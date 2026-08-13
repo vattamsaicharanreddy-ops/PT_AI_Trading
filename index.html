@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1'>
-<title>PT_AI Trading - Quick Stats Fixed</title>
+<title>PT_AI Trading</title>
 <script src='https://telegram.org/js/telegram-web-app.js'></script>
 <script src='https://cdn.tailwindcss.com'></script>
 <link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap' rel='stylesheet'>
@@ -8,7 +8,7 @@
 </head>
 <body class='bg-[#050507] text-white min-h-screen flex justify-center'>
 <div class='w-full max-w-[420px] bg-[#050507] min-h-screen relative pb-28'>
-<header class='flex justify-between items-center p-5 pt-10'><span class='text-sm tracking-[3px] font-bold'>PT_AI Trading</span><span class='text-xs px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'>● SELF-CUSTODY • QUICK STATS FIXED</span></header>
+<header class='flex justify-between items-center p-5 pt-10'><span class='text-sm tracking-[3px] font-bold'>PT_AI Trading</span><span class='text-xs px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'>● LIVE</span></header>
 
 <div class='mx-4 bg-white/5 border border-white/10 rounded-[24px] p-4 flex justify-between items-center'>
 <div class='flex items-center gap-3'><div class='w-12 h-12 rounded-full bg-[#26A17B] flex items-center justify-center font-bold text-white text-[18px]'>₮</div><div><p class='text-xs text-[#26A17B] tracking-widest font-bold'><span id='aiDot'>🟢</span> <span id='aiStatus'>AI ACTIVE</span> • <span id='tierPct'>0%</span>/day</p><p class='font-bold text-sm'><span id='aiDays'>0</span>d <span id='aiHours'>0</span>h left • <span id='balTopMini'>0</span> USDT</p></div></div>
@@ -17,15 +17,15 @@
 
 <div id='tab-home' class='tab-content'>
 <div class='mt-5 mx-4 bg-gradient-to-br from-[#6C3BFF] via-[#8A5CFF] to-[#A5A6F6] rounded-[28px] p-6'>
-<p class='text-white/70 text-sm'>Daily AI Profit • <span id='dailyPct'>0%</span> • Self-Custody • Quick Stats Fixed</p>
+<p class='text-white/70 text-sm'>Daily AI Profit • <span id='dailyPct'>0%</span> • Real Trading</p>
 <h1 class='text-[36px] font-extrabold leading-none mt-2 flex items-center gap-2'><span class='text-[20px] bg-white/20 w-10 h-10 rounded-full flex items-center justify-center'>₮</span> <span id='profitVal'>0.00</span> <span class='text-base opacity-60'>USDT</span></h1>
-<p class='text-sm text-white/80 mt-3'>+<span id='perHour'>0.00</span> USDT/hr • Self-custody deposits • No Binance freeze</p>
-<div class='mt-4 flex gap-3 flex-wrap'><button onclick='openDeposit()' class='bg-white text-black px-5 py-3 rounded-full font-bold text-sm'>Deposit USDT</button><button onclick='openWithdraw()' class='bg-[#FFD60A] text-black px-5 py-3 rounded-full font-bold text-sm'>Withdraw USDT</button><span class='bg-black/40 px-3 py-2 rounded-full text-xs'>Live: <span id='binanceStatus'>Live</span></span></div>
+<p class='text-sm text-white/80 mt-3'>+<span id='perHour'>0.00</span> USDT/hr • Live AI Trading</p>
+<div class='mt-4 flex gap-3 flex-wrap'><button onclick='openDeposit()' class='bg-white text-black px-5 py-3 rounded-full font-bold text-sm'>Deposit USDT</button><button onclick='openWithdraw()' class='bg-[#FFD60A] text-black px-5 py-3 rounded-full font-bold text-sm'>Withdraw USDT</button><span class='bg-black/40 px-3 py-2 rounded-full text-xs'>Status: <span id='binanceStatus'>Live</span></span></div>
 </div>
 
-<!-- QUICK STATS MOVED TO TOP BELOW DAILY AI PROFIT - FIXED INSTANT UPDATE -->
+<!-- QUICK STATS FIXED - MOVED TO TOP BELOW DAILY AI PROFIT - INSTANT UPDATE -->
 <div class='mx-4 mt-4 bg-gradient-to-br from-[#121214] to-[#1a1a2e] border border-[#FFD60A]/20 rounded-[24px] p-4 shadow-lg'>
-<div class='flex justify-between items-center mb-3'><h3 class='font-bold text-sm flex items-center gap-2'>💰 Quick Stats ₮ USDT • Instant Update</h3><span class='text-[10px] px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400'>Live • Fixed</span></div>
+<div class='flex justify-between items-center mb-3'><h3 class='font-bold text-sm flex items-center gap-2'>💰 Quick Stats</h3><span class='text-[10px] px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400'>Live</span></div>
 <div class='grid grid-cols-2 gap-3'>
 <div class='bg-gradient-to-br from-[#26A17B]/20 to-[#26A17B]/5 border border-[#26A17B]/20 p-4 rounded-[16px]'>
 <p class='text-xs opacity-60'>Total Deposited</p>
@@ -42,11 +42,10 @@
 <div class='bg-white/5 p-3 rounded-xl flex justify-between'><span class='opacity-60'>Trading Balance:</span><span id='quickBal' class='font-bold'>0 USDT</span></div>
 <div class='bg-white/5 p-3 rounded-xl flex justify-between'><span class='opacity-60'>Profit Earned:</span><span id='quickProfit' class='font-bold text-emerald-400'>0 USDT</span></div>
 </div>
-<p class='text-[10px] opacity-40 mt-2 text-center'>✅ Updates instantly after deposit/withdrawal verified • No reload needed</p>
 </div>
 
 <div class='mx-4 mt-5 bg-[#121214] border border-emerald-500/20 rounded-[24px] p-4'>
-<div class='flex justify-between items-center'><h3 class='font-bold text-sm flex items-center gap-2'>📈 LIVE TRADING - REAL BINANCE PRICES</h3><span id='priceSource' class='text-xs px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400'>Binance Live</span></div>
+<div class='flex justify-between items-center'><h3 class='font-bold text-sm flex items-center gap-2'>📈 LIVE TRADING</h3><span id='priceSource' class='text-xs px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400'>Live</span></div>
 <div class='mt-3 grid grid-cols-4 gap-2 text-center'>
 <div class='bg-white/5 rounded-xl p-3'><p class='text-[10px] opacity-50'>TODAY</p><p id='todayTrades' class='font-bold text-base'>0</p></div>
 <div class='bg-emerald-500/10 rounded-xl p-3'><p class='text-[10px] text-emerald-400'>PROFIT</p><p id='profitTrades' class='font-bold text-base text-emerald-400'>0</p></div>
@@ -56,7 +55,7 @@
 </div>
 
 <div class='mx-4 mt-4 bg-[#121214] border border-white/10 rounded-[24px] overflow-hidden'>
-<div class='p-4 flex justify-between items-center border-b border-white/5'><h3 class='font-bold text-sm'>INDIVIDUAL TRADES - REAL BINANCE</h3><button onclick='loadRealTrades()' class='text-xs bg-white/10 px-3 py-2 rounded-full'>🔄 Refresh</button></div>
+<div class='p-4 flex justify-between items-center border-b border-white/5'><h3 class='font-bold text-sm'>INDIVIDUAL TRADES</h3><button onclick='loadRealTrades()' class='text-xs bg-white/10 px-3 py-2 rounded-full'>🔄 Refresh</button></div>
 <div class='overflow-x-auto'>
 <table class='w-full text-xs'><thead class='bg-white/5 text-[11px] opacity-60'><tr><th class='p-3 text-left'>Time</th><th class='p-3 text-left'>Pair</th><th class='p-3'>Side</th><th class='p-3 text-right'>Entry</th><th class='p-3 text-right'>Exit</th><th class='p-3 text-right'>Lev</th><th class='p-3 text-right'>PnL %</th></tr></thead><tbody id='tradesTableBody' class='text-sm'><tr><td colspan="7" class="p-4 text-center opacity-50">Loading trades...</td></tr></tbody></table>
 </div>
@@ -65,7 +64,7 @@
 
 <div id='tab-tiers' class='tab-content hidden'>
 <div class='mx-4 mt-5 bg-[#1A1A2E] border border-[#26A17B]/30 rounded-[28px] p-6'>
-<div class='flex items-center gap-3'><div class='w-10 h-10 bg-[#26A17B] rounded-full flex items-center justify-center font-bold'>₮</div><div><h3 class='font-bold text-base'>Profit Tiers - ₮ USDT</h3><p class='text-sm opacity-60'>Earn daily % on USDT balance • Min 20 USDT</p></div></div>
+<div class='flex items-center gap-3'><div class='w-10 h-10 bg-[#26A17B] rounded-full flex items-center justify-center font-bold'>₮</div><div><h3 class='font-bold text-base'>Profit Tiers</h3><p class='text-sm opacity-60'>Earn daily % • Min 20 USDT</p></div></div>
 <div id='tierList' class='mt-5 space-y-3'></div>
 <div class='mt-5 bg-white/5 rounded-[16px] p-4'><table class='w-full text-sm'><thead class='opacity-50 text-xs'><tr><th class='text-left'>Min ₮</th><th class='text-left'>%</th><th class='text-left'>Example</th></tr></thead><tbody id='tierTable'></tbody></table></div>
 </div>
@@ -73,10 +72,9 @@
 
 <div id='tab-referral' class='tab-content hidden'>
 <div class='mx-4 mt-5 bg-gradient-to-br from-[#FFD60A]/20 to-[#FFA600]/10 border border-[#FFD60A]/30 rounded-[28px] p-5'>
-<h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Referral - Earn USDT</h3>
+<h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Referral</h3>
 <div class='mt-4 bg-black/50 rounded-xl p-4'><p class='text-xs opacity-50'>YOUR REFERRAL LINK</p><p id='refLink' class='text-sm break-all mt-2 font-mono'>Loading...</p><div class='flex gap-2 mt-3'><button onclick='copyRef()' class='bg-white text-black px-4 py-2 rounded-full text-sm font-bold'>Copy Link</button><button onclick='shareRef()' class='bg-[#FFD60A] text-black px-4 py-2 rounded-full text-sm font-bold'>Share</button></div></div>
 <div class='mt-4 grid grid-cols-3 gap-3 text-center'><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>DIRECT</p><p id='directCount' class='font-bold text-lg'>0</p></div><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>TEAM</p><p id='teamDep' class='font-bold text-[#FFD60A]'>0 USDT</p></div><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>EARNED</p><p id='refEarned' class='font-bold text-emerald-400'>0 USDT</p></div></div>
-<div class='mt-5 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>💰 Referral Bonus</h3><div class='space-y-2 text-sm'><div class='flex justify-between items-center bg-[#FFD60A]/10 p-3 rounded-xl border border-[#FFD60A]/20'><span>Level 1 - Direct</span><span class='font-bold text-[#FFD60A]'>7% Bonus</span></div><div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 2-10</span><span class='font-bold'>1% Each</span></div></div></div>
 <div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>👥 My Direct Referrals</h3><div id='directList' class='space-y-2 text-sm'><p class='opacity-50'>Loading...</p></div></div>
 <div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>📜 Earnings History</h3><div id='refHistory' class='space-y-2 text-xs'><p class='opacity-50'>Loading...</p></div></div>
 </div>
@@ -88,7 +86,7 @@
 <div class='mt-5 grid grid-cols-2 gap-3 text-sm'><div class='bg-white/5 p-4 rounded-xl'><p class='opacity-50 text-xs'>TRADING BAL</p><p id='userBal' class='font-bold text-base mt-1'>Loading...</p></div><div class='bg-[#FFD60A]/10 border border-[#FFD60A]/20 p-4 rounded-xl'><p class='text-[#FFD60A] text-xs'>WALLET</p><p id='userWd' class='font-bold text-base text-[#FFD60A] mt-1'>Loading...</p></div></div>
 <div class='mt-4 text-sm opacity-50'>Daily: <span id='earnPct'>0%</span> • Earned: <span id='refEarn'>0 USDT</span></div>
 </div>
-<div class='mx-4 mt-5 bg-[#121214] border border-white/5 rounded-[24px] p-5'><h3 class='font-bold text-sm mb-3'>Deposit History (Self-Custody)</h3><div id='history' class='text-sm space-y-2 opacity-70'>Loading history...</div></div>
+<div class='mx-4 mt-5 bg-[#121214] border border-white/5 rounded-[24px] p-5'><h3 class='font-bold text-sm mb-3'>Deposit History</h3><div id='history' class='text-sm space-y-2 opacity-70'>Loading history...</div></div>
 </div>
 
 <div class='fixed bottom-5 left-1/2 -translate-x-1/2 w-[90%] max-w-[380px] bg-[#121214]/95 backdrop-blur-xl border border-white/10 rounded-full p-2 flex justify-around shadow-2xl'>
@@ -100,9 +98,9 @@
 
 <div id='depositModal' class='hidden fixed inset-0 bg-black/90 z-50 flex items-end'><div class='bg-[#121214] w-full rounded-t-[32px] p-6 max-h-[92vh] overflow-y-auto'>
 <div id='depositStep1'>
-<h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Deposit USDT • Self-Custody • Min 20 USDT</h3>
+<h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Deposit USDT • Min 20 USDT</h3>
 <div class='mt-4 grid grid-cols-3 gap-2' id='networkBtns'></div>
-<div class='mt-4 bg-white/5 p-4 rounded-xl'><p class='text-xs opacity-50'>YOUR SELF-CUSTODY ADDRESS (<span id='selectedNet'>TRC20</span>)</p><p id='depositAddr' class='text-sm break-all font-mono mt-2'>Loading...</p><button onclick='copyAddr()' class='mt-3 text-sm bg-white/10 px-4 py-2 rounded-full'>Copy Address</button></div>
+<div class='mt-4 bg-white/5 p-4 rounded-xl'><p class='text-xs opacity-50'>DEPOSIT ADDRESS (<span id='selectedNet'>TRC20</span>)</p><p id='depositAddr' class='text-sm break-all font-mono mt-2'>Loading...</p><button onclick='copyAddr()' class='mt-3 text-sm bg-white/10 px-4 py-2 rounded-full'>Copy Address</button></div>
 <input id='depAmount' type='number' placeholder='Amount USDT (Min 20)' class='mt-4 w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-base'>
 <button onclick='createInvoice()' id='createInvoiceBtn' class='mt-4 w-full bg-[#26A17B] text-white py-4 rounded-full font-bold text-base'>Create Deposit Invoice</button>
 <button onclick='document.getElementById("depositModal").classList.add("hidden")' class='mt-3 w-full bg-white/5 py-4 rounded-full text-base'>Close</button>
@@ -119,17 +117,17 @@
 <p id='invoiceAmount' class='text-[32px] font-extrabold text-[#26A17B]'>0 USDT</p>
 <p class='text-xs opacity-60 mt-1'>Network: <span id='invoiceNetwork' class='font-bold'>TRC20</span> • Invoice: <span id='invoiceIdSmall' class='font-mono'>-</span></p>
 <div class='mt-4 bg-black/50 p-4 rounded-xl'>
-<p class='text-xs opacity-50'>TO YOUR SELF-CUSTODY WALLET</p>
+<p class='text-xs opacity-50'>TO ADDRESS</p>
 <p id='invoiceAddress' class='text-sm break-all font-mono mt-2 text-white'>-</p>
 <div class='flex gap-2 mt-3'><button onclick='copyInvoiceAddr()' class='bg-white text-black px-4 py-2 rounded-full text-sm font-bold'>Copy Address</button><button onclick='copyInvoiceAmount()' class='bg-[#26A17B] text-white px-4 py-2 rounded-full text-sm font-bold'>Copy Amount</button></div>
 </div>
 </div>
 <div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'>
 <h4 class='font-bold text-sm flex items-center gap-2'><span id='invoiceStatusIcon'>⏳</span> <span id='invoiceStatusText'>Waiting for payment...</span></h4>
-<p class='text-xs opacity-60 mt-2' id='invoiceStatusDetail'>Send USDT to your self-custody address. System checks blockchain every 15 seconds.</p>
+<p class='text-xs opacity-60 mt-2' id='invoiceStatusDetail'>Send USDT to address above. System checks blockchain every 15 seconds.</p>
 <div id='invoiceVerifiedBox' class='hidden mt-3 bg-emerald-500/20 border border-emerald-500/30 rounded-xl p-3'>
 <p class='text-sm font-bold text-emerald-400'>✅ Payment Verified!</p>
-<p class='text-xs mt-1'>Amount: <span id='verifiedAmount'>0</span> USDT in your wallet</p>
+<p class='text-xs mt-1'>Amount: <span id='verifiedAmount'>0</span> USDT</p>
 <p class='text-xs opacity-60 break-all'>TX: <span id='verifiedTx'>-</span></p>
 </div>
 <div class='mt-3 flex gap-2'><button onclick='checkInvoiceNow()' id='checkNowBtn' class='bg-white/10 px-4 py-2 rounded-full text-xs'>🔄 Check Now</button><button onclick='cancelInvoice()' class='bg-red-500/20 text-red-400 px-4 py-2 rounded-full text-xs'>Cancel Invoice</button></div>
@@ -139,13 +137,13 @@
 </div></div>
 
 <div id='withdrawModal' class='hidden fixed inset-0 bg-black/80 z-50 flex items-end'><div class='bg-[#121214] w-full rounded-t-[32px] p-6'>
-<h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#FFD60A] rounded-full flex items-center justify-center text-black text-sm'>₮</span> Withdraw USDT (Self-Custody)</h3>
+<h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#FFD60A] rounded-full flex items-center justify-center text-black text-sm'>₮</span> Withdraw USDT</h3>
 <p class='text-sm opacity-60 mt-3'>Available: <span id='wdAvailable' class='font-bold text-[#FFD60A]'>0 USDT</span> • Min 10 USDT • Once per day</p>
 <input id='wdAmount' type='number' placeholder='Amount USDT' class='mt-4 w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-base'>
-<input id='wdAddr' placeholder='User USDT Address' class='mt-3 w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-base'>
+<input id='wdAddr' placeholder='Your USDT Address' class='mt-3 w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-base'>
 <div class='mt-3 flex gap-2'><button onclick='setNet("TRC20")' class='bg-white/5 px-4 py-2 rounded-full text-sm'>TRC20</button><button onclick='setNet("BEP20")' class='bg-white/5 px-4 py-2 rounded-full text-sm'>BEP20</button></div>
 <p class='text-xs mt-3 opacity-50'>Network: <span id='wdNet'>TRC20</span></p>
-<button onclick='submitWithdraw()' id='wdBtn' class='mt-4 w-full bg-[#FFD60A] text-black py-4 rounded-full font-bold text-base'>Request Withdraw</button>
+<button onclick='submitWithdraw()' id='wdBtn' class='mt-4 w-full bg-[#FFD60A] text-black py-4 rounded-full font-bold text-base'>Withdraw USDT</button>
 <button onclick='document.getElementById("withdrawModal").classList.add("hidden")' class='mt-3 w-full bg-white/5 py-4 rounded-full text-base'>Close</button>
 </div></div>
 
@@ -222,25 +220,25 @@ function showTab(name){
 }
 
 function refreshQuickStats(){
- // FIXED: Fetch latest user data for quick stats instantly
  fetch('/api/user/'+userId).then(r=>r.json()).then(data=>{
    if(data && !data.error){
      totalDeposit = data.total_deposit||0;
      totalWithdraw = data.total_withdraw||0;
      balance = data.balance||0;
      profit = data.profit||0;
+     withdrawable = data.withdrawable||0;
      updateQuickStatsDisplay();
    }
  }).catch(e=>{ console.log('quick stats refresh failed', e); });
 }
 
 function updateQuickStatsDisplay(){
- // FIXED: Update all quick stats elements instantly
  safeSet('totalDep', totalDeposit.toFixed(2)+' USDT');
  safeSet('totalWd', totalWithdraw.toFixed(2)+' USDT');
  safeSet('quickBal', balance.toFixed(2)+' USDT');
  safeSet('quickProfit', profit.toFixed(2)+' USDT');
- console.log('Quick stats updated:', totalDeposit, totalWithdraw);
+ safeSet('balTopMini', balance.toFixed(2));
+ safeSet('withdrawableTop', withdrawable.toFixed(2)+' USDT');
 }
 
 async function init(){
@@ -261,18 +259,15 @@ async function init(){
   safeSet('perHour', perHour.toFixed(2));
   safeSet('dailyPct', (data.daily_percent||0).toFixed(1)+'%');
   safeSet('tierPct', (data.daily_percent||0).toFixed(1));
-  safeSet('balTopMini', balance.toFixed(2));
-  safeSet('withdrawableTop', withdrawable.toFixed(2)+' USDT');
+  updateQuickStatsDisplay();
   safeSet('userBal', balance.toFixed(2)+' USDT');
   safeSet('userWd', withdrawable.toFixed(2)+' USDT');
-  // FIXED: Quick stats now updates instantly
-  updateQuickStatsDisplay();
   safeSet('userIdDisplay', data.user_id);
   safeSet('earnPct', (data.daily_percent||0).toFixed(1)+'%');
   safeSet('aiDays', data.days_left||0);
   safeSet('aiHours', data.hours_left||0);
   safeSet('joinedDate', data.created_at ? data.created_at.slice(0,10) : '-');
-  safeSet('realIdWarning', data.user_id==123456789?'⚠️ Test ID - Open via Telegram Bot':'Real Telegram ID: '+data.user_id);
+  safeSet('realIdWarning', data.user_id==123456789?'⚠️ Test ID - Open via Telegram Bot':'User ID: '+data.user_id);
   safeSet('aiStatus', data.ai_active ? 'AI ACTIVE' : 'AI INACTIVE');
   let dot = $('aiDot'); if(dot) dot.innerText = data.ai_active ? '🟢' : '🔴';
   renderTiers(data.tiers || STATIC_TIERS, balance);
@@ -342,16 +337,12 @@ function updateInvoiceUI(data){
    $('invoiceVerifiedBox')?.classList.remove('hidden');
    safeSet('verifiedAmount', data.actual_amount);
    safeSet('verifiedTx', data.tx_hash);
-   safeSet('invoiceStatusDetail', 'Payment verified! Balance credited. Quick stats will update instantly.');
+   safeSet('invoiceStatusDetail', 'Payment verified! Balance credited. Stats updated instantly.');
    clearInvoiceTimers();
-   // FIXED: Instantly refresh quick stats after verification
    setTimeout(()=>{ 
      init(); 
      loadHistory(); 
      refreshQuickStats();
-     // Extra instant update
-     totalDeposit += data.actual_amount;
-     updateQuickStatsDisplay();
    }, 500);
  }else if(data.status==='expired'){
    safeSet('invoiceStatusDetail', 'Invoice expired. Please create new invoice.');
@@ -397,10 +388,8 @@ async function checkInvoiceNow(){
    let j=await r.json();
    if(btn){ btn.innerText='🔄 Check Now'; btn.disabled=false; }
    if(j.ok && j.status==='verified'){
-     alert('✅ Payment verified! '+j.amount+' USDT credited! Quick stats updated.');
+     alert('✅ Payment verified! '+j.amount+' USDT credited! Stats updated.');
      init(); loadHistory(); refreshQuickStats();
-     totalDeposit += j.amount;
-     updateQuickStatsDisplay();
      let status=await fetch('/api/deposit/invoice_status/'+currentInvoiceId).then(r=>r.json());
      updateInvoiceUI(status);
    }else{
@@ -436,7 +425,7 @@ async function submitWithdraw(){
  try{
    let r=await fetch('/api/withdraw/request/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,address:addr,network:wdNetwork})});
    let j=await r.json();
-   if(btn){ btn.innerText='Request Withdraw'; btn.disabled=false; }
+   if(btn){ btn.innerText='Withdraw USDT'; btn.disabled=false; }
    if(j.error){ alert(j.error); return; }
    if(j.ok){ 
      alert(j.message); 
@@ -446,11 +435,8 @@ async function submitWithdraw(){
      init(); 
      loadHistory(); 
      refreshQuickStats();
-     // FIXED: Instantly update quick stats for withdrawal
-     totalWithdraw += amt;
-     updateQuickStatsDisplay();
    }
- }catch(e){ if(btn){ btn.innerText='Request Withdraw'; btn.disabled=false; } alert('Failed: '+e.message); }
+ }catch(e){ if(btn){ btn.innerText='Withdraw USDT'; btn.disabled=false; } alert('Failed: '+e.message); }
 }
 
 async function loadRealTrades(){
@@ -465,7 +451,7 @@ async function loadRealTrades(){
  safeSet('totalPnl', (data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%');
  let el=$('totalPnl'); if(el) el.className='font-bold text-base '+(data.summary.total_pnl_percent>=0?'text-emerald-400':'text-red-400');
  safeSet('binanceStatus','Live');
- safeSet('priceSource', data.prices_source==='binance'?'Binance Live':'Fallback');
+ safeSet('priceSource', data.prices_source==='binance'?'Live':'Fallback');
  renderRealTradesTable(realTrades);
 }
 
@@ -541,8 +527,7 @@ function copyRef(){ let el=$('refLink'); if(el){ let text=el.innerText; if(text.
 function shareRef(){ let el=$('refLink'); if(el && navigator.share){ navigator.share({title:'PT_AI Trading', text:'Join PT_AI Trading', url: el.innerText}); } else { copyRef(); } }
 
 init();
-// Auto refresh quick stats every 5 seconds to ensure instant update
-setInterval(refreshQuickStats, 5000);
+setInterval(refreshQuickStats, 3000);
 setInterval(async ()=>{ try{ let r=await fetch('/api/binance/trades'); if(!r.ok) return; let data=await r.json(); safeSet('todayTrades', data.summary.total_trades); safeSet('profitTrades', data.summary.profit_trades); safeSet('lossTrades', data.summary.loss_trades); safeSet('totalPnl', (data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%'); safeSet('binanceStatus','Live • '+data.summary.total_trades+' trades'); }catch(e){} }, 10000);
 </script>
 </body></html>
