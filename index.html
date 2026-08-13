@@ -36,7 +36,7 @@
 <div class='mx-4 mt-4 bg-[#121214] border border-white/10 rounded-[24px] overflow-hidden'>
 <div class='p-4 flex justify-between items-center border-b border-white/5'><h3 class='font-bold text-sm'>INDIVIDUAL TRADES - REAL BINANCE</h3><button onclick='loadRealTrades()' class='text-xs bg-white/10 px-3 py-2 rounded-full'>🔄 Refresh</button></div>
 <div class='overflow-x-auto'>
-<table class='w-full text-xs'><thead class='bg-white/5 text-[11px] opacity-60'><tr><th class='p-3 text-left'>Time</th><th class='p-3 text-left'>Pair</th><th class='p-3'>Side</th><th class='p-3 text-right'>Entry</th><th class='p-3 text-right'>Exit</th><th class='p-3 text-right'>Lev</th><th class='p-3 text-right'>PnL %</th></tr></thead><tbody id='tradesTableBody' class='text-sm'></tbody></table>
+<table class='w-full text-xs'><thead class='bg-white/5 text-[11px] opacity-60'><tr><th class='p-3 text-left'>Time</th><th class='p-3 text-left'>Pair</th><th class='p-3'>Side</th><th class='p-3 text-right'>Entry</th><th class='p-3 text-right'>Exit</th><th class='p-3 text-right'>Lev</th><th class='p-3 text-right'>PnL %</th></tr></thead><tbody id='tradesTableBody' class='text-sm'><tr><td colspan="7" class="p-4 text-center opacity-50">Loading trades...</td></tr></tbody></table>
 </div>
 </div>
 
@@ -46,29 +46,29 @@
 <div id='tab-tiers' class='tab-content hidden'>
 <div class='mx-4 mt-5 bg-[#1A1A2E] border border-[#26A17B]/30 rounded-[28px] p-6'>
 <div class='flex items-center gap-3'><div class='w-10 h-10 bg-[#26A17B] rounded-full flex items-center justify-center font-bold'>₮</div><div><h3 class='font-bold text-base'>Profit Tiers - ₮ USDT</h3><p class='text-sm opacity-60'>Earn daily % on USDT balance • Min 20 USDT</p></div></div>
-<div id='tierList' class='mt-5 space-y-3'></div>
-<div class='mt-5 bg-white/5 rounded-[16px] p-4'><table class='w-full text-sm'><thead class='opacity-50 text-xs'><tr><th class='text-left'>Min ₮</th><th class='text-left'>%</th><th class='text-left'>Example</th></tr></thead><tbody id='tierTable'></tbody></table></div>
+<div id='tierList' class='mt-5 space-y-3'><p class='text-xs opacity-50'>Loading tiers...</p></div>
+<div class='mt-5 bg-white/5 rounded-[16px] p-4'><table class='w-full text-sm'><thead class='opacity-50 text-xs'><tr><th class='text-left'>Min ₮</th><th class='text-left'>%</th><th class='text-left'>Example</th></tr></thead><tbody id='tierTable'><tr><td colspan="3" class="p-2 opacity-50">Loading...</td></tr></tbody></table></div>
 </div>
 </div>
 
 <div id='tab-referral' class='tab-content hidden'>
 <div class='mx-4 mt-5 bg-gradient-to-br from-[#FFD60A]/20 to-[#FFA600]/10 border border-[#FFD60A]/30 rounded-[28px] p-5'>
 <h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Referral - Earn USDT</h3>
-<div class='mt-4 bg-black/50 rounded-xl p-4'><p class='text-xs opacity-50'>YOUR REFERRAL LINK</p><p id='refLink' class='text-sm break-all mt-2 font-mono'>Loading...</p><div class='flex gap-2 mt-3'><button onclick='copyRef()' class='bg-white text-black px-4 py-2 rounded-full text-sm font-bold'>Copy Link</button><button onclick='shareRef()' class='bg-[#FFD60A] text-black px-4 py-2 rounded-full text-sm font-bold'>Share</button></div></div>
+<div class='mt-4 bg-black/50 rounded-xl p-4'><p class='text-xs opacity-50'>YOUR REFERRAL LINK</p><p id='refLink' class='text-sm break-all mt-2 font-mono'>Loading referral link... If stuck, check server connection</p><div class='flex gap-2 mt-3'><button onclick='copyRef()' class='bg-white text-black px-4 py-2 rounded-full text-sm font-bold'>Copy Link</button><button onclick='shareRef()' class='bg-[#FFD60A] text-black px-4 py-2 rounded-full text-sm font-bold'>Share</button></div></div>
 <div class='mt-4 grid grid-cols-3 gap-3 text-center'><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>DIRECT</p><p id='directCount' class='font-bold text-lg'>0</p><p class='text-[10px] opacity-40'>Friends</p></div><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>TEAM</p><p id='teamDep' class='font-bold text-[#FFD60A]'>0 USDT</p><p class='text-[10px] opacity-40'>Total</p></div><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>EARNED</p><p id='refEarned' class='font-bold text-emerald-400'>0 USDT</p><p class='text-[10px] opacity-40'>To Wallet</p></div></div>
 <div class='mt-5 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>💰 Referral Bonus (Auto → Withdrawable)</h3><div class='space-y-2 text-sm'><div class='flex justify-between items-center bg-[#FFD60A]/10 p-3 rounded-xl border border-[#FFD60A]/20'><span>Level 1 - Direct</span><span class='font-bold text-[#FFD60A]'>7% Bonus</span></div><div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 2-10</span><span class='font-bold'>1% Each</span></div></div><p class='text-xs opacity-50 mt-3'>✅ Bonus added instantly to withdrawable when referral deposits verified!</p></div>
-<div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>👥 My Direct Referrals</h3><div id='directList' class='space-y-2 text-sm'><p class='opacity-50'>No referrals yet</p></div></div>
-<div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>📜 Earnings History</h3><div id='refHistory' class='space-y-2 text-xs'><p class='opacity-50'>No earnings yet</p></div></div>
+<div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>👥 My Direct Referrals</h3><div id='directList' class='space-y-2 text-sm'><p class='opacity-50'>Loading referrals...</p></div></div>
+<div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>📜 Earnings History</h3><div id='refHistory' class='space-y-2 text-xs'><p class='opacity-50'>Loading earnings...</p></div></div>
 </div>
 </div>
 
 <div id='tab-user' class='tab-content hidden'>
 <div class='mx-4 mt-5 bg-[#121214] border border-white/10 rounded-[28px] p-5'>
-<div class='flex items-center gap-4'><div class='w-14 h-14 rounded-full bg-[#26A17B] flex items-center justify-center font-bold text-white text-xl'>₮</div><div><p class='font-bold text-base'>User #<span id='userIdDisplay'>0</span></p><p class='text-sm opacity-60'>Member since <span id='joinedDate'>-</span></p><p class='text-xs opacity-50' id='realIdWarning'></p></div></div>
-<div class='mt-5 grid grid-cols-2 gap-3 text-sm'><div class='bg-white/5 p-4 rounded-xl'><p class='opacity-50 text-xs'>TRADING BAL</p><p id='userBal' class='font-bold text-base mt-1'>0 USDT</p></div><div class='bg-[#FFD60A]/10 border border-[#FFD60A]/20 p-4 rounded-xl'><p class='text-[#FFD60A] text-xs'>WALLET</p><p id='userWd' class='font-bold text-base text-[#FFD60A] mt-1'>0 USDT</p></div></div>
+<div class='flex items-center gap-4'><div class='w-14 h-14 rounded-full bg-[#26A17B] flex items-center justify-center font-bold text-white text-xl'>₮</div><div><p class='font-bold text-base'>User #<span id='userIdDisplay'>Loading...</span></p><p class='text-sm opacity-60'>Member since <span id='joinedDate'>-</span></p><p class='text-xs opacity-50' id='realIdWarning'></p></div></div>
+<div class='mt-5 grid grid-cols-2 gap-3 text-sm'><div class='bg-white/5 p-4 rounded-xl'><p class='opacity-50 text-xs'>TRADING BAL</p><p id='userBal' class='font-bold text-base mt-1'>Loading...</p></div><div class='bg-[#FFD60A]/10 border border-[#FFD60A]/20 p-4 rounded-xl'><p class='text-[#FFD60A] text-xs'>WALLET</p><p id='userWd' class='font-bold text-base text-[#FFD60A] mt-1'>Loading...</p></div></div>
 <div class='mt-4 text-sm opacity-50'>Daily: <span id='earnPct'>0%</span> • Earned: <span id='refEarn'>0 USDT</span></div>
 </div>
-<div class='mx-4 mt-5 bg-[#121214] border border-white/5 rounded-[24px] p-5'><h3 class='font-bold text-sm mb-3'>Deposit History (Auto Verified)</h3><div id='history' class='text-sm space-y-2 opacity-70'>Loading...</div></div>
+<div class='mx-4 mt-5 bg-[#121214] border border-white/5 rounded-[24px] p-5'><h3 class='font-bold text-sm mb-3'>Deposit History (Auto Verified)</h3><div id='history' class='text-sm space-y-2 opacity-70'>Loading history...</div></div>
 </div>
 
 <div class='fixed bottom-5 left-1/2 -translate-x-1/2 w-[90%] max-w-[380px] bg-[#121214]/95 backdrop-blur-xl border border-white/10 rounded-full p-2 flex justify-around shadow-2xl'>
@@ -80,12 +80,11 @@
 
 <div id='depositModal' class='hidden fixed inset-0 bg-black/80 z-50 flex items-end'><div class='bg-[#121214] w-full rounded-t-[32px] p-6 max-h-[90vh] overflow-y-auto'>
 <h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Deposit USDT • Auto Verified • Min 20 USDT</h3>
-<div class='mt-4 grid grid-cols-3 gap-2' id='networkBtns'></div>
-<div class='mt-4 bg-white/5 p-4 rounded-xl'><p class='text-xs opacity-50'>USDT ADDRESS (<span id='selectedNet'>TRC20</span>)</p><p id='depositAddr' class='text-sm break-all font-mono mt-2'>Loading...</p><button onclick='copyAddr()' class='mt-3 text-sm bg-white/10 px-4 py-2 rounded-full'>Copy Address</button></div>
-<div class='mt-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3'><p class='text-xs text-yellow-400'>⚠️ Send only USDT on selected network to this address. Min 20 USDT. After sending, enter amount and TX Hash below. System will auto verify blockchain transaction.</p></div>
+<div class='mt-4 grid grid-cols-3 gap-2' id='networkBtns'><p class='text-xs opacity-50'>Loading networks...</p></div>
+<div class='mt-4 bg-white/5 p-4 rounded-xl'><p class='text-xs opacity-50'>USDT ADDRESS (<span id='selectedNet'>TRC20</span>)</p><p id='depositAddr' class='text-sm break-all font-mono mt-2'>Loading addresses... If stuck, server not connected. Fallback: TDABxPiFnpzUsY7j6sHaq4jJxU7Nz6xcFx (TRC20)</p><button onclick='copyAddr()' class='mt-3 text-sm bg-white/10 px-4 py-2 rounded-full'>Copy Address</button></div>
+<div class='mt-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3'><p class='text-xs text-yellow-400'>⚠️ Send only USDT on selected network. Min 20 USDT. System auto verifies blockchain TX.</p></div>
 <input id='depAmount' type='number' placeholder='Amount USDT (Min 20)' class='mt-4 w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-base'>
 <input id='depTx' placeholder='Transaction Hash / TX ID (Required)' class='mt-3 w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-base font-mono text-sm'>
-<p class='text-xs opacity-50 mt-2'>TX Hash is verified automatically via blockchain explorer. Balance added only after verification.</p>
 <button onclick='submitDeposit()' id='depBtn' class='mt-4 w-full bg-[#26A17B] text-white py-4 rounded-full font-bold text-base'>Verify & Deposit USDT</button>
 <button onclick='document.getElementById("depositModal").classList.add("hidden")' class='mt-3 w-full bg-white/5 py-4 rounded-full text-base'>Close</button>
 <div id='depStatus' class='mt-3 text-xs hidden'></div>
@@ -109,32 +108,55 @@ function $(id){return document.getElementById(id);}
 function safeSet(id, val){ let el=$(id); if(el) el.innerText=val; }
 function safeHTML(id, val){ let el=$(id); if(el) el.innerHTML=val; }
 
+const FALLBACK_ADDRS = {
+ "TRC20": "TDABxPiFnpzUsY7j6sHaq4jJxU7Nz6xcFx",
+ "BEP20": "0x6b2e4fdc0145a0096e4b358d0cfd1f0cbf7c4d56",
+ "ERC20": "0x6b2e4fdc0145a0096e4b358d0cfd1f0cbf7c4d56",
+ "TON": "UQBlNeJ90El3LxBhikC2HUG3mqS16k1q177AjcNAaURVa_zw",
+ "SOL": "87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7"
+};
+
+const STATIC_TIERS = [
+  {min:15000, pct:14.9}, {min:6000, pct:13.6}, {min:2500, pct:11.8},
+  {min:1200, pct:10.9}, {min:500, pct:9.6}, {min:120, pct:8.9}, {min:20, pct:7.6}
+];
+
 function getRealUserId(){
   const urlParams = new URLSearchParams(window.location.search);
   let tg_id_param = urlParams.get('tg_id');
-  if(tg_id_param && parseInt(tg_id_param) > 1000){
-    localStorage.setItem('real_tg_id', tg_id_param);
-    return parseInt(tg_id_param);
+  if(tg_id_param){
+    let parsed = parseInt(tg_id_param);
+    if(parsed && parsed > 0 && parsed < 10000000000){
+      localStorage.setItem('real_tg_id', parsed.toString());
+      return parsed;
+    }
   }
   try{
     let tg = window.Telegram?.WebApp;
     if(tg){
       try{tg.ready(); tg.expand();}catch(e){}
       let tgUser = tg.initDataUnsafe?.user;
-      if(tgUser && tgUser.id && tgUser.id > 1000){
+      if(tgUser && tgUser.id && tgUser.id > 0){
         localStorage.setItem('real_tg_id', tgUser.id.toString());
         return tgUser.id;
       }
     }
   }catch(e){}
   let saved = localStorage.getItem('real_tg_id');
-  if(saved && parseInt(saved) > 1000){ return parseInt(saved); }
+  if(saved){
+    let parsed = parseInt(saved);
+    if(parsed && parsed > 0) return parsed;
+  }
   let user_id_param = urlParams.get('user_id');
-  if(user_id_param && parseInt(user_id_param) > 1000){ return parseInt(user_id_param); }
+  if(user_id_param){
+    let parsed = parseInt(user_id_param);
+    if(parsed && parsed > 0) return parsed;
+  }
   return 123456789;
 }
 
 let userId = getRealUserId();
+if(userId === 0 || isNaN(userId)){ userId = 123456789; }
 let urlParams = new URLSearchParams(window.location.search);
 let username = urlParams.get('username') || localStorage.getItem('real_username') || '';
 let refParam = urlParams.get('ref') || urlParams.get('start') || null;
@@ -144,28 +166,43 @@ try{
 }catch(e){}
 if(username){ localStorage.setItem('real_username', username); }
 
-let balance=0, withdrawable=0, profit=0, perHour=0, selectedNetwork='TRC20', wdNetwork='TRC20', addrs={}, canWithdrawToday=true, realTrades=[];
+let balance=0, withdrawable=0, profit=0, perHour=0, selectedNetwork='TRC20', wdNetwork='TRC20', addrs=FALLBACK_ADDRS, realTrades=[];
 
 function showTab(name){
  document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
  let el=$('tab-'+name); if(el) el.classList.remove('hidden');
  document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('tab-active'); b.classList.add('tab-inactive');});
  let btn=$('btn-'+name); if(btn){btn.classList.remove('tab-inactive'); btn.classList.add('tab-active');}
+ // Load tab data when tab opened
+ if(name==='tiers'){ renderTiers(STATIC_TIERS, balance); }
+ if(name==='referral'){ loadReferral(); }
+ if(name==='user'){ loadHistory(); }
+ if(name==='home'){ loadRealTrades(); }
 }
 
-const STATIC_TIERS = [
-  {min:15000, pct:14.9}, {min:6000, pct:13.6}, {min:2500, pct:11.8},
-  {min:1200, pct:10.9}, {min:500, pct:9.6}, {min:120, pct:8.9}, {min:20, pct:7.6}
-];
-
 async function init(){
+ console.log('Init with userId:', userId);
+ // Render fallback data immediately so UI not empty
+ renderTiers(STATIC_TIERS, 0);
+ renderNetworks();
+ setNetAddr(selectedNetwork);
+ safeSet('userIdDisplay', userId);
+ 
  try{
   let refQ = refParam ? `?ref=${refParam}` : '';
   let userQ = username ? `${refQ ? '&' : '?'}username=${encodeURIComponent(username)}` : refQ;
-  let r=await fetch('/api/user/'+userId+userQ);
-  if(!r.ok) throw new Error('user api '+r.status);
+  let url = '/api/user/'+userId+userQ;
+  console.log('Fetching user:', url);
+  let r=await fetch(url);
+  if(!r.ok){
+    console.error('user api failed', r.status);
+    let text = await r.text();
+    console.error(text);
+    throw new Error('user api '+r.status+': '+text.substring(0,100));
+  }
   let data=await r.json();
-  if(data.error){ console.error(data.error); }
+  console.log('User data:', data);
+  if(data.error){ throw new Error(data.error); }
   balance=data.balance||0; withdrawable=data.withdrawable||0; profit=data.profit||0; perHour=data.profit_per_hour||0;
   safeSet('profitVal', profit.toFixed(2));
   safeSet('perHour', perHour.toFixed(2));
@@ -182,33 +219,51 @@ async function init(){
   safeSet('aiDays', data.days_left||0);
   safeSet('aiHours', data.hours_left||0);
   safeSet('joinedDate', data.created_at ? data.created_at.slice(0,10) : '-');
-  safeSet('realIdWarning', data.user_id==123456789?'⚠️ Test ID - Open via Telegram Bot':'Real Telegram ID: '+data.user_id);
+  safeSet('realIdWarning', data.user_id==123456789?'⚠️ Test ID - Open via Telegram Bot for real ID':'Real Telegram ID: '+data.user_id);
   let aiActive = data.ai_active;
   safeSet('aiStatus', aiActive ? 'AI ACTIVE' : 'AI INACTIVE');
   let dot = $('aiDot'); if(dot) dot.innerText = aiActive ? '🟢' : '🔴';
   renderTiers(data.tiers || STATIC_TIERS, balance);
-  await loadRealTrades();
-  await loadHistory();
-  await loadReferral();
-  let a=await fetch('/api/deposit-addresses');
-  if(!a.ok) throw new Error('deposit addresses '+a.status);
-  addrs=await a.json();
-  renderNetworks();
-  setNetAddr(selectedNetwork);
- }catch(e){ console.error('init failed', e); safeSet('depositAddr','Failed to load addresses: '+e.message); }
+ }catch(e){
+  console.error('init user failed', e);
+  safeSet('realIdWarning','Error loading user: '+e.message+' - Using fallback ID '+userId);
+  safeSet('userIdDisplay', userId+' (fallback)');
+  renderTiers(STATIC_TIERS, balance);
+ }
+
+ // Load other data independently - each with own try/catch so one failure doesn't block others
+ try{ await loadRealTrades(); }catch(e){ console.error('trades failed', e); safeSet('binanceStatus','Error: '+e.message); safeHTML('tradesTableBody','<tr><td colspan="7" class="p-4 text-center text-red-400">Failed to load trades: '+e.message+'<br>Check server /api/binance/trades</td></tr>'); }
+ try{ await loadHistory(); }catch(e){ console.error('history failed', e); safeHTML('history','<p class="text-red-400">Failed to load history: '+e.message+'</p>'); }
+ try{ await loadReferral(); }catch(e){ console.error('referral failed', e); safeSet('refLink','Failed to load referral link: '+e.message+' - Server may be down'); }
+ try{
+   let a=await fetch('/api/deposit-addresses');
+   if(!a.ok) throw new Error('deposit addresses '+a.status);
+   let fetched = await a.json();
+   if(Object.keys(fetched).length>0){ addrs=fetched; }
+   renderNetworks();
+   setNetAddr(selectedNetwork);
+ }catch(e){
+   console.error('deposit addresses failed', e);
+   addrs=FALLBACK_ADDRS;
+   renderNetworks();
+   setNetAddr(selectedNetwork);
+   safeSet('depositAddr', FALLBACK_ADDRS[selectedNetwork]+' (fallback - server: '+e.message+')');
+ }
 }
 
 function renderTiers(tiers, bal){
- let html=''; tiers.forEach(t=>{ let active=bal>=t.min; html+=`<div class='flex justify-between items-center p-3 rounded-xl ${active?'bg-[#26A17B]/20 border border-[#26A17B]/30':'bg-white/5'}'><span>Min $${t.min}</span><span class='font-bold'>${t.pct}%/day ${active?'●':''}</span></div>`; }); safeHTML('tierList', html);
+ if(!tiers || tiers.length===0) tiers=STATIC_TIERS;
+ let html=''; tiers.forEach(t=>{ let active=bal>=t.min; html+=`<div class='flex justify-between items-center p-3 rounded-xl ${active?'bg-[#26A17B]/20 border border-[#26A17B]/30':'bg-white/5'}'><span>Min $${t.min}</span><span class='font-bold'>${t.pct}%/day ${active?'● Active':''}</span></div>`; }); safeHTML('tierList', html);
  let th=''; tiers.forEach(t=>{ th+=`<tr class='border-t border-white/5'><td class='p-2'>$${t.min}</td><td class='p-2'>${t.pct}%</td><td class='p-2 opacity-60'>$${t.min} → $${(t.min*t.pct/100).toFixed(2)}/day</td></tr>`; }); safeHTML('tierTable', th);
 }
 
 function renderNetworks(){
+ if(!addrs || Object.keys(addrs).length===0) addrs=FALLBACK_ADDRS;
  let btns=''; for(let net in addrs){ btns+=`<button onclick="setNetAddr('${net}')" class='px-3 py-2 rounded-full text-xs ${selectedNetwork===net?'bg-white text-black':'bg-white/10'}'>${net}</button>`; } safeHTML('networkBtns', btns);
 }
-function setNetAddr(net){ selectedNetwork=net; safeSet('selectedNet', net); safeSet('depositAddr', addrs[net]||'Loading...'); renderNetworks(); }
-function copyAddr(){ let addr=$('depositAddr')?.innerText; if(addr && addr.length>10){ navigator.clipboard.writeText(addr); alert('Copied: '+addr); } else { alert('Address not loaded yet'); } }
-function openDeposit(){ $('depositModal')?.classList.remove('hidden'); if(Object.keys(addrs).length===0){ fetch('/api/deposit-addresses').then(r=>r.json()).then(d=>{addrs=d; renderNetworks(); setNetAddr(selectedNetwork);}); } }
+function setNetAddr(net){ selectedNetwork=net; safeSet('selectedNet', net); safeSet('depositAddr', addrs[net]||FALLBACK_ADDRS[net]||'Loading...'); renderNetworks(); }
+function copyAddr(){ let addr=$('depositAddr')?.innerText; if(addr && addr.length>10 && !addr.includes('Loading')){ navigator.clipboard.writeText(addr.split(' ')[0]); alert('Copied: '+addr); } else { alert('Address not loaded yet'); } }
+function openDeposit(){ $('depositModal')?.classList.remove('hidden'); }
 function openWithdraw(){ safeSet('wdAvailable', withdrawable.toFixed(2)+' USDT'); $('withdrawModal')?.classList.remove('hidden'); }
 function setNet(net){ wdNetwork=net; safeSet('wdNet', net); }
 
@@ -216,22 +271,18 @@ async function submitDeposit(){
  let amt=parseFloat($('depAmount')?.value); let tx=$('depTx')?.value||'';
  let btn=$('depBtn'); let statusEl=$('depStatus');
  if(!amt || amt < 20){ alert('❌ Min deposit 20 USDT required!'); return; }
- if(!tx || tx.trim().length < 10){ alert('❌ Please enter valid Transaction Hash / TX ID'); return; }
+ if(!tx || tx.trim().length < 10){ alert('❌ Please enter valid Transaction Hash'); return; }
  if(btn){ btn.innerText='Verifying TX on blockchain...'; btn.disabled=true; }
- if(statusEl){ statusEl.classList.remove('hidden'); statusEl.innerHTML='<p class="text-yellow-400">🔍 Verifying transaction on blockchain...</p>'; }
+ if(statusEl){ statusEl.classList.remove('hidden'); statusEl.innerHTML='<p class="text-yellow-400">🔍 Verifying transaction...</p>'; }
  try{
    let r=await fetch('/api/deposit/request/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,network:selectedNetwork,tx_hash:tx.trim()})});
    let j=await r.json();
    if(btn){ btn.innerText='Verify & Deposit USDT'; btn.disabled=false; }
    if(j.error){ if(statusEl){ statusEl.innerHTML=`<p class="text-red-400">❌ ${j.error}</p>`; } alert('❌ '+j.error); return; }
    if(j.ok){
-     if(j.status==='pending'){
-       if(statusEl){ statusEl.innerHTML=`<p class="text-yellow-400">⏳ Deposit ${amt} USDT submitted!<br>Status: PENDING auto verification</p>`; }
-       alert(`⏳ Deposit ${amt} USDT submitted for auto verification!\nSystem is verifying on ${selectedNetwork} blockchain... Balance will be added automatically after verification.`);
-       pollDepositStatus(j.deposit_id);
-     } else {
-       if(statusEl){ statusEl.innerHTML=`<p class="text-emerald-400">✅ Verified!</p>`; }
-     }
+     if(statusEl){ statusEl.innerHTML=`<p class="text-yellow-400">⏳ Deposit ${amt} USDT submitted for verification</p>`; }
+     alert(`⏳ Deposit ${amt} USDT submitted for auto verification! Balance will be added after verification.`);
+     pollDepositStatus(j.deposit_id);
      $('depAmount').value=''; $('depTx').value='';
      setTimeout(()=>{ $('depositModal')?.classList.add('hidden'); if(statusEl) statusEl.classList.add('hidden'); }, 2000);
      await loadHistory(); init();
@@ -250,8 +301,8 @@ async function pollDepositStatus(depositId){
    try{
      let r=await fetch('/api/deposit/status/'+depositId);
      let j=await r.json();
-     if(j.status==='verified'){ clearInterval(interval); alert(`✅ Deposit Verified! ${j.actual_amount} USDT added!`); init(); loadHistory(); }
-     else if(j.status==='failed'){ clearInterval(interval); alert(`❌ Deposit verification failed`); loadHistory(); }
+     if(j.status==='verified'){ clearInterval(interval); alert(`✅ Verified! ${j.actual_amount} USDT added!`); init(); loadHistory(); }
+     else if(j.status==='failed'){ clearInterval(interval); alert(`❌ Verification failed`); loadHistory(); }
      if(tries>20) clearInterval(interval);
    }catch(e){}
  }, 3000);
@@ -272,7 +323,19 @@ async function submitWithdraw(){
 }
 
 async function loadRealTrades(){
- try{ safeSet('binanceStatus','Loading...'); let r=await fetch('/api/binance/trades'); if(!r.ok) throw new Error('trades '+r.status); let data=await r.json(); realTrades=data.trades; safeSet('todayTrades', data.summary.total_trades); safeSet('profitTrades', data.summary.profit_trades); safeSet('lossTrades', data.summary.loss_trades); safeSet('totalPnl', (data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%'); let el=$('totalPnl'); if(el) el.className='font-bold text-base '+(data.summary.total_pnl_percent>=0?'text-emerald-400':'text-red-400'); safeSet('binanceStatus','Live'); safeSet('priceSource', data.prices_source==='binance'?'Binance Live':'Fallback'); renderRealTradesTable(realTrades); }catch(e){ safeSet('binanceStatus','Error'); console.error(e); }
+ safeSet('binanceStatus','Loading...');
+ let r=await fetch('/api/binance/trades');
+ if(!r.ok){ let txt=await r.text(); throw new Error('trades '+r.status+': '+txt.substring(0,100)); }
+ let data=await r.json();
+ realTrades=data.trades;
+ safeSet('todayTrades', data.summary.total_trades);
+ safeSet('profitTrades', data.summary.profit_trades);
+ safeSet('lossTrades', data.summary.loss_trades);
+ safeSet('totalPnl', (data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%');
+ let el=$('totalPnl'); if(el) el.className='font-bold text-base '+(data.summary.total_pnl_percent>=0?'text-emerald-400':'text-red-400');
+ safeSet('binanceStatus','Live');
+ safeSet('priceSource', data.prices_source==='binance'?'Binance Live':'Fallback');
+ renderRealTradesTable(realTrades);
 }
 
 let cachedTradeTimes=null, cachedDate=null;
@@ -297,7 +360,7 @@ function getDeterministicLocalTimes(count){
 }
 
 function renderRealTradesTable(trades){
- if(!trades||trades.length===0) return;
+ if(!trades||trades.length===0){ safeHTML('tradesTableBody','<tr><td colspan="7" class="p-4 text-center opacity-50">No trades today</td></tr>'); return; }
  let localTimes=getDeterministicLocalTimes(trades.length);
  let html=''; trades.forEach((t,idx)=>{
   let sideColor=t.side==='LONG'?'bg-blue-500/20 text-blue-400':'bg-red-500/20 text-red-400';
@@ -322,47 +385,40 @@ async function updateLivePricesOnly(){
 }
 
 async function loadHistory(){
- try{
-  let r=await fetch('/api/history/'+userId);
-  if(!r.ok) throw new Error('history '+r.status);
-  let h=await r.json();
-  let html='';
-  (h.deposits||[]).forEach(d=>{
+ let r=await fetch('/api/history/'+userId);
+ if(!r.ok){ let txt=await r.text(); throw new Error('history '+r.status+': '+txt.substring(0,100)); }
+ let h=await r.json();
+ let html='';
+ (h.deposits||[]).forEach(d=>{
     let sc=d.status==='verified'?'text-emerald-400':d.status==='pending'?'text-yellow-400':'text-red-400';
     let icon=d.status==='verified'?'✅':d.status==='pending'?'⏳':'❌';
     html=`<div class='bg-white/5 p-3 rounded-lg flex justify-between'><div class='flex items-center gap-2'><span class='w-6 h-6 bg-[#26A17B] rounded-full flex items-center justify-center text-[10px]'>₮</span> <span>${icon} Deposit ${d.amount} USDT ${d.network} • ${d.status}<br><span class='opacity-50 text-xs'>${d.tx_hash?d.tx_hash.substring(0,20)+'...':''} • ${d.created_at?d.created_at.slice(0,16):''}</span></div><span class='${sc} text-xs'>${d.status}</span></div>`+html;
-  });
-  (h.withdrawals||[]).forEach(w=>{ let sc=w.status=='approved'?'text-emerald-400':'text-yellow-400'; html+=`<div class='bg-white/5 p-3 rounded-lg flex justify-between items-center'><div class='flex items-center gap-2'><span class='w-6 h-6 bg-[#FFD60A] rounded-full flex items-center justify-center text-black text-[10px]'>₮</span> <span>Withdraw ${w.amount} USDT<br><span class='opacity-50 text-xs'>${w.created_at?w.created_at.slice(0,16):''}</span></div><span class='${sc} text-xs'>${w.status}</span></div>`; });
-  if(!html) html='<p class="opacity-50">No history yet</p>';
-  safeHTML('history', html);
- }catch(e){
-  console.error('loadHistory failed', e);
-  safeHTML('history','<p class="opacity-50">No history yet • '+e.message+'</p>');
- }
+ });
+ (h.withdrawals||[]).forEach(w=>{ let sc=w.status=='approved'?'text-emerald-400':'text-yellow-400'; html+=`<div class='bg-white/5 p-3 rounded-lg flex justify-between items-center'><div class='flex items-center gap-2'><span class='w-6 h-6 bg-[#FFD60A] rounded-full flex items-center justify-center text-black text-[10px]'>₮</span> <span>Withdraw ${w.amount} USDT<br><span class='opacity-50 text-xs'>${w.created_at?w.created_at.slice(0,16):''}</span></div><span class='${sc} text-xs'>${w.status}</span></div>`; });
+ if(!html) html='<p class="opacity-50">No history yet</p>';
+ safeHTML('history', html);
 }
 
 async function loadReferral(){
- try{
-  let r=await fetch('/api/referral/'+userId);
-  if(!r.ok) throw new Error('ref '+r.status);
-  let d=await r.json();
-  safeSet('refLink', d.ref_link);
-  safeSet('directCount', d.direct_count);
-  safeSet('teamDep', (d.total_team_deposit||0).toFixed(2)+' USDT');
-  safeSet('refEarned', (d.total_earnings||0).toFixed(2)+' USDT');
-  let directHtml='';
-  if(d.direct_refs && d.direct_refs.length>0){
-    d.direct_refs.forEach(ref=>{ directHtml+=`<div class='bg-white/5 p-3 rounded-xl flex justify-between items-center'><div><p class='font-bold'>${ref.username||'user_'+ref.user_id}</p><p class='text-xs opacity-50'>ID: ${ref.user_id} • Deposit: $${(ref.deposit||0).toFixed(2)}</p></div><span class='text-emerald-400 text-xs'>Active</span></div>`; });
-  } else { directHtml='<p class="opacity-50">No direct referrals yet</p>'; }
-  safeHTML('directList', directHtml);
-  let histHtml='';
-  if(d.logs && d.logs.length>0){
-    d.logs.forEach(log=>{ histHtml+=`<div class='bg-white/5 p-3 rounded-xl flex justify-between'><div><p class='font-bold'>From: ${log.from} • Level ${log.level}</p><p class='opacity-50'>Deposit $${log.deposit} • ${log.percent}% bonus</p></div><span class='text-emerald-400 font-bold'>+$${log.bonus.toFixed(2)}</span></div>`; });
-  } else { histHtml='<p class="opacity-50">No earnings yet</p>'; }
-  safeHTML('refHistory', histHtml);
- }catch(e){ console.error('referral failed', e); safeSet('refLink','Failed to load: '+e.message); }
+ let r=await fetch('/api/referral/'+userId);
+ if(!r.ok){ let txt=await r.text(); throw new Error('referral '+r.status+': '+txt.substring(0,100)); }
+ let d=await r.json();
+ safeSet('refLink', d.ref_link);
+ safeSet('directCount', d.direct_count);
+ safeSet('teamDep', (d.total_team_deposit||0).toFixed(2)+' USDT');
+ safeSet('refEarned', (d.total_earnings||0).toFixed(2)+' USDT');
+ let directHtml='';
+ if(d.direct_refs && d.direct_refs.length>0){
+   d.direct_refs.forEach(ref=>{ directHtml+=`<div class='bg-white/5 p-3 rounded-xl flex justify-between items-center'><div><p class='font-bold'>${ref.username||'user_'+ref.user_id}</p><p class='text-xs opacity-50'>ID: ${ref.user_id} • Deposit: $${(ref.deposit||0).toFixed(2)}</p></div><span class='text-emerald-400 text-xs'>Active</span></div>`; });
+ } else { directHtml='<p class="opacity-50">No direct referrals yet. Share your link!</p>'; }
+ safeHTML('directList', directHtml);
+ let histHtml='';
+ if(d.logs && d.logs.length>0){
+   d.logs.forEach(log=>{ histHtml+=`<div class='bg-white/5 p-3 rounded-xl flex justify-between'><div><p class='font-bold'>From: ${log.from} • Level ${log.level}</p><p class='opacity-50'>Deposit $${log.deposit} • ${log.percent}% bonus</p></div><span class='text-emerald-400 font-bold'>+$${log.bonus.toFixed(2)}</span></div>`; });
+ } else { histHtml='<p class="opacity-50">No earnings yet. When friends deposit verified, you get bonus!</p>'; }
+ safeHTML('refHistory', histHtml);
 }
-function copyRef(){ let el=$('refLink'); if(el){ navigator.clipboard.writeText(el.innerText); alert('Copied! Share to earn 7% L1 + 1% L2-L10'); } }
+function copyRef(){ let el=$('refLink'); if(el){ let text=el.innerText; if(text.includes('Loading') || text.includes('Failed')){ alert('Referral link not loaded. Check server connection. Fallback: https://t.me/YourBot?start='+userId); return; } navigator.clipboard.writeText(text); alert('Copied!'); } }
 function shareRef(){ let el=$('refLink'); if(el && navigator.share){ navigator.share({title:'PT_AI Trading', text:'Join PT_AI Trading', url: el.innerText}); } else { copyRef(); } }
 
 init();
