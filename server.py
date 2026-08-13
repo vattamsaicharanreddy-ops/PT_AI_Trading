@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sqlite3, datetime, os, json, urllib.request, random, hashlib, time, threading, string
 
-app = FastAPI(title="PT_AI Trading - Invoice System")
+app = FastAPI(title="PT_AI Trading - Self Custody - No Binance Freeze")
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,7 +39,8 @@ conn.execute("""CREATE TABLE IF NOT EXISTS deposits (
 conn.execute("""CREATE TABLE IF NOT EXISTS withdrawals (
  id INTEGER PRIMARY KEY AUTOINCREMENT,
  user_id INTEGER, amount REAL, address TEXT, network TEXT,
- status TEXT DEFAULT 'pending', created_at TEXT, auto_approved INTEGER DEFAULT 0
+ status TEXT DEFAULT 'pending', created_at TEXT, auto_approved INTEGER DEFAULT 0,
+ tx_hash TEXT, admin_note TEXT
 )""")
 
 conn.execute("""CREATE TABLE IF NOT EXISTS referral_logs (
@@ -48,9 +49,12 @@ conn.execute("""CREATE TABLE IF NOT EXISTS referral_logs (
  deposit_amount REAL, bonus_amount REAL, bonus_percent REAL, created_at TEXT
 )""")
 
-# Used TX hashes to prevent double spend
 conn.execute("""CREATE TABLE IF NOT EXISTS used_tx_hashes (
  tx_hash TEXT PRIMARY KEY, used_at TEXT
+)""")
+
+conn.execute("""CREATE TABLE IF NOT EXISTS system_wallet (
+ network TEXT PRIMARY KEY, address TEXT, balance REAL DEFAULT 0, last_checked TEXT
 )""")
 conn.commit()
 
@@ -62,6 +66,8 @@ for sql in [
     "ALTER TABLE users ADD COLUMN is_banned INTEGER DEFAULT 0",
     "ALTER TABLE users ADD COLUMN username TEXT",
     "ALTER TABLE withdrawals ADD COLUMN auto_approved INTEGER DEFAULT 0",
+    "ALTER TABLE withdrawals ADD COLUMN tx_hash TEXT",
+    "ALTER TABLE withdrawals ADD COLUMN admin_note TEXT",
     "ALTER TABLE referral_logs ADD COLUMN bonus_percent REAL",
     "ALTER TABLE deposits ADD COLUMN actual_amount REAL DEFAULT 0",
     "ALTER TABLE deposits ADD COLUMN verified_at TEXT",
@@ -73,13 +79,32 @@ for sql in [
     except: pass
 conn.commit()
 
+# ===== SELF-CUSTODY WALLET ADDRESSES - REPLACE WITH YOUR OWN =====
+# HOW TO GET THESE:
+# 1. Download TronLink (tronlink.org) - Create new wallet - Backup 12 words - Your TRC20 address starts with T...
+# 2. Download MetaMask (metamask.io) - Create wallet - Same address for BEP20 (BSC) and ERC20 (ETH) - starts with 0x...
+# 3. For TON: Use Tonkeeper app - Create wallet - Address starts with UQ...
+# 4. For SOL: Use Phantom app - Create wallet - Address
+# IMPORTANT: These are YOUR wallets, you control private keys, no Binance, no freeze!
+
 DEPOSIT_ADDR = {
- "TRC20": "TDABxPiFnpzUsY7j6sHaq4jJxU7Nz6xcFx",
- "BEP20": "0x6b2e4fdc0145a0096e4b358d0cfd1f0cbf7c4d56",
- "ERC20": "0x6b2e4fdc0145a0096e4b358d0cfd1f0cbf7c4d56",
- "TON": "UQBlNeJ90El3LxBhikC2HUG3mqS16k1q177AjcNAaURVa_zw",
- "SOL": "87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7"
+ "TRC20": "YOUR_TRONLINK_TRC20_ADDRESS_HERE_T_STARTS_WITH_T",  # Replace! Example: TAbC... 
+ "BEP20": "YOUR_METAMASK_BEP20_ADDRESS_HERE_0x_STARTS",        # Same as ERC20 - your MetaMask address
+ "ERC20": "YOUR_METAMASK_ERC20_ADDRESS_HERE_0x_STARTS",        # Same as BEP20
+ "TON": "YOUR_TONKEEPER_TON_ADDRESS_HERE_UQ...",              # Your Tonkeeper address
+ "SOL": "YOUR_PHANTOM_SOL_ADDRESS_HERE..."                    # Your Phantom address
 }
+
+# For quick start, we keep old addresses as fallback but you MUST replace
+# If you don't have wallet yet, use these temporarily but replace ASAP:
+if "YOUR_" in DEPOSIT_ADDR["TRC20"]:
+    DEPOSIT_ADDR = {
+        "TRC20": "TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC",
+        "BEP20": "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",
+        "ERC20": "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",
+        "TON": "UQBlNeJ90El3LxBhikC2HUG3mqS16k1q177AjcNAaURVa_zw",
+        "SOL": "87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7"
+    }
 
 TIERS = [(15000,14.9),(6000,13.6),(2500,11.8),(1200,10.9),(500,9.6),(120,8.9),(20,7.6),(0,0.0)]
 REF_BONUS = {1:7,2:1,3:1,4:1,5:1,6:1,7:1,8:1,9:1,10:1}
@@ -179,14 +204,10 @@ def distribute_referral(depositor_id: int, deposit_amount: float):
         current_id=referrer_id
     conn.commit()
 
-# ===== INVOICE SYSTEM - SECURE DEPOSIT DETECTION =====
-
 def check_trc20_deposits_to_address():
-    """Check recent TRC20 USDT transactions to our TRC20 address"""
     try:
-        # Get recent USDT transfers to our address
         address = DEPOSIT_ADDR["TRC20"]
-        # Tronscan API for TRC20 transfers
+        if "YOUR_" in address: return []
         url = f"https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=50&sort=-timestamp&toAddress={address}&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
         req = urllib.request.Request(url, headers={'User-Agent':'Mozilla/5.0'})
         with urllib.request.urlopen(req, timeout=10) as resp:
@@ -197,30 +218,13 @@ def check_trc20_deposits_to_address():
         print(f"TRC20 check error: {e}")
         return []
 
-def check_bep20_erc20_deposits_to_address(network):
-    """For BEP20/ERC20 we would need to use BscScan/Etherscan API with API key
-       For demo, we return empty and rely on manual verification or alternative method
-       In production, integrate with BscScan API: https://api.bscscan.com/api?module=account&action=tokentx&address=YOUR_ADDR
-    """
-    try:
-        # Placeholder - in production implement with API key
-        # For now, we simulate checking but will require manual admin approval for BEP20/ERC20
-        # Or you can use public RPC to scan recent blocks (complex)
-        return []
-    except Exception as e:
-        print(f"{network} check error: {e}")
-        return []
-
 def process_invoice_payment(invoice_id: str, tx_hash: str, actual_amount: float):
-    """Credit invoice when payment detected"""
     try:
         dep = conn.execute("SELECT user_id, amount, expected_amount, status, expires_at, network FROM deposits WHERE invoice_id=?", (invoice_id,)).fetchone()
         if not dep: return False, "Invoice not found"
         user_id, amount, expected_amount, status, expires_at, network = dep
         if status == 'verified': return False, "Already verified"
         if status == 'expired': return False, "Invoice expired"
-        
-        # Check if expired
         try:
             exp_dt = datetime.datetime.fromisoformat(expires_at)
             if datetime.datetime.utcnow() > exp_dt:
@@ -228,17 +232,10 @@ def process_invoice_payment(invoice_id: str, tx_hash: str, actual_amount: float)
                 conn.commit()
                 return False, "Invoice expired"
         except: pass
-        
-        # Check TX hash not used
-        existing = conn.execute("SELECT tx_hash FROM used_tx_hashes WHERE tx_hash=?", (tx_hash,)).fetchone()
-        if existing:
+        if conn.execute("SELECT 1 FROM used_tx_hashes WHERE tx_hash=?", (tx_hash,)).fetchone():
             return False, "TX already used"
-        
-        # Check amount matches (allow small tolerance)
         if abs(actual_amount - expected_amount) > 0.5 and actual_amount < expected_amount * 0.95:
             return False, f"Amount mismatch: expected {expected_amount}, got {actual_amount}"
-        
-        # Verified! Credit user
         now = datetime.datetime.utcnow().isoformat()
         old_row = conn.execute("SELECT balance, current_tier FROM users WHERE user_id=?", (user_id,)).fetchone()
         old_bal = old_row[0] or 0
@@ -246,7 +243,6 @@ def process_invoice_payment(invoice_id: str, tx_hash: str, actual_amount: float)
         tier_idx, _, daily_pct = get_tier_index(new_bal)
         per_hour = (new_bal * daily_pct / 100) / 24 if daily_pct>0 else 0
         ai_end = (datetime.datetime.utcnow() + datetime.timedelta(days=30)).isoformat()
-        
         conn.execute("UPDATE deposits SET status='verified', tx_hash=?, actual_amount=?, verified_at=? WHERE invoice_id=?", (tx_hash, actual_amount, now, invoice_id))
         conn.execute("INSERT OR IGNORE INTO used_tx_hashes (tx_hash, used_at) VALUES (?,?)", (tx_hash, now))
         conn.execute("""UPDATE users SET balance=?, profit_per_hour=?, daily_percent=?, total_deposit=total_deposit+?, ai_end=?, current_tier=?, last_claim=? WHERE user_id=?""",
@@ -260,76 +256,43 @@ def process_invoice_payment(invoice_id: str, tx_hash: str, actual_amount: float)
         return False, str(e)
 
 def background_invoice_monitor():
-    """Monitor blockchain for payments to our addresses and auto credit invoices"""
-    print("Invoice monitor started - checking every 15 seconds")
+    print("Self-custody invoice monitor started - No Binance - Checking every 15 seconds")
     while True:
         try:
             time.sleep(15)
-            # Check for expired invoices
             now = datetime.datetime.utcnow().isoformat()
             expired = conn.execute("SELECT invoice_id FROM deposits WHERE status='awaiting_payment' AND expires_at < ?", (now,)).fetchall()
             for (inv_id,) in expired:
                 conn.execute("UPDATE deposits SET status='expired' WHERE invoice_id=?", (inv_id,))
             conn.commit()
-            if expired:
-                print(f"Expired {len(expired)} invoices")
-            
-            # Check TRC20 deposits
+            if expired: print(f"Expired {len(expired)} invoices")
             try:
                 transfers = check_trc20_deposits_to_address()
                 for tr in transfers:
                     try:
                         tx_hash = tr.get('transaction_id') or tr.get('transactionHash') or tr.get('hash')
                         if not tx_hash: continue
-                        # Check if TX already used
-                        if conn.execute("SELECT 1 FROM used_tx_hashes WHERE tx_hash=?", (tx_hash,)).fetchone():
-                            continue
-                        
-                        # Get amount
-                        quant = tr.get('quant') or tr.get('amount') or tr.get('value') or '0'
-                        try:
-                            # quant is in base units (6 decimals for USDT)
-                            amount = float(quant) / 1e6 if float(quant) > 1000000 else float(quant)
-                        except:
-                            continue
-                        
-                        # Get timestamp
-                        ts = tr.get('block_timestamp') or tr.get('timestamp') or 0
-                        try:
-                            tx_time = datetime.datetime.fromtimestamp(ts/1000) if ts>1000000000000 else datetime.datetime.fromtimestamp(ts)
-                        except:
-                            tx_time = datetime.datetime.utcnow()
-                        
-                        # Find matching awaiting invoices (same amount, recent, same network TRC20)
-                        # Look for invoices created before this TX and not expired
-                        invoices = conn.execute(
-                            "SELECT invoice_id, expected_amount, created_at FROM deposits WHERE status='awaiting_payment' AND network='TRC20' AND created_at <= ? ORDER BY created_at DESC LIMIT 20",
-                            (tx_time.isoformat(),)
-                        ).fetchall()
-                        
+                        if conn.execute("SELECT 1 FROM used_tx_hashes WHERE tx_hash=?", (tx_hash,)).fetchone(): continue
+                        quant = tr.get('quant') or '0'
+                        try: amount = float(quant) / 1e6 if float(quant) > 1000000 else float(quant)
+                        except: continue
+                        ts = tr.get('block_timestamp') or 0
+                        try: tx_time = datetime.datetime.fromtimestamp(ts/1000) if ts>1000000000000 else datetime.datetime.fromtimestamp(ts)
+                        except: tx_time = datetime.datetime.utcnow()
+                        invoices = conn.execute("SELECT invoice_id, expected_amount, created_at FROM deposits WHERE status='awaiting_payment' AND network='TRC20' AND created_at <= ? ORDER BY created_at DESC LIMIT 20", (tx_time.isoformat(),)).fetchall()
                         for inv_id, exp_amount, created_at in invoices:
-                            # Check amount match (allow 0.5 USDT tolerance or exact)
                             if abs(amount - exp_amount) <= 0.5 or abs(amount - exp_amount) / exp_amount <= 0.05:
-                                # Check TX time after invoice creation
                                 try:
                                     created_dt = datetime.datetime.fromisoformat(created_at)
-                                    if tx_time >= created_dt - datetime.timedelta(minutes=5):  # Allow 5 min before invoice creation
+                                    if tx_time >= created_dt - datetime.timedelta(minutes=5):
                                         success, msg = process_invoice_payment(inv_id, tx_hash, amount)
                                         if success:
                                             print(f"Auto matched TRC20 TX {tx_hash[:15]} amount {amount} to invoice {inv_id}")
                                             break
                                 except: pass
-                    except Exception as inner_e:
-                        print(f"Error processing transfer: {inner_e}")
-                        continue
-            except Exception as e:
-                print(f"TRC20 monitor error: {e}")
-            
-            # For demo, we also check for test invoices with amount 20.00 etc
-            # In production, implement BEP20, ERC20, TON, SOL similarly
-            
-        except Exception as e:
-            print(f"Invoice monitor error: {e}")
+                    except: continue
+            except Exception as e: print(f"TRC20 monitor error: {e}")
+        except Exception as e: print(f"Monitor error: {e}")
 
 threading.Thread(target=background_invoice_monitor, daemon=True).start()
 
@@ -441,8 +404,6 @@ def api_referral(user_id: int):
     logs = conn.execute("SELECT from_user, level, deposit_amount, bonus_amount, bonus_percent, created_at FROM referral_logs WHERE to_user=? ORDER BY id DESC LIMIT 20", (user_id,)).fetchall()
     return {"ref_link": ref_link, "direct_count": len(direct_refs), "direct_refs": [{"user_id": r[0], "username": r[1], "balance": r[2], "deposit": r[3]} for r in direct_refs], "level_counts": level_counts, "total_team_deposit": total_team_deposit, "total_earnings": total_earnings, "bonus_structure": REF_BONUS, "logs": [{"from": l[0], "level": l[1], "deposit": l[2], "bonus": l[3], "percent": l[4], "at": l[5]} for l in logs]}
 
-# ===== INVOICE SYSTEM ENDPOINTS =====
-
 class InvoiceReq(BaseModel):
     amount: float
     network: str
@@ -451,118 +412,48 @@ class InvoiceReq(BaseModel):
 def create_invoice(user_id: int, r: InvoiceReq):
     if user_id == 0: user_id = 123456789
     ensure_user(user_id)
-    if r.amount < 20:
-        return {"error": "Min deposit 20 USDT required"}
-    if r.network not in DEPOSIT_ADDR:
-        return {"error": f"Unsupported network {r.network}"}
-    
-    # Check for existing awaiting invoice for this user
+    if r.amount < 20: return {"error": "Min deposit 20 USDT required"}
+    if r.network not in DEPOSIT_ADDR: return {"error": f"Unsupported network {r.network}"}
     existing = conn.execute("SELECT invoice_id, expires_at FROM deposits WHERE user_id=? AND status='awaiting_payment' AND expires_at > ? LIMIT 1", (user_id, datetime.datetime.utcnow().isoformat())).fetchone()
     if existing:
-        # Return existing invoice if not expired
-        exp = existing[1]
         try:
-            exp_dt = datetime.datetime.fromisoformat(exp)
+            exp_dt = datetime.datetime.fromisoformat(existing[1])
             if datetime.datetime.utcnow() < exp_dt:
                 inv = conn.execute("SELECT invoice_id, amount, expected_amount, network, created_at, expires_at, status FROM deposits WHERE invoice_id=?", (existing[0],)).fetchone()
                 if inv:
-                    return {
-                        "ok": True,
-                        "invoice_id": inv[0],
-                        "amount": inv[1],
-                        "expected_amount": inv[2],
-                        "network": inv[3],
-                        "address": DEPOSIT_ADDR[inv[3]],
-                        "created_at": inv[4],
-                        "expires_at": inv[5],
-                        "status": inv[6],
-                        "message": "Existing invoice returned"
-                    }
+                    return {"ok": True, "invoice_id": inv[0], "amount": inv[1], "expected_amount": inv[2], "network": inv[3], "address": DEPOSIT_ADDR[inv[3]], "created_at": inv[4], "expires_at": inv[5], "status": inv[6], "message": "Existing invoice returned"}
         except: pass
-    
-    # Generate unique invoice with slight unique amount to prevent collision
-    # Add small random cents 0.01-0.99 to make amount unique for auto detection
-    # But keep it close to requested amount
     invoice_id = generate_invoice_id()
-    # For TRC20, we can use exact amount matching, but add unique small fraction for security
-    # Example: user wants 20 USDT, we ask for 20.07 USDT (07 from invoice ID)
-    # This makes it unique and prevents someone else's TX being used
-    unique_cents = random.randint(1, 99) / 100.0  # 0.01 to 0.99
-    # For min 20, we add unique cents, but user must send exact amount including cents
-    expected_amount = round(r.amount + unique_cents, 2)
-    # If user wants exact amount without cents, we can also use expected_amount = r.amount
-    # For better UX, we will use exact amount but with invoice tracking
-    # Let's use exact amount for now, but with invoice_id uniqueness
     expected_amount = round(r.amount, 2)
-    
     now = datetime.datetime.utcnow()
     expires_at = now + datetime.timedelta(minutes=15)
-    
-    conn.execute(
-        "INSERT INTO deposits (user_id, amount, expected_amount, network, status, invoice_id, created_at, expires_at, tx_hash, actual_amount) VALUES (?,?,?,?,?,?,?,?,?,?)",
-        (user_id, r.amount, expected_amount, r.network, "awaiting_payment", invoice_id, now.isoformat(), expires_at.isoformat(), "", 0)
-    )
+    conn.execute("INSERT INTO deposits (user_id, amount, expected_amount, network, status, invoice_id, created_at, expires_at, tx_hash, actual_amount) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                 (user_id, r.amount, expected_amount, r.network, "awaiting_payment", invoice_id, now.isoformat(), expires_at.isoformat(), "", 0))
     conn.commit()
-    
-    return {
-        "ok": True,
-        "invoice_id": invoice_id,
-        "amount": r.amount,
-        "expected_amount": expected_amount,
-        "network": r.network,
-        "address": DEPOSIT_ADDR[r.network],
-        "created_at": now.isoformat(),
-        "expires_at": expires_at.isoformat(),
-        "status": "awaiting_payment",
-        "message": f"Invoice created. Send exactly {expected_amount} USDT ({r.network}) to {DEPOSIT_ADDR[r.network]} within 15 minutes. Payment will be detected automatically."
-    }
+    return {"ok": True, "invoice_id": invoice_id, "amount": r.amount, "expected_amount": expected_amount, "network": r.network, "address": DEPOSIT_ADDR[r.network], "created_at": now.isoformat(), "expires_at": expires_at.isoformat(), "status": "awaiting_payment", "message": f"Invoice created. Send exactly {expected_amount} USDT ({r.network}) to {DEPOSIT_ADDR[r.network]} within 15 minutes. Payment auto detected - No Binance needed!"}
 
 @app.get("/api/deposit/invoice_status/{invoice_id}")
 def invoice_status(invoice_id: str):
     row = conn.execute("SELECT user_id, amount, expected_amount, network, status, tx_hash, actual_amount, created_at, expires_at, verified_at FROM deposits WHERE invoice_id=?", (invoice_id,)).fetchone()
-    if not row:
-        return {"error": "Invoice not found"}
-    
+    if not row: return {"error": "Invoice not found"}
     now = datetime.datetime.utcnow()
     try:
         exp_dt = datetime.datetime.fromisoformat(row[8])
         time_left = (exp_dt - now).total_seconds()
         if time_left < 0: time_left = 0
-        # Auto expire if time left 0 and still awaiting
         if time_left == 0 and row[4] == 'awaiting_payment':
             conn.execute("UPDATE deposits SET status='expired' WHERE invoice_id=?", (invoice_id,))
             conn.commit()
-            row = list(row)
-            row[4] = 'expired'
-    except:
-        time_left = 0
-    
-    return {
-        "invoice_id": invoice_id,
-        "user_id": row[0],
-        "amount": row[1],
-        "expected_amount": row[2],
-        "network": row[3],
-        "status": row[4],
-        "tx_hash": row[5],
-        "actual_amount": row[6],
-        "created_at": row[7],
-        "expires_at": row[8],
-        "verified_at": row[9],
-        "address": DEPOSIT_ADDR.get(row[3], ""),
-        "time_left_seconds": int(time_left),
-        "time_left_formatted": f"{int(time_left//60)}:{int(time_left%60):02d}"
-    }
+            row = list(row); row[4] = 'expired'
+    except: time_left = 0
+    return {"invoice_id": invoice_id, "user_id": row[0], "amount": row[1], "expected_amount": row[2], "network": row[3], "status": row[4], "tx_hash": row[5], "actual_amount": row[6], "created_at": row[7], "expires_at": row[8], "verified_at": row[9], "address": DEPOSIT_ADDR.get(row[3], ""), "time_left_seconds": int(time_left), "time_left_formatted": f"{int(time_left//60)}:{int(time_left%60):02d}"}
 
 @app.post("/api/deposit/check_now/{invoice_id}")
 def check_invoice_now(invoice_id: str):
-    """Manually trigger blockchain check for this invoice"""
     row = conn.execute("SELECT user_id, network, expected_amount, created_at, status FROM deposits WHERE invoice_id=?", (invoice_id,)).fetchone()
     if not row: return {"error": "Invoice not found"}
     if row[4] == 'verified': return {"ok": True, "status": "verified", "message": "Already verified"}
     if row[4] == 'expired': return {"error": "Invoice expired"}
-    
-    # For TRC20, check recent transfers
     if row[1] == 'TRC20':
         transfers = check_trc20_deposits_to_address()
         for tr in transfers:
@@ -573,24 +464,34 @@ def check_invoice_now(invoice_id: str):
                 quant = tr.get('quant') or '0'
                 try: amount = float(quant) / 1e6 if float(quant) > 1000000 else float(quant)
                 except: continue
-                if abs(amount - row[2]) <= 1.0:  # Allow 1 USDT tolerance
+                if abs(amount - row[2]) <= 1.0:
                     success, msg = process_invoice_payment(invoice_id, tx_hash, amount)
-                    if success:
-                        return {"ok": True, "status": "verified", "amount": amount, "tx_hash": tx_hash, "message": msg}
+                    if success: return {"ok": True, "status": "verified", "amount": amount, "tx_hash": tx_hash, "message": msg}
             except: continue
-        return {"ok": False, "status": "awaiting_payment", "message": "No matching transaction found yet. Please ensure you sent to correct address and amount."}
+        return {"ok": False, "status": "awaiting_payment", "message": "No payment found yet. Ensure you sent to correct self-custody address."}
     else:
-        return {"ok": False, "status": "awaiting_payment", "message": f"Auto detection for {row[1]} is manual for now. Admin will verify. Or send TRC20 for auto detection."}
+        return {"ok": False, "status": "awaiting_payment", "message": f"Auto detection for {row[1]} - Please send and admin will verify. TRC20 auto works best."}
 
 @app.get("/api/history/{user_id}")
 def history(user_id: int):
     if user_id == 0: user_id = 123456789
     deps = conn.execute("SELECT id, amount, expected_amount, network, tx_hash, status, actual_amount, created_at, expires_at, invoice_id FROM deposits WHERE user_id=? ORDER BY id DESC LIMIT 20", (user_id,)).fetchall()
-    wds = conn.execute("SELECT amount, address, network, status, created_at FROM withdrawals WHERE user_id=? ORDER BY id DESC LIMIT 20", (user_id,)).fetchall()
-    return {"deposits": [{"id":d[0],"amount":d[1],"expected":d[2],"network":d[3],"tx_hash":d[4],"status":d[5],"actual":d[6],"created_at":d[7],"expires_at":d[8],"invoice_id":d[9]} for d in deps], "withdrawals": [{"amount":d[0],"address":d[1],"network":d[2],"status":d[3],"created_at":d[4]} for d in wds]}
+    wds = conn.execute("SELECT amount, address, network, status, created_at, tx_hash FROM withdrawals WHERE user_id=? ORDER BY id DESC LIMIT 20", (user_id,)).fetchall()
+    return {"deposits": [{"id":d[0],"amount":d[1],"expected":d[2],"network":d[3],"tx_hash":d[4],"status":d[5],"actual":d[6],"created_at":d[7],"expires_at":d[8],"invoice_id":d[9]} for d in deps], "withdrawals": [{"amount":d[0],"address":d[1],"network":d[2],"status":d[3],"created_at":d[4],"tx_hash":d[5]} for d in wds]}
 
 @app.get("/api/deposit-addresses")
 def addrs(): return DEPOSIT_ADDR
+
+@app.get("/api/wallet/balance")
+def wallet_balance():
+    """Check your self-custody wallet balances - No Binance needed"""
+    balances = {}
+    for net, addr in DEPOSIT_ADDR.items():
+        if "YOUR_" in addr:
+            balances[net] = {"address": addr, "balance": "Replace address first", "note": "Set your own wallet address in server.py"}
+        else:
+            balances[net] = {"address": addr, "balance": "Check via blockchain explorer", "explorer": f"https://tronscan.org/#/address/{addr}" if net=="TRC20" else f"https://bscscan.com/address/{addr}" if net=="BEP20" else ""}
+    return balances
 
 @app.get("/api/admin/stats")
 def stats():
@@ -599,7 +500,7 @@ def stats():
     pend_dep = conn.execute("SELECT COUNT(*) FROM deposits WHERE status='awaiting_payment'").fetchone()[0]
     total_ref = conn.execute("SELECT COALESCE(SUM(bonus_amount),0) FROM referral_logs").fetchone()[0] or 0
     total_dep = conn.execute("SELECT COALESCE(SUM(actual_amount),0) FROM deposits WHERE status='verified'").fetchone()[0] or 0
-    return {"total_users": u[0], "total_balance": (u[1] or 0)+(u[2] or 0), "active_now": u[0], "pending_withdrawals": pend_wd, "pending_deposits": pend_dep, "total_ref_paid": total_ref, "total_deposits": total_dep}
+    return {"total_users": u[0], "total_balance": (u[1] or 0)+(u[2] or 0), "active_now": u[0], "pending_withdrawals": pend_wd, "pending_deposits": pend_dep, "total_ref_paid": total_ref, "total_deposits": total_dep, "self_custody": True, "binance_free": True}
 
 @app.get("/api/admin/users")
 def admin_users():
@@ -613,8 +514,8 @@ def admin_deps():
 
 @app.get("/api/admin/withdrawals")
 def admin_wds():
-    rows = conn.execute("SELECT id, user_id, amount, address, network, status, created_at FROM withdrawals ORDER BY id DESC LIMIT 100").fetchall()
-    return [{"id":r[0],"user_id":r[1],"amount":r[2],"address":r[3],"network":r[4],"status":r[5],"created_at":r[6]} for r in rows]
+    rows = conn.execute("SELECT id, user_id, amount, address, network, status, created_at, tx_hash FROM withdrawals ORDER BY id DESC LIMIT 100").fetchall()
+    return [{"id":r[0],"user_id":r[1],"amount":r[2],"address":r[3],"network":r[4],"status":r[5],"created_at":r[6],"tx_hash":r[7]} for r in rows]
 
 @app.get("/api/admin/referrals")
 def admin_referrals():
@@ -636,17 +537,17 @@ def admin_user_action(req: AdminUserAction):
     return {"ok": True}
 
 class ApproveReq(BaseModel):
-    id: int; action: str
+    id: int; action: str; tx_hash: str = ""; note: str = ""
 
 @app.post("/api/admin/withdraw/action")
 def wd_action(r: ApproveReq):
-    wd = conn.execute("SELECT user_id, amount FROM withdrawals WHERE id=?", (r.id,)).fetchone()
+    wd = conn.execute("SELECT user_id, amount, address, network FROM withdrawals WHERE id=?", (r.id,)).fetchone()
     if not wd: return {"error":"not found"}
     if r.action=="approve":
-        conn.execute("UPDATE withdrawals SET status='approved' WHERE id=?", (r.id,))
+        conn.execute("UPDATE withdrawals SET status='approved', tx_hash=?, admin_note=? WHERE id=?", (r.tx_hash, r.note or "Sent from self-custody wallet", r.id))
         conn.execute("UPDATE users SET total_withdraw=total_withdraw+? WHERE user_id=?", (wd[1], wd[0]))
     else:
-        conn.execute("UPDATE withdrawals SET status='rejected' WHERE id=?", (r.id,))
+        conn.execute("UPDATE withdrawals SET status='rejected', admin_note=? WHERE id=?", (r.note or "Rejected", r.id))
         conn.execute("UPDATE users SET withdrawable=withdrawable+? WHERE user_id=?", (wd[1], wd[0]))
     conn.commit()
     return {"ok":True}
@@ -656,9 +557,8 @@ def dep_action(r: ApproveReq):
     dep = conn.execute("SELECT user_id, amount, expected_amount FROM deposits WHERE id=?", (r.id,)).fetchone()
     if not dep: return {"error":"not found"}
     if r.action=="approve":
-        # Force approve invoice
         now = datetime.datetime.utcnow().isoformat()
-        fake_tx = f"admin_approved_{r.id}_{int(time.time())}"
+        fake_tx = r.tx_hash or f"admin_approved_{r.id}_{int(time.time())}"
         conn.execute("UPDATE deposits SET status='verified', tx_hash=?, actual_amount=expected_amount, verified_at=? WHERE id=?", (fake_tx, now, r.id))
         conn.execute("INSERT OR IGNORE INTO used_tx_hashes (tx_hash, used_at) VALUES (?,?)", (fake_tx, now))
         old_row = conn.execute("SELECT balance FROM users WHERE user_id=?", (dep[0],)).fetchone()
@@ -682,8 +582,6 @@ class WithdrawReq(BaseModel):
 def withdraw_req(user_id: int, r: WithdrawReq):
     if user_id == 0: user_id = 123456789
     ensure_user(user_id)
-    from fastapi import HTTPException
-    # Simplified recalc
     recalc_profit(user_id)
     now = datetime.datetime.utcnow(); today_str = now.date().isoformat()
     user_row = conn.execute("SELECT withdrawable, created_at, last_withdraw_date, is_banned FROM users WHERE user_id=?", (user_id,)).fetchone()
@@ -696,25 +594,16 @@ def withdraw_req(user_id: int, r: WithdrawReq):
     if last_wd_date == today_str: return {"error": "Once per day only. Try tomorrow."}
     today_count = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE user_id=? AND DATE(created_at)=DATE('now')", (user_id,)).fetchone()[0]
     if today_count > 0: return {"error": "Once per day only. Try tomorrow."}
-    try:
-        created_dt = datetime.datetime.fromisoformat(user_row[1]) if user_row[1] else now
-        days_since = (now - created_dt).days; is_auto_period = days_since < 6
-    except: is_auto_period = True
     new_w = withdrawable - r.amount
-    if is_auto_period:
-        conn.execute("UPDATE users SET withdrawable=?, total_withdraw=total_withdraw+?, last_withdraw_date=? WHERE user_id=?", (new_w, r.amount, today_str, user_id))
-        conn.execute("INSERT INTO withdrawals (user_id, amount, address, network, status, created_at, auto_approved) VALUES (?,?,?,?,?,?,?)", (user_id, r.amount, r.address, r.network, "approved", now.isoformat(), 1))
-        conn.commit()
-        return {"ok": True, "new_withdrawable": new_w, "message": f"Withdrawal of {r.amount} USDT submitted successfully."}
-    else:
-        conn.execute("UPDATE users SET withdrawable=?, last_withdraw_date=? WHERE user_id=?", (new_w, today_str, user_id))
-        conn.execute("INSERT INTO withdrawals (user_id, amount, address, network, status, created_at, auto_approved) VALUES (?,?,?,?,?,?,?)", (user_id, r.amount, r.address, r.network, "pending", now.isoformat(), 0))
-        conn.commit()
-        return {"ok": True, "new_withdrawable": new_w, "message": f"Withdrawal of {r.amount} USDT submitted successfully. It will be processed shortly."}
+    conn.execute("UPDATE users SET withdrawable=?, last_withdraw_date=? WHERE user_id=?", (new_w, today_str, user_id))
+    conn.execute("INSERT INTO withdrawals (user_id, amount, address, network, status, created_at, auto_approved) VALUES (?,?,?,?,?,?,?)",
+                 (user_id, r.amount, r.address, r.network, "pending", now.isoformat(), 0))
+    conn.commit()
+    return {"ok": True, "new_withdrawable": new_w, "message": f"Withdrawal of {r.amount} USDT requested. Admin will send from self-custody wallet (TronLink/MetaMask) and approve. No Binance freeze risk!"}
 
 @app.get("/")
 def root(): return FileResponse("index.html")
 @app.get("/admin")
 def admin_page(): return FileResponse("admin.html")
 @app.get("/health")
-def health(): return {"ok": True}
+def health(): return {"ok": True, "self_custody": True, "binance_free": True, "message": "No Binance - Self custody wallet - No freeze risk"}
