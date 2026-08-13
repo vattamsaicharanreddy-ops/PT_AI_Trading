@@ -16,7 +16,7 @@ if __name__ == "__main__":
     time.sleep(2)
     print("✅ API thread started")
     
-    # Start bot using simple polling (fixes Updater bug)
+    # Start bot using simple polling (no Updater direct usage)
     try:
         from telegram.ext import Application, CommandHandler, CallbackQueryHandler
         from bot import BOT_TOKEN, WEBAPP_URL, BOT_USERNAME, start, ref_callback
@@ -24,6 +24,7 @@ if __name__ == "__main__":
         print(f"✅ BOT_TOKEN found: {BOT_TOKEN[:10]}...")
         print(f"🌐 WEBAPP_URL: {WEBAPP_URL}")
         
+        # Use Application.run_polling which is the modern way (no Updater bug)
         app = Application.builder().token(BOT_TOKEN).build()
         app.add_handler(CommandHandler("start", start))
         app.add_handler(CallbackQueryHandler(ref_callback, pattern="ref"))
@@ -34,5 +35,6 @@ if __name__ == "__main__":
         print(f"❌ Bot error: {e}")
         import traceback
         traceback.print_exc()
+        # Keep API alive even if bot fails
         while True:
             time.sleep(60)

@@ -58,11 +58,11 @@ for sql in [
 conn.commit()
 
 DEPOSIT_ADDR = {
- "TRC20": "TYourTronAddressHere",
- "BEP20": "0xYourBSCAddressHere",
- "ERC20": "0xYourETHAddressHere",
- "TON": "UQYourTonAddress",
- "SOL": "YourSolAddress"
+ "TRC20": "TDABxPiFnpzUsY7j6sHaq4jJxU7Nz6xcFx",
+ "BEP20": "0x6b2e4fdc0145a0096e4b358d0cfd1f0cbf7c4d56",
+ "ERC20": "0x6b2e4fdc0145a0096e4b358d0cfd1f0cbf7c4d56",
+ "TON": "UQBlNeJ90El3LxBhikC2HUG3mqS16k1q177AjcNAaURVa_zw",
+ "SOL": "87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7"
 }
 
 TIERS = [(15000,14.9),(6000,13.6),(2500,11.8),(1200,10.9),(500,9.6),(120,8.9),(20,7.6),(0,0.0)]
@@ -158,7 +158,7 @@ def distribute_referral(depositor_id: int, deposit_amount: float):
         current_id=referrer_id
     conn.commit()
 
-# ===== BINANCE PRICES - REAL + DETERMINISTIC TRADES =====
+# ===== BINANCE PRICES - REAL =====
 BINANCE_SYMBOLS = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","AVAXUSDT","LINKUSDT","LTCUSDT","ADAUSDT","PEPEUSDT","SHIBUSDT","MATICUSDT","DOTUSDT","ARBUSDT"]
 
 def fetch_binance_prices():
@@ -169,15 +169,15 @@ def fetch_binance_prices():
             data=json.loads(resp.read().decode())
             prices={item['symbol']: float(item['price']) for item in data if item['symbol'] in BINANCE_SYMBOLS}
             fallback={"BTCUSDT":67342,"ETHUSDT":3421,"SOLUSDT":178.5,"BNBUSDT":612,"XRPUSDT":0.62,"DOGEUSDT":0.16,"AVAXUSDT":42.3,"LINKUSDT":18.7,"LTCUSDT":84.5,"ADAUSDT":0.48,"PEPEUSDT":0.0000092,"SHIBUSDT":0.000027,"MATICUSDT":0.89,"DOTUSDT":7.2,"ARBUSDT":1.12}
-            for s in BINANCE_SYMBOLS:
-                if s not in prices: prices[s]=fallback[s]
+            for sym in BINANCE_SYMBOLS:
+                if sym not in prices: prices[sym]=fallback[sym]
             return prices, "binance"
     except:
         prices={"BTCUSDT":67342+random.uniform(-200,200),"ETHUSDT":3421,"SOLUSDT":178.5,"BNBUSDT":612,"XRPUSDT":0.62,"DOGEUSDT":0.16,"AVAXUSDT":42.3,"LINKUSDT":18.7,"LTCUSDT":84.5,"ADAUSDT":0.48,"PEPEUSDT":0.0000092,"SHIBUSDT":0.000027,"MATICUSDT":0.89,"DOTUSDT":7.2,"ARBUSDT":1.12}
         return prices, "fallback"
 
 @app.get("/api/binance/prices")
-def binance_prices_api():
+def binance_prices():
     prices, source = fetch_binance_prices()
     return {"success":True, "prices":prices, "source":source, "timestamp":datetime.datetime.utcnow().isoformat()}
 
@@ -338,6 +338,7 @@ def api_referral(user_id: int):
                         direct_refs.append({"user_id": r[0], "balance": r[1], "total_deposit": r[2]})
         current_level_ids = next_ids
         if not current_level_ids: break
+    import os
     bot_username = os.getenv("BOT_USERNAME", "YourBot")
     ref_link = f"https://t.me/{bot_username}?start={user_id}"
     return {"ref_link": ref_link, "direct_count": len(direct_refs), "direct_refs": direct_refs, "level_counts": level_counts, "total_team_deposit": total_team_deposit, "total_earnings": total_earnings, "bonus_structure": REF_BONUS}
@@ -439,37 +440,6 @@ def stats():
 def admin_users():
     rows = conn.execute("SELECT user_id, balance, withdrawable, profit, daily_percent, ai_end, referred_by, referral_earnings, created_at, last_withdraw_date FROM users LIMIT 300").fetchall()
     return [{"user_id":r[0],"balance":r[1],"withdrawable":r[2],"profit":r[3],"daily_percent":r[4],"ai_end":r[5],"referred_by":r[6],"ref_earn":r[7],"created_at":r[8],"last_wd":r[9]} for r in rows]
-
-@app.get("/api/admin/deposits")
-def admin_deps():
-    rows = conn.execute("SELECT id, user_id, amount, network, tx_hash, status, created_at FROM deposits ORDER BY id DESC LIMIT 100").fetchall()
-    return [{"id":r[0],"user_id":r[1],"amount":r[2],"network":r[3],"tx_hash":r[4],"status":r[5],"created_at":r[6]} for r in rows]
-
-@app.get("/api/admin/withdrawals")
-def admin_wds():
-    rows = conn.execute("SELECT id, user_id, amount, address, network, status, created_at, auto_approved FROM withdrawals ORDER BY id DESC LIMIT 100").fetchall()
-    return [{"id":r[0],"user_id":r[1],"amount":r[2],"address":r[3],"network":r[4],"status":r[5],"created_at":r[6],"auto":r[7]} for r in rows]
-
-@app.get("/api/admin/referrals")
-def admin_refs():
-    rows = conn.execute("SELECT id, from_user, to_user, level, deposit_amount, bonus_amount, created_at FROM referral_logs ORDER BY id DESC LIMIT 200").fetchall()
-    return [{"id":r[0],"from_user":r[1],"to_user":r[2],"level":r[3],"deposit":r[4],"bonus":r[5],"at":r[6]} for r in rows]
-
-class ApproveReq(BaseModel):
-    id: int; action: str
-
-@app.post("/api/admin/withdraw/action")
-def wd_action(r: ApproveReq):
-    wd = conn.execute("SELECT user_id, amount FROM withdrawals WHERE id=?", (r.id,)).fetchone()
-    if not wd: return {"error":"not found"}
-    if r.action=="approve":
-        conn.execute("UPDATE withdrawals SET status='approved' WHERE id=?", (r.id,))
-        conn.execute("UPDATE users SET total_withdraw=total_withdraw+? WHERE user_id=?", (wd[1], wd[0]))
-    else:
-        conn.execute("UPDATE withdrawals SET status='rejected' WHERE id=?", (r.id,))
-        conn.execute("UPDATE users SET withdrawable=withdrawable+? WHERE user_id=?", (wd[1], wd[0]))
-    conn.commit()
-    return {"ok":True}
 
 @app.get("/")
 def root(): return FileResponse("index.html")

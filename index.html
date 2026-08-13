@@ -98,7 +98,11 @@
 </div>
 
 <script>
-let userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 123456789;
+let tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+let userId = (tgUser && tgUser.id && tgUser.id > 1000) ? tgUser.id : (parseInt(new URLSearchParams(window.location.search).get('user_id')) || 123456789);
+console.log('Telegram user:', tgUser, 'Using userId:', userId);
+// For testing in browser without Telegram, use 123456789
+if (userId === 0 || userId < 1000) userId = 123456789;
 let urlParams = new URLSearchParams(window.location.search);
 let refParam = urlParams.get('ref') || window.Telegram?.WebApp?.initDataUnsafe?.start_param || null;
 let balance=0, withdrawable=0, profit=0, perHour=0, selectedNetwork='TRC20', wdNetwork='TRC20', addrs={}, canWithdrawToday=true;
@@ -113,8 +117,13 @@ function showTab(name){
 }
 
 async function init(){
+ console.log('Fetching user:', userId, 'ref:', refParam);
  let url = `/api/user/${userId}` + (refParam ? `?ref=${refParam}` : '');
- let r=await fetch(url); let d=await r.json();
+ try {
+  let r=await fetch(url); 
+  if (!r.ok) throw new Error('User API failed: '+r.status);
+  let d=await r.json();
+  console.log('User data:', d);
  balance=d.balance; withdrawable=d.withdrawable; profit=d.profit; perHour=d.profit_per_hour;
  canWithdrawToday=d.can_withdraw_today;
  document.getElementById('balTrading').innerText=balance.toFixed(2)+' USDT';
@@ -151,12 +160,27 @@ async function init(){
  });
  document.getElementById('tierList').innerHTML=tierHtml;
  document.getElementById('tierTable').innerHTML=tableHtml;
- let a=await fetch('/api/deposit-addresses'); addrs=await a.json(); renderNetworks(); selectNetwork('TRC20'); loadHistory(); loadReferral();
- loadRealTrades();
- setInterval(()=>{if(perHour>0 && document.getElementById('aiStatus').innerText!='EXPIRED'){profit+=perHour/3600; document.getElementById('profitVal').innerText=profit.toFixed(2);}},1000);
- // Fixed: Don't regenerate trades every 5s, only update prices via cached endpoint - trades stay 12-15 fixed per day
- setInterval(updateLivePricesOnly, 5000);
+ try {
+   let a=await fetch('/api/deposit-addresses'); 
+   if (!a.ok) throw new Error('Deposit addresses failed');
+   addrs=await a.json(); 
+   console.log('Addrs:', addrs);
+   renderNetworks(); selectNetwork('TRC20'); 
+  } catch(e){ console.error('Deposit addr error:', e); document.getElementById('depositAddr').innerText='Set addresses in server.py DEPOSIT_ADDR'; }
+  
+  try { await loadHistory(); } catch(e){ console.error('History error', e); }
+  try { await loadReferral(); } catch(e){ console.error('Referral error', e); document.getElementById('refLink').innerText='https://t.me/'+(d.bot_username||'YourBot')+'?start='+userId; }
+  try { await loadRealTrades(); } catch(e){ console.error('Trades error', e); }
+  
+  setInterval(()=>{if(perHour>0 && document.getElementById('aiStatus').innerText!='EXPIRED'){profit+=perHour/3600; document.getElementById('profitVal').innerText=profit.toFixed(2);}},1000);
+  setInterval(updateLivePricesOnly, 5000);
+ } catch(err){
+  console.error('Init failed:', err);
+  alert('Failed to load: '+err.message+'\nCheck if server.py has all endpoints deployed on Render');
+  document.getElementById('binanceStatus').innerText='API Error - Redeploy server.py';
+ }
 }
+
 
 function renderNetworks(){let html=''; for(let k in addrs){html+=`<button onclick="selectNetwork('${k}')" class="netBtn bg-white/5 border border-white/10 rounded-full px-2 py-2 text-[10px]">${k} ₮</button>`;} document.getElementById('networkBtns').innerHTML=html;}
 function selectNetwork(net){selectedNetwork=net; document.getElementById('selectedNet').innerText=net; document.getElementById('depositAddr').innerText=addrs[net]||'';}
@@ -186,11 +210,13 @@ async function submitWithdraw(){
  }
 }
 
-async function updateLivePricesOnly(){ try{ let r=await fetch(`/api/binance/trades/${userId}`); let data=await r.json(); realTrades=data.trades; document.getElementById('todayTrades').innerText=data.summary.total_trades; document.getElementById('profitTrades').innerText=data.summary.profit_trades; document.getElementById('lossTrades').innerText=data.summary.loss_trades; document.getElementById('totalPnl').innerText=(data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%'; document.getElementById('totalPnl').className='font-bold text-[11px] '+(data.summary.total_pnl_percent>=0?'text-emerald-400':'text-red-400'); renderRealTradesTable(realTrades); document.getElementById('binanceStatus').innerText='Live • '+data.summary.total_trades+' trades'; }catch(e){} }
+async function updateLivePricesOnly(){ try{ let r=await fetch(`/api/binance/trades`); let data=await r.json(); realTrades=data.trades; document.getElementById('todayTrades').innerText=data.summary.total_trades; document.getElementById('profitTrades').innerText=data.summary.profit_trades; document.getElementById('lossTrades').innerText=data.summary.loss_trades; document.getElementById('totalPnl').innerText=(data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%'; document.getElementById('totalPnl').className='font-bold text-[11px] '+(data.summary.total_pnl_percent>=0?'text-emerald-400':'text-red-400'); renderRealTradesTable(realTrades); document.getElementById('binanceStatus').innerText='Live • '+data.summary.total_trades+' trades'; }catch(e){} }
 async function loadRealTrades(){
  try{
   document.getElementById('binanceStatus').innerText='Loading...';
-  let r=await fetch(`/api/binance/trades/${userId}`);
+  let r=await fetch(`/api/binance/trades`);
+  if (!r.ok) r=await fetch(`/api/binance/trades/${userId}`);
+
   let data=await r.json();
   realTrades=data.trades;
   document.getElementById('todayTrades').innerText=data.summary.total_trades;
@@ -242,7 +268,21 @@ async function loadHistory(){
  if(!html) html='<p class="opacity-50">No history yet</p>';
  document.getElementById('history').innerHTML=html;
 }
-async function loadReferral(){ let r=await fetch('/api/referral/'+userId); let d=await r.json(); document.getElementById('refLink').innerText=d.ref_link; document.getElementById('directCount').innerText=d.direct_count; document.getElementById('teamDep').innerText=(d.total_team_deposit||0).toFixed(2)+' USDT'; document.getElementById('refEarned').innerText=(d.total_earnings||0).toFixed(2)+' USDT'; }
+async function loadReferral(){ 
+ try {
+  let r=await fetch('/api/referral/'+userId); 
+  if (!r.ok) throw new Error('Referral API '+r.status);
+  let d=await r.json(); 
+  console.log('Referral:', d);
+  document.getElementById('refLink').innerText=d.ref_link; 
+  document.getElementById('directCount').innerText=d.direct_count; 
+  document.getElementById('teamDep').innerText=(d.total_team_deposit||0).toFixed(2)+' USDT'; 
+  document.getElementById('refEarned').innerText=(d.total_earnings||0).toFixed(2)+' USDT'; 
+ } catch(e){
+  console.error('Referral failed', e);
+  document.getElementById('refLink').innerText='https://t.me/YourBot?start='+userId;
+ }
+}
 function copyRef(){ navigator.clipboard.writeText(document.getElementById('refLink').innerText); alert('Referral link copied!'); }
 init();
 </script>
