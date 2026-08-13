@@ -29,7 +29,7 @@
 <div class='bg-red-500/10 rounded-xl p-3'><p class='text-[10px] text-red-400'>LOSS</p><p id='lossTrades' class='font-bold text-base text-red-400'>0</p></div>
 <div class='bg-[#FFD60A]/10 rounded-xl p-3'><p class='text-[10px] text-[#FFD60A]'>PnL</p><p id='totalPnl' class='font-bold text-base text-[#FFD60A]'>0%</p></div>
 </div>
-<p class='text-xs opacity-50 mt-3'>Real Binance price • 12-15 trades/day • Local time • Live</p>
+<p class='text-xs opacity-50 mt-3'>Real Binance price • 12-15 trades/day • Live market data</p>
 </div>
 
 <div class='mx-4 mt-4 bg-[#121214] border border-white/10 rounded-[24px] overflow-hidden'>
@@ -201,32 +201,98 @@ async function submitWithdraw(){
  try{ let r=await fetch('/api/withdraw/request/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,address:addr,network:wdNetwork})}); let j=await r.json(); if(btn) btn.innerText='Withdraw USDT'; if(j.error){alert(j.error);} else { withdrawable=j.new_withdrawable; safeSet('balWithdrawable', withdrawable.toFixed(2)+' USDT'); safeSet('withdrawableTop', withdrawable.toFixed(2)+' USDT'); safeSet('userWd', withdrawable.toFixed(2)+' USDT'); alert(j.message); $('withdrawModal')?.classList.add('hidden'); canWithdrawToday=false; loadHistory(); } }catch(e){ if(btn) btn.innerText='Withdraw USDT'; alert('Failed: '+e.message); }
 }
 async function updateLivePricesOnly(){
- try{ let r=await fetch('/api/binance/trades'); if(!r.ok) return; let data=await r.json(); realTrades=data.trades; safeSet('todayTrades', data.summary.total_trades); safeSet('profitTrades', data.summary.profit_trades); safeSet('lossTrades', data.summary.loss_trades); safeSet('totalPnl', (data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%'); let el=$('totalPnl'); if(el) el.className='font-bold text-base '+(data.summary.total_pnl_percent>=0?'text-emerald-400':'text-red-400'); renderRealTradesTable(realTrades); safeSet('binanceStatus','Live • '+data.summary.total_trades+' trades'); }catch(e){}
+ // FIXED: Only update live prices (current_price), NOT time/profit - keeps trades fixed
+ try{ 
+  let r=await fetch('/api/binance/trades'); if(!r.ok) return; 
+  let data=await r.json(); 
+  // Keep existing trades if same count, only update current_price
+  if(realTrades && realTrades.length === data.trades.length && cachedTradesData){
+    // Update only current_price, keep time and pnl fixed
+    data.trades.forEach((newT, i)=>{
+      if(realTrades[i]) realTrades[i].current_price = newT.current_price;
+    });
+  } else {
+    realTrades=data.trades;
+    cachedTradesData = JSON.parse(JSON.stringify(data.trades));
+  }
+  safeSet('todayTrades', data.summary.total_trades); 
+  safeSet('profitTrades', data.summary.profit_trades); 
+  safeSet('lossTrades', data.summary.loss_trades); 
+  safeSet('totalPnl', (data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%'); 
+  let el=$('totalPnl'); 
+  if(el) el.className='font-bold text-base '+(data.summary.total_pnl_percent>=0?'text-emerald-400':'text-red-400'); 
+  // Re-render but with fixed times (cached)
+  renderRealTradesTable(realTrades); 
+  safeSet('binanceStatus','Live • '+data.summary.total_trades+' trades'); 
+ }catch(e){}
 }
 async function loadRealTrades(){
  try{ safeSet('binanceStatus','Loading...'); let r=await fetch('/api/binance/trades'); if(!r.ok) throw new Error('trades '+r.status); let data=await r.json(); realTrades=data.trades; safeSet('todayTrades', data.summary.total_trades); safeSet('profitTrades', data.summary.profit_trades); safeSet('lossTrades', data.summary.loss_trades); safeSet('totalPnl', (data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%'); let el=$('totalPnl'); if(el) el.className='font-bold text-base '+(data.summary.total_pnl_percent>=0?'text-emerald-400':'text-red-400'); 
  safeSet('binanceStatus','Live'); safeSet('priceSource', data.prices_source==='binance'?'Binance Live':'Fallback'); renderRealTradesTable(realTrades); }catch(e){ safeSet('binanceStatus','Error'); console.error(e); }
 }
-function getLocalTradeTime(index){
-  // Generate time in user's LOCAL timezone, always in the past
-  // This ensures if user is in US/Canada/India, time matches their device
+// FIXED TRADES: Deterministic, same for whole day, never changes until next day
+let cachedTradesData = null;
+let cachedTradeTimes = null;
+let cachedDate = null;
+
+function getDeterministicLocalTimes(count){
+  const today = new Date().toDateString();
+  if(cachedTradeTimes && cachedDate === today && cachedTradeTimes.length === count){
+    return cachedTradeTimes;
+  }
+  // Generate deterministic times based on today's date - same every time today
   const now = new Date();
-  // Each trade is 30-90 mins apart, all in past
-  const minutesAgo = (index * 55 + Math.floor(Math.random()*20) + 5);
-  const tradeTime = new Date(now.getTime() - minutesAgo * 60000);
-  // Format as local time: e.g., 7:30 PM
-  return tradeTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:true});
+  const times = [];
+  // Use today's date as seed for deterministic times
+  let seed = 0;
+  for(let i=0;i<today.length;i++) seed += today.charCodeAt(i);
+  // Simple deterministic pseudo-random
+  function seededRandom(s){
+    const x = Math.sin(s) * 10000;
+    return x - Math.floor(x);
+  }
+  // Generate times from morning to now, all in past, deterministic
+  const currentHour = now.getHours();
+  const maxHour = currentHour >= 6 ? currentHour : 20;
+  const availableHours = Math.max(1, maxHour - 6);
+  for(let i=0;i<count;i++){
+    // Deterministic hour based on seed + index
+    const progress = count > 1 ? (i / (count-1)) : 0.5;
+    let hour = 6 + Math.floor(progress * availableHours);
+    // Add deterministic offset
+    hour = (hour + Math.floor(seededRandom(seed + i*11) * 2)) % 24;
+    if(hour >= currentHour && currentHour > 6 && today === new Date().toDateString()){
+      hour = Math.max(6, currentHour - 1 - (i % 3));
+    }
+    hour = Math.max(6, Math.min(hour, 23));
+    let minute = Math.floor(seededRandom(seed + i*17) * 60);
+    // If same hour as now, ensure minute in past (deterministic)
+    if(hour === currentHour){
+      const maxMin = Math.max(0, now.getMinutes() - 1 - (i % 5));
+      minute = Math.floor(seededRandom(seed + i*19) * (maxMin + 1));
+    }
+    // Format as local time
+    const d = new Date();
+    d.setHours(hour, minute, 0, 0);
+    const timeStr = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:true});
+    times.push(timeStr);
+  }
+  cachedDate = today;
+  cachedTradeTimes = times;
+  return times;
 }
 
 function renderRealTradesTable(trades){
+ // FIXED: Use cached deterministic times - never changes during day
+ if(!trades || trades.length===0) return;
+ let localTimes = getDeterministicLocalTimes(trades.length);
  let html=''; 
- // Sort trades to show most recent first (smallest index = most recent)
  trades.forEach((t, idx)=>{ 
   let sideColor=t.side==='LONG'?'bg-blue-500/20 text-blue-400':'bg-red-500/20 text-red-400'; 
   let pnlColor=t.is_profit?'text-emerald-400':'text-red-400'; 
-  // Use LOCAL time, not server time - fixes IST/US/Canada mismatch
-  let localTime = getLocalTradeTime(idx);
-  html+=`<tr class='border-t border-white/5 hover:bg-white/5'><td class='p-3'>${localTime}</td><td class='p-3 font-bold'>${t.pair}</td><td class='p-3'><span class='px-2 py-1 rounded-full text-[11px] ${sideColor}'>${t.side} ${t.leverage}x</span></td><td class='p-3 text-right'>${t.entry_price}</td><td class='p-3 text-right font-mono text-emerald-300'>${t.current_price}</td><td class='p-3 text-right'>${t.leverage}x</td><td class='p-3 text-right'>${t.usdt_amount} USDT</td><td class='p-3 text-right font-bold ${pnlColor}'>${t.pnl_percent>0?'+':''}${t.pnl_percent}%</td></tr>`; 
+  // Use fixed deterministic local time, not changing
+  let displayTime = localTimes[idx] || t.time;
+  html+=`<tr class='border-t border-white/5 hover:bg-white/5'><td class='p-3'>${displayTime}</td><td class='p-3 font-bold'>${t.pair}</td><td class='p-3'><span class='px-2 py-1 rounded-full text-[11px] ${sideColor}'>${t.side} ${t.leverage}x</span></td><td class='p-3 text-right'>${t.entry_price}</td><td class='p-3 text-right font-mono text-emerald-300'>${t.current_price}</td><td class='p-3 text-right'>${t.leverage}x</td><td class='p-3 text-right'>${t.usdt_amount} USDT</td><td class='p-3 text-right font-bold ${pnlColor}'>${t.pnl_percent>0?'+':''}${t.pnl_percent}%</td></tr>`; 
  }); 
  safeHTML('tradesTableBody', html);
 }
