@@ -145,9 +145,9 @@ def distribute_referral(depositor_id: int, deposit_amount: float):
     now=datetime.datetime.utcnow().isoformat()
     current_id=depositor_id
     for level in range(1,11):
-        ref_row=conn.execute("SELECT referred_by FROM users WHERE user_id=?", (current_id,)).fetchone()
-        if not ref_row or not ref_row[0]: break
-        referrer_id=ref_row[0]
+        row=conn.execute("SELECT referred_by FROM users WHERE user_id=?", (current_id,)).fetchone()
+        if not row or not row[0]: break
+        referrer_id=row[0]
         if not conn.execute("SELECT 1 FROM users WHERE user_id=?", (referrer_id,)).fetchone(): break
         bonus_pct=REF_BONUS.get(level,0)
         if bonus_pct>0:
@@ -158,8 +158,16 @@ def distribute_referral(depositor_id: int, deposit_amount: float):
         current_id=referrer_id
     conn.commit()
 
-# ===== BINANCE PRICES - REAL =====
+# ===== FIXED TRADES - ENTRY, EXIT, PnL NEVER CHANGES =====
 BINANCE_SYMBOLS = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","AVAXUSDT","LINKUSDT","LTCUSDT","ADAUSDT","PEPEUSDT","SHIBUSDT","MATICUSDT","DOTUSDT","ARBUSDT"]
+
+# Base prices - deterministic per day but fixed once generated
+BASE_PRICES = {
+ "BTCUSDT": 67200, "ETHUSDT": 3400, "SOLUSDT": 178.0, "BNBUSDT": 610,
+ "XRPUSDT": 0.62, "DOGEUSDT": 0.16, "AVAXUSDT": 42.0, "LINKUSDT": 18.5,
+ "LTCUSDT": 84.0, "ADAUSDT": 0.48, "PEPEUSDT": 0.000009, "SHIBUSDT": 0.000027,
+ "MATICUSDT": 0.89, "DOTUSDT": 7.2, "ARBUSDT": 1.12
+}
 
 def fetch_binance_prices():
     try:
@@ -168,28 +176,26 @@ def fetch_binance_prices():
         with urllib.request.urlopen(req, timeout=4) as resp:
             data=json.loads(resp.read().decode())
             prices={item['symbol']: float(item['price']) for item in data if item['symbol'] in BINANCE_SYMBOLS}
-            fallback={"BTCUSDT":67342,"ETHUSDT":3421,"SOLUSDT":178.5,"BNBUSDT":612,"XRPUSDT":0.62,"DOGEUSDT":0.16,"AVAXUSDT":42.3,"LINKUSDT":18.7,"LTCUSDT":84.5,"ADAUSDT":0.48,"PEPEUSDT":0.0000092,"SHIBUSDT":0.000027,"MATICUSDT":0.89,"DOTUSDT":7.2,"ARBUSDT":1.12}
             for sym in BINANCE_SYMBOLS:
-                if sym not in prices: prices[sym]=fallback[sym]
+                if sym not in prices: prices[sym]=BASE_PRICES[sym]
             return prices, "binance"
     except:
-        prices={"BTCUSDT":67342+random.uniform(-200,200),"ETHUSDT":3421,"SOLUSDT":178.5,"BNBUSDT":612,"XRPUSDT":0.62,"DOGEUSDT":0.16,"AVAXUSDT":42.3,"LINKUSDT":18.7,"LTCUSDT":84.5,"ADAUSDT":0.48,"PEPEUSDT":0.0000092,"SHIBUSDT":0.000027,"MATICUSDT":0.89,"DOTUSDT":7.2,"ARBUSDT":1.12}
-        return prices, "fallback"
-
-@app.get("/api/binance/prices")
-def binance_prices():
-    prices, source = fetch_binance_prices()
-    return {"success":True, "prices":prices, "source":source, "timestamp":datetime.datetime.utcnow().isoformat()}
+        return BASE_PRICES, "fixed"
 
 def generate_deterministic_trades():
-    today = datetime.date.today().isoformat()
+    # FIXED: Trades are deterministic for whole day, entry/exit/pnl never changes
+    # Uses date as seed, so same trades all day, new trades next day
+    today = datetime.datetime.utcnow().date().isoformat()
     seed = int(hashlib.md5(today.encode()).hexdigest()[:8], 16)
     rng = random.Random(seed)
-    count = 12 + (seed % 4)  # 12-15
-    target_total = 50 + (seed % 21)  # 50-70
+    
+    count = 12 + (seed % 4)  # 12-15 trades
+    target_total = 50 + (seed % 21)  # 50-70% total
     win_count = int(count * 0.71)
     if win_count < 8: win_count = 8
     loss_count = count - win_count
+    
+    # Generate PnL percentages - fixed for day
     needed_win = target_total - (loss_count * -1.1)
     win_pnls = []
     for _ in range(win_count):
@@ -201,6 +207,7 @@ def generate_deterministic_trades():
     lose_pnls = [round(-(0.7 + rng.random()*1.3),2) for _ in range(loss_count)]
     all_pnls = win_pnls + lose_pnls
     rng.shuffle(all_pnls)
+    
     final = round(sum(all_pnls),2)
     if final < 50 or final > 70:
         diff = target_total - final
@@ -208,55 +215,86 @@ def generate_deterministic_trades():
             if all_pnls[i] > 0:
                 all_pnls[i] = round(all_pnls[i]+diff,2)
                 break
+    
     symbols = BINANCE_SYMBOLS.copy()
     rng.shuffle(symbols)
+    
+    # Use base prices + small deterministic variation for entry
     trades=[]
     for i in range(count):
         sym = symbols[i % len(symbols)]
-        pnl = all_pnls[i]
+        pnl = all_pnls[i]  # Fixed PnL % for this trade
         side = rng.choice(["LONG","SHORT"])
         leverage = rng.choice([5,10,15,20])
         usdt = round(800 + rng.random()*1200,2)
-        th = (6 + i + rng.randint(0,2)) % 24
+        
+        # Deterministic time - fixed for day, in past, local time conversion in frontend
+        th = 6 + (i * 2) % 14 + rng.randint(0,1)
+        th = max(6, min(th, 22))
         tm = rng.randint(0,59)
         time_str = f"{th:02d}:{tm:02d}"
-        status = "OPEN" if i < 3 else "CLOSED"
-        trades.append({"id":i+1,"pair":sym.replace("USDT","/USDT"),"symbol":sym,"target_pnl":pnl,"is_profit":pnl>0,"leverage":leverage,"usdt_amount":usdt,"time":time_str,"status":status,"side":side,"date":today})
+        
+        # FIXED ENTRY and EXIT prices - calculated deterministically, never changes
+        base_price = BASE_PRICES.get(sym, 100)
+        # Add deterministic variation to base price for entry
+        variation = (rng.random() - 0.5) * 0.02  # +/-1%
+        entry_price = base_price * (1 + variation)
+        
+        # Calculate exit price based on pnl_percent - FIXED, never changes
+        if side == "LONG":
+            exit_price = entry_price * (1 + pnl/100)
+        else:
+            exit_price = entry_price * (1 - pnl/100)
+        
+        # Round appropriately
+        if entry_price < 1:
+            entry_price = round(entry_price, 6)
+            exit_price = round(exit_price, 6)
+        else:
+            entry_price = round(entry_price, 2)
+            exit_price = round(exit_price, 2)
+        
+        status = "CLOSED"  # All trades show as closed with fixed exit price
+        
+        trades.append({
+            "id": i+1,
+            "pair": sym.replace("USDT","/USDT"),
+            "symbol": sym,
+            "side": side,
+            "leverage": leverage,
+            "usdt_amount": usdt,
+            "entry_price": entry_price,
+            "exit_price": exit_price,  # FIXED exit price, not current/live
+            "pnl_percent": pnl,  # FIXED %
+            "pnl_usdt": round(usdt * pnl / 100, 2),  # FIXED profit based on entry->exit
+            "is_profit": pnl > 0,
+            "time": time_str,
+            "status": status,
+            "date": today
+        })
+    
+    # Sort by time descending
     trades.sort(key=lambda x: x["time"], reverse=True)
     return trades, round(sum(all_pnls),2), count, len([p for p in all_pnls if p>0]), len([p for p in all_pnls if p<0])
 
 @app.get("/api/binance/trades")
 def binance_trades_all():
+    # FIXED: Returns same trades all day, entry/exit/pnl never changes
+    trades, total_pnl, count, win_c, loss_c = generate_deterministic_trades()
     prices, source = fetch_binance_prices()
-    tmpl, total_pnl, count, win_c, loss_c = generate_deterministic_trades()
-    trades=[]
-    for t in tmpl:
-        curr = prices.get(t["symbol"], 100)
-        pnl = t["target_pnl"]
-        if t["side"]=="LONG":
-            entry = curr / (1 + pnl/100)
-        else:
-            entry = curr / (1 - pnl/100)
-        trades.append({
-            "id":t["id"],"pair":t["pair"],"symbol":t["symbol"],"side":t["side"],
-            "entry_price":round(entry,6 if entry<1 else 2),
-            "current_price":round(curr,6 if curr<1 else 2),
-            "leverage":t["leverage"],"usdt_amount":t["usdt_amount"],
-            "pnl_percent":pnl,"pnl_usdt":round(t["usdt_amount"]*pnl/100,2),
-            "is_profit":t["is_profit"],"time":t["time"],"status":t["status"],"date":t["date"]
-        })
     return {
-        "trades":trades,
-        "summary":{
-            "total_trades":count,
-            "profit_trades":win_c,
-            "loss_trades":loss_c,
-            "total_pnl_percent":total_pnl,
-            "total_pnl_usdt":round(sum(x["pnl_usdt"] for x in trades),2),
-            "funds_in_market":round(sum(x["usdt_amount"] for x in trades),2),
-            "date":tmpl[0]["date"] if tmpl else ""
+        "trades": trades,
+        "summary": {
+            "total_trades": count,
+            "profit_trades": win_c,
+            "loss_trades": loss_c,
+            "total_pnl_percent": total_pnl,
+            "total_pnl_usdt": round(sum(x["pnl_usdt"] for x in trades),2),
+            "funds_in_market": round(sum(x["usdt_amount"] for x in trades),2),
+            "date": trades[0]["date"] if trades else ""
         },
-        "prices_source":source
+        "prices_source": source,
+        "live_prices": prices  # Live prices for header, but trades are fixed
     }
 
 @app.get("/api/binance/trades/{user_id}")
@@ -299,48 +337,45 @@ def api_user(user_id: int, ref: int = None):
         "profit": row[4],
         "profit_per_hour": row[5],
         "daily_percent": row[6],
+        "ai_start": row[6] if len(row)>6 else None,
         "ai_end": row[7],
         "days_left": days_left,
         "hours_left": hours_left,
         "ai_active": active,
-        "total_deposit": row[10] or 0,
-        "total_withdraw": row[11] or 0,
-        "tier_min": get_tier_index(row[2] or 0)[1],
-        "referral_earnings": row[14] if len(row) > 14 and row[14] else 0,
-        "referred_by": row[13] if len(row) > 13 else None,
+        "total_deposit": row[10] if len(row)>10 else 0,
+        "total_withdraw": row[11] if len(row)>11 else 0,
+        "tier_min": TIERS[0][0],
+        "tiers": [{"min": t[0], "pct": t[1]} for t in TIERS],
+        "referral_earnings": row[14] if len(row)>14 and row[14] else 0,
         "created_at": created_str,
-        "days_since_join": days_since,
-        "can_withdraw_today": can_withdraw_today,
-        "last_withdraw_date": last_wd_date,
-        "tiers": [{"min": t[0], "pct": t[1]} for t in TIERS]
+        "can_withdraw_today": can_withdraw_today
     }
 
 @app.get("/api/referral/{user_id}")
 def api_referral(user_id: int):
     ensure_user(user_id)
-    total_earnings = conn.execute("SELECT COALESCE(SUM(bonus_amount),0) FROM referral_logs WHERE to_user=?", (user_id,)).fetchone()[0] or 0
-    level_counts = {i:0 for i in range(1,11)}
+    ref_link = f"https://t.me/YourBot?start={user_id}"
+    try:
+        import os
+        bot_username = os.getenv("BOT_USERNAME", "YourBot")
+        ref_link = f"https://t.me/{bot_username}?start={user_id}"
+    except: pass
+    direct_refs = conn.execute("SELECT user_id FROM users WHERE referred_by=?", (user_id,)).fetchall()
     total_team_deposit = 0
-    direct_refs = []
-    current_level_ids = [user_id]
-    visited = set()
-    for lvl in range(1,11):
-        next_ids = []
-        for uid in current_level_ids:
-            refs = conn.execute("SELECT user_id, balance, total_deposit FROM users WHERE referred_by=?", (uid,)).fetchall()
-            for r in refs:
-                if r[0] not in visited:
-                    visited.add(r[0])
-                    next_ids.append(r[0])
-                    level_counts[lvl]+=1
-                    total_team_deposit += (r[2] or 0)
-                    if lvl==1:
-                        direct_refs.append({"user_id": r[0], "balance": r[1], "total_deposit": r[2]})
-        current_level_ids = next_ids
-        if not current_level_ids: break
-    import os
-    bot_username = os.getenv("BOT_USERNAME", "YourBot")
-    ref_link = f"https://t.me/{bot_username}?start={user_id}"
+    all_team = []
+    def get_team(uid, level=1):
+        nonlocal total_team_deposit
+        refs = conn.execute("SELECT user_id, total_deposit FROM users WHERE referred_by=?", (uid,)).fetchall()
+        for r in refs:
+            all_team.append((r[0], level))
+            total_team_deposit += r[1] or 0
+            if level < 10:
+                get_team(r[0], level+1)
+    get_team(user_id)
+    level_counts = {}
+    for _, lvl in all_team:
+        level_counts[lvl] = level_counts.get(lvl, 0) + 1
+    total_earnings = conn.execute("SELECT COALESCE(SUM(bonus_amount),0) FROM referral_logs WHERE to_user=?", (user_id,)).fetchone()[0] or 0
     return {"ref_link": ref_link, "direct_count": len(direct_refs), "direct_refs": direct_refs, "level_counts": level_counts, "total_team_deposit": total_team_deposit, "total_earnings": total_earnings, "bonus_structure": REF_BONUS}
 
 class DepositReq(BaseModel):
