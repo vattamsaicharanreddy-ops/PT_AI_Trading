@@ -132,16 +132,25 @@ async function init(){
   safeSet('joinedDate', d.created_at?d.created_at.slice(0,10):'-'); safeSet('totalDep', (d.total_deposit||0).toFixed(2)+' USDT'); safeSet('totalWd', (d.total_withdraw||0).toFixed(2)+' USDT');
   let wdBtn=$('wdBtn'); if(wdBtn){ wdBtn.innerText=canWithdrawToday?'Withdraw USDT':'Already withdrew today'; wdBtn.disabled=!canWithdrawToday; }
   if(!d.ai_active){ safeSet('aiStatus','EXPIRED'); safeSet('aiDot','🔴'); }
+  // Fixed: Always show tiers, use hardcoded fallback if API doesn't return
+  const STATIC_TIERS = [
+    {min:15000, pct:14.9}, {min:6000, pct:13.6}, {min:2500, pct:11.8},
+    {min:1200, pct:10.9}, {min:500, pct:9.6}, {min:120, pct:8.9}, {min:20, pct:7.6}
+  ];
+  let tiersToShow = (d.tiers && d.tiers.length>0) ? d.tiers : STATIC_TIERS;
   let tierHtml='', tableHtml='';
-  (d.tiers||[]).forEach(t=>{
+  tiersToShow.forEach(t=>{
    if(t.min>0){
-    let isActive=balance>=t.min; let cls=isActive?'bg-[#26A17B]/20 border-[#26A17B]/40 text-white':'bg-white/5 border-white/5 opacity-70';
-    let badge=isActive?'<span class="bg-[#26A17B] text-white text-[9px] px-2 py-1 rounded-full">ACTIVE</span>':'<span class="bg-white/10 text-[9px] px-2 py-1 rounded-full">LOCKED</span>';
-    tierHtml+=`<div class='border rounded-xl p-4 ${cls}'><div class='flex justify-between'><div class='flex gap-3'><div class='w-9 h-9 bg-[#26A17B] rounded-full flex items-center justify-center text-xs font-bold'>₮</div><div><p class='font-bold text-sm'>≥${t.min} USDT ${badge}</p><p class='text-xs opacity-60'>${(t.min*t.pct/100).toFixed(2)} USDT/day</p></div></div><div class='text-right'><p class='font-bold text-[#FFD60A] text-sm'>${t.pct}%/day</p></div></div></div>`;
-    tableHtml+=`<tr class='border-t border-white/5'><td class='py-2'>${t.min} USDT</td><td class='py-2 text-[#FFD60A]'>${t.pct}%</td><td class='py-2'>${(t.min*t.pct/100).toFixed(2)} USDT/day</td></tr>`;
+    let isActive=balance>=t.min;
+    let cls=isActive?'bg-[#26A17B]/30 border-[#26A17B]/50 text-white shadow-lg shadow-[#26A17B]/20':'bg-white/5 border-white/10 opacity-80';
+    let badge=isActive?'<span class="bg-[#26A17B] text-white text-[10px] px-2.5 py-1 rounded-full font-bold">ACTIVE</span>':'<span class="bg-white/10 text-[10px] px-2.5 py-1 rounded-full">LOCKED</span>';
+    let dailyEarn = (t.min * t.pct / 100).toFixed(2);
+    tierHtml+=`<div class='border rounded-[20px] p-4 ${cls}'><div class='flex justify-between items-center'><div class='flex gap-3 items-center'><div class='w-10 h-10 bg-[#26A17B] rounded-full flex items-center justify-center text-sm font-bold'>₮</div><div><p class='font-bold text-[15px]'>≥${t.min.toLocaleString()} USDT ${badge}</p><p class='text-xs opacity-70 mt-1'>Earn ${dailyEarn} USDT/day • ${t.pct}% daily</p></div></div><div class='text-right'><p class='font-extrabold text-[#FFD60A] text-lg'>${t.pct}%</p><p class='text-[10px] opacity-60'>/day</p></div></div></div>`;
+    tableHtml+=`<tr class='border-t border-white/5 hover:bg-white/5'><td class='py-3 font-bold'>${t.min.toLocaleString()} USDT</td><td class='py-3 text-[#FFD60A] font-bold'>${t.pct}%</td><td class='py-3'>${dailyEarn} USDT/day</td></tr>`;
    }
   });
-  safeHTML('tierList', tierHtml||'<p class="opacity-50 text-sm">Deposit ≥20 USDT to unlock tiers</p>'); safeHTML('tierTable', tableHtml);
+  safeHTML('tierList', tierHtml||'<p class="opacity-50 text-sm">Deposit ≥20 USDT to unlock tiers</p>'); 
+  safeHTML('tierTable', tableHtml||'<tr><td colspan=3 class="py-3 text-center opacity-50">Deposit ≥20 USDT to unlock</td></tr>');
  }catch(e){ console.error('user failed', e); }
  try{ let a=await fetch('/api/deposit-addresses'); if(!a.ok) throw new Error('addr'); addrs=await a.json(); renderNetworks(); selectNetwork('TRC20'); }catch(e){ console.error(e); safeSet('depositAddr','Set in server.py'); }
  try{ await loadHistory(); }catch(e){}
