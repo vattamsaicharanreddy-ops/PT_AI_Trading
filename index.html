@@ -31,7 +31,6 @@
 <div class='bg-red-500/10 rounded-xl p-3'><p class='text-[10px] text-red-400'>LOSS</p><p id='lossTrades' class='font-bold text-base text-red-400'>0</p></div>
 <div class='bg-[#FFD60A]/10 rounded-xl p-3'><p class='text-[10px] text-[#FFD60A]'>PnL</p><p id='totalPnl' class='font-bold text-base text-[#FFD60A]'>0%</p></div>
 </div>
-<p class='text-xs opacity-50 mt-3'>Fixed trades • Entry → Exit • Auto verified deposits</p>
 </div>
 
 <div class='mx-4 mt-4 bg-[#121214] border border-white/10 rounded-[24px] overflow-hidden'>
@@ -143,7 +142,6 @@ try{
   let tg = window.Telegram?.WebApp;
   if(tg && tg.initDataUnsafe?.start_param){ refParam = refParam || tg.initDataUnsafe.start_param; }
 }catch(e){}
-
 if(username){ localStorage.setItem('real_username', username); }
 
 let balance=0, withdrawable=0, profit=0, perHour=0, selectedNetwork='TRC20', wdNetwork='TRC20', addrs={}, canWithdrawToday=true, realTrades=[];
@@ -165,7 +163,7 @@ async function init(){
   let refQ = refParam ? `?ref=${refParam}` : '';
   let userQ = username ? `${refQ ? '&' : '?'}username=${encodeURIComponent(username)}` : refQ;
   let r=await fetch('/api/user/'+userId+userQ);
-  if(!r.ok) throw new Error('user api');
+  if(!r.ok) throw new Error('user api '+r.status);
   let data=await r.json();
   if(data.error){ console.error(data.error); }
   balance=data.balance||0; withdrawable=data.withdrawable||0; profit=data.profit||0; perHour=data.profit_per_hour||0;
@@ -184,26 +182,20 @@ async function init(){
   safeSet('aiDays', data.days_left||0);
   safeSet('aiHours', data.hours_left||0);
   safeSet('joinedDate', data.created_at ? data.created_at.slice(0,10) : '-');
-  safeSet('balTrading', balance.toFixed(2));
-  safeSet('balWithdrawable', withdrawable.toFixed(2));
-  safeSet('refEarn', (data.referral_earnings||0).toFixed(2)+' USDT');
-  
-  if(data.user_id == 123456789){
-    safeSet('realIdWarning', '⚠️ Test ID - Open via Telegram Bot for real ID');
-  } else {
-    safeSet('realIdWarning', 'Real Telegram ID: '+data.user_id);
-  }
-  
+  safeSet('realIdWarning', data.user_id==123456789?'⚠️ Test ID - Open via Telegram Bot':'Real Telegram ID: '+data.user_id);
   let aiActive = data.ai_active;
   safeSet('aiStatus', aiActive ? 'AI ACTIVE' : 'AI INACTIVE');
   let dot = $('aiDot'); if(dot) dot.innerText = aiActive ? '🟢' : '🔴';
-  
   renderTiers(data.tiers || STATIC_TIERS, balance);
   await loadRealTrades();
   await loadHistory();
   await loadReferral();
-  let a=await fetch('/api/deposit-addresses'); if(a.ok){ addrs=await a.json(); renderNetworks(); setNetAddr(selectedNetwork); }
- }catch(e){ console.error('init failed', e); }
+  let a=await fetch('/api/deposit-addresses');
+  if(!a.ok) throw new Error('deposit addresses '+a.status);
+  addrs=await a.json();
+  renderNetworks();
+  setNetAddr(selectedNetwork);
+ }catch(e){ console.error('init failed', e); safeSet('depositAddr','Failed to load addresses: '+e.message); }
 }
 
 function renderTiers(tiers, bal){
@@ -215,50 +207,39 @@ function renderNetworks(){
  let btns=''; for(let net in addrs){ btns+=`<button onclick="setNetAddr('${net}')" class='px-3 py-2 rounded-full text-xs ${selectedNetwork===net?'bg-white text-black':'bg-white/10'}'>${net}</button>`; } safeHTML('networkBtns', btns);
 }
 function setNetAddr(net){ selectedNetwork=net; safeSet('selectedNet', net); safeSet('depositAddr', addrs[net]||'Loading...'); renderNetworks(); }
-function copyAddr(){ let addr=$('depositAddr')?.innerText; if(addr){ navigator.clipboard.writeText(addr); alert('Copied: '+addr); } }
-function openDeposit(){ $('depositModal')?.classList.remove('hidden'); }
+function copyAddr(){ let addr=$('depositAddr')?.innerText; if(addr && addr.length>10){ navigator.clipboard.writeText(addr); alert('Copied: '+addr); } else { alert('Address not loaded yet'); } }
+function openDeposit(){ $('depositModal')?.classList.remove('hidden'); if(Object.keys(addrs).length===0){ fetch('/api/deposit-addresses').then(r=>r.json()).then(d=>{addrs=d; renderNetworks(); setNetAddr(selectedNetwork);}); } }
 function openWithdraw(){ safeSet('wdAvailable', withdrawable.toFixed(2)+' USDT'); $('withdrawModal')?.classList.remove('hidden'); }
 function setNet(net){ wdNetwork=net; safeSet('wdNet', net); }
 
 async function submitDeposit(){
- let amt=parseFloat($('depAmount')?.value); 
- let tx=$('depTx')?.value||'';
- let btn=$('depBtn');
- let statusEl=$('depStatus');
- 
+ let amt=parseFloat($('depAmount')?.value); let tx=$('depTx')?.value||'';
+ let btn=$('depBtn'); let statusEl=$('depStatus');
  if(!amt || amt < 20){ alert('❌ Min deposit 20 USDT required!'); return; }
- if(!tx || tx.trim().length < 10){ alert('❌ Please enter valid Transaction Hash / TX ID. System will verify automatically!'); return; }
- 
+ if(!tx || tx.trim().length < 10){ alert('❌ Please enter valid Transaction Hash / TX ID'); return; }
  if(btn){ btn.innerText='Verifying TX on blockchain...'; btn.disabled=true; }
- if(statusEl){ statusEl.classList.remove('hidden'); statusEl.innerHTML='<p class="text-yellow-400">🔍 Verifying transaction on blockchain...<br>Checking '+selectedNetwork+' explorer...</p>'; }
- 
- try{ 
-   let r=await fetch('/api/deposit/request/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,network:selectedNetwork,tx_hash:tx.trim()})}); 
-   let j=await r.json(); 
+ if(statusEl){ statusEl.classList.remove('hidden'); statusEl.innerHTML='<p class="text-yellow-400">🔍 Verifying transaction on blockchain...</p>'; }
+ try{
+   let r=await fetch('/api/deposit/request/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,network:selectedNetwork,tx_hash:tx.trim()})});
+   let j=await r.json();
    if(btn){ btn.innerText='Verify & Deposit USDT'; btn.disabled=false; }
-   if(j.error){ 
-     if(statusEl){ statusEl.innerHTML=`<p class="text-red-400">❌ ${j.error}</p>`; }
-     alert('❌ '+j.error); 
-     return;
-   } 
-   if(j.ok){ 
-     if(j.status === 'pending'){
-       if(statusEl){ statusEl.innerHTML=`<p class="text-yellow-400">⏳ Deposit ${amt} USDT submitted!<br>TX: ${tx.substring(0,20)}...<br>Status: PENDING auto verification<br>Will verify in background, balance added after verification.</p>`; }
-       alert(`⏳ Deposit ${amt} USDT submitted for auto verification!\n\nTX: ${tx}\n\nStatus: PENDING\nSystem is verifying on ${selectedNetwork} blockchain...\nBalance will be added automatically after verification (30-60 seconds).\n\nYou can close and check History tab.`);
-       // Poll for status
+   if(j.error){ if(statusEl){ statusEl.innerHTML=`<p class="text-red-400">❌ ${j.error}</p>`; } alert('❌ '+j.error); return; }
+   if(j.ok){
+     if(j.status==='pending'){
+       if(statusEl){ statusEl.innerHTML=`<p class="text-yellow-400">⏳ Deposit ${amt} USDT submitted!<br>Status: PENDING auto verification</p>`; }
+       alert(`⏳ Deposit ${amt} USDT submitted for auto verification!\nSystem is verifying on ${selectedNetwork} blockchain... Balance will be added automatically after verification.`);
        pollDepositStatus(j.deposit_id);
      } else {
-       if(statusEl){ statusEl.innerHTML=`<p class="text-emerald-400">✅ Verified! ${j.new_balance.toFixed(2)} USDT @ ${j.daily_percent}%/day</p>`; }
-       alert(`✅ Verified! ${j.new_balance.toFixed(2)} USDT @ ${j.daily_percent}%/day`);
+       if(statusEl){ statusEl.innerHTML=`<p class="text-emerald-400">✅ Verified!</p>`; }
      }
      $('depAmount').value=''; $('depTx').value='';
-     setTimeout(()=>{ $('depositModal')?.classList.add('hidden'); if(statusEl) statusEl.classList.add('hidden'); }, 3000);
-     init(); 
-   } 
- }catch(e){ 
+     setTimeout(()=>{ $('depositModal')?.classList.add('hidden'); if(statusEl) statusEl.classList.add('hidden'); }, 2000);
+     await loadHistory(); init();
+   }
+ }catch(e){
    if(btn){ btn.innerText='Verify & Deposit USDT'; btn.disabled=false; }
    if(statusEl){ statusEl.innerHTML=`<p class="text-red-400">Failed: ${e.message}</p>`; }
-   alert('Failed: '+e.message); 
+   alert('Failed: '+e.message);
  }
 }
 
@@ -269,14 +250,8 @@ async function pollDepositStatus(depositId){
    try{
      let r=await fetch('/api/deposit/status/'+depositId);
      let j=await r.json();
-     if(j.status==='verified'){
-       clearInterval(interval);
-       alert(`✅ Deposit Verified! ${j.actual_amount} USDT added to balance!`);
-       init();
-     } else if(j.status==='failed'){
-       clearInterval(interval);
-       alert(`❌ Deposit verification failed: TX not valid or not to our address`);
-     }
+     if(j.status==='verified'){ clearInterval(interval); alert(`✅ Deposit Verified! ${j.actual_amount} USDT added!`); init(); loadHistory(); }
+     else if(j.status==='failed'){ clearInterval(interval); alert(`❌ Deposit verification failed`); loadHistory(); }
      if(tries>20) clearInterval(interval);
    }catch(e){}
  }, 3000);
@@ -286,7 +261,6 @@ async function submitWithdraw(){
  let amt=parseFloat($('wdAmount')?.value); let addr=$('wdAddr')?.value||'';
  if(!amt||amt<10){ alert('Min 10 USDT'); return; }
  if(!addr||addr.length<10){ alert('Enter valid address'); return; }
- if(!canWithdrawToday){ alert('Once per day only'); return; }
  let btn=$('wdBtn'); if(btn){ btn.innerText='Submitting...'; btn.disabled=true; }
  try{
    let r=await fetch('/api/withdraw/request/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,address:addr,network:wdNetwork})});
@@ -349,7 +323,8 @@ async function updateLivePricesOnly(){
 
 async function loadHistory(){
  try{
-  let r=await fetch('/api/history/'+userId); if(!r.ok) throw new Error('history');
+  let r=await fetch('/api/history/'+userId);
+  if(!r.ok) throw new Error('history '+r.status);
   let h=await r.json();
   let html='';
   (h.deposits||[]).forEach(d=>{
@@ -360,12 +335,16 @@ async function loadHistory(){
   (h.withdrawals||[]).forEach(w=>{ let sc=w.status=='approved'?'text-emerald-400':'text-yellow-400'; html+=`<div class='bg-white/5 p-3 rounded-lg flex justify-between items-center'><div class='flex items-center gap-2'><span class='w-6 h-6 bg-[#FFD60A] rounded-full flex items-center justify-center text-black text-[10px]'>₮</span> <span>Withdraw ${w.amount} USDT<br><span class='opacity-50 text-xs'>${w.created_at?w.created_at.slice(0,16):''}</span></div><span class='${sc} text-xs'>${w.status}</span></div>`; });
   if(!html) html='<p class="opacity-50">No history yet</p>';
   safeHTML('history', html);
- }catch(e){ safeHTML('history','<p class="opacity-50">No history yet</p>'); }
+ }catch(e){
+  console.error('loadHistory failed', e);
+  safeHTML('history','<p class="opacity-50">No history yet • '+e.message+'</p>');
+ }
 }
 
 async function loadReferral(){
  try{
-  let r=await fetch('/api/referral/'+userId); if(!r.ok) throw new Error('ref');
+  let r=await fetch('/api/referral/'+userId);
+  if(!r.ok) throw new Error('ref '+r.status);
   let d=await r.json();
   safeSet('refLink', d.ref_link);
   safeSet('directCount', d.direct_count);
@@ -381,10 +360,10 @@ async function loadReferral(){
     d.logs.forEach(log=>{ histHtml+=`<div class='bg-white/5 p-3 rounded-xl flex justify-between'><div><p class='font-bold'>From: ${log.from} • Level ${log.level}</p><p class='opacity-50'>Deposit $${log.deposit} • ${log.percent}% bonus</p></div><span class='text-emerald-400 font-bold'>+$${log.bonus.toFixed(2)}</span></div>`; });
   } else { histHtml='<p class="opacity-50">No earnings yet</p>'; }
   safeHTML('refHistory', histHtml);
- }catch(e){ console.error('referral failed', e); }
+ }catch(e){ console.error('referral failed', e); safeSet('refLink','Failed to load: '+e.message); }
 }
 function copyRef(){ let el=$('refLink'); if(el){ navigator.clipboard.writeText(el.innerText); alert('Copied! Share to earn 7% L1 + 1% L2-L10'); } }
-function shareRef(){ let el=$('refLink'); if(el && navigator.share){ navigator.share({title:'PT_AI Trading', text:'Join PT_AI Trading and earn 7.6% to 14.9% daily!', url: el.innerText}); } else { copyRef(); } }
+function shareRef(){ let el=$('refLink'); if(el && navigator.share){ navigator.share({title:'PT_AI Trading', text:'Join PT_AI Trading', url: el.innerText}); } else { copyRef(); } }
 
 init();
 setInterval(updateLivePricesOnly, 10000);
