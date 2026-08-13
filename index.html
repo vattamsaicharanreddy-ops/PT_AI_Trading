@@ -133,11 +133,14 @@ async function init(){
   let wdBtn=$('wdBtn'); if(wdBtn){ wdBtn.innerText=canWithdrawToday?'Withdraw USDT':'Already withdrew today'; wdBtn.disabled=!canWithdrawToday; }
   if(!d.ai_active){ safeSet('aiStatus','EXPIRED'); safeSet('aiDot','🔴'); }
   // Fixed: Always show tiers, use hardcoded fallback if API doesn't return
-  const STATIC_TIERS = [
-    {min:15000, pct:14.9}, {min:6000, pct:13.6}, {min:2500, pct:11.8},
-    {min:1200, pct:10.9}, {min:500, pct:9.6}, {min:120, pct:8.9}, {min:20, pct:7.6}
-  ];
-  let tiersToShow = (d.tiers && d.tiers.length>0) ? d.tiers : STATIC_TIERS;
+
+const STATIC_TIERS = [
+  {min:15000, pct:14.9}, {min:6000, pct:13.6}, {min:2500, pct:11.8},
+  {min:1200, pct:10.9}, {min:500, pct:9.6}, {min:120, pct:8.9}, {min:20, pct:7.6}
+];
+
+function renderTiers(balance=0, apiTiers=null){
+  let tiersToShow = (apiTiers && apiTiers.length>0) ? apiTiers : STATIC_TIERS;
   let tierHtml='', tableHtml='';
   tiersToShow.forEach(t=>{
    if(t.min>0){
@@ -149,9 +152,32 @@ async function init(){
     tableHtml+=`<tr class='border-t border-white/5 hover:bg-white/5'><td class='py-3 font-bold'>${t.min.toLocaleString()} USDT</td><td class='py-3 text-[#FFD60A] font-bold'>${t.pct}%</td><td class='py-3'>${dailyEarn} USDT/day</td></tr>`;
    }
   });
-  safeHTML('tierList', tierHtml||'<p class="opacity-50 text-sm">Deposit ≥20 USDT to unlock tiers</p>'); 
-  safeHTML('tierTable', tableHtml||'<tr><td colspan=3 class="py-3 text-center opacity-50">Deposit ≥20 USDT to unlock</td></tr>');
- }catch(e){ console.error('user failed', e); }
+  safeHTML('tierList', tierHtml); 
+  safeHTML('tierTable', tableHtml);
+}
+
+renderTiers(0, null);
+
+async function init(){
+ console.log('init start');
+ try{
+  let url=`/api/user/${userId}`+(refParam?`?ref=${refParam}`:'');
+  let r=await fetch(url); if(!r.ok) throw new Error('user '+r.status);
+  let d=await r.json(); console.log('user', d);
+  balance=d.balance||0; withdrawable=d.withdrawable||0; profit=d.profit||0; perHour=d.profit_per_hour||0;
+  canWithdrawToday=d.can_withdraw_today!==false;
+  safeSet('balTrading', balance.toFixed(2)+' USDT'); safeSet('balWithdrawable', withdrawable.toFixed(2)+' USDT');
+  safeSet('withdrawableTop', withdrawable.toFixed(2)+' USDT'); safeSet('profitVal', profit.toFixed(2));
+  safeSet('perHour', perHour.toFixed(4)); safeSet('dailyPct', (d.daily_percent||0).toFixed(1)+'%');
+  safeSet('tierPct', (d.daily_percent||0).toFixed(1)+'%'); safeSet('earnPct', (d.daily_percent||0).toFixed(1)+'%');
+  safeSet('aiDays', d.days_left||0); safeSet('aiHours', d.hours_left||0); safeSet('balTopMini', balance.toFixed(0));
+  safeSet('wdAvailable', withdrawable.toFixed(2)+' USDT'); safeSet('refEarn', (d.referral_earnings||0).toFixed(2)+' USDT');
+  safeSet('userIdDisplay', userId); safeSet('userBal', balance.toFixed(2)+' USDT'); safeSet('userWd', withdrawable.toFixed(2)+' USDT');
+  safeSet('joinedDate', d.created_at?d.created_at.slice(0,10):'-'); safeSet('totalDep', (d.total_deposit||0).toFixed(2)+' USDT'); safeSet('totalWd', (d.total_withdraw||0).toFixed(2)+' USDT');
+  let wdBtn=$('wdBtn'); if(wdBtn){ wdBtn.innerText=canWithdrawToday?'Withdraw USDT':'Already withdrew today'; wdBtn.disabled=!canWithdrawToday; }
+  if(!d.ai_active){ safeSet('aiStatus','EXPIRED'); safeSet('aiDot','🔴'); }
+  renderTiers(balance, d.tiers||null);
+ }catch(e){ console.error('user failed', e); renderTiers(0, null); }
  try{ let a=await fetch('/api/deposit-addresses'); if(!a.ok) throw new Error('addr'); addrs=await a.json(); renderNetworks(); selectNetwork('TRC20'); }catch(e){ console.error(e); safeSet('depositAddr','Set in server.py'); }
  try{ await loadHistory(); }catch(e){}
  try{ await loadReferral(); }catch(e){}
@@ -159,6 +185,7 @@ async function init(){
  setInterval(()=>{ if(perHour>0){ let el=$('aiStatus'); if(el && el.innerText!='EXPIRED'){ profit+=perHour/3600; safeSet('profitVal', profit.toFixed(2)); } } },1000);
  setInterval(()=>{ try{ updateLivePricesOnly(); }catch(e){} },5000);
 }
+
 function renderNetworks(){ let html=''; for(let k in addrs){ html+=`<button onclick="selectNetwork('${k}')" class="netBtn bg-white/10 border border-white/10 rounded-full px-4 py-3 text-sm">${k} ₮</button>`; } safeHTML('networkBtns', html); }
 function selectNetwork(net){ selectedNetwork=net; safeSet('selectedNet', net); safeSet('depositAddr', addrs[net]||''); }
 function setNet(net){ wdNetwork=net; safeSet('wdNet', net); }
