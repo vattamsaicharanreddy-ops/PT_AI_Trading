@@ -366,8 +366,19 @@ def api_user(user_id: int, ref: int = None, username: str = None):
         total_wd_calc = conn.execute("SELECT COALESCE(SUM(amount),0) FROM withdrawals WHERE user_id=? AND status='approved'", (user_id,)).fetchone()[0] or 0
     except: total_wd_calc = 0
     # Use calculated values, fallback to row columns
-    total_deposit = total_dep_calc if total_dep_calc > 0 else (row[10] if len(row)>10 and row[10] is not None else 0)
-    total_withdraw = total_wd_calc if total_wd_calc > 0 else (row[11] if len(row)>11 and row[11] is not None else 0)
+    # FIXED: Ensure numbers, handle None, and only count verified/approved
+    try: total_deposit = float(total_dep_calc) if total_dep_calc else float(row[10] if len(row)>10 and row[10] is not None else 0)
+    except: total_deposit = 0.0
+    try: total_withdraw = float(total_wd_calc) if total_wd_calc else float(row[11] if len(row)>11 and row[11] is not None else 0)
+    except: total_withdraw = 0.0
+    # Ensure total_withdraw never equals total_deposit unless actually withdrawn - fix bug where both show same
+    if total_withdraw > 0 and total_deposit == total_withdraw:
+        # Double check from DB if this is real withdrawal or bug
+        try:
+            real_wd_count = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE user_id=? AND status='approved'", (user_id,)).fetchone()[0] or 0
+            if real_wd_count == 0:
+                total_withdraw = 0.0
+        except: pass
     return {"user_id": row[0], "username": row[1] or f"user_{row[0]}", "balance": row[2], "withdrawable": row[3], "profit": row[4], "profit_per_hour": row[5], "daily_percent": row[6], "ai_end": row[7], "days_left": days_left, "hours_left": hours_left, "ai_active": active, "total_deposit": total_deposit, "total_withdraw": total_withdraw, "tiers": [{"min": t[0], "pct": t[1]} for t in TIERS], "referral_earnings": row[14] if len(row)>14 and row[14] else 0, "created_at": created_str, "can_withdraw_today": can_withdraw_today, "referred_by": row[13] if len(row)>13 else None, "direct_referrals": direct_count, "is_banned": row[17] if len(row)>17 and row[17] else 0}
 
 

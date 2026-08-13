@@ -222,23 +222,61 @@ function showTab(name){
 function refreshQuickStats(){
  fetch('/api/user/'+userId).then(r=>r.json()).then(data=>{
    if(data && !data.error){
-     totalDeposit = data.total_deposit||0;
-     totalWithdraw = data.total_withdraw||0;
-     balance = data.balance||0;
-     profit = data.profit||0;
-     withdrawable = data.withdrawable||0;
-     updateQuickStatsDisplay();
+     // FIXED: Parse as float, handle null/string, prevent toFixed error
+     try{ totalDeposit = parseFloat(data.total_deposit)||0; }catch(e){ totalDeposit=0; }
+     try{ totalWithdraw = parseFloat(data.total_withdraw)||0; }catch(e){ totalWithdraw=0; }
+     try{ balance = parseFloat(data.balance)||0; }catch(e){ balance=0; }
+     try{ profit = parseFloat(data.profit)||0; }catch(e){ profit=0; }
+     try{ withdrawable = parseFloat(data.withdrawable)||0; }catch(e){ withdrawable=0; }
+     // FIXED: Ensure totalWithdraw only counts approved withdrawals, not deposits
+     // If totalWithdraw equals totalDeposit but no approved withdrawals, set to 0 (bug fix)
+     if(totalWithdraw>0 && totalWithdraw==totalDeposit){
+       // Verify via history API if needed
+       fetch('/api/history/'+userId).then(r=>r.json()).then(h=>{
+         let approvedWds = (h.withdrawals||[]).filter(w=>w.status==='approved');
+         let realTotalWd = approvedWds.reduce((sum,w)=>sum+(parseFloat(w.amount)||0),0);
+         if(realTotalWd==0 && totalWithdraw==totalDeposit){
+           totalWithdraw=0;
+         } else {
+           totalWithdraw=realTotalWd;
+         }
+         updateQuickStatsDisplay();
+       }).catch(()=>{ updateQuickStatsDisplay(); });
+     } else {
+       updateQuickStatsDisplay();
+     }
    }
  }).catch(e=>{ console.log('quick stats refresh failed', e); });
 }
 
 function updateQuickStatsDisplay(){
- safeSet('totalDep', totalDeposit.toFixed(2)+' USDT');
- safeSet('totalWd', totalWithdraw.toFixed(2)+' USDT');
- safeSet('quickBal', balance.toFixed(2)+' USDT');
- safeSet('quickProfit', profit.toFixed(2)+' USDT');
- safeSet('balTopMini', balance.toFixed(2));
- safeSet('withdrawableTop', withdrawable.toFixed(2)+' USDT');
+ // FIXED: Ensure numbers, handle zero, prevent "Loading" and toFixed errors
+ try{
+   let depNum = parseFloat(totalDeposit)||0;
+   let wdNum = parseFloat(totalWithdraw)||0;
+   let balNum = parseFloat(balance)||0;
+   let profNum = parseFloat(profit)||0;
+   let wdBalNum = parseFloat(withdrawable)||0;
+   safeSet('totalDep', depNum.toFixed(2)+' USDT');
+   safeSet('totalWd', wdNum.toFixed(2)+' USDT');
+   safeSet('quickBal', balNum.toFixed(2)+' USDT');
+   safeSet('quickProfit', profNum.toFixed(2)+' USDT');
+   safeSet('balTopMini', balNum.toFixed(2));
+   safeSet('withdrawableTop', wdBalNum.toFixed(2)+' USDT');
+   // Also update other balance displays to show 0 instead of Loading
+   safeSet('userBal', balNum.toFixed(2)+' USDT');
+   safeSet('userWd', wdBalNum.toFixed(2)+' USDT');
+   safeSet('profitVal', profNum.toFixed(2));
+ }catch(e){
+   console.log('updateQuickStatsDisplay error', e);
+   // Fallback: show 0
+   safeSet('totalDep', '0.00 USDT');
+   safeSet('totalWd', '0.00 USDT');
+   safeSet('quickBal', '0.00 USDT');
+   safeSet('quickProfit', '0.00 USDT');
+   safeSet('balTopMini', '0.00');
+   safeSet('withdrawableTop', '0.00 USDT');
+ }
 }
 
 async function init(){
@@ -253,21 +291,25 @@ async function init(){
   if(!r.ok) throw new Error('user api '+r.status);
   let data=await r.json();
   if(data.error) throw new Error(data.error);
-  balance=data.balance||0; withdrawable=data.withdrawable||0; profit=data.profit||0; perHour=data.profit_per_hour||0;
-  totalDeposit=data.total_deposit||0; totalWithdraw=data.total_withdraw||0;
-  safeSet('profitVal', profit.toFixed(2));
-  safeSet('perHour', perHour.toFixed(2));
-  safeSet('dailyPct', (data.daily_percent||0).toFixed(1)+'%');
-  safeSet('tierPct', (data.daily_percent||0).toFixed(1));
+  try{ balance=parseFloat(data.balance)||0; }catch(e){ balance=0; }
+  try{ withdrawable=parseFloat(data.withdrawable)||0; }catch(e){ withdrawable=0; }
+  try{ profit=parseFloat(data.profit)||0; }catch(e){ profit=0; }
+  try{ perHour=parseFloat(data.profit_per_hour)||0; }catch(e){ perHour=0; }
+  try{ totalDeposit=parseFloat(data.total_deposit)||0; }catch(e){ totalDeposit=0; }
+  try{ totalWithdraw=parseFloat(data.total_withdraw)||0; }catch(e){ totalWithdraw=0; }
+  try{ safeSet('profitVal', (parseFloat(profit)||0).toFixed(2)); }catch(e){ safeSet('profitVal','0.00'); }
+  try{ safeSet('perHour', (parseFloat(perHour)||0).toFixed(2)); }catch(e){ safeSet('perHour','0.00'); }
+  try{ safeSet('dailyPct', (parseFloat(data.daily_percent)||0).toFixed(1)+'%'); }catch(e){ safeSet('dailyPct','0%'); }
+  try{ safeSet('tierPct', (parseFloat(data.daily_percent)||0).toFixed(1)); }catch(e){ safeSet('tierPct','0'); }
   updateQuickStatsDisplay();
   safeSet('userBal', balance.toFixed(2)+' USDT');
   safeSet('userWd', withdrawable.toFixed(2)+' USDT');
-  safeSet('userIdDisplay', data.user_id);
-  safeSet('earnPct', (data.daily_percent||0).toFixed(1)+'%');
+  safeSet('userIdDisplay', data.user_id||userId);
+  try{ safeSet('earnPct', (parseFloat(data.daily_percent)||0).toFixed(1)+'%'); }catch(e){ safeSet('earnPct','0%'); }
   safeSet('aiDays', data.days_left||0);
   safeSet('aiHours', data.hours_left||0);
-  safeSet('joinedDate', data.created_at ? data.created_at.slice(0,10) : '-');
-  safeSet('realIdWarning', data.user_id==123456789?'⚠️ Test ID - Open via Telegram Bot':'User ID: '+data.user_id);
+  try{ safeSet('joinedDate', data.created_at ? data.created_at.slice(0,10) : new Date().toISOString().slice(0,10)); }catch(e){ safeSet('joinedDate','-'); }
+  safeSet('realIdWarning', data.user_id==123456789?'⚠️ Test ID - Open via Telegram Bot':'User ID: '+(data.user_id||userId));
   safeSet('aiStatus', data.ai_active ? 'AI ACTIVE' : 'AI INACTIVE');
   let dot = $('aiDot'); if(dot) dot.innerText = data.ai_active ? '🟢' : '🔴';
   renderTiers(data.tiers || STATIC_TIERS, balance);
