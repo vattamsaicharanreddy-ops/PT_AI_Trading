@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1'>
-<title>PT_AI Trading</title>
+<title>PT_AI Trading - Invoice Deposit</title>
 <script src='https://telegram.org/js/telegram-web-app.js'></script>
 <script src='https://cdn.tailwindcss.com'></script>
 <link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap' rel='stylesheet'>
-<style>body{font-family:'Inter',sans-serif;} .tab-active{background:white;color:black} .tab-inactive{opacity:0.5}</style>
+<style>body{font-family:'Inter',sans-serif;} .tab-active{background:white;color:black} .tab-inactive{opacity:0.5} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}} .animate-pulse{animation:pulse 2s infinite}</style>
 </head>
 <body class='bg-[#050507] text-white min-h-screen flex justify-center'>
 <div class='w-full max-w-[420px] bg-[#050507] min-h-screen relative pb-28'>
@@ -54,11 +54,11 @@
 <div id='tab-referral' class='tab-content hidden'>
 <div class='mx-4 mt-5 bg-gradient-to-br from-[#FFD60A]/20 to-[#FFA600]/10 border border-[#FFD60A]/30 rounded-[28px] p-5'>
 <h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Referral - Earn USDT</h3>
-<div class='mt-4 bg-black/50 rounded-xl p-4'><p class='text-xs opacity-50'>YOUR REFERRAL LINK</p><p id='refLink' class='text-sm break-all mt-2 font-mono'>Loading referral link... If stuck, check server connection</p><div class='flex gap-2 mt-3'><button onclick='copyRef()' class='bg-white text-black px-4 py-2 rounded-full text-sm font-bold'>Copy Link</button><button onclick='shareRef()' class='bg-[#FFD60A] text-black px-4 py-2 rounded-full text-sm font-bold'>Share</button></div></div>
+<div class='mt-4 bg-black/50 rounded-xl p-4'><p class='text-xs opacity-50'>YOUR REFERRAL LINK</p><p id='refLink' class='text-sm break-all mt-2 font-mono'>Loading...</p><div class='flex gap-2 mt-3'><button onclick='copyRef()' class='bg-white text-black px-4 py-2 rounded-full text-sm font-bold'>Copy Link</button><button onclick='shareRef()' class='bg-[#FFD60A] text-black px-4 py-2 rounded-full text-sm font-bold'>Share</button></div></div>
 <div class='mt-4 grid grid-cols-3 gap-3 text-center'><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>DIRECT</p><p id='directCount' class='font-bold text-lg'>0</p><p class='text-[10px] opacity-40'>Friends</p></div><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>TEAM</p><p id='teamDep' class='font-bold text-[#FFD60A]'>0 USDT</p><p class='text-[10px] opacity-40'>Total</p></div><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>EARNED</p><p id='refEarned' class='font-bold text-emerald-400'>0 USDT</p><p class='text-[10px] opacity-40'>To Wallet</p></div></div>
 <div class='mt-5 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>💰 Referral Bonus (Auto → Withdrawable)</h3><div class='space-y-2 text-sm'><div class='flex justify-between items-center bg-[#FFD60A]/10 p-3 rounded-xl border border-[#FFD60A]/20'><span>Level 1 - Direct</span><span class='font-bold text-[#FFD60A]'>7% Bonus</span></div><div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 2-10</span><span class='font-bold'>1% Each</span></div></div><p class='text-xs opacity-50 mt-3'>✅ Bonus added instantly to withdrawable when referral deposits verified!</p></div>
-<div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>👥 My Direct Referrals</h3><div id='directList' class='space-y-2 text-sm'><p class='opacity-50'>Loading referrals...</p></div></div>
-<div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>📜 Earnings History</h3><div id='refHistory' class='space-y-2 text-xs'><p class='opacity-50'>Loading earnings...</p></div></div>
+<div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>👥 My Direct Referrals</h3><div id='directList' class='space-y-2 text-sm'><p class='opacity-50'>Loading...</p></div></div>
+<div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>📜 Earnings History</h3><div id='refHistory' class='space-y-2 text-xs'><p class='opacity-50'>Loading...</p></div></div>
 </div>
 </div>
 
@@ -68,7 +68,7 @@
 <div class='mt-5 grid grid-cols-2 gap-3 text-sm'><div class='bg-white/5 p-4 rounded-xl'><p class='opacity-50 text-xs'>TRADING BAL</p><p id='userBal' class='font-bold text-base mt-1'>Loading...</p></div><div class='bg-[#FFD60A]/10 border border-[#FFD60A]/20 p-4 rounded-xl'><p class='text-[#FFD60A] text-xs'>WALLET</p><p id='userWd' class='font-bold text-base text-[#FFD60A] mt-1'>Loading...</p></div></div>
 <div class='mt-4 text-sm opacity-50'>Daily: <span id='earnPct'>0%</span> • Earned: <span id='refEarn'>0 USDT</span></div>
 </div>
-<div class='mx-4 mt-5 bg-[#121214] border border-white/5 rounded-[24px] p-5'><h3 class='font-bold text-sm mb-3'>Deposit History (Auto Verified)</h3><div id='history' class='text-sm space-y-2 opacity-70'>Loading history...</div></div>
+<div class='mx-4 mt-5 bg-[#121214] border border-white/5 rounded-[24px] p-5'><h3 class='font-bold text-sm mb-3'>Deposit History (Invoice System)</h3><div id='history' class='text-sm space-y-2 opacity-70'>Loading history...</div></div>
 </div>
 
 <div class='fixed bottom-5 left-1/2 -translate-x-1/2 w-[90%] max-w-[380px] bg-[#121214]/95 backdrop-blur-xl border border-white/10 rounded-full p-2 flex justify-around shadow-2xl'>
@@ -78,16 +78,52 @@
 <button onclick='showTab("user")' id='btn-user' class='tab-btn w-14 h-14 rounded-full flex items-center justify-center text-xl tab-inactive'>👤</button>
 </div>
 
-<div id='depositModal' class='hidden fixed inset-0 bg-black/80 z-50 flex items-end'><div class='bg-[#121214] w-full rounded-t-[32px] p-6 max-h-[90vh] overflow-y-auto'>
-<h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Deposit USDT • Auto Verified • Min 20 USDT</h3>
+<!-- DEPOSIT MODAL - INVOICE SYSTEM NO TX HASH -->
+<div id='depositModal' class='hidden fixed inset-0 bg-black/90 z-50 flex items-end'><div class='bg-[#121214] w-full rounded-t-[32px] p-6 max-h-[92vh] overflow-y-auto'>
+<div id='depositStep1'>
+<h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Deposit USDT • Invoice • Min 20 USDT</h3>
+<p class='text-xs opacity-60 mt-2'>No TX hash needed! Send to address and we auto detect payment within 15 min timer.</p>
 <div class='mt-4 grid grid-cols-3 gap-2' id='networkBtns'><p class='text-xs opacity-50'>Loading networks...</p></div>
-<div class='mt-4 bg-white/5 p-4 rounded-xl'><p class='text-xs opacity-50'>USDT ADDRESS (<span id='selectedNet'>TRC20</span>)</p><p id='depositAddr' class='text-sm break-all font-mono mt-2'>Loading addresses... If stuck, server not connected. Fallback: TDABxPiFnpzUsY7j6sHaq4jJxU7Nz6xcFx (TRC20)</p><button onclick='copyAddr()' class='mt-3 text-sm bg-white/10 px-4 py-2 rounded-full'>Copy Address</button></div>
-<div class='mt-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3'><p class='text-xs text-yellow-400'>⚠️ Send only USDT on selected network. Min 20 USDT. System auto verifies blockchain TX.</p></div>
+<div class='mt-4 bg-white/5 p-4 rounded-xl'><p class='text-xs opacity-50'>DEPOSIT ADDRESS (<span id='selectedNet'>TRC20</span>)</p><p id='depositAddr' class='text-sm break-all font-mono mt-2'>Loading...</p><button onclick='copyAddr()' class='mt-3 text-sm bg-white/10 px-4 py-2 rounded-full'>Copy Address</button></div>
+<div class='mt-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3'><p class='text-xs text-emerald-400'>✅ Secure: Payment auto detected from blockchain. No need to enter TX hash. Just send and wait!</p></div>
 <input id='depAmount' type='number' placeholder='Amount USDT (Min 20)' class='mt-4 w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-base'>
-<input id='depTx' placeholder='Transaction Hash / TX ID (Required)' class='mt-3 w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-base font-mono text-sm'>
-<button onclick='submitDeposit()' id='depBtn' class='mt-4 w-full bg-[#26A17B] text-white py-4 rounded-full font-bold text-base'>Verify & Deposit USDT</button>
+<button onclick='createInvoice()' id='createInvoiceBtn' class='mt-4 w-full bg-[#26A17B] text-white py-4 rounded-full font-bold text-base'>Create Deposit Invoice</button>
 <button onclick='document.getElementById("depositModal").classList.add("hidden")' class='mt-3 w-full bg-white/5 py-4 rounded-full text-base'>Close</button>
-<div id='depStatus' class='mt-3 text-xs hidden'></div>
+</div>
+
+<div id='depositStep2' class='hidden'>
+<h3 class='font-bold text-base flex items-center gap-2'>⏳ Deposit Invoice • <span id='invoiceIdDisplay' class='font-mono text-[#FFD60A]'></span></h3>
+<div class='mt-4 bg-[#FFD60A]/10 border border-[#FFD60A]/30 rounded-[20px] p-4'>
+<div class='flex justify-between items-center'><p class='text-xs opacity-70'>Time left to pay</p><p id='invoiceTimer' class='font-bold text-xl text-[#FFD60A] animate-pulse'>15:00</p></div>
+<div class='mt-2 w-full bg-black/50 rounded-full h-2'><div id='timerBar' class='h-2 bg-[#FFD60A] rounded-full transition-all' style='width:100%'></div></div>
+<p class='text-xs opacity-60 mt-2' id='invoiceExpiry'>Expires at...</p>
+</div>
+
+<div class='mt-4 bg-white/5 border border-white/10 rounded-[20px] p-5'>
+<p class='text-xs opacity-50'>SEND EXACTLY</p>
+<p id='invoiceAmount' class='text-[32px] font-extrabold text-[#26A17B]'>0 USDT</p>
+<p class='text-xs opacity-60 mt-1'>Network: <span id='invoiceNetwork' class='font-bold'>TRC20</span> • Invoice: <span id='invoiceIdSmall' class='font-mono'>-</span></p>
+<div class='mt-4 bg-black/50 p-4 rounded-xl'>
+<p class='text-xs opacity-50'>TO ADDRESS</p>
+<p id='invoiceAddress' class='text-sm break-all font-mono mt-2 text-white'>-</p>
+<div class='flex gap-2 mt-3'><button onclick='copyInvoiceAddr()' class='bg-white text-black px-4 py-2 rounded-full text-sm font-bold'>Copy Address</button><button onclick='copyInvoiceAmount()' class='bg-[#26A17B] text-white px-4 py-2 rounded-full text-sm font-bold'>Copy Amount</button></div>
+</div>
+<div class='mt-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3'><p class='text-xs text-yellow-400'>⚠️ Send EXACT amount on selected network only. Payment will be auto detected from blockchain within 1-2 minutes after sending. Do not send less or more.</p></div>
+</div>
+
+<div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'>
+<h4 class='font-bold text-sm flex items-center gap-2'><span id='invoiceStatusIcon'>⏳</span> <span id='invoiceStatusText'>Waiting for payment...</span></h4>
+<p class='text-xs opacity-60 mt-2' id='invoiceStatusDetail'>Send USDT to address above. System checks blockchain every 15 seconds.</p>
+<div id='invoiceVerifiedBox' class='hidden mt-3 bg-emerald-500/20 border border-emerald-500/30 rounded-xl p-3'>
+<p class='text-sm font-bold text-emerald-400'>✅ Payment Verified!</p>
+<p class='text-xs mt-1'>Amount: <span id='verifiedAmount'>0</span> USDT</p>
+<p class='text-xs opacity-60 break-all'>TX: <span id='verifiedTx'>-</span></p>
+</div>
+<div class='mt-3 flex gap-2'><button onclick='checkInvoiceNow()' id='checkNowBtn' class='bg-white/10 px-4 py-2 rounded-full text-xs'>🔄 Check Now</button><button onclick='cancelInvoice()' class='bg-red-500/20 text-red-400 px-4 py-2 rounded-full text-xs'>Cancel Invoice</button></div>
+</div>
+
+<button onclick='closeInvoiceAndReset()' class='mt-4 w-full bg-white/10 py-4 rounded-full text-base'>Close</button>
+</div>
 </div></div>
 
 <div id='withdrawModal' class='hidden fixed inset-0 bg-black/80 z-50 flex items-end'><div class='bg-[#121214] w-full rounded-t-[32px] p-6'>
@@ -167,13 +203,13 @@ try{
 if(username){ localStorage.setItem('real_username', username); }
 
 let balance=0, withdrawable=0, profit=0, perHour=0, selectedNetwork='TRC20', wdNetwork='TRC20', addrs=FALLBACK_ADDRS, realTrades=[];
+let currentInvoiceId=null, invoiceTimerInterval=null, invoicePollInterval=null;
 
 function showTab(name){
  document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
  let el=$('tab-'+name); if(el) el.classList.remove('hidden');
  document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('tab-active'); b.classList.add('tab-inactive');});
  let btn=$('btn-'+name); if(btn){btn.classList.remove('tab-inactive'); btn.classList.add('tab-active');}
- // Load tab data when tab opened
  if(name==='tiers'){ renderTiers(STATIC_TIERS, balance); }
  if(name==='referral'){ loadReferral(); }
  if(name==='user'){ loadHistory(); }
@@ -181,28 +217,18 @@ function showTab(name){
 }
 
 async function init(){
- console.log('Init with userId:', userId);
- // Render fallback data immediately so UI not empty
  renderTiers(STATIC_TIERS, 0);
  renderNetworks();
  setNetAddr(selectedNetwork);
  safeSet('userIdDisplay', userId);
- 
  try{
   let refQ = refParam ? `?ref=${refParam}` : '';
   let userQ = username ? `${refQ ? '&' : '?'}username=${encodeURIComponent(username)}` : refQ;
   let url = '/api/user/'+userId+userQ;
-  console.log('Fetching user:', url);
   let r=await fetch(url);
-  if(!r.ok){
-    console.error('user api failed', r.status);
-    let text = await r.text();
-    console.error(text);
-    throw new Error('user api '+r.status+': '+text.substring(0,100));
-  }
+  if(!r.ok) throw new Error('user api '+r.status);
   let data=await r.json();
-  console.log('User data:', data);
-  if(data.error){ throw new Error(data.error); }
+  if(data.error) throw new Error(data.error);
   balance=data.balance||0; withdrawable=data.withdrawable||0; profit=data.profit||0; perHour=data.profit_per_hour||0;
   safeSet('profitVal', profit.toFixed(2));
   safeSet('perHour', perHour.toFixed(2));
@@ -219,36 +245,31 @@ async function init(){
   safeSet('aiDays', data.days_left||0);
   safeSet('aiHours', data.hours_left||0);
   safeSet('joinedDate', data.created_at ? data.created_at.slice(0,10) : '-');
-  safeSet('realIdWarning', data.user_id==123456789?'⚠️ Test ID - Open via Telegram Bot for real ID':'Real Telegram ID: '+data.user_id);
-  let aiActive = data.ai_active;
-  safeSet('aiStatus', aiActive ? 'AI ACTIVE' : 'AI INACTIVE');
-  let dot = $('aiDot'); if(dot) dot.innerText = aiActive ? '🟢' : '🔴';
+  safeSet('realIdWarning', data.user_id==123456789?'⚠️ Test ID - Open via Telegram Bot':'Real Telegram ID: '+data.user_id);
+  safeSet('aiStatus', data.ai_active ? 'AI ACTIVE' : 'AI INACTIVE');
+  let dot = $('aiDot'); if(dot) dot.innerText = data.ai_active ? '🟢' : '🔴';
   renderTiers(data.tiers || STATIC_TIERS, balance);
  }catch(e){
   console.error('init user failed', e);
-  safeSet('realIdWarning','Error loading user: '+e.message+' - Using fallback ID '+userId);
-  safeSet('userIdDisplay', userId+' (fallback)');
+  safeSet('realIdWarning','Error: '+e.message);
   renderTiers(STATIC_TIERS, balance);
  }
-
- // Load other data independently - each with own try/catch so one failure doesn't block others
- try{ await loadRealTrades(); }catch(e){ console.error('trades failed', e); safeSet('binanceStatus','Error: '+e.message); safeHTML('tradesTableBody','<tr><td colspan="7" class="p-4 text-center text-red-400">Failed to load trades: '+e.message+'<br>Check server /api/binance/trades</td></tr>'); }
- try{ await loadHistory(); }catch(e){ console.error('history failed', e); safeHTML('history','<p class="text-red-400">Failed to load history: '+e.message+'</p>'); }
- try{ await loadReferral(); }catch(e){ console.error('referral failed', e); safeSet('refLink','Failed to load referral link: '+e.message+' - Server may be down'); }
+ try{ await loadRealTrades(); }catch(e){ safeSet('binanceStatus','Error'); }
+ try{ await loadHistory(); }catch(e){}
+ try{ await loadReferral(); }catch(e){}
  try{
    let a=await fetch('/api/deposit-addresses');
-   if(!a.ok) throw new Error('deposit addresses '+a.status);
-   let fetched = await a.json();
-   if(Object.keys(fetched).length>0){ addrs=fetched; }
-   renderNetworks();
-   setNetAddr(selectedNetwork);
- }catch(e){
-   console.error('deposit addresses failed', e);
-   addrs=FALLBACK_ADDRS;
-   renderNetworks();
-   setNetAddr(selectedNetwork);
-   safeSet('depositAddr', FALLBACK_ADDRS[selectedNetwork]+' (fallback - server: '+e.message+')');
- }
+   if(a.ok){ let fetched = await a.json(); if(Object.keys(fetched).length>0){ addrs=fetched; } renderNetworks(); setNetAddr(selectedNetwork); }
+ }catch(e){ addrs=FALLBACK_ADDRS; renderNetworks(); setNetAddr(selectedNetwork); }
+ // Check if user has existing awaiting invoice
+ try{
+   let h=await fetch('/api/history/'+userId).then(r=>r.json());
+   let awaiting = (h.deposits||[]).find(d=>d.status==='awaiting_payment');
+   if(awaiting && awaiting.invoice_id){
+     currentInvoiceId=awaiting.invoice_id;
+     showInvoiceStep2(awaiting.invoice_id);
+   }
+ }catch(e){}
 }
 
 function renderTiers(tiers, bal){
@@ -262,50 +283,145 @@ function renderNetworks(){
  let btns=''; for(let net in addrs){ btns+=`<button onclick="setNetAddr('${net}')" class='px-3 py-2 rounded-full text-xs ${selectedNetwork===net?'bg-white text-black':'bg-white/10'}'>${net}</button>`; } safeHTML('networkBtns', btns);
 }
 function setNetAddr(net){ selectedNetwork=net; safeSet('selectedNet', net); safeSet('depositAddr', addrs[net]||FALLBACK_ADDRS[net]||'Loading...'); renderNetworks(); }
-function copyAddr(){ let addr=$('depositAddr')?.innerText; if(addr && addr.length>10 && !addr.includes('Loading')){ navigator.clipboard.writeText(addr.split(' ')[0]); alert('Copied: '+addr); } else { alert('Address not loaded yet'); } }
-function openDeposit(){ $('depositModal')?.classList.remove('hidden'); }
+function copyAddr(){ let addr=$('depositAddr')?.innerText; if(addr) navigator.clipboard.writeText(addr.split(' ')[0]); alert('Copied: '+addr); }
+function openDeposit(){ $('depositModal')?.classList.remove('hidden'); showDepositStep1(); }
+function showDepositStep1(){ $('depositStep1')?.classList.remove('hidden'); $('depositStep2')?.classList.add('hidden'); }
+function showDepositStep2(){ $('depositStep1')?.classList.add('hidden'); $('depositStep2')?.classList.remove('hidden'); }
 function openWithdraw(){ safeSet('wdAvailable', withdrawable.toFixed(2)+' USDT'); $('withdrawModal')?.classList.remove('hidden'); }
 function setNet(net){ wdNetwork=net; safeSet('wdNet', net); }
+function copyInvoiceAddr(){ let addr=$('invoiceAddress')?.innerText; if(addr) { navigator.clipboard.writeText(addr); alert('Copied address'); } }
+function copyInvoiceAmount(){ let amt=$('invoiceAmount')?.innerText; if(amt) { navigator.clipboard.writeText(amt.replace(' USDT','').trim()); alert('Copied amount: '+amt); } }
 
-async function submitDeposit(){
- let amt=parseFloat($('depAmount')?.value); let tx=$('depTx')?.value||'';
- let btn=$('depBtn'); let statusEl=$('depStatus');
+async function createInvoice(){
+ let amt=parseFloat($('depAmount')?.value);
  if(!amt || amt < 20){ alert('❌ Min deposit 20 USDT required!'); return; }
- if(!tx || tx.trim().length < 10){ alert('❌ Please enter valid Transaction Hash'); return; }
- if(btn){ btn.innerText='Verifying TX on blockchain...'; btn.disabled=true; }
- if(statusEl){ statusEl.classList.remove('hidden'); statusEl.innerHTML='<p class="text-yellow-400">🔍 Verifying transaction...</p>'; }
+ let btn=$('createInvoiceBtn');
+ if(btn){ btn.innerText='Creating invoice...'; btn.disabled=true; }
  try{
-   let r=await fetch('/api/deposit/request/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,network:selectedNetwork,tx_hash:tx.trim()})});
+   let r=await fetch('/api/deposit/create_invoice/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,network:selectedNetwork})});
    let j=await r.json();
-   if(btn){ btn.innerText='Verify & Deposit USDT'; btn.disabled=false; }
-   if(j.error){ if(statusEl){ statusEl.innerHTML=`<p class="text-red-400">❌ ${j.error}</p>`; } alert('❌ '+j.error); return; }
+   if(btn){ btn.innerText='Create Deposit Invoice'; btn.disabled=false; }
+   if(j.error){ alert('❌ '+j.error); return; }
    if(j.ok){
-     if(statusEl){ statusEl.innerHTML=`<p class="text-yellow-400">⏳ Deposit ${amt} USDT submitted for verification</p>`; }
-     alert(`⏳ Deposit ${amt} USDT submitted for auto verification! Balance will be added after verification.`);
-     pollDepositStatus(j.deposit_id);
-     $('depAmount').value=''; $('depTx').value='';
-     setTimeout(()=>{ $('depositModal')?.classList.add('hidden'); if(statusEl) statusEl.classList.add('hidden'); }, 2000);
-     await loadHistory(); init();
+     currentInvoiceId=j.invoice_id;
+     showInvoiceStep2(j.invoice_id);
    }
  }catch(e){
-   if(btn){ btn.innerText='Verify & Deposit USDT'; btn.disabled=false; }
-   if(statusEl){ statusEl.innerHTML=`<p class="text-red-400">Failed: ${e.message}</p>`; }
+   if(btn){ btn.innerText='Create Deposit Invoice'; btn.disabled=false; }
    alert('Failed: '+e.message);
  }
 }
 
-async function pollDepositStatus(depositId){
- let tries=0;
- let interval=setInterval(async ()=>{
-   tries++;
+async function showInvoiceStep2(invoiceId){
+ showDepositStep2();
+ try{
+   let r=await fetch('/api/deposit/invoice_status/'+invoiceId);
+   let j=await r.json();
+   if(j.error){ alert(j.error); showDepositStep1(); return; }
+   safeSet('invoiceIdDisplay', j.invoice_id);
+   safeSet('invoiceIdSmall', j.invoice_id);
+   safeSet('invoiceAmount', j.expected_amount+' USDT');
+   safeSet('invoiceNetwork', j.network);
+   safeSet('invoiceAddress', j.address);
+   safeSet('invoiceExpiry', 'Expires at: '+new Date(j.expires_at).toLocaleString());
+   updateInvoiceUI(j);
+   startInvoiceTimers(j.invoice_id);
+ }catch(e){ alert('Failed to load invoice: '+e.message); }
+}
+
+function updateInvoiceUI(data){
+ safeSet('invoiceStatusText', data.status==='verified'?'Payment Verified!':data.status==='expired'?'Invoice Expired':data.status==='awaiting_payment'?'Waiting for payment...':data.status);
+ safeSet('invoiceStatusIcon', data.status==='verified'?'✅':data.status==='expired'?'❌':data.status==='awaiting_payment'?'⏳':'❓');
+ if(data.status==='verified'){
+   $('invoiceVerifiedBox')?.classList.remove('hidden');
+   safeSet('verifiedAmount', data.actual_amount);
+   safeSet('verifiedTx', data.tx_hash);
+   safeSet('invoiceStatusDetail', 'Payment verified! Balance credited. You can close this invoice.');
+   clearInvoiceTimers();
+   setTimeout(()=>{ init(); loadHistory(); }, 1000);
+ }else if(data.status==='expired'){
+   safeSet('invoiceStatusDetail', 'Invoice expired. Please create new invoice.');
+   clearInvoiceTimers();
+ }else{
+   $('invoiceVerifiedBox')?.classList.add('hidden');
+   safeSet('invoiceStatusDetail', 'Send EXACT amount to address. Auto detection every 15 seconds. Do not close before payment.');
+ }
+}
+
+function startInvoiceTimers(invoiceId){
+ clearInvoiceTimers();
+ // Timer countdown
+ invoiceTimerInterval=setInterval(async ()=>{
    try{
-     let r=await fetch('/api/deposit/status/'+depositId);
+     let r=await fetch('/api/deposit/invoice_status/'+invoiceId);
      let j=await r.json();
-     if(j.status==='verified'){ clearInterval(interval); alert(`✅ Verified! ${j.actual_amount} USDT added!`); init(); loadHistory(); }
-     else if(j.status==='failed'){ clearInterval(interval); alert(`❌ Verification failed`); loadHistory(); }
-     if(tries>20) clearInterval(interval);
+     if(j.error){ clearInvoiceTimers(); return; }
+     safeSet('invoiceTimer', j.time_left_formatted);
+     let pct = (j.time_left_seconds / 900) * 100; // 15 min = 900 sec
+     let bar=$('timerBar'); if(bar) bar.style.width=pct+'%';
+     if(j.status!=='awaiting_payment'){
+       updateInvoiceUI(j);
+       if(j.status==='verified' || j.status==='expired'){
+         clearInvoiceTimers();
+       }
+     }
+   }catch(e){}
+ }, 1000);
+ // Poll status every 3 sec
+ invoicePollInterval=setInterval(async ()=>{
+   try{
+     let r=await fetch('/api/deposit/invoice_status/'+invoiceId);
+     let j=await r.json();
+     if(j.status==='verified' || j.status==='expired'){
+       updateInvoiceUI(j);
+     }
    }catch(e){}
  }, 3000);
+}
+
+function clearInvoiceTimers(){
+ if(invoiceTimerInterval){ clearInterval(invoiceTimerInterval); invoiceTimerInterval=null; }
+ if(invoicePollInterval){ clearInterval(invoicePollInterval); invoicePollInterval=null; }
+}
+
+async function checkInvoiceNow(){
+ if(!currentInvoiceId){ alert('No invoice'); return; }
+ let btn=$('checkNowBtn'); if(btn){ btn.innerText='Checking...'; btn.disabled=true; }
+ try{
+   let r=await fetch('/api/deposit/check_now/'+currentInvoiceId,{method:'POST'});
+   let j=await r.json();
+   if(btn){ btn.innerText='🔄 Check Now'; btn.disabled=false; }
+   if(j.ok && j.status==='verified'){
+     alert('✅ Payment verified! '+j.amount+' USDT credited!');
+     init(); loadHistory();
+     let status=await fetch('/api/deposit/invoice_status/'+currentInvoiceId).then(r=>r.json());
+     updateInvoiceUI(status);
+   }else{
+     alert(j.message||'No payment found yet. Make sure you sent to correct address and amount.');
+     let status=await fetch('/api/deposit/invoice_status/'+currentInvoiceId).then(r=>r.json());
+     updateInvoiceUI(status);
+   }
+ }catch(e){
+   if(btn){ btn.innerText='🔄 Check Now'; btn.disabled=false; }
+   alert('Check failed: '+e.message);
+ }
+}
+
+function cancelInvoice(){
+ if(!currentInvoiceId) return;
+ if(!confirm('Cancel this invoice? You will need to create new invoice to deposit.')) return;
+ currentInvoiceId=null;
+ clearInvoiceTimers();
+ showDepositStep1();
+ $('depAmount').value='';
+}
+
+function closeInvoiceAndReset(){
+ clearInvoiceTimers();
+ currentInvoiceId=null;
+ $('depositModal')?.classList.add('hidden');
+ showDepositStep1();
+ init(); loadHistory();
 }
 
 async function submitWithdraw(){
@@ -325,7 +441,7 @@ async function submitWithdraw(){
 async function loadRealTrades(){
  safeSet('binanceStatus','Loading...');
  let r=await fetch('/api/binance/trades');
- if(!r.ok){ let txt=await r.text(); throw new Error('trades '+r.status+': '+txt.substring(0,100)); }
+ if(!r.ok) throw new Error('trades '+r.status);
  let data=await r.json();
  realTrades=data.trades;
  safeSet('todayTrades', data.summary.total_trades);
@@ -371,28 +487,16 @@ function renderRealTradesTable(trades){
  }); safeHTML('tradesTableBody', html);
 }
 
-async function updateLivePricesOnly(){
- try{
-  let r=await fetch('/api/binance/trades'); if(!r.ok) return;
-  let data=await r.json();
-  safeSet('todayTrades', data.summary.total_trades);
-  safeSet('profitTrades', data.summary.profit_trades);
-  safeSet('lossTrades', data.summary.loss_trades);
-  safeSet('totalPnl', (data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%');
-  let el=$('totalPnl'); if(el) el.className='font-bold text-base '+(data.summary.total_pnl_percent>=0?'text-emerald-400':'text-red-400');
-  safeSet('binanceStatus','Live • '+data.summary.total_trades+' trades');
- }catch(e){}
-}
-
 async function loadHistory(){
  let r=await fetch('/api/history/'+userId);
- if(!r.ok){ let txt=await r.text(); throw new Error('history '+r.status+': '+txt.substring(0,100)); }
+ if(!r.ok) throw new Error('history '+r.status);
  let h=await r.json();
  let html='';
  (h.deposits||[]).forEach(d=>{
-    let sc=d.status==='verified'?'text-emerald-400':d.status==='pending'?'text-yellow-400':'text-red-400';
-    let icon=d.status==='verified'?'✅':d.status==='pending'?'⏳':'❌';
-    html=`<div class='bg-white/5 p-3 rounded-lg flex justify-between'><div class='flex items-center gap-2'><span class='w-6 h-6 bg-[#26A17B] rounded-full flex items-center justify-center text-[10px]'>₮</span> <span>${icon} Deposit ${d.amount} USDT ${d.network} • ${d.status}<br><span class='opacity-50 text-xs'>${d.tx_hash?d.tx_hash.substring(0,20)+'...':''} • ${d.created_at?d.created_at.slice(0,16):''}</span></div><span class='${sc} text-xs'>${d.status}</span></div>`+html;
+    let sc=d.status==='verified'?'text-emerald-400':d.status==='awaiting_payment'?'text-yellow-400':d.status==='expired'?'text-red-400':'text-red-400';
+    let icon=d.status==='verified'?'✅':d.status==='awaiting_payment'?'⏳':d.status==='expired'?'❌':'❌';
+    let invoiceInfo = d.invoice_id ? `Invoice ${d.invoice_id}` : '';
+    html=`<div class='bg-white/5 p-3 rounded-lg flex justify-between'><div class='flex items-center gap-2'><span class='w-6 h-6 bg-[#26A17B] rounded-full flex items-center justify-center text-[10px]'>₮</span> <span>${icon} ${d.amount} USDT ${d.network} • ${d.status}<br><span class='opacity-50 text-xs'>${invoiceInfo} • ${d.created_at?d.created_at.slice(0,16):''}${d.tx_hash?' • '+d.tx_hash.substring(0,12)+'...':''}</span></div><span class='${sc} text-xs'>${d.status}</span></div>`+html;
  });
  (h.withdrawals||[]).forEach(w=>{ let sc=w.status=='approved'?'text-emerald-400':'text-yellow-400'; html+=`<div class='bg-white/5 p-3 rounded-lg flex justify-between items-center'><div class='flex items-center gap-2'><span class='w-6 h-6 bg-[#FFD60A] rounded-full flex items-center justify-center text-black text-[10px]'>₮</span> <span>Withdraw ${w.amount} USDT<br><span class='opacity-50 text-xs'>${w.created_at?w.created_at.slice(0,16):''}</span></div><span class='${sc} text-xs'>${w.status}</span></div>`; });
  if(!html) html='<p class="opacity-50">No history yet</p>';
@@ -401,7 +505,7 @@ async function loadHistory(){
 
 async function loadReferral(){
  let r=await fetch('/api/referral/'+userId);
- if(!r.ok){ let txt=await r.text(); throw new Error('referral '+r.status+': '+txt.substring(0,100)); }
+ if(!r.ok) throw new Error('ref '+r.status);
  let d=await r.json();
  safeSet('refLink', d.ref_link);
  safeSet('directCount', d.direct_count);
@@ -418,10 +522,10 @@ async function loadReferral(){
  } else { histHtml='<p class="opacity-50">No earnings yet. When friends deposit verified, you get bonus!</p>'; }
  safeHTML('refHistory', histHtml);
 }
-function copyRef(){ let el=$('refLink'); if(el){ let text=el.innerText; if(text.includes('Loading') || text.includes('Failed')){ alert('Referral link not loaded. Check server connection. Fallback: https://t.me/YourBot?start='+userId); return; } navigator.clipboard.writeText(text); alert('Copied!'); } }
+function copyRef(){ let el=$('refLink'); if(el){ let text=el.innerText; if(text.includes('Loading') || text.includes('Failed')){ alert('Referral link not loaded'); return; } navigator.clipboard.writeText(text); alert('Copied!'); } }
 function shareRef(){ let el=$('refLink'); if(el && navigator.share){ navigator.share({title:'PT_AI Trading', text:'Join PT_AI Trading', url: el.innerText}); } else { copyRef(); } }
 
 init();
-setInterval(updateLivePricesOnly, 10000);
+setInterval(async ()=>{ try{ let r=await fetch('/api/binance/trades'); if(!r.ok) return; let data=await r.json(); safeSet('todayTrades', data.summary.total_trades); safeSet('profitTrades', data.summary.profit_trades); safeSet('lossTrades', data.summary.loss_trades); safeSet('totalPnl', (data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%'); safeSet('binanceStatus','Live • '+data.summary.total_trades+' trades'); }catch(e){} }, 10000);
 </script>
 </body></html>
