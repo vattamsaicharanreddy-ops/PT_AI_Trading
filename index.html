@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1'>
-<title>PT_AI Trading</title><script src='https://cdn.tailwindcss.com'></script>
+<title>PT_AI Trading</title>
+<script src='https://telegram.org/js/telegram-web-app.js'></script>
+<script src='https://cdn.tailwindcss.com'></script>
 <link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap' rel='stylesheet'>
 <style>body{font-family:'Inter',sans-serif;} .tab-active{background:white;color:black} .tab-inactive{opacity:0.5}</style>
 </head>
@@ -62,7 +64,7 @@
 </div>
 
 <div class='mt-5 bg-[#121214] border border-white/10 rounded-[20px] p-4'>
-<h3 class='font-bold text-sm mb-3'>💰 Referral Bonus Structure (Auto → Withdrawable)</h3>
+<h3 class='font-bold text-sm mb-3'>Referral Bonus Structure (Auto -> Withdrawable)</h3>
 <div class='space-y-2 text-sm'>
 <div class='flex justify-between items-center bg-[#FFD60A]/10 p-3 rounded-xl border border-[#FFD60A]/20'><span>Level 1 - Direct Referral</span><span class='font-bold text-[#FFD60A]'>7% Bonus</span></div>
 <div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 2</span><span class='font-bold'>1% Bonus</span></div>
@@ -75,16 +77,16 @@
 <div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 9</span><span class='font-bold'>1% Bonus</span></div>
 <div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 10</span><span class='font-bold'>1% Bonus</span></div>
 </div>
-<p class='text-xs opacity-50 mt-3'>✅ Bonus is added instantly to your withdrawable balance when your referral deposits. You can withdraw immediately.</p>
+<p class='text-xs opacity-50 mt-3'>Bonus is added instantly to your withdrawable balance when your referral deposits. You can withdraw immediately.</p>
 </div>
 
 <div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'>
-<h3 class='font-bold text-sm mb-3'>👥 My Direct Referrals</h3>
+<h3 class='font-bold text-sm mb-3'>My Direct Referrals</h3>
 <div id='directList' class='space-y-2 text-sm'><p class='opacity-50'>No referrals yet. Share your link!</p></div>
 </div>
 
 <div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'>
-<h3 class='font-bold text-sm mb-3'>📜 Referral Earnings History</h3>
+<h3 class='font-bold text-sm mb-3'>Referral Earnings History</h3>
 <div id='refHistory' class='space-y-2 text-xs'><p class='opacity-50'>No earnings yet</p></div>
 </div>
 
@@ -134,13 +136,72 @@
 function $(id){return document.getElementById(id);}
 function safeSet(id, val){ let el=$(id); if(el) el.innerText=val; }
 function safeHTML(id, val){ let el=$(id); if(el) el.innerHTML=val; }
-let tg = window.Telegram?.WebApp; if(tg){ try{tg.ready(); tg.expand();}catch(e){} }
-let tgUser = tg?.initDataUnsafe?.user;
-let userId = (tgUser && tgUser.id && tgUser.id>0) ? tgUser.id : 123456789;
+
+// FIXED: Get REAL Telegram ID - fixes 123456789 issue
+function getRealUserId(){
+  const urlParams = new URLSearchParams(window.location.search);
+  // 1. Check URL param tg_id (from bot.py WebApp URL)
+  let tg_id_param = urlParams.get('tg_id');
+  if(tg_id_param && parseInt(tg_id_param) > 1000){
+    console.log('Found ID from URL param tg_id:', tg_id_param);
+    localStorage.setItem('real_tg_id', tg_id_param);
+    return parseInt(tg_id_param);
+  }
+  // 2. Check Telegram WebApp initDataUnsafe
+  try{
+    let tg = window.Telegram?.WebApp;
+    if(tg){
+      try{tg.ready(); tg.expand();}catch(e){}
+      let tgUser = tg.initDataUnsafe?.user;
+      if(tgUser && tgUser.id && tgUser.id > 1000){
+        console.log('Found ID from Telegram WebApp:', tgUser.id);
+        localStorage.setItem('real_tg_id', tgUser.id.toString());
+        return tgUser.id;
+      }
+    }
+  }catch(e){ console.log('Telegram WebApp not available yet', e); }
+  // 3. Check localStorage (previously saved real ID)
+  let saved = localStorage.getItem('real_tg_id');
+  if(saved && parseInt(saved) > 1000){
+    console.log('Found ID from localStorage:', saved);
+    return parseInt(saved);
+  }
+  // 4. Check user_id param
+  let user_id_param = urlParams.get('user_id');
+  if(user_id_param && parseInt(user_id_param) > 1000){
+    return parseInt(user_id_param);
+  }
+  // 5. Fallback (only for testing in browser)
+  console.log('No real ID found, using fallback 123456789 - open via Telegram Bot!');
+  return 123456789;
+}
+
+let userId = getRealUserId();
 let urlParams = new URLSearchParams(window.location.search);
-let refParam = urlParams.get('ref') || tg?.initDataUnsafe?.start_param || null;
-if(urlParams.get('user_id')) userId = parseInt(urlParams.get('user_id'))||userId;
-if(!userId || userId===0) userId=123456789;
+let username = urlParams.get('username') || '';
+let refParam = urlParams.get('ref') || urlParams.get('start') || null;
+
+// Also try to get start_param from Telegram
+try{
+  let tg = window.Telegram?.WebApp;
+  if(tg && tg.initDataUnsafe?.start_param){
+    refParam = refParam || tg.initDataUnsafe.start_param;
+  }
+}catch(e){}
+
+console.log('FINAL userId:', userId, 'username:', username, 'ref:', refParam);
+
+// Save username too
+if(username){
+  localStorage.setItem('real_username', username);
+} else {
+  username = localStorage.getItem('real_username') || '';
+}
+
+// Show warning if using fallback ID
+if(userId === 123456789){
+  console.warn('Using fallback ID 123456789 - you are NOT in Telegram! Open via bot: @YourBot');
+}
 let balance=0, withdrawable=0, profit=0, perHour=0, selectedNetwork='TRC20', wdNetwork='TRC20', addrs={}, canWithdrawToday=true, realTrades=[];
 function showTab(name){
  document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
@@ -337,7 +398,6 @@ async function loadReferral(){
   safeSet('teamDep', (d.total_team_deposit||0).toFixed(2)+' USDT'); 
   safeSet('refEarned', (d.total_earnings||0).toFixed(2)+' USDT');
   
-  // Show direct referrals with real IDs and usernames
   let directHtml = '';
   if(d.direct_refs && d.direct_refs.length > 0){
     d.direct_refs.forEach(ref=>{
@@ -348,14 +408,13 @@ async function loadReferral(){
   }
   safeHTML('directList', directHtml);
   
-  // Show earnings history with percentages
   let histHtml = '';
   if(d.logs && d.logs.length > 0){
     d.logs.forEach(log=>{
       histHtml += `<div class='bg-white/5 p-3 rounded-xl flex justify-between'><div><p class='font-bold'>From: ${log.from} • Level ${log.level}</p><p class='opacity-50'>Deposit $${log.deposit} • ${log.percent}% bonus</p></div><span class='text-emerald-400 font-bold'>+$${log.bonus.toFixed(2)}</span></div>`;
     });
   } else {
-    histHtml = '<p class="opacity-50">No referral earnings yet. When your friends deposit, you get bonus to withdrawable!</p>';
+    histHtml = '<p class="opacity-50">No referral earnings yet. When friends deposit, you get bonus to withdrawable!</p>';
   }
   safeHTML('refHistory', histHtml);
   

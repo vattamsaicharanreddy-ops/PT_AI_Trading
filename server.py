@@ -88,13 +88,11 @@ def ensure_user(user_id: int, username="", referred_by=None):
                 ref_id=int(referred_by)
                 if ref_id!=user_id and conn.execute("SELECT 1 FROM users WHERE user_id=?", (ref_id,)).fetchone(): ref=ref_id
             except: pass
-        # Save actual telegram username
         uname = username or f"user_{user_id}"
         conn.execute("INSERT INTO users (user_id, username, referred_by, created_at, last_claim, last_auto_claim, current_tier) VALUES (?,?,?,?,?,?,?)",
                      (user_id, uname, ref, now.isoformat(), now.isoformat(), now.isoformat(), len(TIERS)-1))
         conn.commit()
         return conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
-    # Update username if provided and different
     if username and row[1] != username:
         conn.execute("UPDATE users SET username=? WHERE user_id=?", (username, user_id))
         conn.commit()
@@ -153,7 +151,6 @@ def recalc_profit(user_id: int):
     return conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
 
 def distribute_referral(depositor_id: int, deposit_amount: float):
-    # FIXED: Referral bonus added to withdrawable balance immediately
     now=datetime.datetime.utcnow().isoformat()
     current_id=depositor_id
     for level in range(1,11):
@@ -164,14 +161,12 @@ def distribute_referral(depositor_id: int, deposit_amount: float):
         bonus_pct=REF_BONUS.get(level,0)
         if bonus_pct>0:
             bonus=deposit_amount*bonus_pct/100
-            # Add to withdrawable + referral_earnings
             conn.execute("UPDATE users SET withdrawable=withdrawable+?, referral_earnings=referral_earnings+? WHERE user_id=?", (bonus, bonus, referrer_id))
             conn.execute("INSERT INTO referral_logs (from_user, to_user, level, deposit_amount, bonus_amount, bonus_percent, created_at) VALUES (?,?,?,?,?,?,?)",
                          (depositor_id, referrer_id, level, deposit_amount, bonus, bonus_pct, now))
         current_id=referrer_id
     conn.commit()
 
-# ===== FIXED TRADES =====
 BINANCE_SYMBOLS = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","AVAXUSDT","LINKUSDT","LTCUSDT","ADAUSDT","PEPEUSDT","SHIBUSDT","MATICUSDT","DOTUSDT","ARBUSDT"]
 BASE_PRICES = {
  "BTCUSDT": 67200, "ETHUSDT": 3400, "SOLUSDT": 178.0, "BNBUSDT": 610,
@@ -291,18 +286,12 @@ def binance_trades_user(user_id: int):
 
 @app.get("/api/user/{user_id}")
 def api_user(user_id: int, ref: int = None, username: str = None):
-    # Save actual telegram username if provided
     ensure_user(user_id, username=username or "", referred_by=ref)
     row = recalc_profit(user_id)
     if not row:
         return {"error": "User not found"}
     now = datetime.datetime.utcnow()
     created_str = row[15] if len(row) > 15 and row[15] else now.isoformat()
-    try:
-        created_dt = datetime.datetime.fromisoformat(created_str)
-        days_since = (now - created_dt).days
-    except:
-        days_since = 0
     ai_end_str = row[7]
     if ai_end_str:
         try:
@@ -321,7 +310,6 @@ def api_user(user_id: int, ref: int = None, username: str = None):
     today_count = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE user_id=? AND DATE(created_at)=DATE('now')", (user_id,)).fetchone()[0]
     if today_count > 0:
         can_withdraw_today = False
-    # Get referral info
     direct_count = conn.execute("SELECT COUNT(*) FROM users WHERE referred_by=?", (user_id,)).fetchone()[0]
     return {
         "user_id": row[0],
@@ -373,7 +361,6 @@ def api_referral(user_id: int):
     for _, lvl in all_team:
         level_counts[lvl] = level_counts.get(lvl, 0) + 1
     total_earnings = conn.execute("SELECT COALESCE(SUM(bonus_amount),0) FROM referral_logs WHERE to_user=?", (user_id,)).fetchone()[0] or 0
-    # Get referral logs for this user
     logs = conn.execute("SELECT from_user, level, deposit_amount, bonus_amount, bonus_percent, created_at FROM referral_logs WHERE to_user=? ORDER BY id DESC LIMIT 20", (user_id,)).fetchall()
     return {
         "ref_link": ref_link,
