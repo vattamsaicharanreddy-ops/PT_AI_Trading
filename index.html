@@ -1,62 +1,249 @@
 <!DOCTYPE html>
 <html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1'>
-<title>PT_AI Trading</title><script src='https://cdn.tailwindcss.com'></script>
+<title>PT_AI Trading - Real Binance Trades</title><script src='https://cdn.tailwindcss.com'></script>
 <link href='https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap' rel='stylesheet'>
-<style>body{font-family:'Space Grotesk',sans-serif;}</style>
+<style>body{font-family:'Space Grotesk',sans-serif;} .tab-active{background:white;color:black} .tab-inactive{opacity:0.5} table{border-collapse:collapse} th,td{white-space:nowrap}</style>
 </head>
 <body class='bg-[#050507] text-white min-h-screen flex justify-center'>
-<div class='w-full max-w-[390px] bg-[#050507] min-h-screen relative overflow-hidden'>
-<div class='absolute top-0 left-0 w-full h-[400px] bg-gradient-to-b from-[#2A1B5A]/40 to-transparent pointer-events-none'></div>
-<header class='relative flex justify-between items-center p-4 pt-12'><span class='text-xs tracking-[3px]'>PT_AI Trading</span><span class='text-xs opacity-50'>● LIVE</span></header>
-<div class='relative mx-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[20px] p-3 flex justify-between items-center'>
-<div class='flex items-center gap-3'><div class='w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center font-bold'>V</div><div><p class='text-[10px] text-[#FFD60A] tracking-widest'>AI ENGINE ACTIVE</p><p class='font-bold'>Varun</p></div></div>
-<div class='text-right'><p class='text-[10px] opacity-50'>Balance</p><p id='balTop' class='font-bold'>$81,418.86</p></div>
+<div class='w-full max-w-[390px] bg-[#050507] min-h-screen relative pb-28'>
+<header class='flex justify-between items-center p-4 pt-10'><span class='text-xs tracking-[3px] font-bold'>PT_AI Trading</span><span class='text-[10px] px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'>● BINANCE LIVE</span></header>
+
+<div class='mx-4 bg-white/5 border border-white/10 rounded-[20px] p-3 flex justify-between items-center'>
+<div class='flex items-center gap-2'><div class='w-9 h-9 rounded-full bg-[#26A17B] flex items-center justify-center font-bold text-white text-[14px]'>₮</div><div><p class='text-[9px] text-[#26A17B] tracking-widest font-bold'><span id='aiDot'>🟢</span> <span id='aiStatus'>AI ACTIVE</span> • <span id='tierPct'>0%</span>/day</p><p class='font-bold text-[11px]'><span id='aiDays'>0</span>d <span id='aiHours'>0</span>h left • <span id='balTopMini'>0</span> USDT</p></div></div>
+<div class='text-right'><p class='text-[9px] opacity-50'>WALLET</p><p id='withdrawableTop' class='font-bold text-[#FFD60A] text-sm'>0.00 USDT</p></div>
 </div>
-<div class='relative mt-6 mx-4 bg-gradient-to-br from-[#6C3BFF] via-[#8A5CFF] to-[#A5A6F6] rounded-[32px] p-6 overflow-hidden'>
-<div class='absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,white/20,transparent_50%)]'></div>
-<p class='relative text-white/60 text-sm'>Your profit</p>
-<h1 id='profit' class='relative text-[42px] font-bold leading-none tracking-tight'>$74,173.22</h1>
-<div class='relative mt-5 flex gap-2'>
-<button onclick='claim()' id='claimBtn' class='bg-black text-white px-5 py-3 rounded-full font-bold text-sm flex items-center gap-2'>+ CLAIM PROFIT</button>
-<span class='bg-white/20 backdrop-blur px-3 py-2 rounded-full text-xs'>+<span id='perHour'>101.77</span>/hr</span>
+
+<div id='tab-home' class='tab-content'>
+<div class='mt-4 mx-4 bg-gradient-to-br from-[#6C3BFF] via-[#8A5CFF] to-[#A5A6F6] rounded-[28px] p-5'>
+<p class='text-white/60 text-xs'>Daily AI Profit • <span id='dailyPct'>0%</span> • Real Binance Trading</p>
+<h1 id='profit' class='text-[32px] font-bold leading-none mt-1 flex items-center gap-2'><span class='text-[18px] bg-white/20 w-8 h-8 rounded-full flex items-center justify-center'>₮</span> <span id='profitVal'>0.00</span> <span class='text-[14px] opacity-60'>USDT</span></h1>
+<p class='text-[10px] text-white/70 mt-2'>+<span id='perHour'>0.00</span> USDT/hr • Live trades on Binance</p>
+<div class='mt-2 flex gap-2'><button onclick='openDeposit()' class='bg-white text-black px-3 py-2 rounded-full font-bold text-[11px]'>Deposit USDT</button><button onclick='openWithdraw()' class='bg-[#FFD60A] text-black px-3 py-2 rounded-full font-bold text-[11px]'>Withdraw USDT</button><span class='bg-black/40 px-2 py-1 rounded-full text-[9px]'>Binance API: <span id='binanceStatus'>Connecting...</span></span></div>
 </div>
-<p class='relative mt-3 text-[11px] text-white/60'>Profit will be transferred to your USDT balance</p>
+
+<div class='mx-4 mt-4 bg-[#121214] border border-emerald-500/20 rounded-[20px] p-3'>
+<div class='flex justify-between items-center'><h3 class='font-bold text-[11px] flex items-center gap-2'>📈 LIVE TRADING - REAL BINANCE PRICES</h3><span id='priceSource' class='text-[8px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400'>Binance Live</span></div>
+<div class='mt-2 grid grid-cols-4 gap-1.5 text-center'>
+<div class='bg-white/5 rounded-lg p-1.5'><p class='text-[7px] opacity-50'>TODAY</p><p id='todayTrades' class='font-bold text-[11px]'>0</p></div>
+<div class='bg-emerald-500/10 rounded-lg p-1.5'><p class='text-[7px] text-emerald-400'>PROFIT</p><p id='profitTrades' class='font-bold text-[11px] text-emerald-400'>0</p></div>
+<div class='bg-red-500/10 rounded-lg p-1.5'><p class='text-[7px] text-red-400'>LOSS</p><p id='lossTrades' class='font-bold text-[11px] text-red-400'>0</p></div>
+<div class='bg-[#FFD60A]/10 rounded-lg p-1.5'><p class='text-[7px] text-[#FFD60A]'>PnL</p><p id='totalPnl' class='font-bold text-[11px] text-[#FFD60A]'>0%</p></div>
 </div>
-<div class='mx-4 mt-4 bg-[#1A1A2E] border border-[#FFD60A]/20 rounded-[24px] p-5'>
-<p class='text-[#FFD60A] text-[10px] tracking-widest'>BONUS • 7d 3h</p>
-<h2 class='font-bold text-lg mt-1'>Get up to <span class='text-[#FFD60A]'>+200 USDT</span></h2>
-<p class='text-xs opacity-60 mt-1'>Deposit in next 3 days, get +200% instantly</p>
-<button onclick='document.getElementById("depositModal").classList.remove("hidden")' class='mt-4 bg-white text-black px-4 py-2 rounded-full text-sm font-bold'>Deposit →</button>
+<p class='text-[8px] opacity-40 mt-1'>Real Binance price • 12-15 trades/day • Your <span id='fundsInTrade'>0 USDT</span> in market • Updates 3s</p>
 </div>
-<div class='mx-4 mt-4 bg-[#2A1A4A] rounded-[24px] p-5 flex justify-between items-center'>
-<div><p class='text-[10px] tracking-widest opacity-60'>FREE BONUSES</p><h3 class='font-bold'>Open Gift Boxes</h3><p class='text-xs opacity-60'>Stars and USDT rewards</p></div>
-<button class='bg-gradient-to-r from-[#FFD60A] to-[#FFA600] text-black px-4 py-2 rounded-full font-bold text-sm'>Open →</button>
+
+<div class='mx-4 mt-3 bg-[#121214] border border-white/10 rounded-[20px] overflow-hidden'>
+<div class='p-3 flex justify-between items-center border-b border-white/5'><h3 class='font-bold text-[11px]'>INDIVIDUAL TRADES - REAL BINANCE</h3><button onclick='loadRealTrades()' class='text-[9px] bg-white/5 px-2 py-1 rounded-full'>🔄 Refresh</button></div>
+<div class='overflow-x-auto'>
+<table class='w-full text-[9px]'><thead class='bg-white/5 text-[8px] opacity-60'><tr><th class='p-2 text-left'>Time</th><th class='p-2 text-left'>Pair</th><th class='p-2'>Side</th><th class='p-2 text-right'>Entry</th><th class='p-2 text-right'>Current (Binance)</th><th class='p-2 text-right'>Lev</th><th class='p-2 text-right'>Amount</th><th class='p-2 text-right'>PnL %</th><th class='p-2 text-right'>PnL USDT</th><th class='p-2'>Status</th></tr></thead><tbody id='tradesTableBody'></tbody></table>
 </div>
-<div class='h-24'></div>
-<div class='fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[360px] bg-[#121214]/90 backdrop-blur-xl border border-white/10 rounded-full p-2 flex justify-around'>
-<button class='w-10 h-10 bg-white/10 rounded-full'>🏠</button><button class='w-10 h-10 opacity-40'>📊</button><button class='w-10 h-10 opacity-40'>📄</button><button class='w-10 h-10 opacity-40'>👥</button><button class='w-10 h-10 opacity-40'>👤</button>
+<p class='text-[7px] opacity-30 p-2 text-center'>Real-time Binance ticker • Long/Short • AI uses your USDT funds • Binance • Bybit • OKX</p>
 </div>
-<div id='depositModal' class='hidden fixed inset-0 bg-black/80 backdrop-blur flex items-end z-50'><div class='bg-[#121214] w-full rounded-t-[32px] p-6 border-t border-white/10'>
-<h3 class='font-bold text-lg'>Deposit</h3><div id='addrs' class='mt-4 space-y-3 text-xs'></div>
-<button onclick='document.getElementById("depositModal").classList.add("hidden")' class='mt-4 w-full bg-white/10 py-3 rounded-full'>Close</button>
+
+<div class='mx-4 mt-3 bg-[#121214] border border-white/5 rounded-[16px] p-3'><h3 class='font-bold text-[10px] mb-2'>Quick Stats ₮ USDT</h3><div class='grid grid-cols-2 gap-2 text-[9px]'><div class='bg-white/5 p-2 rounded-lg'>Deposit: <span id='totalDep' class='font-bold'>0 USDT</span></div><div class='bg-white/5 p-2 rounded-lg'>Withdrawn: <span id='totalWd' class='font-bold'>0 USDT</span></div></div></div>
+</div>
+
+<div id='tab-tiers' class='tab-content hidden'>
+<div class='mx-4 mt-4 bg-[#1A1A2E] border border-[#26A17B]/30 rounded-[24px] p-5'>
+<div class='flex items-center gap-2'><div class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center font-bold'>₮</div><div><h3 class='font-bold'>Profit Tiers - ₮ USDT</h3><p class='text-[10px] opacity-60'>Earn daily % on USDT balance</p></div></div>
+<div id='tierList' class='mt-4 space-y-2'></div>
+<div class='mt-4 bg-white/5 rounded-[16px] p-3'><table class='w-full text-[10px]'><thead class='opacity-50'><tr><th class='text-left'>Min ₮</th><th class='text-left'>%</th><th class='text-left'>Example</th></tr></thead><tbody id='tierTable'></tbody></table></div>
+</div>
+</div>
+
+<div id='tab-referral' class='tab-content hidden'>
+<div class='mx-4 mt-4 bg-gradient-to-br from-[#FFD60A]/20 to-[#FFA600]/10 border border-[#FFD60A]/30 rounded-[24px] p-4'>
+<h3 class='font-bold text-sm flex items-center gap-2'><span class='w-6 h-6 bg-[#26A17B] rounded-full flex items-center justify-center text-[10px]'>₮</span> Referral - Earn USDT</h3>
+<div class='mt-3 bg-black/50 rounded-xl p-3'><p class='text-[9px] opacity-50'>YOUR REFERRAL LINK</p><p id='refLink' class='text-[11px] break-all mt-1 font-mono'>Loading...</p><div class='flex gap-2 mt-2'><button onclick='copyRef()' class='bg-white text-black px-3 py-1.5 rounded-full text-[10px] font-bold'>Copy</button></div></div>
+<div class='mt-3 grid grid-cols-3 gap-2 text-center'><div class='bg-white/5 rounded-xl p-2'><p class='text-[9px] opacity-50'>DIRECT</p><p id='directCount' class='font-bold'>0</p></div><div class='bg-white/5 rounded-xl p-2'><p class='text-[9px] opacity-50'>TEAM</p><p id='teamDep' class='font-bold text-[#FFD60A]'>0 USDT</p></div><div class='bg-white/5 rounded-xl p-2'><p class='text-[9px] opacity-50'>EARNED</p><p id='refEarned' class='font-bold text-emerald-400'>0 USDT</p></div></div>
+</div>
+</div>
+
+<div id='tab-user' class='tab-content hidden'>
+<div class='mx-4 mt-4 bg-[#121214] border border-white/10 rounded-[24px] p-4'>
+<div class='flex items-center gap-3'><div class='w-12 h-12 rounded-full bg-[#26A17B] flex items-center justify-center font-bold text-white text-lg'>₮</div><div><p class='font-bold'>User #<span id='userIdDisplay'>0</span></p><p class='text-[10px] opacity-60'>Member since <span id='joinedDate'>-</span></p></div></div>
+<div class='mt-4 grid grid-cols-2 gap-2 text-[11px]'><div class='bg-white/5 p-3 rounded-xl'><p class='opacity-50 text-[9px]'>TRADING BAL</p><p id='userBal' class='font-bold text-sm mt-1'>0 USDT</p></div><div class='bg-[#FFD60A]/10 border border-[#FFD60A]/20 p-3 rounded-xl'><p class='text-[#FFD60A] text-[9px]'>WALLET</p><p id='userWd' class='font-bold text-sm text-[#FFD60A] mt-1'>0 USDT</p></div></div>
+</div>
+<div class='mx-4 mt-4 bg-[#121214] border border-white/5 rounded-[20px] p-4'><h3 class='font-bold text-xs mb-2'>History</h3><div id='history' class='text-[10px] space-y-2 opacity-70'>Loading...</div></div>
+</div>
+
+<div class='fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[360px] bg-[#121214]/90 backdrop-blur-xl border border-white/10 rounded-full p-1.5 flex justify-around'>
+<button onclick='showTab("home")' id='btn-home' class='tab-btn w-10 h-10 rounded-full flex items-center justify-center text-sm tab-active'>🏠</button>
+<button onclick='showTab("tiers")' id='btn-tiers' class='tab-btn w-10 h-10 rounded-full flex items-center justify-center text-sm tab-inactive'>📈</button>
+<button onclick='showTab("referral")' id='btn-referral' class='tab-btn w-10 h-10 rounded-full flex items-center justify-center text-sm tab-inactive'>👥</button>
+<button onclick='showTab("user")' id='btn-user' class='tab-btn w-10 h-10 rounded-full flex items-center justify-center text-sm tab-inactive'>👤</button>
+</div>
+
+<div id='depositModal' class='hidden fixed inset-0 bg-black/80 z-50 flex items-end'><div class='bg-[#121214] w-full rounded-t-[32px] p-6 max-h-[90vh] overflow-y-auto'>
+<h3 class='font-bold flex items-center gap-2'><span class='w-6 h-6 bg-[#26A17B] rounded-full flex items-center justify-center text-xs'>₮</span> Deposit USDT</h3>
+<div class='mt-3 grid grid-cols-3 gap-2' id='networkBtns'></div>
+<div class='mt-3 bg-white/5 p-3 rounded-xl'><p class='text-[9px] opacity-50'>USDT ADDRESS (<span id='selectedNet'>TRC20</span>)</p><p id='depositAddr' class='text-xs break-all font-mono mt-1'>Loading...</p><button onclick='copyAddr()' class='mt-2 text-[10px] bg-white/10 px-3 py-1 rounded-full'>Copy</button></div>
+<input id='depAmount' type='number' placeholder='Amount USDT (min 20)' class='mt-3 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm'>
+<input id='depTx' placeholder='TX Hash (optional)' class='mt-2 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm'>
+<button onclick='submitDeposit()' class='mt-3 w-full bg-[#26A17B] text-white py-3 rounded-full font-bold'>Deposit USDT</button>
+<button onclick='document.getElementById("depositModal").classList.add("hidden")' class='mt-2 w-full bg-white/5 py-3 rounded-full text-sm'>Close</button>
 </div></div>
+
+<div id='withdrawModal' class='hidden fixed inset-0 bg-black/80 z-50 flex items-end'><div class='bg-[#121214] w-full rounded-t-[32px] p-6'>
+<h3 class='font-bold flex items-center gap-2'><span class='w-6 h-6 bg-[#FFD60A] rounded-full flex items-center justify-center text-black text-xs'>₮</span> Withdraw USDT</h3>
+<p class='text-[10px] opacity-60 mt-2'>Available: <span id='wdAvailable' class='font-bold text-[#FFD60A]'>0 USDT</span> • Min 10 USDT • Once per day</p>
+<input id='wdAmount' type='number' placeholder='Amount USDT' class='mt-3 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm'>
+<input id='wdAddr' placeholder='Your USDT Address' class='mt-2 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm'>
+<div class='mt-2 flex gap-2'><button onclick='setNet("TRC20")' class='bg-white/5 px-3 py-1 rounded-full text-xs'>TRC20</button><button onclick='setNet("BEP20")' class='bg-white/5 px-3 py-1 rounded-full text-xs'>BEP20</button><button onclick='setNet("ERC20")' class='bg-white/5 px-3 py-1 rounded-full text-xs'>ERC20</button></div>
+<p class='text-[9px] mt-2 opacity-50'>Network: <span id='wdNet'>TRC20</span> • Symbol: ₮ USDT</p>
+<button onclick='submitWithdraw()' id='wdBtn' class='mt-3 w-full bg-[#FFD60A] text-black py-3 rounded-full font-bold'>Withdraw USDT</button>
+<button onclick='document.getElementById("withdrawModal").classList.add("hidden")' class='mt-2 w-full bg-white/5 py-3 rounded-full text-sm'>Close</button>
+</div></div>
+
+</div>
+
 <script>
 let userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 123456789;
-let balance=81418.86, profit=74173.22, perHour=101.7779;
+let urlParams = new URLSearchParams(window.location.search);
+let refParam = urlParams.get('ref') || window.Telegram?.WebApp?.initDataUnsafe?.start_param || null;
+let balance=0, withdrawable=0, profit=0, perHour=0, selectedNetwork='TRC20', wdNetwork='TRC20', addrs={}, canWithdrawToday=true;
+let realTrades=[];
+
+function showTab(name){
+ document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
+ document.getElementById('tab-'+name).classList.remove('hidden');
+ document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('tab-active'); b.classList.add('tab-inactive');});
+ document.getElementById('btn-'+name).classList.remove('tab-inactive');
+ document.getElementById('btn-'+name).classList.add('tab-active');
+}
+
 async function init(){
-  try{
-    let r=await fetch(`/api/user/${userId}`); if(r.ok){let d=await r.json(); balance=d.balance; profit=d.profit; perHour=d.profit_per_hour;}
-    let a=await fetch('/api/deposit-addresses'); if(a.ok){let addrs=await a.json(); let html=''; for(let k in addrs) html+=`<div class='bg-white/5 p-3 rounded-xl flex justify-between'><span>${k}</span><span class='opacity-60 text-[10px]'>${addrs[k]}</span></div>`; document.getElementById('addrs').innerHTML=html;}
-  }catch(e){}
-  document.getElementById('balTop').innerText='$'+balance.toFixed(2);
-  document.getElementById('perHour').innerText=perHour.toFixed(2);
-  setInterval(()=>{profit+=perHour/3600; document.getElementById('profit').innerText='$'+profit.toFixed(2);},1000);
+ let url = `/api/user/${userId}` + (refParam ? `?ref=${refParam}` : '');
+ let r=await fetch(url); let d=await r.json();
+ balance=d.balance; withdrawable=d.withdrawable; profit=d.profit; perHour=d.profit_per_hour;
+ canWithdrawToday=d.can_withdraw_today;
+ document.getElementById('balTrading').innerText=balance.toFixed(2)+' USDT';
+ document.getElementById('balWithdrawable').innerText=withdrawable.toFixed(2)+' USDT';
+ document.getElementById('withdrawableTop').innerText=withdrawable.toFixed(2)+' USDT';
+ document.getElementById('profitVal').innerText=profit.toFixed(2);
+ document.getElementById('perHour').innerText=perHour.toFixed(4);
+ document.getElementById('dailyPct').innerText=(d.daily_percent||0).toFixed(1)+'%';
+ document.getElementById('tierPct').innerText=(d.daily_percent||0).toFixed(1)+'%';
+ document.getElementById('earnPct').innerText=(d.daily_percent||0).toFixed(1)+'%';
+ document.getElementById('aiDays').innerText=d.days_left;
+ document.getElementById('aiHours').innerText=d.hours_left;
+ document.getElementById('balTopMini').innerText=balance.toFixed(0);
+ document.getElementById('wdAvailable').innerText=withdrawable.toFixed(2)+' USDT';
+ document.getElementById('refEarn').innerText=d.referral_earnings.toFixed(2)+' USDT';
+ document.getElementById('userIdDisplay').innerText=userId;
+ document.getElementById('userBal').innerText=balance.toFixed(2)+' USDT';
+ document.getElementById('userWd').innerText=withdrawable.toFixed(2)+' USDT';
+ document.getElementById('joinedDate').innerText=d.created_at ? d.created_at.slice(0,10) : '-';
+ document.getElementById('totalDep').innerText=(d.total_deposit||0).toFixed(2)+' USDT';
+ document.getElementById('totalWd').innerText=(d.total_withdraw||0).toFixed(2)+' USDT';
+ document.getElementById('wdBtn').innerText=canWithdrawToday ? 'Withdraw USDT' : 'Already withdrew today';
+ document.getElementById('wdBtn').disabled=!canWithdrawToday;
+ if(!d.ai_active){document.getElementById('aiStatus').innerText='EXPIRED'; document.getElementById('aiDot').innerText='🔴';}
+ let tierHtml=''; let tableHtml='';
+ (d.tiers||[]).forEach(t=>{
+  if(t.min>0){
+   let isActive = balance>=t.min;
+   let cls = isActive ? 'bg-[#26A17B]/20 border-[#26A17B]/40 text-white' : 'bg-white/5 border-white/5 opacity-70';
+   let badge = isActive ? '<span class="bg-[#26A17B] text-white text-[7px] px-1.5 py-0.5 rounded-full">ACTIVE</span>' : '<span class="bg-white/10 text-[7px] px-1.5 py-0.5 rounded-full">LOCKED</span>';
+   tierHtml+=`<div class='border rounded-xl p-2.5 ${cls}'><div class='flex justify-between'><div class='flex gap-2'><div class='w-7 h-7 bg-[#26A17B] rounded-full flex items-center justify-center text-[10px] font-bold'>₮</div><div><p class='font-bold text-[11px]'>≥${t.min} USDT ${badge}</p><p class='text-[8px] opacity-60'>${(t.min * t.pct/100).toFixed(2)} USDT/day</p></div></div><div class='text-right'><p class='font-bold text-[#FFD60A] text-[11px]'>${t.pct}%/day</p></div></div></div>`;
+   tableHtml+=`<tr class='border-t border-white/5'><td class='py-1'>${t.min} USDT</td><td class='py-1 text-[#FFD60A]'>${t.pct}%</td><td class='py-1'>${(t.min * t.pct/100).toFixed(2)} USDT/day</td></tr>`;
+  }
+ });
+ document.getElementById('tierList').innerHTML=tierHtml;
+ document.getElementById('tierTable').innerHTML=tableHtml;
+ let a=await fetch('/api/deposit-addresses'); addrs=await a.json(); renderNetworks(); selectNetwork('TRC20'); loadHistory(); loadReferral();
+ loadRealTrades();
+ setInterval(()=>{if(perHour>0 && document.getElementById('aiStatus').innerText!='EXPIRED'){profit+=perHour/3600; document.getElementById('profitVal').innerText=profit.toFixed(2);}},1000);
+ // Fixed: Don't regenerate trades every 5s, only update prices via cached endpoint - trades stay 12-15 fixed per day
+ setInterval(updateLivePricesOnly, 5000);
 }
-async function claim(){
-  let btn=document.getElementById('claimBtn'); btn.innerText='Claiming...';
-  let r=await fetch(`/api/claim/${userId}`,{method:'POST'}); if(r.ok){let d=await r.json(); balance=d.new_balance; profit=0; document.getElementById('balTop').innerText='$'+balance.toFixed(2); document.getElementById('profit').innerText='$0.00'; alert('Claimed $'+d.claimed.toFixed(2));}
-  btn.innerText='+ CLAIM PROFIT';
+
+function renderNetworks(){let html=''; for(let k in addrs){html+=`<button onclick="selectNetwork('${k}')" class="netBtn bg-white/5 border border-white/10 rounded-full px-2 py-2 text-[10px]">${k} ₮</button>`;} document.getElementById('networkBtns').innerHTML=html;}
+function selectNetwork(net){selectedNetwork=net; document.getElementById('selectedNet').innerText=net; document.getElementById('depositAddr').innerText=addrs[net]||'';}
+function setNet(net){wdNetwork=net; document.getElementById('wdNet').innerText=net;}
+function copyAddr(){navigator.clipboard.writeText(document.getElementById('depositAddr').innerText); alert('Copied USDT Address');}
+function openDeposit(){document.getElementById('depositModal').classList.remove('hidden');}
+function openWithdraw(){document.getElementById('withdrawModal').classList.remove('hidden');}
+async function submitDeposit(){let amt=parseFloat(document.getElementById('depAmount').value); let tx=document.getElementById('depTx').value||'auto_'+Date.now(); if(!amt||amt<1){alert('Min 1 USDT'); return;} let r=await fetch('/api/deposit/request/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,network:selectedNetwork,tx_hash:tx})}); let j=await r.json(); if(j.ok){alert(`${j.new_balance.toFixed(2)} USDT @ ${j.daily_percent}%/day`); document.getElementById('depositModal').classList.add('hidden'); init();} }
+async function submitWithdraw(){
+ let amt=parseFloat(document.getElementById('wdAmount').value); let addr=document.getElementById('wdAddr').value;
+ if(!canWithdrawToday){alert('Once per day only!'); return;}
+ if(!amt||amt<10){alert('Min 10 USDT'); return;}
+ if(!addr){alert('USDT Address required'); return;}
+ let btn=document.getElementById('wdBtn'); btn.innerText='Processing...';
+ let r=await fetch('/api/withdraw/request/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,address:addr,network:wdNetwork})});
+ let j=await r.json();
+ btn.innerText='Withdraw USDT';
+ if(j.error){alert(j.error);} else {
+  withdrawable=j.new_withdrawable;
+  document.getElementById('balWithdrawable').innerText=withdrawable.toFixed(2)+' USDT';
+  document.getElementById('withdrawableTop').innerText=withdrawable.toFixed(2)+' USDT';
+  document.getElementById('userWd').innerText=withdrawable.toFixed(2)+' USDT';
+  alert(j.message);
+  document.getElementById('withdrawModal').classList.add('hidden');
+  canWithdrawToday=false;
+  loadHistory();
+ }
 }
+
+async function updateLivePricesOnly(){ try{ let r=await fetch(`/api/binance/trades/${userId}`); let data=await r.json(); realTrades=data.trades; document.getElementById('todayTrades').innerText=data.summary.total_trades; document.getElementById('profitTrades').innerText=data.summary.profit_trades; document.getElementById('lossTrades').innerText=data.summary.loss_trades; document.getElementById('totalPnl').innerText=(data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%'; document.getElementById('totalPnl').className='font-bold text-[11px] '+(data.summary.total_pnl_percent>=0?'text-emerald-400':'text-red-400'); renderRealTradesTable(realTrades); document.getElementById('binanceStatus').innerText='Live • '+data.summary.total_trades+' trades'; }catch(e){} }
+async function loadRealTrades(){
+ try{
+  document.getElementById('binanceStatus').innerText='Loading...';
+  let r=await fetch(`/api/binance/trades/${userId}`);
+  let data=await r.json();
+  realTrades=data.trades;
+  document.getElementById('todayTrades').innerText=data.summary.total_trades;
+  document.getElementById('profitTrades').innerText=data.summary.profit_trades;
+  document.getElementById('lossTrades').innerText=data.summary.loss_trades;
+  document.getElementById('totalPnl').innerText=(data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%';
+  document.getElementById('totalPnl').className='font-bold text-[11px] '+(data.summary.total_pnl_percent>=0?'text-emerald-400':'text-red-400');
+  document.getElementById('fundsInTrade').innerText=data.summary.funds_in_market.toFixed(0)+' USDT';
+  document.getElementById('binanceStatus').innerText='Live';
+  document.getElementById('priceSource').innerText=data.prices_source==='binance'?'Binance Live':'Binance (fallback)';
+  renderRealTradesTable(realTrades);
+ }catch(e){
+  document.getElementById('binanceStatus').innerText='Error';
+  console.error(e);
+ }
+}
+
+function renderRealTradesTable(trades){
+ let html='';
+ trades.forEach(t=>{
+  let sideColor = t.side==='LONG' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400';
+  let pnlColor = t.is_profit ? 'text-emerald-400' : 'text-red-400';
+  let statusColor = t.status==='OPEN' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/5 text-white/40';
+  html+=`<tr class='border-t border-white/5 hover:bg-white/5'>
+   <td class='p-2'>${t.time}</td>
+   <td class='p-2 font-bold'>${t.pair}</td>
+   <td class='p-2'><span class='px-1.5 py-0.5 rounded-full text-[8px] ${sideColor}'>${t.side} ${t.leverage}x</span></td>
+   <td class='p-2 text-right'>${t.entry_price}</td>
+   <td class='p-2 text-right font-mono text-emerald-300'>${t.current_price}</td>
+   <td class='p-2 text-right'>${t.leverage}x</td>
+   <td class='p-2 text-right'>${t.usdt_amount} USDT</td>
+   <td class='p-2 text-right font-bold ${pnlColor}'>${t.pnl_percent>0?'+':''}${t.pnl_percent}%</td>
+   <td class='p-2 text-right ${pnlColor}'>${t.pnl_percent>0?'+':''}${t.pnl_usdt} USDT</td>
+   <td class='p-2'><span class='px-1.5 py-0.5 rounded-full text-[7px] ${statusColor}'>${t.status}</span></td>
+  </tr>`;
+ });
+ document.getElementById('tradesTableBody').innerHTML=html;
+}
+
+async function loadHistory(){
+ let r=await fetch('/api/history/'+userId); let h=await r.json();
+ let html=''; h.withdrawals.forEach(w=>{
+  let statusColor=w.status=='approved'?'text-emerald-400':'text-yellow-400';
+  html+=`<div class='bg-white/5 p-2 rounded-lg flex justify-between items-center'><div class='flex items-center gap-1'><span class='w-4 h-4 bg-[#FFD60A] rounded-full flex items-center justify-center text-black text-[7px]'>₮</span> <span>Withdraw ${w.amount} USDT<br><span class='opacity-50 text-[8px]'>${w.created_at ? w.created_at.slice(0,16) : ''}</span></div><span class='${statusColor} text-[9px]'>${w.status}</span></div>`;
+ });
+ h.deposits.forEach(d=>{
+  html=`<div class='bg-white/5 p-2 rounded-lg flex justify-between'><span class='flex items-center gap-1'><span class='w-4 h-4 bg-[#26A17B] rounded-full flex items-center justify-center text-[7px]'>₮</span> Deposit ${d.amount} USDT ${d.network}</span><span class='text-emerald-400 text-[9px]'>${d.status}</span></div>`+html;
+ });
+ if(!html) html='<p class="opacity-50">No history yet</p>';
+ document.getElementById('history').innerHTML=html;
+}
+async function loadReferral(){ let r=await fetch('/api/referral/'+userId); let d=await r.json(); document.getElementById('refLink').innerText=d.ref_link; document.getElementById('directCount').innerText=d.direct_count; document.getElementById('teamDep').innerText=(d.total_team_deposit||0).toFixed(2)+' USDT'; document.getElementById('refEarned').innerText=(d.total_earnings||0).toFixed(2)+' USDT'; }
+function copyRef(){ navigator.clipboard.writeText(document.getElementById('refLink').innerText); alert('Referral link copied!'); }
 init();
 </script>
-</div></body></html>
+</body></html>

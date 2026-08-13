@@ -1,40 +1,5 @@
-<!DOCTYPE html>
-<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>Admin</title><script src='https://cdn.tailwindcss.com'></script></head>
-<body class='bg-[#0a0a0f] text-white p-6 font-sans'>
-<h1 class='text-3xl font-bold mb-6'>💎 PT_AI Trading - Admin Panel</h1>
-<div class='grid grid-cols-3 gap-4 mb-8'>
-<div class='bg-white/5 p-4 rounded-2xl border border-white/10'><p class='text-white/50 text-xs'>TOTAL USERS</p><p id='stat_users' class='text-2xl font-bold'>0</p></div>
-<div class='bg-white/5 p-4 rounded-2xl border border-white/10'><p class='text-white/50 text-xs'>TOTAL BALANCE</p><p id='stat_bal' class='text-2xl font-bold text-[#FFD60A]'>$0</p></div>
-<div class='bg-white/5 p-4 rounded-2xl border border-white/10'><p class='text-white/50 text-xs'>ACTIVE NOW</p><p id='stat_active' class='text-2xl font-bold text-emerald-400'>0</p></div>
-</div>
-<div class='bg-white/5 rounded-2xl border border-white/10 p-4'>
-<h2 class='font-bold mb-4'>Users</h2>
-<table class='w-full text-sm'><thead class='text-white/40'><tr><th class='text-left p-2'>ID</th><th class='text-left p-2'>Balance</th><th class='text-left p-2'>Profit</th><th>Action</th></tr></thead><tbody id='users'></tbody></table>
-</div>
-<div class='mt-6 bg-[#FFD60A]/10 border border-[#FFD60A]/20 p-4 rounded-2xl'>
-<h3 class='font-bold text-[#FFD60A] mb-2'>Quick Edit</h3>
-<input id='uid' placeholder='User ID' class='bg-black/50 border border-white/10 rounded px-3 py-2 mr-2'>
-<input id='bal' placeholder='New Balance' class='bg-black/50 border border-white/10 rounded px-3 py-2 mr-2'>
-<button onclick='setBal()' class='bg-[#FFD60A] text-black px-4 py-2 rounded font-bold'>Set Balance</button>
-</div>
-<script>
-async function load(){
-  let s = await fetch('/api/admin/stats').then(r=>r.json());
-  document.getElementById('stat_users').innerText=s.total_users;
-  document.getElementById('stat_bal').innerText='$'+s.total_balance;
-  document.getElementById('stat_active').innerText=s.active_now;
-  let users = await fetch('/api/admin/users').then(r=>r.json());
-  let tbody=document.getElementById('users'); tbody.innerHTML='';
-  users.forEach(u=>{
-    tbody.innerHTML+=`<tr class='border-t border-white/5'><td class='p-2'>${u.user_id}</td><td class='p-2'>$${u.balance.toFixed(2)}</td><td class='p-2'>$${u.profit.toFixed(2)}</td><td class='p-2'><button onclick='document.getElementById("uid").value=${u.user_id}' class='text-[#FFD60A]'>Edit</button></td></tr>`
-  });
-}
-async function setBal(){
-  let id=document.getElementById('uid').value; let b=document.getElementById('bal').value;
-  await fetch(`/api/admin/user/${id}/set-balance`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({balance:parseFloat(b)})});
-  alert('Updated'); load();
-}
-load();
-</script>
-</body></html>
+<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>PT_AI Admin</title><script src='https://cdn.tailwindcss.com'></script></head><body class='bg-[#0a0a0f] text-white p-6'><h1 class='text-2xl font-bold'>PT_AI Trading - Admin + 10 Level Referral</h1><p class='text-xs opacity-50'>L1 7% • L2-10 1% • Auto deposit • Auto claim 24h</p><div class='grid grid-cols-5 gap-4 mt-6 mb-6'><div class='bg-white/5 p-4 rounded-2xl'><p class='text-xs opacity-50'>USERS</p><p id='stat_users' class='text-xl font-bold'>0</p></div><div class='bg-white/5 p-4 rounded-2xl'><p class='text-xs opacity-50'>TOTAL BAL</p><p id='stat_bal' class='text-xl font-bold text-[#FFD60A]'>$0</p></div><div class='bg-yellow-500/10 p-4 rounded-2xl'><p class='text-xs text-yellow-400'>PEND WD</p><p id='pend_wd' class='text-xl font-bold text-yellow-400'>0</p></div><div class='bg-emerald-500/10 p-4 rounded-2xl'><p class='text-xs text-emerald-400'>TOTAL REF PAID</p><p id='ref_paid' class='text-xl font-bold text-emerald-400'>$0</p></div><div class='bg-[#FFD60A]/10 p-4 rounded-2xl'><p class='text-xs text-[#FFD60A]'>TIER SYSTEM</p><p class='text-[10px]'>20:7.6% 120:8.9% 500:9.6% 1200:10.9% 2500:11.8% 6000:13.6% 15000:14.9%</p></div></div><div class='grid grid-cols-3 gap-6'><div class='bg-white/5 rounded-2xl p-4'><h2 class='font-bold mb-3 text-sm'>Deposits Auto</h2><table class='w-full text-xs'><thead><tr><th>ID</th><th>User</th><th>Amt</th><th>Net</th></tr></thead><tbody id='deps'></tbody></table></div><div class='bg-white/5 rounded-2xl p-4'><h2 class='font-bold mb-3 text-sm'>Withdrawals</h2><table class='w-full text-xs'><thead><tr><th>ID</th><th>User</th><th>Amt</th><th>Status</th><th>Action</th></tr></thead><tbody id='wds'></tbody></table></div><div class='bg-white/5 rounded-2xl p-4'><h2 class='font-bold mb-3 text-sm'>Referral Logs</h2><table class='w-full text-[10px]'><thead><tr><th>From</th><th>To</th><th>Lvl</th><th>Bonus</th></tr></thead><tbody id='refs'></tbody></table></div></div><div class='mt-6 bg-white/5 rounded-2xl p-4'><h2 class='font-bold mb-3'>Users</h2><table class='w-full text-xs'><thead><tr><th>ID</th><th>Bal</th><th>Withd</th><th>Profit</th><th>%</th><th>AI End</th><th>Ref By</th><th>Ref Earn</th></tr></thead><tbody id='users'></tbody></table></div><script>
+async function load(){let s=await fetch('/api/admin/stats').then(r=>r.json()); document.getElementById('stat_users').innerText=s.total_users; document.getElementById('stat_bal').innerText='$'+Number(s.total_balance).toFixed(2); document.getElementById('pend_wd').innerText=s.pending_withdrawals; document.getElementById('ref_paid').innerText='$'+Number(s.total_ref_paid).toFixed(2); let deps=await fetch('/api/admin/deposits').then(r=>r.json()); document.getElementById('deps').innerHTML=deps.map(d=>`<tr class='border-t border-white/5'><td class='p-1'>${d.id}</td><td class='p-1'>${d.user_id}</td><td class='p-1'>$${d.amount}</td><td class='p-1'>${d.network}</td></tr>`).join(''); let wds=await fetch('/api/admin/withdrawals').then(r=>r.json()); document.getElementById('wds').innerHTML=wds.map(w=>`<tr class='border-t border-white/5'><td class='p-1'>${w.id}</td><td class='p-1'>${w.user_id}</td><td class='p-1'>$${w.amount}</td><td class='p-1 ${w.status=='pending'?'text-yellow-400':'text-green-400'}'>${w.status}</td><td class='p-1'>${w.status=='pending'?`<button onclick="actWd(${w.id},'approve')" class='bg-green-500/20 text-green-400 px-2 py-1 rounded mr-1'>Pay</button><button onclick="actWd(${w.id},'reject')" class='bg-red-500/20 text-red-400 px-2 py-1 rounded'>Refund</button>`:''}</td></tr>`).join(''); let refs=await fetch('/api/admin/referrals').then(r=>r.json()); document.getElementById('refs').innerHTML=refs.map(r=>`<tr class='border-t border-white/5'><td class='p-1'>${r.from_user}</td><td class='p-1'>${r.to_user}</td><td class='p-1'>L${r.level}</td><td class='p-1 text-[#FFD60A]'>$${r.bonus.toFixed(2)}</td></tr>`).join(''); let users=await fetch('/api/admin/users').then(r=>r.json()); document.getElementById('users').innerHTML=users.map(u=>`<tr class='border-t border-white/5'><td class='p-1'>${u.user_id}</td><td class='p-1'>$${u.balance.toFixed(2)}</td><td class='p-1 text-[#FFD60A]'>$${u.withdrawable.toFixed(2)}</td><td class='p-1'>$${u.profit.toFixed(2)}</td><td class='p-1'>${(u.daily_percent||0).toFixed(1)}%</td><td class='p-1 text-[9px]'>${u.ai_end?u.ai_end.slice(0,10):'No AI'}</td><td class='p-1'>${u.referred_by||'-'}</td><td class='p-1 text-emerald-400'>$${(u.ref_earn||0).toFixed(2)}</td></tr>`).join('');}
+async function actWd(id,action){await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action})}); load();}
+load(); setInterval(load,5000);
+</script></body></html>
