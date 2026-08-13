@@ -2,8 +2,7 @@
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-import sqlite3, datetime, os, json, urllib.request, urllib.error
-import random
+import sqlite3, datetime, os, json, urllib.request, random, hashlib
 
 app = FastAPI(title="PT_AI Trading - Real Binance")
 DB = "bot.db"
@@ -42,14 +41,9 @@ conn.execute("""CREATE TABLE IF NOT EXISTS withdrawals (
 
 conn.execute("""CREATE TABLE IF NOT EXISTS referral_logs (
  id INTEGER PRIMARY KEY AUTOINCREMENT,
- from_user INTEGER,
- to_user INTEGER,
- level INTEGER,
- deposit_amount REAL,
- bonus_amount REAL,
- created_at TEXT
+ from_user INTEGER, to_user INTEGER, level INTEGER,
+ deposit_amount REAL, bonus_amount REAL, created_at TEXT
 )""")
-
 conn.commit()
 
 for sql in [
@@ -59,10 +53,8 @@ for sql in [
     "ALTER TABLE users ADD COLUMN referral_earnings REAL DEFAULT 0",
     "ALTER TABLE withdrawals ADD COLUMN auto_approved INTEGER DEFAULT 0"
 ]:
-    try:
-        conn.execute(sql)
-    except:
-        pass
+    try: conn.execute(sql)
+    except: pass
 conn.commit()
 
 DEPOSIT_ADDR = {
@@ -73,200 +65,142 @@ DEPOSIT_ADDR = {
  "SOL": "YourSolAddress"
 }
 
-TIERS = [
- (15000, 14.9),
- (6000, 13.6),
- (2500, 11.8),
- (1200, 10.9),
- (500, 9.6),
- (120, 8.9),
- (20, 7.6),
- (0, 0.0)
-]
-
-REF_BONUS = {1: 7, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1, 10: 1}
+TIERS = [(15000,14.9),(6000,13.6),(2500,11.8),(1200,10.9),(500,9.6),(120,8.9),(20,7.6),(0,0.0)]
+REF_BONUS = {1:7,2:1,3:1,4:1,5:1,6:1,7:1,8:1,9:1,10:1}
 
 def get_tier_index(balance: float):
-    for i, (min_bal, pct) in enumerate(TIERS):
-        if balance >= min_bal:
-            return i, min_bal, pct
-    return len(TIERS)-1, 0, 0.0
+    for i,(min_bal,pct) in enumerate(TIERS):
+        if balance >= min_bal: return i,min_bal,pct
+    return len(TIERS)-1,0,0.0
 
 def ensure_user(user_id: int, username="", referred_by=None):
     row = conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
     now = datetime.datetime.utcnow()
     if not row:
-        ref = None
+        ref=None
         if referred_by:
             try:
-                ref_id = int(referred_by)
-                if ref_id != user_id and conn.execute("SELECT 1 FROM users WHERE user_id=?", (ref_id,)).fetchone():
-                    ref = ref_id
-            except:
-                pass
+                ref_id=int(referred_by)
+                if ref_id!=user_id and conn.execute("SELECT 1 FROM users WHERE user_id=?", (ref_id,)).fetchone(): ref=ref_id
+            except: pass
         conn.execute("INSERT INTO users (user_id, username, referred_by, created_at, last_claim, last_auto_claim, current_tier) VALUES (?,?,?,?,?,?,?)",
                      (user_id, username or f"user_{user_id}", ref, now.isoformat(), now.isoformat(), now.isoformat(), len(TIERS)-1))
         conn.commit()
         return conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
-    if len(row) > 15 and row[15] is None:
+    if len(row)>15 and row[15] is None:
         conn.execute("UPDATE users SET created_at=? WHERE user_id=?", (now.isoformat(), user_id))
         conn.commit()
     return conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
 
 def recalc_profit(user_id: int):
     row = conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
-    if not row:
-        return None
-    balance = row[2] or 0
-    ai_end_str = row[7]
-    last_claim_str = row[8]
-    last_auto_str = row[9]
-    current_tier_idx = row[12] if len(row) > 12 and row[12] is not None else len(TIERS)-1
-    now = datetime.datetime.utcnow()
-    tier_idx, tier_min, daily_pct = get_tier_index(balance)
-    if tier_idx < current_tier_idx and balance >= 20:
-        ai_start = now.isoformat()
-        ai_end = (now + datetime.timedelta(days=30)).isoformat()
+    if not row: return None
+    balance=row[2] or 0
+    ai_end_str=row[7]
+    last_claim_str=row[8]
+    last_auto_str=row[9]
+    current_tier_idx=row[12] if len(row)>12 and row[12] is not None else len(TIERS)-1
+    now=datetime.datetime.utcnow()
+    tier_idx,tier_min,daily_pct=get_tier_index(balance)
+    if tier_idx<current_tier_idx and balance>=20:
+        ai_start=now.isoformat(); ai_end=(now+datetime.timedelta(days=30)).isoformat()
         conn.execute("UPDATE users SET ai_start=?, ai_end=?, current_tier=? WHERE user_id=?", (ai_start, ai_end, tier_idx, user_id))
-        ai_end_str = ai_end
+        ai_end_str=ai_end
     else:
-        if (not ai_end_str) and balance >= 20:
-            ai_start = now.isoformat()
-            ai_end = (now + datetime.timedelta(days=30)).isoformat()
+        if (not ai_end_str) and balance>=20:
+            ai_start=now.isoformat(); ai_end=(now+datetime.timedelta(days=30)).isoformat()
             conn.execute("UPDATE users SET ai_start=?, ai_end=?, current_tier=? WHERE user_id=?", (ai_start, ai_end, tier_idx, user_id))
-            ai_end_str = ai_end
-        elif tier_idx != current_tier_idx:
+            ai_end_str=ai_end
+        elif tier_idx!=current_tier_idx:
             conn.execute("UPDATE users SET current_tier=? WHERE user_id=?", (tier_idx, user_id))
-    per_hour = (balance * daily_pct / 100) / 24 if daily_pct>0 else 0
-    profit = row[4] or 0
+    per_hour=(balance*daily_pct/100)/24 if daily_pct>0 else 0
+    profit=row[4] or 0
     if ai_end_str:
         try:
-            ai_end_dt = datetime.datetime.fromisoformat(ai_end_str)
-            if now < ai_end_dt and per_hour>0 and last_claim_str:
-                last_claim = datetime.datetime.fromisoformat(last_claim_str)
-                hours = (now - last_claim).total_seconds()/3600
+            ai_end_dt=datetime.datetime.fromisoformat(ai_end_str)
+            if now<ai_end_dt and per_hour>0 and last_claim_str:
+                last_claim=datetime.datetime.fromisoformat(last_claim_str)
+                hours=(now-last_claim).total_seconds()/3600
                 if hours>0:
-                    inc = hours * per_hour
-                    profit += inc
+                    inc=hours*per_hour
+                    profit+=inc
                     conn.execute("UPDATE users SET profit=?, last_claim=?, profit_per_hour=?, daily_percent=? WHERE user_id=?",
                                  (profit, now.isoformat(), per_hour, daily_pct, user_id))
             else:
                 conn.execute("UPDATE users SET profit_per_hour=?, daily_percent=? WHERE user_id=?", (per_hour, daily_pct, user_id))
-        except:
-            pass
+        except: pass
     try:
         if last_auto_str:
-            last_auto = datetime.datetime.fromisoformat(last_auto_str)
-            if (now - last_auto).total_seconds() >= 24*3600:
-                if profit > 0.01:
-                    withdrawable = (conn.execute("SELECT withdrawable FROM users WHERE user_id=?", (user_id,)).fetchone()[0] or 0) + profit
+            last_auto=datetime.datetime.fromisoformat(last_auto_str)
+            if (now-last_auto).total_seconds()>=24*3600:
+                if profit>0.01:
+                    withdrawable=(conn.execute("SELECT withdrawable FROM users WHERE user_id=?", (user_id,)).fetchone()[0] or 0)+profit
                     conn.execute("UPDATE users SET withdrawable=?, profit=0, last_auto_claim=? WHERE user_id=?", (withdrawable, now.isoformat(), user_id))
-                    profit = 0
-                else:
-                    conn.execute("UPDATE users SET last_auto_claim=? WHERE user_id=?", (now.isoformat(), user_id))
-    except:
-        pass
+                    profit=0
+    except: pass
     conn.commit()
     return conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
 
 def distribute_referral(depositor_id: int, deposit_amount: float):
-    now = datetime.datetime.utcnow().isoformat()
-    current_id = depositor_id
-    for level in range(1, 11):
-        ref_row = conn.execute("SELECT referred_by FROM users WHERE user_id=?", (current_id,)).fetchone()
-        if not ref_row or not ref_row[0]:
-            break
-        referrer_id = ref_row[0]
-        if not conn.execute("SELECT 1 FROM users WHERE user_id=?", (referrer_id,)).fetchone():
-            break
-        bonus_pct = REF_BONUS.get(level, 0)
-        if bonus_pct > 0:
-            bonus = deposit_amount * bonus_pct / 100
+    now=datetime.datetime.utcnow().isoformat()
+    current_id=depositor_id
+    for level in range(1,11):
+        ref_row=conn.execute("SELECT referred_by FROM users WHERE user_id=?", (current_id,)).fetchone()
+        if not ref_row or not ref_row[0]: break
+        referrer_id=ref_row[0]
+        if not conn.execute("SELECT 1 FROM users WHERE user_id=?", (referrer_id,)).fetchone(): break
+        bonus_pct=REF_BONUS.get(level,0)
+        if bonus_pct>0:
+            bonus=deposit_amount*bonus_pct/100
             conn.execute("UPDATE users SET withdrawable=withdrawable+?, referral_earnings=referral_earnings+? WHERE user_id=?", (bonus, bonus, referrer_id))
             conn.execute("INSERT INTO referral_logs (from_user, to_user, level, deposit_amount, bonus_amount, created_at) VALUES (?,?,?,?,?,?)",
                          (depositor_id, referrer_id, level, deposit_amount, bonus, now))
-        current_id = referrer_id
+        current_id=referrer_id
     conn.commit()
 
-# ===== REAL BINANCE PRICES ENDPOINT =====
+# ===== BINANCE PRICES - REAL + DETERMINISTIC TRADES =====
 BINANCE_SYMBOLS = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","AVAXUSDT","LINKUSDT","LTCUSDT","ADAUSDT","PEPEUSDT","SHIBUSDT","MATICUSDT","DOTUSDT","ARBUSDT"]
 
-@app.get("/api/binance/prices")
-def binance_prices():
-    """Fetch real Binance prices - proxy to avoid CORS"""
+def fetch_binance_prices():
     try:
-        url = "https://api.binance.com/api/v3/ticker/price"
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=5) as response:
-            data = json.loads(response.read().decode())
-            # Filter only our symbols
-            filtered = {item['symbol']: float(item['price']) for item in data if item['symbol'] in BINANCE_SYMBOLS}
-            # If Binance fails to return some (like PEPE, SHIB), use fallback
-            fallback = {
-                "BTCUSDT": 67500, "ETHUSDT": 3450, "SOLUSDT": 175, "BNBUSDT": 610,
-                "XRPUSDT": 0.62, "DOGEUSDT": 0.16, "AVAXUSDT": 42, "LINKUSDT": 18.5,
-                "LTCUSDT": 84, "ADAUSDT": 0.48, "PEPEUSDT": 0.000009, "SHIBUSDT": 0.000027,
-                "MATICUSDT": 0.89, "DOTUSDT": 7.2, "ARBUSDT": 1.12
-            }
-            for sym in BINANCE_SYMBOLS:
-                if sym not in filtered:
-                    filtered[sym] = fallback.get(sym, 100)
-            return {"success": True, "prices": filtered, "source": "binance", "timestamp": datetime.datetime.utcnow().isoformat()}
-    except Exception as e:
-        # Fallback prices if Binance API fails
-        fallback_prices = {
-            "BTCUSDT": 67500 + random.uniform(-500,500),
-            "ETHUSDT": 3450 + random.uniform(-50,50),
-            "SOLUSDT": 175 + random.uniform(-5,5),
-            "BNBUSDT": 610 + random.uniform(-10,10),
-            "XRPUSDT": 0.62 + random.uniform(-0.02,0.02),
-            "DOGEUSDT": 0.16 + random.uniform(-0.01,0.01),
-            "AVAXUSDT": 42 + random.uniform(-1,1),
-            "LINKUSDT": 18.5 + random.uniform(-0.5,0.5),
-            "LTCUSDT": 84 + random.uniform(-2,2),
-            "ADAUSDT": 0.48 + random.uniform(-0.02,0.02),
-            "PEPEUSDT": 0.000009 + random.uniform(-0.0000005,0.0000005),
-            "SHIBUSDT": 0.000027 + random.uniform(-0.000001,0.000001),
-            "MATICUSDT": 0.89 + random.uniform(-0.03,0.03),
-            "DOTUSDT": 7.2 + random.uniform(-0.2,0.2),
-            "ARBUSDT": 1.12 + random.uniform(-0.05,0.05)
-        }
-        return {"success": True, "prices": fallback_prices, "source": "fallback", "timestamp": datetime.datetime.utcnow().isoformat()}
+        url="https://api.binance.com/api/v3/ticker/price"
+        req=urllib.request.Request(url, headers={'User-Agent':'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            data=json.loads(resp.read().decode())
+            prices={item['symbol']: float(item['price']) for item in data if item['symbol'] in BINANCE_SYMBOLS}
+            fallback={"BTCUSDT":67342,"ETHUSDT":3421,"SOLUSDT":178.5,"BNBUSDT":612,"XRPUSDT":0.62,"DOGEUSDT":0.16,"AVAXUSDT":42.3,"LINKUSDT":18.7,"LTCUSDT":84.5,"ADAUSDT":0.48,"PEPEUSDT":0.0000092,"SHIBUSDT":0.000027,"MATICUSDT":0.89,"DOTUSDT":7.2,"ARBUSDT":1.12}
+            for s in BINANCE_SYMBOLS:
+                if s not in prices: prices[s]=fallback[s]
+            return prices, "binance"
+    except:
+        prices={"BTCUSDT":67342+random.uniform(-200,200),"ETHUSDT":3421,"SOLUSDT":178.5,"BNBUSDT":612,"XRPUSDT":0.62,"DOGEUSDT":0.16,"AVAXUSDT":42.3,"LINKUSDT":18.7,"LTCUSDT":84.5,"ADAUSDT":0.48,"PEPEUSDT":0.0000092,"SHIBUSDT":0.000027,"MATICUSDT":0.89,"DOTUSDT":7.2,"ARBUSDT":1.12}
+        return prices, "fallback"
 
-@app.get("/api/binance/trades")
-def binance_trades_all():
-    """Same trades for all users - 12-15 trades, 50-70% total PnL, deterministic per day"""
-    import hashlib
+@app.get("/api/binance/prices")
+def binance_prices_api():
+    prices, source = fetch_binance_prices()
+    return {"success":True, "prices":prices, "source":source, "timestamp":datetime.datetime.utcnow().isoformat()}
+
+def generate_deterministic_trades():
     today = datetime.date.today().isoformat()
     seed = int(hashlib.md5(today.encode()).hexdigest()[:8], 16)
     rng = random.Random(seed)
-    
-    prices_data = binance_prices()
-    prices = prices_data["prices"]
-    
     count = 12 + (seed % 4)  # 12-15
-    target_total = 50 + (seed % 21)  # 50-70%
-    
+    target_total = 50 + (seed % 21)  # 50-70
     win_count = int(count * 0.71)
     if win_count < 8: win_count = 8
     loss_count = count - win_count
-    
     needed_win = target_total - (loss_count * -1.1)
-    
     win_pnls = []
     for _ in range(win_count):
         win_pnls.append(4.5 + rng.random()*4.0)
-    
     curr_win = sum(win_pnls)
     if curr_win > 0:
         scale = needed_win / curr_win
         win_pnls = [round(p*scale,2) for p in win_pnls]
-    
     lose_pnls = [round(-(0.7 + rng.random()*1.3),2) for _ in range(loss_count)]
-    
     all_pnls = win_pnls + lose_pnls
     rng.shuffle(all_pnls)
-    
     final = round(sum(all_pnls),2)
     if final < 50 or final > 70:
         diff = target_total - final
@@ -274,215 +208,60 @@ def binance_trades_all():
             if all_pnls[i] > 0:
                 all_pnls[i] = round(all_pnls[i]+diff,2)
                 break
-    
     symbols = BINANCE_SYMBOLS.copy()
     rng.shuffle(symbols)
-    
-    trades = []
-    total_usdt = 0
+    trades=[]
     for i in range(count):
         sym = symbols[i % len(symbols)]
-        pair = sym.replace("USDT","/USDT")
         pnl = all_pnls[i]
         side = rng.choice(["LONG","SHORT"])
         leverage = rng.choice([5,10,15,20])
         usdt = round(800 + rng.random()*1200,2)
-        total_usdt += usdt
-        time_h = (6 + i*1 + rng.randint(0,2)) % 24
-        time_m = rng.randint(0,59)
-        time_str = f"{time_h:02d}:{time_m:02d}"
+        th = (6 + i + rng.randint(0,2)) % 24
+        tm = rng.randint(0,59)
+        time_str = f"{th:02d}:{tm:02d}"
         status = "OPEN" if i < 3 else "CLOSED"
-        curr_price = prices.get(sym, 100)
-        if side == "LONG":
-            entry = curr_price / (1 + pnl/100)
-        else:
-            entry = curr_price / (1 - pnl/100)
-        
-        trades.append({
-            "id": i+1,
-            "pair": pair,
-            "symbol": sym,
-            "side": side,
-            "entry_price": round(entry, 6 if entry < 1 else 2),
-            "current_price": round(curr_price, 6 if curr_price < 1 else 2),
-            "leverage": leverage,
-            "usdt_amount": usdt,
-            "pnl_percent": pnl,
-            "pnl_usdt": round(usdt*pnl/100,2),
-            "is_profit": pnl>0,
-            "time": time_str,
-            "status": status,
-            "date": today
-        })
-    
+        trades.append({"id":i+1,"pair":sym.replace("USDT","/USDT"),"symbol":sym,"target_pnl":pnl,"is_profit":pnl>0,"leverage":leverage,"usdt_amount":usdt,"time":time_str,"status":status,"side":side,"date":today})
     trades.sort(key=lambda x: x["time"], reverse=True)
-    total_pnl = round(sum(t["pnl_percent"] for t in trades),2)
-    
-    return {
-        "trades": trades,
-        "summary": {
-            "total_trades": count,
-            "profit_trades": len([t for t in trades if t["pnl_percent"]>0]),
-            "loss_trades": len([t for t in trades if t["pnl_percent"]<0]),
-            "total_pnl_percent": total_pnl,
-            "total_pnl_usdt": round(sum(t["pnl_usdt"] for t in trades),2),
-            "funds_in_market": round(total_usdt,2),
-            "date": today
-        },
-        "prices_source": prices_data["source"]
-    }
+    return trades, round(sum(all_pnls),2), count, len([p for p in all_pnls if p>0]), len([p for p in all_pnls if p<0])
 
-# Cache for daily trades per user - to keep consistent on refresh
-DAILY_TRADES_CACHE = {}
+@app.get("/api/binance/trades")
+def binance_trades_all():
+    prices, source = fetch_binance_prices()
+    tmpl, total_pnl, count, win_c, loss_c = generate_deterministic_trades()
+    trades=[]
+    for t in tmpl:
+        curr = prices.get(t["symbol"], 100)
+        pnl = t["target_pnl"]
+        if t["side"]=="LONG":
+            entry = curr / (1 + pnl/100)
+        else:
+            entry = curr / (1 - pnl/100)
+        trades.append({
+            "id":t["id"],"pair":t["pair"],"symbol":t["symbol"],"side":t["side"],
+            "entry_price":round(entry,6 if entry<1 else 2),
+            "current_price":round(curr,6 if curr<1 else 2),
+            "leverage":t["leverage"],"usdt_amount":t["usdt_amount"],
+            "pnl_percent":pnl,"pnl_usdt":round(t["usdt_amount"]*pnl/100,2),
+            "is_profit":t["is_profit"],"time":t["time"],"status":t["status"],"date":t["date"]
+        })
+    return {
+        "trades":trades,
+        "summary":{
+            "total_trades":count,
+            "profit_trades":win_c,
+            "loss_trades":loss_c,
+            "total_pnl_percent":total_pnl,
+            "total_pnl_usdt":round(sum(x["pnl_usdt"] for x in trades),2),
+            "funds_in_market":round(sum(x["usdt_amount"] for x in trades),2),
+            "date":tmpl[0]["date"] if tmpl else ""
+        },
+        "prices_source":source
+    }
 
 @app.get("/api/binance/trades/{user_id}")
-def binance_trades(user_id: int):
-    """Generate FIXED 12-15 trades per day per user - consistent on refresh, 50-70% total PnL"""
-    ensure_user(user_id)
-    user_row = conn.execute("SELECT balance FROM users WHERE user_id=?", (user_id,)).fetchone()
-    balance = user_row[0] if user_row else 0
-    
-    # Get real prices
-    prices_data = binance_prices()
-    prices = prices_data["prices"]
-    
-    today = datetime.datetime.utcnow().date().isoformat()
-    cache_key = f"{user_id}_{today}"
-    
-    # If cached and same day, return cached trades but update current prices
-    if cache_key in DAILY_TRADES_CACHE:
-        cached = DAILY_TRADES_CACHE[cache_key]
-        # Update current prices with live Binance prices
-        for trade in cached["trades"]:
-            sym = trade["symbol"]
-            if sym in prices:
-                live_price = prices[sym]
-                trade["current_price"] = round(live_price, 6 if live_price < 1 else 2)
-                # Recalculate PnL for OPEN trades based on live price
-                if trade["status"] == "OPEN":
-                    if trade["side"] == "LONG":
-                        new_pnl = ((live_price - trade["entry_price"]) / trade["entry_price"]) * 100
-                    else:
-                        new_pnl = ((trade["entry_price"] - live_price) / trade["entry_price"]) * 100
-                    trade["pnl_percent"] = round(new_pnl, 2)
-                    trade["pnl_usdt"] = round(trade["usdt_amount"] * new_pnl / 100, 2)
-                    trade["is_profit"] = new_pnl > 0
-        # Recalculate summary
-        total_pnl = sum(t["pnl_percent"] for t in cached["trades"])
-        profit_cnt = sum(1 for t in cached["trades"] if t["pnl_percent"] > 0)
-        loss_cnt = len(cached["trades"]) - profit_cnt
-        cached["summary"]["total_pnl_percent"] = round(total_pnl, 2)
-        cached["summary"]["profit_trades"] = profit_cnt
-        cached["summary"]["loss_trades"] = loss_cnt
-        cached["summary"]["total_pnl_usdt"] = round(sum(t["pnl_usdt"] for t in cached["trades"]), 2)
-        return cached
-    
-    # Generate NEW trades for today - deterministic seed for consistency
-    seed_str = f"{user_id}_{today}"
-    seed = hash(seed_str) % (2**32)
-    random.seed(seed)
-    
-    symbols = list(prices.keys())
-    # Fixed count 12-15 based on seed - same for whole day
-    count = 12 + (seed % 4)  # 12,13,14,15
-    # Target total PnL 50-70% for the day
-    target_total_pnl = 50 + (seed % 21)  # 50-70%
-    # Distribute PnL across trades - 70% winning trades
-    winning_count = int(count * 0.7)  # 70% win rate = 8-10 wins
-    losing_count = count - winning_count
-    
-    trades = []
-    total_pnl_percent = 0
-    profit_count = 0
-    loss_count = 0
-    now = datetime.datetime.utcnow()
-    
-    # Generate winning PnLs that sum to ~60-75% minus small losses
-    # Winning trades: 5-9% each, losing: -0.5 to -1.5% each
-    win_pnls = []
-    lose_pnls = []
-    # Reserve 10% for losses, 90% for wins to reach 50-70% net
-    net_target = target_total_pnl
-    loss_budget = - (losing_count * 1.0)  # average -1% per loss
-    win_budget = net_target - loss_budget  # need this much from wins
-    
-    for i in range(winning_count):
-        pnl = win_budget / winning_count + random.uniform(-1, 1)
-        pnl = max(3.0, min(9.0, pnl))  # clamp 3-9%
-        win_pnls.append(round(pnl, 2))
-    
-    for i in range(losing_count):
-        pnl = -random.uniform(0.5, 1.8)
-        lose_pnls.append(round(pnl, 2))
-    
-    all_pnls = win_pnls + lose_pnls
-    random.shuffle(all_pnls)
-    
-    for i in range(count):
-        symbol = random.choice(symbols)
-        pair = symbol.replace("USDT","/USDT")
-        current_price = prices[symbol]
-        target_pnl = all_pnls[i]
-        is_profit = target_pnl > 0
-        side = "LONG" if random.random() > 0.5 else "SHORT"
-        
-        if side == "LONG":
-            entry_price = current_price / (1 + target_pnl/100)
-        else:
-            entry_price = current_price / (1 - target_pnl/100)
-        
-        leverage = random.choice([5,10,15,20])
-        usdt_amount = round((balance*0.08 + random.random()*balance*0.04) if balance>20 else (20 + random.random()*60), 2)
-        pnl_usdt = round(usdt_amount * target_pnl / 100, 2)
-        
-        trade_time = now - datetime.timedelta(hours=random.randint(0,23), minutes=random.randint(0,59))
-        time_str = trade_time.strftime("%H:%M")
-        
-        status = "OPEN" if i < 3 else "CLOSED"
-        
-        if is_profit:
-            profit_count+=1
-        else:
-            loss_count+=1
-        total_pnl_percent+=target_pnl
-        
-        trades.append({
-            "id": i+1,
-            "pair": pair,
-            "symbol": symbol,
-            "side": side,
-            "entry_price": round(entry_price, 6 if entry_price < 1 else 2),
-            "current_price": round(current_price, 6 if current_price < 1 else 2),
-            "leverage": leverage,
-            "usdt_amount": usdt_amount,
-            "pnl_percent": target_pnl,
-            "pnl_usdt": pnl_usdt,
-            "is_profit": is_profit,
-            "time": time_str,
-            "status": status,
-            "timestamp": trade_time.isoformat()
-        })
-    
-    trades.sort(key=lambda x: x["time"], reverse=True)
-    
-    result = {
-        "trades": trades,
-        "summary": {
-            "total_trades": count,
-            "profit_trades": profit_count,
-            "loss_trades": loss_count,
-            "total_pnl_percent": round(total_pnl_percent, 2),
-            "total_pnl_usdt": round(sum(t["pnl_usdt"] for t in trades), 2),
-            "funds_in_market": round(balance*0.75, 2) if balance>0 else 0,
-            "target_pnl": target_total_pnl,
-            "date": today
-        },
-        "prices_source": prices_data["source"]
-    }
-    
-    DAILY_TRADES_CACHE[cache_key] = result
-    random.seed()  # Reset random seed
-    return result
+def binance_trades_user(user_id: int):
+    return binance_trades_all()
 
 @app.get("/api/user/{user_id}")
 def api_user(user_id: int, ref: int = None):
@@ -558,20 +337,10 @@ def api_referral(user_id: int):
                     if lvl==1:
                         direct_refs.append({"user_id": r[0], "balance": r[1], "total_deposit": r[2]})
         current_level_ids = next_ids
-        if not current_level_ids:
-            break
-    import os
+        if not current_level_ids: break
     bot_username = os.getenv("BOT_USERNAME", "YourBot")
     ref_link = f"https://t.me/{bot_username}?start={user_id}"
-    return {
-        "ref_link": ref_link,
-        "direct_count": len(direct_refs),
-        "direct_refs": direct_refs,
-        "level_counts": level_counts,
-        "total_team_deposit": total_team_deposit,
-        "total_earnings": total_earnings,
-        "bonus_structure": REF_BONUS
-    }
+    return {"ref_link": ref_link, "direct_count": len(direct_refs), "direct_refs": direct_refs, "level_counts": level_counts, "total_team_deposit": total_team_deposit, "total_earnings": total_earnings, "bonus_structure": REF_BONUS}
 
 class DepositReq(BaseModel):
     amount: float
@@ -589,29 +358,22 @@ def deposit_req(user_id: int, r: DepositReq):
     tier_idx, tier_min, daily_pct = get_tier_index(new_bal)
     per_hour = (new_bal * daily_pct / 100) / 24 if daily_pct>0 else 0
     should_reset = False
-    if old_bal < 20 and new_bal >= 20:
-        should_reset = True
-    elif tier_idx < old_tier_idx:
-        should_reset = True
+    if old_bal < 20 and new_bal >= 20: should_reset = True
+    elif tier_idx < old_tier_idx: should_reset = True
     if should_reset:
-        ai_start = now.isoformat()
-        ai_end = (now + datetime.timedelta(days=30)).isoformat()
+        ai_start = now.isoformat(); ai_end = (now + datetime.timedelta(days=30)).isoformat()
     else:
         row = conn.execute("SELECT ai_start, ai_end FROM users WHERE user_id=?", (user_id,)).fetchone()
-        ai_start = row[0]
-        ai_end = row[1]
+        ai_start = row[0]; ai_end = row[1]
         if not ai_end and new_bal >=20:
-            ai_start = now.isoformat()
-            ai_end = (now + datetime.timedelta(days=30)).isoformat()
+            ai_start = now.isoformat(); ai_end = (now + datetime.timedelta(days=30)).isoformat()
     conn.execute("INSERT INTO deposits (user_id, amount, network, tx_hash, status, created_at) VALUES (?,?,?,?,?,?)",
                  (user_id, r.amount, r.network, r.tx_hash, "approved", now.isoformat()))
-    conn.execute("""UPDATE users SET balance=?, profit_per_hour=?, daily_percent=?, 
-                 total_deposit=total_deposit+?, ai_start=?, ai_end=?, current_tier=?, last_claim=?
-                 WHERE user_id=?""",
+    conn.execute("""UPDATE users SET balance=?, profit_per_hour=?, daily_percent=?, total_deposit=total_deposit+?, ai_start=?, ai_end=?, current_tier=?, last_claim=? WHERE user_id=?""",
                  (new_bal, per_hour, daily_pct, r.amount, ai_start, ai_end, tier_idx, now.isoformat(), user_id))
     conn.commit()
     distribute_referral(user_id, r.amount)
-    return {"ok": True, "auto_approved": True, "new_balance": new_bal, "daily_percent": daily_pct, "ai_reset": should_reset, "ai_end": ai_end}
+    return {"ok": True, "new_balance": new_bal, "daily_percent": daily_pct, "ai_reset": should_reset, "ai_end": ai_end}
 
 class WithdrawReq(BaseModel):
     amount: float
@@ -625,20 +387,15 @@ def withdraw_req(user_id: int, r: WithdrawReq):
     now = datetime.datetime.utcnow()
     today_str = now.date().isoformat()
     user_row = conn.execute("SELECT withdrawable, created_at, last_withdraw_date FROM users WHERE user_id=?", (user_id,)).fetchone()
-    if not user_row:
-        return {"error": "User not found"}
+    if not user_row: return {"error": "User not found"}
     withdrawable = user_row[0] or 0
     created_str = user_row[1]
     last_wd_date = user_row[2] or ""
-    if last_wd_date == today_str:
-        return {"error": "Withdrawal limit: Once per day only. Try tomorrow."}
+    if last_wd_date == today_str: return {"error": "Once per day only. Try tomorrow."}
     today_count = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE user_id=? AND DATE(created_at)=DATE('now')", (user_id,)).fetchone()[0]
-    if today_count > 0:
-        return {"error": "Withdrawal limit: Once per day only. Try tomorrow."}
-    if r.amount < 10:
-        return {"error": "Min withdraw 10 USDT"}
-    if withdrawable < r.amount:
-        return {"error": f"Insufficient withdrawable USDT. You have {withdrawable:.2f} USDT"}
+    if today_count > 0: return {"error": "Once per day only. Try tomorrow."}
+    if r.amount < 10: return {"error": "Min withdraw 10 USDT"}
+    if withdrawable < r.amount: return {"error": f"Insufficient. You have {withdrawable:.2f} USDT"}
     try:
         created_dt = datetime.datetime.fromisoformat(created_str) if created_str else now
         days_since = (now - created_dt).days
