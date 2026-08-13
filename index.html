@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1'>
-<title>PT_AI Trading - Invoice Deposit</title>
+<title>PT_AI Trading - Quick Stats Fixed</title>
 <script src='https://telegram.org/js/telegram-web-app.js'></script>
 <script src='https://cdn.tailwindcss.com'></script>
 <link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap' rel='stylesheet'>
@@ -8,7 +8,7 @@
 </head>
 <body class='bg-[#050507] text-white min-h-screen flex justify-center'>
 <div class='w-full max-w-[420px] bg-[#050507] min-h-screen relative pb-28'>
-<header class='flex justify-between items-center p-5 pt-10'><span class='text-sm tracking-[3px] font-bold'>PT_AI Trading</span><span class='text-xs px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'>● BINANCE LIVE</span></header>
+<header class='flex justify-between items-center p-5 pt-10'><span class='text-sm tracking-[3px] font-bold'>PT_AI Trading</span><span class='text-xs px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'>● SELF-CUSTODY • QUICK STATS FIXED</span></header>
 
 <div class='mx-4 bg-white/5 border border-white/10 rounded-[24px] p-4 flex justify-between items-center'>
 <div class='flex items-center gap-3'><div class='w-12 h-12 rounded-full bg-[#26A17B] flex items-center justify-center font-bold text-white text-[18px]'>₮</div><div><p class='text-xs text-[#26A17B] tracking-widest font-bold'><span id='aiDot'>🟢</span> <span id='aiStatus'>AI ACTIVE</span> • <span id='tierPct'>0%</span>/day</p><p class='font-bold text-sm'><span id='aiDays'>0</span>d <span id='aiHours'>0</span>h left • <span id='balTopMini'>0</span> USDT</p></div></div>
@@ -17,10 +17,32 @@
 
 <div id='tab-home' class='tab-content'>
 <div class='mt-5 mx-4 bg-gradient-to-br from-[#6C3BFF] via-[#8A5CFF] to-[#A5A6F6] rounded-[28px] p-6'>
-<p class='text-white/70 text-sm'>Daily AI Profit • <span id='dailyPct'>0%</span> • Real Binance Trading</p>
+<p class='text-white/70 text-sm'>Daily AI Profit • <span id='dailyPct'>0%</span> • Self-Custody • Quick Stats Fixed</p>
 <h1 class='text-[36px] font-extrabold leading-none mt-2 flex items-center gap-2'><span class='text-[20px] bg-white/20 w-10 h-10 rounded-full flex items-center justify-center'>₮</span> <span id='profitVal'>0.00</span> <span class='text-base opacity-60'>USDT</span></h1>
-<p class='text-sm text-white/80 mt-3'>+<span id='perHour'>0.00</span> USDT/hr • Live trades on Binance</p>
-<div class='mt-4 flex gap-3 flex-wrap'><button onclick='openDeposit()' class='bg-white text-black px-5 py-3 rounded-full font-bold text-sm'>Deposit USDT</button><button onclick='openWithdraw()' class='bg-[#FFD60A] text-black px-5 py-3 rounded-full font-bold text-sm'>Withdraw USDT</button><span class='bg-black/40 px-3 py-2 rounded-full text-xs'>Binance API: <span id='binanceStatus'>Connecting...</span></span></div>
+<p class='text-sm text-white/80 mt-3'>+<span id='perHour'>0.00</span> USDT/hr • Self-custody deposits • No Binance freeze</p>
+<div class='mt-4 flex gap-3 flex-wrap'><button onclick='openDeposit()' class='bg-white text-black px-5 py-3 rounded-full font-bold text-sm'>Deposit USDT</button><button onclick='openWithdraw()' class='bg-[#FFD60A] text-black px-5 py-3 rounded-full font-bold text-sm'>Withdraw USDT</button><span class='bg-black/40 px-3 py-2 rounded-full text-xs'>Live: <span id='binanceStatus'>Live</span></span></div>
+</div>
+
+<!-- QUICK STATS MOVED TO TOP BELOW DAILY AI PROFIT - FIXED INSTANT UPDATE -->
+<div class='mx-4 mt-4 bg-gradient-to-br from-[#121214] to-[#1a1a2e] border border-[#FFD60A]/20 rounded-[24px] p-4 shadow-lg'>
+<div class='flex justify-between items-center mb-3'><h3 class='font-bold text-sm flex items-center gap-2'>💰 Quick Stats ₮ USDT • Instant Update</h3><span class='text-[10px] px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400'>Live • Fixed</span></div>
+<div class='grid grid-cols-2 gap-3'>
+<div class='bg-gradient-to-br from-[#26A17B]/20 to-[#26A17B]/5 border border-[#26A17B]/20 p-4 rounded-[16px]'>
+<p class='text-xs opacity-60'>Total Deposited</p>
+<p id='totalDep' class='font-extrabold text-lg mt-1 text-[#26A17B]'>0.00 USDT</p>
+<p class='text-[10px] opacity-50 mt-1'>All verified deposits</p>
+</div>
+<div class='bg-gradient-to-br from-[#FFD60A]/20 to-[#FFD60A]/5 border border-[#FFD60A]/20 p-4 rounded-[16px]'>
+<p class='text-xs opacity-60'>Total Withdrawn</p>
+<p id='totalWd' class='font-extrabold text-lg mt-1 text-[#FFD60A]'>0.00 USDT</p>
+<p class='text-[10px] opacity-50 mt-1'>All withdrawals</p>
+</div>
+</div>
+<div class='mt-3 grid grid-cols-2 gap-3 text-xs'>
+<div class='bg-white/5 p-3 rounded-xl flex justify-between'><span class='opacity-60'>Trading Balance:</span><span id='quickBal' class='font-bold'>0 USDT</span></div>
+<div class='bg-white/5 p-3 rounded-xl flex justify-between'><span class='opacity-60'>Profit Earned:</span><span id='quickProfit' class='font-bold text-emerald-400'>0 USDT</span></div>
+</div>
+<p class='text-[10px] opacity-40 mt-2 text-center'>✅ Updates instantly after deposit/withdrawal verified • No reload needed</p>
 </div>
 
 <div class='mx-4 mt-5 bg-[#121214] border border-emerald-500/20 rounded-[24px] p-4'>
@@ -39,15 +61,13 @@
 <table class='w-full text-xs'><thead class='bg-white/5 text-[11px] opacity-60'><tr><th class='p-3 text-left'>Time</th><th class='p-3 text-left'>Pair</th><th class='p-3'>Side</th><th class='p-3 text-right'>Entry</th><th class='p-3 text-right'>Exit</th><th class='p-3 text-right'>Lev</th><th class='p-3 text-right'>PnL %</th></tr></thead><tbody id='tradesTableBody' class='text-sm'><tr><td colspan="7" class="p-4 text-center opacity-50">Loading trades...</td></tr></tbody></table>
 </div>
 </div>
-
-<div class='mx-4 mt-4 bg-[#121214] border border-white/5 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>Quick Stats ₮ USDT</h3><div class='grid grid-cols-2 gap-3 text-sm'><div class='bg-white/5 p-3 rounded-xl'>Deposit: <span id='totalDep' class='font-bold'>0 USDT</span></div><div class='bg-white/5 p-3 rounded-xl'>Withdrawn: <span id='totalWd' class='font-bold'>0 USDT</span></div></div></div>
 </div>
 
 <div id='tab-tiers' class='tab-content hidden'>
 <div class='mx-4 mt-5 bg-[#1A1A2E] border border-[#26A17B]/30 rounded-[28px] p-6'>
 <div class='flex items-center gap-3'><div class='w-10 h-10 bg-[#26A17B] rounded-full flex items-center justify-center font-bold'>₮</div><div><h3 class='font-bold text-base'>Profit Tiers - ₮ USDT</h3><p class='text-sm opacity-60'>Earn daily % on USDT balance • Min 20 USDT</p></div></div>
-<div id='tierList' class='mt-5 space-y-3'><p class='text-xs opacity-50'>Loading tiers...</p></div>
-<div class='mt-5 bg-white/5 rounded-[16px] p-4'><table class='w-full text-sm'><thead class='opacity-50 text-xs'><tr><th class='text-left'>Min ₮</th><th class='text-left'>%</th><th class='text-left'>Example</th></tr></thead><tbody id='tierTable'><tr><td colspan="3" class="p-2 opacity-50">Loading...</td></tr></tbody></table></div>
+<div id='tierList' class='mt-5 space-y-3'></div>
+<div class='mt-5 bg-white/5 rounded-[16px] p-4'><table class='w-full text-sm'><thead class='opacity-50 text-xs'><tr><th class='text-left'>Min ₮</th><th class='text-left'>%</th><th class='text-left'>Example</th></tr></thead><tbody id='tierTable'></tbody></table></div>
 </div>
 </div>
 
@@ -55,8 +75,8 @@
 <div class='mx-4 mt-5 bg-gradient-to-br from-[#FFD60A]/20 to-[#FFA600]/10 border border-[#FFD60A]/30 rounded-[28px] p-5'>
 <h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Referral - Earn USDT</h3>
 <div class='mt-4 bg-black/50 rounded-xl p-4'><p class='text-xs opacity-50'>YOUR REFERRAL LINK</p><p id='refLink' class='text-sm break-all mt-2 font-mono'>Loading...</p><div class='flex gap-2 mt-3'><button onclick='copyRef()' class='bg-white text-black px-4 py-2 rounded-full text-sm font-bold'>Copy Link</button><button onclick='shareRef()' class='bg-[#FFD60A] text-black px-4 py-2 rounded-full text-sm font-bold'>Share</button></div></div>
-<div class='mt-4 grid grid-cols-3 gap-3 text-center'><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>DIRECT</p><p id='directCount' class='font-bold text-lg'>0</p><p class='text-[10px] opacity-40'>Friends</p></div><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>TEAM</p><p id='teamDep' class='font-bold text-[#FFD60A]'>0 USDT</p><p class='text-[10px] opacity-40'>Total</p></div><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>EARNED</p><p id='refEarned' class='font-bold text-emerald-400'>0 USDT</p><p class='text-[10px] opacity-40'>To Wallet</p></div></div>
-<div class='mt-5 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>💰 Referral Bonus (Auto → Withdrawable)</h3><div class='space-y-2 text-sm'><div class='flex justify-between items-center bg-[#FFD60A]/10 p-3 rounded-xl border border-[#FFD60A]/20'><span>Level 1 - Direct</span><span class='font-bold text-[#FFD60A]'>7% Bonus</span></div><div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 2-10</span><span class='font-bold'>1% Each</span></div></div><p class='text-xs opacity-50 mt-3'>✅ Bonus added instantly to withdrawable when referral deposits verified!</p></div>
+<div class='mt-4 grid grid-cols-3 gap-3 text-center'><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>DIRECT</p><p id='directCount' class='font-bold text-lg'>0</p></div><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>TEAM</p><p id='teamDep' class='font-bold text-[#FFD60A]'>0 USDT</p></div><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>EARNED</p><p id='refEarned' class='font-bold text-emerald-400'>0 USDT</p></div></div>
+<div class='mt-5 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>💰 Referral Bonus</h3><div class='space-y-2 text-sm'><div class='flex justify-between items-center bg-[#FFD60A]/10 p-3 rounded-xl border border-[#FFD60A]/20'><span>Level 1 - Direct</span><span class='font-bold text-[#FFD60A]'>7% Bonus</span></div><div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 2-10</span><span class='font-bold'>1% Each</span></div></div></div>
 <div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>👥 My Direct Referrals</h3><div id='directList' class='space-y-2 text-sm'><p class='opacity-50'>Loading...</p></div></div>
 <div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>📜 Earnings History</h3><div id='refHistory' class='space-y-2 text-xs'><p class='opacity-50'>Loading...</p></div></div>
 </div>
@@ -68,7 +88,7 @@
 <div class='mt-5 grid grid-cols-2 gap-3 text-sm'><div class='bg-white/5 p-4 rounded-xl'><p class='opacity-50 text-xs'>TRADING BAL</p><p id='userBal' class='font-bold text-base mt-1'>Loading...</p></div><div class='bg-[#FFD60A]/10 border border-[#FFD60A]/20 p-4 rounded-xl'><p class='text-[#FFD60A] text-xs'>WALLET</p><p id='userWd' class='font-bold text-base text-[#FFD60A] mt-1'>Loading...</p></div></div>
 <div class='mt-4 text-sm opacity-50'>Daily: <span id='earnPct'>0%</span> • Earned: <span id='refEarn'>0 USDT</span></div>
 </div>
-<div class='mx-4 mt-5 bg-[#121214] border border-white/5 rounded-[24px] p-5'><h3 class='font-bold text-sm mb-3'>Deposit History (Invoice System)</h3><div id='history' class='text-sm space-y-2 opacity-70'>Loading history...</div></div>
+<div class='mx-4 mt-5 bg-[#121214] border border-white/5 rounded-[24px] p-5'><h3 class='font-bold text-sm mb-3'>Deposit History (Self-Custody)</h3><div id='history' class='text-sm space-y-2 opacity-70'>Loading history...</div></div>
 </div>
 
 <div class='fixed bottom-5 left-1/2 -translate-x-1/2 w-[90%] max-w-[380px] bg-[#121214]/95 backdrop-blur-xl border border-white/10 rounded-full p-2 flex justify-around shadow-2xl'>
@@ -78,62 +98,54 @@
 <button onclick='showTab("user")' id='btn-user' class='tab-btn w-14 h-14 rounded-full flex items-center justify-center text-xl tab-inactive'>👤</button>
 </div>
 
-<!-- DEPOSIT MODAL - INVOICE SYSTEM NO TX HASH -->
 <div id='depositModal' class='hidden fixed inset-0 bg-black/90 z-50 flex items-end'><div class='bg-[#121214] w-full rounded-t-[32px] p-6 max-h-[92vh] overflow-y-auto'>
 <div id='depositStep1'>
-<h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Deposit USDT • Invoice • Min 20 USDT</h3>
-<p class='text-xs opacity-60 mt-2'>No TX hash needed! Send to address and we auto detect payment within 15 min timer.</p>
-<div class='mt-4 grid grid-cols-3 gap-2' id='networkBtns'><p class='text-xs opacity-50'>Loading networks...</p></div>
-<div class='mt-4 bg-white/5 p-4 rounded-xl'><p class='text-xs opacity-50'>DEPOSIT ADDRESS (<span id='selectedNet'>TRC20</span>)</p><p id='depositAddr' class='text-sm break-all font-mono mt-2'>Loading...</p><button onclick='copyAddr()' class='mt-3 text-sm bg-white/10 px-4 py-2 rounded-full'>Copy Address</button></div>
-<div class='mt-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3'><p class='text-xs text-emerald-400'>✅ Secure: Payment auto detected from blockchain. No need to enter TX hash. Just send and wait!</p></div>
+<h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Deposit USDT • Self-Custody • Min 20 USDT</h3>
+<div class='mt-4 grid grid-cols-3 gap-2' id='networkBtns'></div>
+<div class='mt-4 bg-white/5 p-4 rounded-xl'><p class='text-xs opacity-50'>YOUR SELF-CUSTODY ADDRESS (<span id='selectedNet'>TRC20</span>)</p><p id='depositAddr' class='text-sm break-all font-mono mt-2'>Loading...</p><button onclick='copyAddr()' class='mt-3 text-sm bg-white/10 px-4 py-2 rounded-full'>Copy Address</button></div>
 <input id='depAmount' type='number' placeholder='Amount USDT (Min 20)' class='mt-4 w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-base'>
 <button onclick='createInvoice()' id='createInvoiceBtn' class='mt-4 w-full bg-[#26A17B] text-white py-4 rounded-full font-bold text-base'>Create Deposit Invoice</button>
 <button onclick='document.getElementById("depositModal").classList.add("hidden")' class='mt-3 w-full bg-white/5 py-4 rounded-full text-base'>Close</button>
 </div>
-
 <div id='depositStep2' class='hidden'>
-<h3 class='font-bold text-base flex items-center gap-2'>⏳ Deposit Invoice • <span id='invoiceIdDisplay' class='font-mono text-[#FFD60A]'></span></h3>
+<h3 class='font-bold text-base flex items-center gap-2'>⏳ Invoice • <span id='invoiceIdDisplay' class='font-mono text-[#FFD60A]'></span></h3>
 <div class='mt-4 bg-[#FFD60A]/10 border border-[#FFD60A]/30 rounded-[20px] p-4'>
 <div class='flex justify-between items-center'><p class='text-xs opacity-70'>Time left to pay</p><p id='invoiceTimer' class='font-bold text-xl text-[#FFD60A] animate-pulse'>15:00</p></div>
 <div class='mt-2 w-full bg-black/50 rounded-full h-2'><div id='timerBar' class='h-2 bg-[#FFD60A] rounded-full transition-all' style='width:100%'></div></div>
 <p class='text-xs opacity-60 mt-2' id='invoiceExpiry'>Expires at...</p>
 </div>
-
 <div class='mt-4 bg-white/5 border border-white/10 rounded-[20px] p-5'>
 <p class='text-xs opacity-50'>SEND EXACTLY</p>
 <p id='invoiceAmount' class='text-[32px] font-extrabold text-[#26A17B]'>0 USDT</p>
 <p class='text-xs opacity-60 mt-1'>Network: <span id='invoiceNetwork' class='font-bold'>TRC20</span> • Invoice: <span id='invoiceIdSmall' class='font-mono'>-</span></p>
 <div class='mt-4 bg-black/50 p-4 rounded-xl'>
-<p class='text-xs opacity-50'>TO ADDRESS</p>
+<p class='text-xs opacity-50'>TO YOUR SELF-CUSTODY WALLET</p>
 <p id='invoiceAddress' class='text-sm break-all font-mono mt-2 text-white'>-</p>
 <div class='flex gap-2 mt-3'><button onclick='copyInvoiceAddr()' class='bg-white text-black px-4 py-2 rounded-full text-sm font-bold'>Copy Address</button><button onclick='copyInvoiceAmount()' class='bg-[#26A17B] text-white px-4 py-2 rounded-full text-sm font-bold'>Copy Amount</button></div>
 </div>
-<div class='mt-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3'><p class='text-xs text-yellow-400'>⚠️ Send EXACT amount on selected network only. Payment will be auto detected from blockchain within 1-2 minutes after sending. Do not send less or more.</p></div>
 </div>
-
 <div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'>
 <h4 class='font-bold text-sm flex items-center gap-2'><span id='invoiceStatusIcon'>⏳</span> <span id='invoiceStatusText'>Waiting for payment...</span></h4>
-<p class='text-xs opacity-60 mt-2' id='invoiceStatusDetail'>Send USDT to address above. System checks blockchain every 15 seconds.</p>
+<p class='text-xs opacity-60 mt-2' id='invoiceStatusDetail'>Send USDT to your self-custody address. System checks blockchain every 15 seconds.</p>
 <div id='invoiceVerifiedBox' class='hidden mt-3 bg-emerald-500/20 border border-emerald-500/30 rounded-xl p-3'>
 <p class='text-sm font-bold text-emerald-400'>✅ Payment Verified!</p>
-<p class='text-xs mt-1'>Amount: <span id='verifiedAmount'>0</span> USDT</p>
+<p class='text-xs mt-1'>Amount: <span id='verifiedAmount'>0</span> USDT in your wallet</p>
 <p class='text-xs opacity-60 break-all'>TX: <span id='verifiedTx'>-</span></p>
 </div>
 <div class='mt-3 flex gap-2'><button onclick='checkInvoiceNow()' id='checkNowBtn' class='bg-white/10 px-4 py-2 rounded-full text-xs'>🔄 Check Now</button><button onclick='cancelInvoice()' class='bg-red-500/20 text-red-400 px-4 py-2 rounded-full text-xs'>Cancel Invoice</button></div>
 </div>
-
 <button onclick='closeInvoiceAndReset()' class='mt-4 w-full bg-white/10 py-4 rounded-full text-base'>Close</button>
 </div>
 </div></div>
 
 <div id='withdrawModal' class='hidden fixed inset-0 bg-black/80 z-50 flex items-end'><div class='bg-[#121214] w-full rounded-t-[32px] p-6'>
-<h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#FFD60A] rounded-full flex items-center justify-center text-black text-sm'>₮</span> Withdraw USDT</h3>
+<h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#FFD60A] rounded-full flex items-center justify-center text-black text-sm'>₮</span> Withdraw USDT (Self-Custody)</h3>
 <p class='text-sm opacity-60 mt-3'>Available: <span id='wdAvailable' class='font-bold text-[#FFD60A]'>0 USDT</span> • Min 10 USDT • Once per day</p>
 <input id='wdAmount' type='number' placeholder='Amount USDT' class='mt-4 w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-base'>
-<input id='wdAddr' placeholder='Your USDT Address' class='mt-3 w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-base'>
-<div class='mt-3 flex gap-2'><button onclick='setNet("TRC20")' class='bg-white/5 px-4 py-2 rounded-full text-sm'>TRC20</button><button onclick='setNet("BEP20")' class='bg-white/5 px-4 py-2 rounded-full text-sm'>BEP20</button><button onclick='setNet("ERC20")' class='bg-white/5 px-4 py-2 rounded-full text-sm'>ERC20</button></div>
-<p class='text-xs mt-3 opacity-50'>Network: <span id='wdNet'>TRC20</span> • Symbol: ₮ USDT</p>
-<button onclick='submitWithdraw()' id='wdBtn' class='mt-4 w-full bg-[#FFD60A] text-black py-4 rounded-full font-bold text-base'>Withdraw USDT</button>
+<input id='wdAddr' placeholder='User USDT Address' class='mt-3 w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-base'>
+<div class='mt-3 flex gap-2'><button onclick='setNet("TRC20")' class='bg-white/5 px-4 py-2 rounded-full text-sm'>TRC20</button><button onclick='setNet("BEP20")' class='bg-white/5 px-4 py-2 rounded-full text-sm'>BEP20</button></div>
+<p class='text-xs mt-3 opacity-50'>Network: <span id='wdNet'>TRC20</span></p>
+<button onclick='submitWithdraw()' id='wdBtn' class='mt-4 w-full bg-[#FFD60A] text-black py-4 rounded-full font-bold text-base'>Request Withdraw</button>
 <button onclick='document.getElementById("withdrawModal").classList.add("hidden")' class='mt-3 w-full bg-white/5 py-4 rounded-full text-base'>Close</button>
 </div></div>
 
@@ -183,11 +195,6 @@ function getRealUserId(){
     let parsed = parseInt(saved);
     if(parsed && parsed > 0) return parsed;
   }
-  let user_id_param = urlParams.get('user_id');
-  if(user_id_param){
-    let parsed = parseInt(user_id_param);
-    if(parsed && parsed > 0) return parsed;
-  }
   return 123456789;
 }
 
@@ -196,14 +203,12 @@ if(userId === 0 || isNaN(userId)){ userId = 123456789; }
 let urlParams = new URLSearchParams(window.location.search);
 let username = urlParams.get('username') || localStorage.getItem('real_username') || '';
 let refParam = urlParams.get('ref') || urlParams.get('start') || null;
-try{
-  let tg = window.Telegram?.WebApp;
-  if(tg && tg.initDataUnsafe?.start_param){ refParam = refParam || tg.initDataUnsafe.start_param; }
-}catch(e){}
+try{ let tg = window.Telegram?.WebApp; if(tg && tg.initDataUnsafe?.start_param){ refParam = refParam || tg.initDataUnsafe.start_param; } }catch(e){}
 if(username){ localStorage.setItem('real_username', username); }
 
 let balance=0, withdrawable=0, profit=0, perHour=0, selectedNetwork='TRC20', wdNetwork='TRC20', addrs=FALLBACK_ADDRS, realTrades=[];
 let currentInvoiceId=null, invoiceTimerInterval=null, invoicePollInterval=null;
+let totalDeposit=0, totalWithdraw=0;
 
 function showTab(name){
  document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
@@ -213,7 +218,29 @@ function showTab(name){
  if(name==='tiers'){ renderTiers(STATIC_TIERS, balance); }
  if(name==='referral'){ loadReferral(); }
  if(name==='user'){ loadHistory(); }
- if(name==='home'){ loadRealTrades(); }
+ if(name==='home'){ loadRealTrades(); refreshQuickStats(); }
+}
+
+function refreshQuickStats(){
+ // FIXED: Fetch latest user data for quick stats instantly
+ fetch('/api/user/'+userId).then(r=>r.json()).then(data=>{
+   if(data && !data.error){
+     totalDeposit = data.total_deposit||0;
+     totalWithdraw = data.total_withdraw||0;
+     balance = data.balance||0;
+     profit = data.profit||0;
+     updateQuickStatsDisplay();
+   }
+ }).catch(e=>{ console.log('quick stats refresh failed', e); });
+}
+
+function updateQuickStatsDisplay(){
+ // FIXED: Update all quick stats elements instantly
+ safeSet('totalDep', totalDeposit.toFixed(2)+' USDT');
+ safeSet('totalWd', totalWithdraw.toFixed(2)+' USDT');
+ safeSet('quickBal', balance.toFixed(2)+' USDT');
+ safeSet('quickProfit', profit.toFixed(2)+' USDT');
+ console.log('Quick stats updated:', totalDeposit, totalWithdraw);
 }
 
 async function init(){
@@ -224,12 +251,12 @@ async function init(){
  try{
   let refQ = refParam ? `?ref=${refParam}` : '';
   let userQ = username ? `${refQ ? '&' : '?'}username=${encodeURIComponent(username)}` : refQ;
-  let url = '/api/user/'+userId+userQ;
-  let r=await fetch(url);
+  let r=await fetch('/api/user/'+userId+userQ);
   if(!r.ok) throw new Error('user api '+r.status);
   let data=await r.json();
   if(data.error) throw new Error(data.error);
   balance=data.balance||0; withdrawable=data.withdrawable||0; profit=data.profit||0; perHour=data.profit_per_hour||0;
+  totalDeposit=data.total_deposit||0; totalWithdraw=data.total_withdraw||0;
   safeSet('profitVal', profit.toFixed(2));
   safeSet('perHour', perHour.toFixed(2));
   safeSet('dailyPct', (data.daily_percent||0).toFixed(1)+'%');
@@ -238,8 +265,8 @@ async function init(){
   safeSet('withdrawableTop', withdrawable.toFixed(2)+' USDT');
   safeSet('userBal', balance.toFixed(2)+' USDT');
   safeSet('userWd', withdrawable.toFixed(2)+' USDT');
-  safeSet('totalDep', (data.total_deposit||0).toFixed(2)+' USDT');
-  safeSet('totalWd', (data.total_withdraw||0).toFixed(2)+' USDT');
+  // FIXED: Quick stats now updates instantly
+  updateQuickStatsDisplay();
   safeSet('userIdDisplay', data.user_id);
   safeSet('earnPct', (data.daily_percent||0).toFixed(1)+'%');
   safeSet('aiDays', data.days_left||0);
@@ -249,27 +276,12 @@ async function init(){
   safeSet('aiStatus', data.ai_active ? 'AI ACTIVE' : 'AI INACTIVE');
   let dot = $('aiDot'); if(dot) dot.innerText = data.ai_active ? '🟢' : '🔴';
   renderTiers(data.tiers || STATIC_TIERS, balance);
- }catch(e){
-  console.error('init user failed', e);
-  safeSet('realIdWarning','Error: '+e.message);
-  renderTiers(STATIC_TIERS, balance);
- }
+ }catch(e){ safeSet('realIdWarning','Error: '+e.message); renderTiers(STATIC_TIERS, balance); }
  try{ await loadRealTrades(); }catch(e){ safeSet('binanceStatus','Error'); }
  try{ await loadHistory(); }catch(e){}
  try{ await loadReferral(); }catch(e){}
- try{
-   let a=await fetch('/api/deposit-addresses');
-   if(a.ok){ let fetched = await a.json(); if(Object.keys(fetched).length>0){ addrs=fetched; } renderNetworks(); setNetAddr(selectedNetwork); }
- }catch(e){ addrs=FALLBACK_ADDRS; renderNetworks(); setNetAddr(selectedNetwork); }
- // Check if user has existing awaiting invoice
- try{
-   let h=await fetch('/api/history/'+userId).then(r=>r.json());
-   let awaiting = (h.deposits||[]).find(d=>d.status==='awaiting_payment');
-   if(awaiting && awaiting.invoice_id){
-     currentInvoiceId=awaiting.invoice_id;
-     showInvoiceStep2(awaiting.invoice_id);
-   }
- }catch(e){}
+ try{ let a=await fetch('/api/deposit-addresses'); if(a.ok){ let f=await a.json(); if(Object.keys(f).length>0){ addrs=f; } renderNetworks(); setNetAddr(selectedNetwork); } }catch(e){ addrs=FALLBACK_ADDRS; renderNetworks(); setNetAddr(selectedNetwork); }
+ try{ let h=await fetch('/api/history/'+userId).then(r=>r.json()); let awaiting=(h.deposits||[]).find(d=>d.status==='awaiting_payment'); if(awaiting && awaiting.invoice_id){ currentInvoiceId=awaiting.invoice_id; showInvoiceStep2(awaiting.invoice_id); } }catch(e){}
 }
 
 function renderTiers(tiers, bal){
@@ -289,8 +301,8 @@ function showDepositStep1(){ $('depositStep1')?.classList.remove('hidden'); $('d
 function showDepositStep2(){ $('depositStep1')?.classList.add('hidden'); $('depositStep2')?.classList.remove('hidden'); }
 function openWithdraw(){ safeSet('wdAvailable', withdrawable.toFixed(2)+' USDT'); $('withdrawModal')?.classList.remove('hidden'); }
 function setNet(net){ wdNetwork=net; safeSet('wdNet', net); }
-function copyInvoiceAddr(){ let addr=$('invoiceAddress')?.innerText; if(addr) { navigator.clipboard.writeText(addr); alert('Copied address'); } }
-function copyInvoiceAmount(){ let amt=$('invoiceAmount')?.innerText; if(amt) { navigator.clipboard.writeText(amt.replace(' USDT','').trim()); alert('Copied amount: '+amt); } }
+function copyInvoiceAddr(){ let addr=$('invoiceAddress')?.innerText; if(addr){ navigator.clipboard.writeText(addr); alert('Copied address'); } }
+function copyInvoiceAmount(){ let amt=$('invoiceAmount')?.innerText; if(amt){ navigator.clipboard.writeText(amt.replace(' USDT','').trim()); alert('Copied amount: '+amt); } }
 
 async function createInvoice(){
  let amt=parseFloat($('depAmount')?.value);
@@ -302,14 +314,8 @@ async function createInvoice(){
    let j=await r.json();
    if(btn){ btn.innerText='Create Deposit Invoice'; btn.disabled=false; }
    if(j.error){ alert('❌ '+j.error); return; }
-   if(j.ok){
-     currentInvoiceId=j.invoice_id;
-     showInvoiceStep2(j.invoice_id);
-   }
- }catch(e){
-   if(btn){ btn.innerText='Create Deposit Invoice'; btn.disabled=false; }
-   alert('Failed: '+e.message);
- }
+   if(j.ok){ currentInvoiceId=j.invoice_id; showInvoiceStep2(j.invoice_id); }
+ }catch(e){ if(btn){ btn.innerText='Create Deposit Invoice'; btn.disabled=false; } alert('Failed: '+e.message); }
 }
 
 async function showInvoiceStep2(invoiceId){
@@ -336,45 +342,44 @@ function updateInvoiceUI(data){
    $('invoiceVerifiedBox')?.classList.remove('hidden');
    safeSet('verifiedAmount', data.actual_amount);
    safeSet('verifiedTx', data.tx_hash);
-   safeSet('invoiceStatusDetail', 'Payment verified! Balance credited. You can close this invoice.');
+   safeSet('invoiceStatusDetail', 'Payment verified! Balance credited. Quick stats will update instantly.');
    clearInvoiceTimers();
-   setTimeout(()=>{ init(); loadHistory(); }, 1000);
+   // FIXED: Instantly refresh quick stats after verification
+   setTimeout(()=>{ 
+     init(); 
+     loadHistory(); 
+     refreshQuickStats();
+     // Extra instant update
+     totalDeposit += data.actual_amount;
+     updateQuickStatsDisplay();
+   }, 500);
  }else if(data.status==='expired'){
    safeSet('invoiceStatusDetail', 'Invoice expired. Please create new invoice.');
    clearInvoiceTimers();
  }else{
    $('invoiceVerifiedBox')?.classList.add('hidden');
-   safeSet('invoiceStatusDetail', 'Send EXACT amount to address. Auto detection every 15 seconds. Do not close before payment.');
+   safeSet('invoiceStatusDetail', 'Send EXACT amount to address. Auto detection every 15 seconds.');
  }
 }
 
 function startInvoiceTimers(invoiceId){
  clearInvoiceTimers();
- // Timer countdown
  invoiceTimerInterval=setInterval(async ()=>{
    try{
      let r=await fetch('/api/deposit/invoice_status/'+invoiceId);
      let j=await r.json();
      if(j.error){ clearInvoiceTimers(); return; }
      safeSet('invoiceTimer', j.time_left_formatted);
-     let pct = (j.time_left_seconds / 900) * 100; // 15 min = 900 sec
+     let pct=(j.time_left_seconds/900)*100;
      let bar=$('timerBar'); if(bar) bar.style.width=pct+'%';
-     if(j.status!=='awaiting_payment'){
-       updateInvoiceUI(j);
-       if(j.status==='verified' || j.status==='expired'){
-         clearInvoiceTimers();
-       }
-     }
+     if(j.status!=='awaiting_payment'){ updateInvoiceUI(j); if(j.status==='verified'||j.status==='expired'){ clearInvoiceTimers(); } }
    }catch(e){}
  }, 1000);
- // Poll status every 3 sec
  invoicePollInterval=setInterval(async ()=>{
    try{
      let r=await fetch('/api/deposit/invoice_status/'+invoiceId);
      let j=await r.json();
-     if(j.status==='verified' || j.status==='expired'){
-       updateInvoiceUI(j);
-     }
+     if(j.status==='verified'||j.status==='expired'){ updateInvoiceUI(j); }
    }catch(e){}
  }, 3000);
 }
@@ -392,24 +397,23 @@ async function checkInvoiceNow(){
    let j=await r.json();
    if(btn){ btn.innerText='🔄 Check Now'; btn.disabled=false; }
    if(j.ok && j.status==='verified'){
-     alert('✅ Payment verified! '+j.amount+' USDT credited!');
-     init(); loadHistory();
+     alert('✅ Payment verified! '+j.amount+' USDT credited! Quick stats updated.');
+     init(); loadHistory(); refreshQuickStats();
+     totalDeposit += j.amount;
+     updateQuickStatsDisplay();
      let status=await fetch('/api/deposit/invoice_status/'+currentInvoiceId).then(r=>r.json());
      updateInvoiceUI(status);
    }else{
-     alert(j.message||'No payment found yet. Make sure you sent to correct address and amount.');
+     alert(j.message||'No payment found yet.');
      let status=await fetch('/api/deposit/invoice_status/'+currentInvoiceId).then(r=>r.json());
      updateInvoiceUI(status);
    }
- }catch(e){
-   if(btn){ btn.innerText='🔄 Check Now'; btn.disabled=false; }
-   alert('Check failed: '+e.message);
- }
+ }catch(e){ if(btn){ btn.innerText='🔄 Check Now'; btn.disabled=false; } alert('Check failed: '+e.message); }
 }
 
 function cancelInvoice(){
  if(!currentInvoiceId) return;
- if(!confirm('Cancel this invoice? You will need to create new invoice to deposit.')) return;
+ if(!confirm('Cancel this invoice?')) return;
  currentInvoiceId=null;
  clearInvoiceTimers();
  showDepositStep1();
@@ -421,7 +425,7 @@ function closeInvoiceAndReset(){
  currentInvoiceId=null;
  $('depositModal')?.classList.add('hidden');
  showDepositStep1();
- init(); loadHistory();
+ init(); loadHistory(); refreshQuickStats();
 }
 
 async function submitWithdraw(){
@@ -432,14 +436,25 @@ async function submitWithdraw(){
  try{
    let r=await fetch('/api/withdraw/request/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,address:addr,network:wdNetwork})});
    let j=await r.json();
-   if(btn){ btn.innerText='Withdraw USDT'; btn.disabled=false; }
+   if(btn){ btn.innerText='Request Withdraw'; btn.disabled=false; }
    if(j.error){ alert(j.error); return; }
-   if(j.ok){ alert(j.message); $('withdrawModal')?.classList.add('hidden'); $('wdAmount').value=''; $('wdAddr').value=''; init(); loadHistory(); }
- }catch(e){ if(btn){ btn.innerText='Withdraw USDT'; btn.disabled=false; } alert('Failed: '+e.message); }
+   if(j.ok){ 
+     alert(j.message); 
+     $('withdrawModal')?.classList.add('hidden'); 
+     $('wdAmount').value=''; 
+     $('wdAddr').value=''; 
+     init(); 
+     loadHistory(); 
+     refreshQuickStats();
+     // FIXED: Instantly update quick stats for withdrawal
+     totalWithdraw += amt;
+     updateQuickStatsDisplay();
+   }
+ }catch(e){ if(btn){ btn.innerText='Request Withdraw'; btn.disabled=false; } alert('Failed: '+e.message); }
 }
 
 async function loadRealTrades(){
- safeSet('binanceStatus','Loading...');
+ safeSet('binanceStatus','Live');
  let r=await fetch('/api/binance/trades');
  if(!r.ok) throw new Error('trades '+r.status);
  let data=await r.json();
@@ -519,13 +534,15 @@ async function loadReferral(){
  let histHtml='';
  if(d.logs && d.logs.length>0){
    d.logs.forEach(log=>{ histHtml+=`<div class='bg-white/5 p-3 rounded-xl flex justify-between'><div><p class='font-bold'>From: ${log.from} • Level ${log.level}</p><p class='opacity-50'>Deposit $${log.deposit} • ${log.percent}% bonus</p></div><span class='text-emerald-400 font-bold'>+$${log.bonus.toFixed(2)}</span></div>`; });
- } else { histHtml='<p class="opacity-50">No earnings yet. When friends deposit verified, you get bonus!</p>'; }
+ } else { histHtml='<p class="opacity-50">No earnings yet.</p>'; }
  safeHTML('refHistory', histHtml);
 }
-function copyRef(){ let el=$('refLink'); if(el){ let text=el.innerText; if(text.includes('Loading') || text.includes('Failed')){ alert('Referral link not loaded'); return; } navigator.clipboard.writeText(text); alert('Copied!'); } }
+function copyRef(){ let el=$('refLink'); if(el){ let text=el.innerText; if(text.includes('Loading')){ alert('Referral link not loaded'); return; } navigator.clipboard.writeText(text); alert('Copied!'); } }
 function shareRef(){ let el=$('refLink'); if(el && navigator.share){ navigator.share({title:'PT_AI Trading', text:'Join PT_AI Trading', url: el.innerText}); } else { copyRef(); } }
 
 init();
+// Auto refresh quick stats every 5 seconds to ensure instant update
+setInterval(refreshQuickStats, 5000);
 setInterval(async ()=>{ try{ let r=await fetch('/api/binance/trades'); if(!r.ok) return; let data=await r.json(); safeSet('todayTrades', data.summary.total_trades); safeSet('profitTrades', data.summary.profit_trades); safeSet('lossTrades', data.summary.loss_trades); safeSet('totalPnl', (data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%'); safeSet('binanceStatus','Live • '+data.summary.total_trades+' trades'); }catch(e){} }, 10000);
 </script>
 </body></html>

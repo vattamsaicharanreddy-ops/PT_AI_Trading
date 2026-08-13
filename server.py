@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sqlite3, datetime, os, json, urllib.request, random, hashlib, time, threading, string
 
-app = FastAPI(title="PT_AI Trading - Self Custody - No Binance Freeze")
+app = FastAPI(title="PT_AI Trading - Self Custody - Fixed Quick Stats")
 
 app.add_middleware(
     CORSMiddleware,
@@ -53,9 +53,6 @@ conn.execute("""CREATE TABLE IF NOT EXISTS used_tx_hashes (
  tx_hash TEXT PRIMARY KEY, used_at TEXT
 )""")
 
-conn.execute("""CREATE TABLE IF NOT EXISTS system_wallet (
- network TEXT PRIMARY KEY, address TEXT, balance REAL DEFAULT 0, last_checked TEXT
-)""")
 conn.commit()
 
 for sql in [
@@ -79,32 +76,13 @@ for sql in [
     except: pass
 conn.commit()
 
-# ===== SELF-CUSTODY WALLET ADDRESSES - REPLACE WITH YOUR OWN =====
-# HOW TO GET THESE:
-# 1. Download TronLink (tronlink.org) - Create new wallet - Backup 12 words - Your TRC20 address starts with T...
-# 2. Download MetaMask (metamask.io) - Create wallet - Same address for BEP20 (BSC) and ERC20 (ETH) - starts with 0x...
-# 3. For TON: Use Tonkeeper app - Create wallet - Address starts with UQ...
-# 4. For SOL: Use Phantom app - Create wallet - Address
-# IMPORTANT: These are YOUR wallets, you control private keys, no Binance, no freeze!
-
 DEPOSIT_ADDR = {
- "TRC20": "YOUR_TRONLINK_TRC20_ADDRESS_HERE_T_STARTS_WITH_T",  # Replace! Example: TAbC... 
- "BEP20": "YOUR_METAMASK_BEP20_ADDRESS_HERE_0x_STARTS",        # Same as ERC20 - your MetaMask address
- "ERC20": "YOUR_METAMASK_ERC20_ADDRESS_HERE_0x_STARTS",        # Same as BEP20
- "TON": "YOUR_TONKEEPER_TON_ADDRESS_HERE_UQ...",              # Your Tonkeeper address
- "SOL": "YOUR_PHANTOM_SOL_ADDRESS_HERE..."                    # Your Phantom address
+ "TRC20": "TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC",
+ "BEP20": "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",
+ "ERC20": "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",
+ "TON": "UQBlNeJ90El3LxBhikC2HUG3mqS16k1q177AjcNAaURVa_zw",
+ "SOL": "87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7"
 }
-
-# For quick start, we keep old addresses as fallback but you MUST replace
-# If you don't have wallet yet, use these temporarily but replace ASAP:
-if "YOUR_" in DEPOSIT_ADDR["TRC20"]:
-    DEPOSIT_ADDR = {
-        "TRC20": "TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC",
-        "BEP20": "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",
-        "ERC20": "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",
-        "TON": "UQBlNeJ90El3LxBhikC2HUG3mqS16k1q177AjcNAaURVa_zw",
-        "SOL": "87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7"
-    }
 
 TIERS = [(15000,14.9),(6000,13.6),(2500,11.8),(1200,10.9),(500,9.6),(120,8.9),(20,7.6),(0,0.0)]
 REF_BONUS = {1:7,2:1,3:1,4:1,5:1,6:1,7:1,8:1,9:1,10:1}
@@ -249,14 +227,14 @@ def process_invoice_payment(invoice_id: str, tx_hash: str, actual_amount: float)
                      (new_bal, per_hour, daily_pct, actual_amount, ai_end, tier_idx, now, user_id))
         conn.commit()
         distribute_referral(user_id, actual_amount)
-        print(f"Invoice {invoice_id} verified: user {user_id} +${actual_amount} TX {tx_hash[:10]}...")
+        print(f"Invoice {invoice_id} verified: user {user_id} +${actual_amount}")
         return True, f"Verified {actual_amount} USDT"
     except Exception as e:
         print(f"Process invoice error: {e}")
         return False, str(e)
 
 def background_invoice_monitor():
-    print("Self-custody invoice monitor started - No Binance - Checking every 15 seconds")
+    print("Self-custody invoice monitor started")
     while True:
         try:
             time.sleep(15)
@@ -265,7 +243,6 @@ def background_invoice_monitor():
             for (inv_id,) in expired:
                 conn.execute("UPDATE deposits SET status='expired' WHERE invoice_id=?", (inv_id,))
             conn.commit()
-            if expired: print(f"Expired {len(expired)} invoices")
             try:
                 transfers = check_trc20_deposits_to_address()
                 for tr in transfers:
@@ -286,9 +263,7 @@ def background_invoice_monitor():
                                     created_dt = datetime.datetime.fromisoformat(created_at)
                                     if tx_time >= created_dt - datetime.timedelta(minutes=5):
                                         success, msg = process_invoice_payment(inv_id, tx_hash, amount)
-                                        if success:
-                                            print(f"Auto matched TRC20 TX {tx_hash[:15]} amount {amount} to invoice {inv_id}")
-                                            break
+                                        if success: break
                                 except: pass
                     except: continue
             except Exception as e: print(f"TRC20 monitor error: {e}")
@@ -381,7 +356,10 @@ def api_user(user_id: int, ref: int = None, username: str = None):
     today_count = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE user_id=? AND DATE(created_at)=DATE('now')", (user_id,)).fetchone()[0]
     if today_count > 0: can_withdraw_today = False
     direct_count = conn.execute("SELECT COUNT(*) FROM users WHERE referred_by=?", (user_id,)).fetchone()[0]
-    return {"user_id": row[0], "username": row[1] or f"user_{row[0]}", "balance": row[2], "withdrawable": row[3], "profit": row[4], "profit_per_hour": row[5], "daily_percent": row[6], "ai_end": row[7], "days_left": days_left, "hours_left": hours_left, "ai_active": active, "total_deposit": row[10] if len(row)>10 else 0, "total_withdraw": row[11] if len(row)>11 else 0, "tiers": [{"min": t[0], "pct": t[1]} for t in TIERS], "referral_earnings": row[14] if len(row)>14 and row[14] else 0, "created_at": created_str, "can_withdraw_today": can_withdraw_today, "referred_by": row[13] if len(row)>13 else None, "direct_referrals": direct_count, "is_banned": row[17] if len(row)>17 and row[17] else 0}
+    # FIXED: Return total_deposit and total_withdraw correctly
+    total_deposit = row[10] if len(row)>10 and row[10] is not None else 0
+    total_withdraw = row[11] if len(row)>11 and row[11] is not None else 0
+    return {"user_id": row[0], "username": row[1] or f"user_{row[0]}", "balance": row[2], "withdrawable": row[3], "profit": row[4], "profit_per_hour": row[5], "daily_percent": row[6], "ai_end": row[7], "days_left": days_left, "hours_left": hours_left, "ai_active": active, "total_deposit": total_deposit, "total_withdraw": total_withdraw, "tiers": [{"min": t[0], "pct": t[1]} for t in TIERS], "referral_earnings": row[14] if len(row)>14 and row[14] else 0, "created_at": created_str, "can_withdraw_today": can_withdraw_today, "referred_by": row[13] if len(row)>13 else None, "direct_referrals": direct_count, "is_banned": row[17] if len(row)>17 and row[17] else 0}
 
 @app.get("/api/referral/{user_id}")
 def api_referral(user_id: int):
@@ -430,7 +408,7 @@ def create_invoice(user_id: int, r: InvoiceReq):
     conn.execute("INSERT INTO deposits (user_id, amount, expected_amount, network, status, invoice_id, created_at, expires_at, tx_hash, actual_amount) VALUES (?,?,?,?,?,?,?,?,?,?)",
                  (user_id, r.amount, expected_amount, r.network, "awaiting_payment", invoice_id, now.isoformat(), expires_at.isoformat(), "", 0))
     conn.commit()
-    return {"ok": True, "invoice_id": invoice_id, "amount": r.amount, "expected_amount": expected_amount, "network": r.network, "address": DEPOSIT_ADDR[r.network], "created_at": now.isoformat(), "expires_at": expires_at.isoformat(), "status": "awaiting_payment", "message": f"Invoice created. Send exactly {expected_amount} USDT ({r.network}) to {DEPOSIT_ADDR[r.network]} within 15 minutes. Payment auto detected - No Binance needed!"}
+    return {"ok": True, "invoice_id": invoice_id, "amount": r.amount, "expected_amount": expected_amount, "network": r.network, "address": DEPOSIT_ADDR[r.network], "created_at": now.isoformat(), "expires_at": expires_at.isoformat(), "status": "awaiting_payment"}
 
 @app.get("/api/deposit/invoice_status/{invoice_id}")
 def invoice_status(invoice_id: str):
@@ -468,9 +446,9 @@ def check_invoice_now(invoice_id: str):
                     success, msg = process_invoice_payment(invoice_id, tx_hash, amount)
                     if success: return {"ok": True, "status": "verified", "amount": amount, "tx_hash": tx_hash, "message": msg}
             except: continue
-        return {"ok": False, "status": "awaiting_payment", "message": "No payment found yet. Ensure you sent to correct self-custody address."}
+        return {"ok": False, "status": "awaiting_payment", "message": "No payment found yet."}
     else:
-        return {"ok": False, "status": "awaiting_payment", "message": f"Auto detection for {row[1]} - Please send and admin will verify. TRC20 auto works best."}
+        return {"ok": False, "status": "awaiting_payment", "message": f"Auto detection for {row[1]} manual."}
 
 @app.get("/api/history/{user_id}")
 def history(user_id: int):
@@ -484,13 +462,9 @@ def addrs(): return DEPOSIT_ADDR
 
 @app.get("/api/wallet/balance")
 def wallet_balance():
-    """Check your self-custody wallet balances - No Binance needed"""
     balances = {}
     for net, addr in DEPOSIT_ADDR.items():
-        if "YOUR_" in addr:
-            balances[net] = {"address": addr, "balance": "Replace address first", "note": "Set your own wallet address in server.py"}
-        else:
-            balances[net] = {"address": addr, "balance": "Check via blockchain explorer", "explorer": f"https://tronscan.org/#/address/{addr}" if net=="TRC20" else f"https://bscscan.com/address/{addr}" if net=="BEP20" else ""}
+        balances[net] = {"address": addr}
     return balances
 
 @app.get("/api/admin/stats")
@@ -500,7 +474,7 @@ def stats():
     pend_dep = conn.execute("SELECT COUNT(*) FROM deposits WHERE status='awaiting_payment'").fetchone()[0]
     total_ref = conn.execute("SELECT COALESCE(SUM(bonus_amount),0) FROM referral_logs").fetchone()[0] or 0
     total_dep = conn.execute("SELECT COALESCE(SUM(actual_amount),0) FROM deposits WHERE status='verified'").fetchone()[0] or 0
-    return {"total_users": u[0], "total_balance": (u[1] or 0)+(u[2] or 0), "active_now": u[0], "pending_withdrawals": pend_wd, "pending_deposits": pend_dep, "total_ref_paid": total_ref, "total_deposits": total_dep, "self_custody": True, "binance_free": True}
+    return {"total_users": u[0], "total_balance": (u[1] or 0)+(u[2] or 0), "active_now": u[0], "pending_withdrawals": pend_wd, "pending_deposits": pend_dep, "total_ref_paid": total_ref, "total_deposits": total_dep}
 
 @app.get("/api/admin/users")
 def admin_users():
@@ -544,7 +518,7 @@ def wd_action(r: ApproveReq):
     wd = conn.execute("SELECT user_id, amount, address, network FROM withdrawals WHERE id=?", (r.id,)).fetchone()
     if not wd: return {"error":"not found"}
     if r.action=="approve":
-        conn.execute("UPDATE withdrawals SET status='approved', tx_hash=?, admin_note=? WHERE id=?", (r.tx_hash, r.note or "Sent from self-custody wallet", r.id))
+        conn.execute("UPDATE withdrawals SET status='approved', tx_hash=?, admin_note=? WHERE id=?", (r.tx_hash, r.note or "Sent from self-custody", r.id))
         conn.execute("UPDATE users SET total_withdraw=total_withdraw+? WHERE user_id=?", (wd[1], wd[0]))
     else:
         conn.execute("UPDATE withdrawals SET status='rejected', admin_note=? WHERE id=?", (r.note or "Rejected", r.id))
@@ -584,7 +558,7 @@ def withdraw_req(user_id: int, r: WithdrawReq):
     ensure_user(user_id)
     recalc_profit(user_id)
     now = datetime.datetime.utcnow(); today_str = now.date().isoformat()
-    user_row = conn.execute("SELECT withdrawable, created_at, last_withdraw_date, is_banned FROM users WHERE user_id=?", (user_id,)).fetchone()
+    user_row = conn.execute("SELECT withdrawable, created_at, last_withdraw_date, is_banned, total_withdraw FROM users WHERE user_id=?", (user_id,)).fetchone()
     if not user_row: return {"error": "User not found"}
     if user_row[3] == 1: return {"error": "Account banned"}
     withdrawable = user_row[0] or 0
@@ -599,11 +573,11 @@ def withdraw_req(user_id: int, r: WithdrawReq):
     conn.execute("INSERT INTO withdrawals (user_id, amount, address, network, status, created_at, auto_approved) VALUES (?,?,?,?,?,?,?)",
                  (user_id, r.amount, r.address, r.network, "pending", now.isoformat(), 0))
     conn.commit()
-    return {"ok": True, "new_withdrawable": new_w, "message": f"Withdrawal of {r.amount} USDT requested. Admin will send from self-custody wallet (TronLink/MetaMask) and approve. No Binance freeze risk!"}
+    return {"ok": True, "new_withdrawable": new_w, "message": f"Withdrawal of {r.amount} USDT requested. Admin will send from self-custody wallet."}
 
 @app.get("/")
 def root(): return FileResponse("index.html")
 @app.get("/admin")
 def admin_page(): return FileResponse("admin.html")
 @app.get("/health")
-def health(): return {"ok": True, "self_custody": True, "binance_free": True, "message": "No Binance - Self custody wallet - No freeze risk"}
+def health(): return {"ok": True, "self_custody": True, "quick_stats_fixed": True}
