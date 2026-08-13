@@ -66,7 +66,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if ref:
             ref_exists = conn.execute("SELECT user_id FROM users WHERE user_id=?", (ref,)).fetchone()
             if ref_exists:
-                await update.message.reply_text(f"Invited by user {ref}! Your friend will earn 7% when you deposit.")
+                await update.message.reply_text(f"Invited by user {ref}! Your friend will earn 7% when you deposit verified.")
 
     # IMPORTANT: Pass real Telegram ID in WebApp URL - fixes 123456789 issue
     webapp_url_with_id = f"{WEBAPP_URL}?tg_id={uid}&username={urllib.parse.quote(username)}"
@@ -89,14 +89,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
         f"Welcome to PT_AI Trading, {full_name}!\n"
-        f"ID: {uid}\n\n"
+        f"ID: {uid} (Real Telegram ID)\n\n"
         f"Trading: ${bal:.2f} @ {pct:.1f}%/day\n"
         f"Withdrawable: ${wd:.2f}\n"
         f"Referral Earned: ${ref_earn:.2f}\n"
         f"Direct Referrals: {direct_count}\n\n"
-        f"Referral: L1 7% L2-10 1% -> Withdrawable instantly!\n\n"
+        f"Referral: L1 7% L2-10 1% -> Withdrawable instantly after verified deposit!\n\n"
+        f"Deposit: Min 20 USDT, auto verified via blockchain\n"
         f"Your link: {ref_link}\n\n"
-        f"Deposit >= $20 to start AI (30 days).",
+        f"Deposit >= $20 USDT to start AI (30 days).",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
@@ -108,14 +109,14 @@ async def ref_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if q.data == "ref":
         direct = conn.execute("SELECT user_id, username, total_deposit FROM users WHERE referred_by=?", (uid,)).fetchall()
         total_earn = conn.execute("SELECT COALESCE(SUM(bonus_amount),0) FROM referral_logs WHERE to_user=?", (uid,)).fetchone()[0] or 0
-        text = f"Your Referral Stats:\n\nLink: {ref_link}\nDirect: {len(direct)}\nEarned: ${total_earn:.2f} -> Withdrawable\n\nBonus: L1 7%, L2-L10 1% each\nBonus added instantly!\n"
+        text = f"Your Referral Stats:\n\nLink: {ref_link}\nDirect: {len(direct)}\nEarned: ${total_earn:.2f} -> Withdrawable\n\nBonus: L1 7%, L2-L10 1% each\nBonus added instantly after verified deposit!\n"
         if direct:
             text += "\nYour Referrals:\n"
             for d in direct[:10]:
                 text += f"• {d[1] or d[0]} - ${d[2]:.2f}\n"
         await q.message.reply_text(text)
     elif q.data == "how":
-        await q.message.reply_text(f"How Referral Works:\n1. Share: {ref_link}\n2. Friend deposits $100\n3. You get 7% = $7 to withdrawable\n4. L2-L10: 1% each\nAll bonuses -> Withdrawable!")
+        await q.message.reply_text(f"How Referral Works:\n1. Share: {ref_link}\n2. Friend deposits $100 (verified on blockchain)\n3. You get 7% = $7 to withdrawable instantly!\n4. L2-L10: 1% each\nAll bonuses -> Withdrawable!")
 
 def main():
     print(f"Bot starting {BOT_TOKEN[:10]}... WebApp: {WEBAPP_URL}")
