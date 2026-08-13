@@ -53,8 +53,41 @@
 <div id='tab-referral' class='tab-content hidden'>
 <div class='mx-4 mt-5 bg-gradient-to-br from-[#FFD60A]/20 to-[#FFA600]/10 border border-[#FFD60A]/30 rounded-[28px] p-5'>
 <h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Referral - Earn USDT</h3>
-<div class='mt-4 bg-black/50 rounded-xl p-4'><p class='text-xs opacity-50'>YOUR REFERRAL LINK</p><p id='refLink' class='text-sm break-all mt-2 font-mono'>Loading...</p><div class='flex gap-2 mt-3'><button onclick='copyRef()' class='bg-white text-black px-4 py-2 rounded-full text-sm font-bold'>Copy</button></div></div>
-<div class='mt-4 grid grid-cols-3 gap-3 text-center'><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>DIRECT</p><p id='directCount' class='font-bold text-lg'>0</p></div><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>TEAM</p><p id='teamDep' class='font-bold text-[#FFD60A]'>0 USDT</p></div><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>EARNED</p><p id='refEarned' class='font-bold text-emerald-400'>0 USDT</p></div></div>
+<div class='mt-4 bg-black/50 rounded-xl p-4'><p class='text-xs opacity-50'>YOUR REFERRAL LINK</p><p id='refLink' class='text-sm break-all mt-2 font-mono'>Loading...</p><div class='flex gap-2 mt-3'><button onclick='copyRef()' class='bg-white text-black px-4 py-2 rounded-full text-sm font-bold'>Copy Link</button><button onclick='shareRef()' class='bg-[#FFD60A] text-black px-4 py-2 rounded-full text-sm font-bold'>Share</button></div></div>
+
+<div class='mt-4 grid grid-cols-3 gap-3 text-center'>
+<div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>DIRECT</p><p id='directCount' class='font-bold text-lg'>0</p><p class='text-[10px] opacity-40'>Friends Joined</p></div>
+<div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>TEAM DEPOSIT</p><p id='teamDep' class='font-bold text-[#FFD60A]'>0 USDT</p><p class='text-[10px] opacity-40'>Total Team</p></div>
+<div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>EARNED</p><p id='refEarned' class='font-bold text-emerald-400'>0 USDT</p><p class='text-[10px] opacity-40'>To Withdrawable</p></div>
+</div>
+
+<div class='mt-5 bg-[#121214] border border-white/10 rounded-[20px] p-4'>
+<h3 class='font-bold text-sm mb-3'>💰 Referral Bonus Structure (Auto → Withdrawable)</h3>
+<div class='space-y-2 text-sm'>
+<div class='flex justify-between items-center bg-[#FFD60A]/10 p-3 rounded-xl border border-[#FFD60A]/20'><span>Level 1 - Direct Referral</span><span class='font-bold text-[#FFD60A]'>7% Bonus</span></div>
+<div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 2</span><span class='font-bold'>1% Bonus</span></div>
+<div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 3</span><span class='font-bold'>1% Bonus</span></div>
+<div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 4</span><span class='font-bold'>1% Bonus</span></div>
+<div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 5</span><span class='font-bold'>1% Bonus</span></div>
+<div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 6</span><span class='font-bold'>1% Bonus</span></div>
+<div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 7</span><span class='font-bold'>1% Bonus</span></div>
+<div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 8</span><span class='font-bold'>1% Bonus</span></div>
+<div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 9</span><span class='font-bold'>1% Bonus</span></div>
+<div class='flex justify-between items-center bg-white/5 p-2 rounded-xl'><span>Level 10</span><span class='font-bold'>1% Bonus</span></div>
+</div>
+<p class='text-xs opacity-50 mt-3'>✅ Bonus is added instantly to your withdrawable balance when your referral deposits. You can withdraw immediately.</p>
+</div>
+
+<div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'>
+<h3 class='font-bold text-sm mb-3'>👥 My Direct Referrals</h3>
+<div id='directList' class='space-y-2 text-sm'><p class='opacity-50'>No referrals yet. Share your link!</p></div>
+</div>
+
+<div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'>
+<h3 class='font-bold text-sm mb-3'>📜 Referral Earnings History</h3>
+<div id='refHistory' class='space-y-2 text-xs'><p class='opacity-50'>No earnings yet</p></div>
+</div>
+
 </div>
 </div>
 
@@ -296,9 +329,45 @@ async function loadHistory(){
  let r=await fetch('/api/history/'+userId); if(!r.ok) throw new Error('history'); let h=await r.json(); let html=''; (h.withdrawals||[]).forEach(w=>{ let sc=w.status=='approved'?'text-emerald-400':'text-yellow-400'; html+=`<div class='bg-white/5 p-3 rounded-lg flex justify-between items-center'><div class='flex items-center gap-2'><span class='w-6 h-6 bg-[#FFD60A] rounded-full flex items-center justify-center text-black text-[10px]'>₮</span> <span>Withdraw ${w.amount} USDT<br><span class='opacity-50 text-xs'>${w.created_at?w.created_at.slice(0,16):''}</span></div><span class='${sc} text-xs'>${w.status}</span></div>`; }); (h.deposits||[]).forEach(d=>{ html=`<div class='bg-white/5 p-3 rounded-lg flex justify-between'><span class='flex items-center gap-2'><span class='w-6 h-6 bg-[#26A17B] rounded-full flex items-center justify-center text-[10px]'>₮</span> Deposit ${d.amount} USDT ${d.network}</span><span class='text-emerald-400 text-xs'>${d.status}</span></div>`+html; }); if(!html) html='<p class="opacity-50">No history yet</p>'; safeHTML('history', html);
 }
 async function loadReferral(){
- let r=await fetch('/api/referral/'+userId); if(!r.ok) throw new Error('ref'); let d=await r.json(); safeSet('refLink', d.ref_link); safeSet('directCount', d.direct_count); safeSet('teamDep', (d.total_team_deposit||0).toFixed(2)+' USDT'); safeSet('refEarned', (d.total_earnings||0).toFixed(2)+' USDT');
+ try{
+  let r=await fetch('/api/referral/'+userId); if(!r.ok) throw new Error('ref'); 
+  let d=await r.json(); 
+  safeSet('refLink', d.ref_link); 
+  safeSet('directCount', d.direct_count); 
+  safeSet('teamDep', (d.total_team_deposit||0).toFixed(2)+' USDT'); 
+  safeSet('refEarned', (d.total_earnings||0).toFixed(2)+' USDT');
+  
+  // Show direct referrals with real IDs and usernames
+  let directHtml = '';
+  if(d.direct_refs && d.direct_refs.length > 0){
+    d.direct_refs.forEach(ref=>{
+      directHtml += `<div class='bg-white/5 p-3 rounded-xl flex justify-between items-center'><div><p class='font-bold'>${ref.username || 'user_'+ref.user_id}</p><p class='text-xs opacity-50'>ID: ${ref.user_id} • Deposit: $${(ref.deposit||0).toFixed(2)}</p></div><span class='text-emerald-400 text-xs'>Active</span></div>`;
+    });
+  } else {
+    directHtml = '<p class="opacity-50">No direct referrals yet. Share your link!</p>';
+  }
+  safeHTML('directList', directHtml);
+  
+  // Show earnings history with percentages
+  let histHtml = '';
+  if(d.logs && d.logs.length > 0){
+    d.logs.forEach(log=>{
+      histHtml += `<div class='bg-white/5 p-3 rounded-xl flex justify-between'><div><p class='font-bold'>From: ${log.from} • Level ${log.level}</p><p class='opacity-50'>Deposit $${log.deposit} • ${log.percent}% bonus</p></div><span class='text-emerald-400 font-bold'>+$${log.bonus.toFixed(2)}</span></div>`;
+    });
+  } else {
+    histHtml = '<p class="opacity-50">No referral earnings yet. When your friends deposit, you get bonus to withdrawable!</p>';
+  }
+  safeHTML('refHistory', histHtml);
+  
+ } catch(e){ console.error('referral failed', e); }
 }
-function copyRef(){ let el=$('refLink'); if(el){ navigator.clipboard.writeText(el.innerText); alert('Copied!'); } }
+function copyRef(){ let el=$('refLink'); if(el){ navigator.clipboard.writeText(el.innerText); alert('Copied! Share to earn 7% L1 + 1% L2-L10'); } }
+function shareRef(){ 
+  let el=$('refLink'); 
+  if(el && navigator.share){ navigator.share({title:'PT_AI Trading', text:'Join PT_AI Trading and earn 7.6% to 14.9% daily! Use my referral link', url: el.innerText}); }
+  else { copyRef(); }
+}
+
 init();
 </script>
 </body></html>

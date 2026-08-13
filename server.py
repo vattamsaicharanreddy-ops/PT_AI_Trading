@@ -23,7 +23,8 @@ conn.execute("""CREATE TABLE IF NOT EXISTS users (
  referred_by INTEGER,
  referral_earnings REAL DEFAULT 0,
  created_at TEXT,
- last_withdraw_date TEXT
+ last_withdraw_date TEXT,
+ is_banned INTEGER DEFAULT 0
 )""")
 
 conn.execute("""CREATE TABLE IF NOT EXISTS deposits (
@@ -42,7 +43,8 @@ conn.execute("""CREATE TABLE IF NOT EXISTS withdrawals (
 conn.execute("""CREATE TABLE IF NOT EXISTS referral_logs (
  id INTEGER PRIMARY KEY AUTOINCREMENT,
  from_user INTEGER, to_user INTEGER, level INTEGER,
- deposit_amount REAL, bonus_amount REAL, created_at TEXT
+ deposit_amount REAL, bonus_amount REAL, bonus_percent REAL,
+ created_at TEXT
 )""")
 conn.commit()
 
@@ -51,7 +53,10 @@ for sql in [
     "ALTER TABLE users ADD COLUMN last_withdraw_date TEXT",
     "ALTER TABLE users ADD COLUMN referred_by INTEGER",
     "ALTER TABLE users ADD COLUMN referral_earnings REAL DEFAULT 0",
-    "ALTER TABLE withdrawals ADD COLUMN auto_approved INTEGER DEFAULT 0"
+    "ALTER TABLE users ADD COLUMN is_banned INTEGER DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN username TEXT",
+    "ALTER TABLE withdrawals ADD COLUMN auto_approved INTEGER DEFAULT 0",
+    "ALTER TABLE referral_logs ADD COLUMN bonus_percent REAL"
 ]:
     try: conn.execute(sql)
     except: pass
@@ -83,10 +88,16 @@ def ensure_user(user_id: int, username="", referred_by=None):
                 ref_id=int(referred_by)
                 if ref_id!=user_id and conn.execute("SELECT 1 FROM users WHERE user_id=?", (ref_id,)).fetchone(): ref=ref_id
             except: pass
+        # Save actual telegram username
+        uname = username or f"user_{user_id}"
         conn.execute("INSERT INTO users (user_id, username, referred_by, created_at, last_claim, last_auto_claim, current_tier) VALUES (?,?,?,?,?,?,?)",
-                     (user_id, username or f"user_{user_id}", ref, now.isoformat(), now.isoformat(), now.isoformat(), len(TIERS)-1))
+                     (user_id, uname, ref, now.isoformat(), now.isoformat(), now.isoformat(), len(TIERS)-1))
         conn.commit()
         return conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
+    # Update username if provided and different
+    if username and row[1] != username:
+        conn.execute("UPDATE users SET username=? WHERE user_id=?", (username, user_id))
+        conn.commit()
     if len(row)>15 and row[15] is None:
         conn.execute("UPDATE users SET created_at=? WHERE user_id=?", (now.isoformat(), user_id))
         conn.commit()
@@ -142,6 +153,7 @@ def recalc_profit(user_id: int):
     return conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
 
 def distribute_referral(depositor_id: int, deposit_amount: float):
+    # FIXED: Referral bonus added to withdrawable balance immediately
     now=datetime.datetime.utcnow().isoformat()
     current_id=depositor_id
     for level in range(1,11):
@@ -152,16 +164,15 @@ def distribute_referral(depositor_id: int, deposit_amount: float):
         bonus_pct=REF_BONUS.get(level,0)
         if bonus_pct>0:
             bonus=deposit_amount*bonus_pct/100
+            # Add to withdrawable + referral_earnings
             conn.execute("UPDATE users SET withdrawable=withdrawable+?, referral_earnings=referral_earnings+? WHERE user_id=?", (bonus, bonus, referrer_id))
-            conn.execute("INSERT INTO referral_logs (from_user, to_user, level, deposit_amount, bonus_amount, created_at) VALUES (?,?,?,?,?,?)",
-                         (depositor_id, referrer_id, level, deposit_amount, bonus, now))
+            conn.execute("INSERT INTO referral_logs (from_user, to_user, level, deposit_amount, bonus_amount, bonus_percent, created_at) VALUES (?,?,?,?,?,?,?)",
+                         (depositor_id, referrer_id, level, deposit_amount, bonus, bonus_pct, now))
         current_id=referrer_id
     conn.commit()
 
-# ===== FIXED TRADES - ENTRY, EXIT, PnL NEVER CHANGES =====
+# ===== FIXED TRADES =====
 BINANCE_SYMBOLS = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","AVAXUSDT","LINKUSDT","LTCUSDT","ADAUSDT","PEPEUSDT","SHIBUSDT","MATICUSDT","DOTUSDT","ARBUSDT"]
-
-# Base prices - deterministic per day but fixed once generated
 BASE_PRICES = {
  "BTCUSDT": 67200, "ETHUSDT": 3400, "SOLUSDT": 178.0, "BNBUSDT": 610,
  "XRPUSDT": 0.62, "DOGEUSDT": 0.16, "AVAXUSDT": 42.0, "LINKUSDT": 18.5,
@@ -183,19 +194,14 @@ def fetch_binance_prices():
         return BASE_PRICES, "fixed"
 
 def generate_deterministic_trades():
-    # FIXED: Trades are deterministic for whole day, entry/exit/pnl never changes
-    # Uses date as seed, so same trades all day, new trades next day
     today = datetime.datetime.utcnow().date().isoformat()
     seed = int(hashlib.md5(today.encode()).hexdigest()[:8], 16)
     rng = random.Random(seed)
-    
-    count = 12 + (seed % 4)  # 12-15 trades
-    target_total = 50 + (seed % 21)  # 50-70% total
+    count = 12 + (seed % 4)
+    target_total = 50 + (seed % 21)
     win_count = int(count * 0.71)
     if win_count < 8: win_count = 8
     loss_count = count - win_count
-    
-    # Generate PnL percentages - fixed for day
     needed_win = target_total - (loss_count * -1.1)
     win_pnls = []
     for _ in range(win_count):
@@ -207,7 +213,6 @@ def generate_deterministic_trades():
     lose_pnls = [round(-(0.7 + rng.random()*1.3),2) for _ in range(loss_count)]
     all_pnls = win_pnls + lose_pnls
     rng.shuffle(all_pnls)
-    
     final = round(sum(all_pnls),2)
     if final < 50 or final > 70:
         diff = target_total - final
@@ -215,47 +220,33 @@ def generate_deterministic_trades():
             if all_pnls[i] > 0:
                 all_pnls[i] = round(all_pnls[i]+diff,2)
                 break
-    
     symbols = BINANCE_SYMBOLS.copy()
     rng.shuffle(symbols)
-    
-    # Use base prices + small deterministic variation for entry
     trades=[]
     for i in range(count):
         sym = symbols[i % len(symbols)]
-        pnl = all_pnls[i]  # Fixed PnL % for this trade
+        pnl = all_pnls[i]
         side = rng.choice(["LONG","SHORT"])
         leverage = rng.choice([5,10,15,20])
         usdt = round(800 + rng.random()*1200,2)
-        
-        # Deterministic time - fixed for day, in past, local time conversion in frontend
         th = 6 + (i * 2) % 14 + rng.randint(0,1)
         th = max(6, min(th, 22))
         tm = rng.randint(0,59)
         time_str = f"{th:02d}:{tm:02d}"
-        
-        # FIXED ENTRY and EXIT prices - calculated deterministically, never changes
         base_price = BASE_PRICES.get(sym, 100)
-        # Add deterministic variation to base price for entry
-        variation = (rng.random() - 0.5) * 0.02  # +/-1%
+        variation = (rng.random() - 0.5) * 0.02
         entry_price = base_price * (1 + variation)
-        
-        # Calculate exit price based on pnl_percent - FIXED, never changes
         if side == "LONG":
             exit_price = entry_price * (1 + pnl/100)
         else:
             exit_price = entry_price * (1 - pnl/100)
-        
-        # Round appropriately
         if entry_price < 1:
             entry_price = round(entry_price, 6)
             exit_price = round(exit_price, 6)
         else:
             entry_price = round(entry_price, 2)
             exit_price = round(exit_price, 2)
-        
-        status = "CLOSED"  # All trades show as closed with fixed exit price
-        
+        status = "CLOSED"
         trades.append({
             "id": i+1,
             "pair": sym.replace("USDT","/USDT"),
@@ -264,22 +255,19 @@ def generate_deterministic_trades():
             "leverage": leverage,
             "usdt_amount": usdt,
             "entry_price": entry_price,
-            "exit_price": exit_price,  # FIXED exit price, not current/live
-            "pnl_percent": pnl,  # FIXED %
-            "pnl_usdt": round(usdt * pnl / 100, 2),  # FIXED profit based on entry->exit
+            "exit_price": exit_price,
+            "pnl_percent": pnl,
+            "pnl_usdt": round(usdt * pnl / 100, 2),
             "is_profit": pnl > 0,
             "time": time_str,
             "status": status,
             "date": today
         })
-    
-    # Sort by time descending
     trades.sort(key=lambda x: x["time"], reverse=True)
     return trades, round(sum(all_pnls),2), count, len([p for p in all_pnls if p>0]), len([p for p in all_pnls if p<0])
 
 @app.get("/api/binance/trades")
 def binance_trades_all():
-    # FIXED: Returns same trades all day, entry/exit/pnl never changes
     trades, total_pnl, count, win_c, loss_c = generate_deterministic_trades()
     prices, source = fetch_binance_prices()
     return {
@@ -294,7 +282,7 @@ def binance_trades_all():
             "date": trades[0]["date"] if trades else ""
         },
         "prices_source": source,
-        "live_prices": prices  # Live prices for header, but trades are fixed
+        "live_prices": prices
     }
 
 @app.get("/api/binance/trades/{user_id}")
@@ -302,9 +290,12 @@ def binance_trades_user(user_id: int):
     return binance_trades_all()
 
 @app.get("/api/user/{user_id}")
-def api_user(user_id: int, ref: int = None):
-    ensure_user(user_id, referred_by=ref)
+def api_user(user_id: int, ref: int = None, username: str = None):
+    # Save actual telegram username if provided
+    ensure_user(user_id, username=username or "", referred_by=ref)
     row = recalc_profit(user_id)
+    if not row:
+        return {"error": "User not found"}
     now = datetime.datetime.utcnow()
     created_str = row[15] if len(row) > 15 and row[15] else now.isoformat()
     try:
@@ -330,8 +321,11 @@ def api_user(user_id: int, ref: int = None):
     today_count = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE user_id=? AND DATE(created_at)=DATE('now')", (user_id,)).fetchone()[0]
     if today_count > 0:
         can_withdraw_today = False
+    # Get referral info
+    direct_count = conn.execute("SELECT COUNT(*) FROM users WHERE referred_by=?", (user_id,)).fetchone()[0]
     return {
         "user_id": row[0],
+        "username": row[1] or f"user_{row[0]}",
         "balance": row[2],
         "withdrawable": row[3],
         "profit": row[4],
@@ -348,7 +342,10 @@ def api_user(user_id: int, ref: int = None):
         "tiers": [{"min": t[0], "pct": t[1]} for t in TIERS],
         "referral_earnings": row[14] if len(row)>14 and row[14] else 0,
         "created_at": created_str,
-        "can_withdraw_today": can_withdraw_today
+        "can_withdraw_today": can_withdraw_today,
+        "referred_by": row[13] if len(row)>13 else None,
+        "direct_referrals": direct_count,
+        "is_banned": row[17] if len(row)>17 and row[17] else 0
     }
 
 @app.get("/api/referral/{user_id}")
@@ -360,7 +357,7 @@ def api_referral(user_id: int):
         bot_username = os.getenv("BOT_USERNAME", "YourBot")
         ref_link = f"https://t.me/{bot_username}?start={user_id}"
     except: pass
-    direct_refs = conn.execute("SELECT user_id FROM users WHERE referred_by=?", (user_id,)).fetchall()
+    direct_refs = conn.execute("SELECT user_id, username, balance, total_deposit FROM users WHERE referred_by=?", (user_id,)).fetchall()
     total_team_deposit = 0
     all_team = []
     def get_team(uid, level=1):
@@ -376,7 +373,23 @@ def api_referral(user_id: int):
     for _, lvl in all_team:
         level_counts[lvl] = level_counts.get(lvl, 0) + 1
     total_earnings = conn.execute("SELECT COALESCE(SUM(bonus_amount),0) FROM referral_logs WHERE to_user=?", (user_id,)).fetchone()[0] or 0
-    return {"ref_link": ref_link, "direct_count": len(direct_refs), "direct_refs": direct_refs, "level_counts": level_counts, "total_team_deposit": total_team_deposit, "total_earnings": total_earnings, "bonus_structure": REF_BONUS}
+    # Get referral logs for this user
+    logs = conn.execute("SELECT from_user, level, deposit_amount, bonus_amount, bonus_percent, created_at FROM referral_logs WHERE to_user=? ORDER BY id DESC LIMIT 20", (user_id,)).fetchall()
+    return {
+        "ref_link": ref_link,
+        "direct_count": len(direct_refs),
+        "direct_refs": [{"user_id": r[0], "username": r[1], "balance": r[2], "deposit": r[3]} for r in direct_refs],
+        "level_counts": level_counts,
+        "total_team_deposit": total_team_deposit,
+        "total_earnings": total_earnings,
+        "bonus_structure": REF_BONUS,
+        "logs": [{"from": l[0], "level": l[1], "deposit": l[2], "bonus": l[3], "percent": l[4], "at": l[5]} for l in logs]
+    }
+
+@app.get("/api/admin/referrals")
+def admin_referrals():
+    rows = conn.execute("SELECT from_user, to_user, level, deposit_amount, bonus_amount, bonus_percent, created_at FROM referral_logs ORDER BY id DESC LIMIT 100").fetchall()
+    return [{"from_user": r[0], "to_user": r[1], "level": r[2], "deposit": r[3], "bonus": r[4], "percent": r[5], "at": r[6]} for r in rows]
 
 class DepositReq(BaseModel):
     amount: float
@@ -422,8 +435,9 @@ def withdraw_req(user_id: int, r: WithdrawReq):
     recalc_profit(user_id)
     now = datetime.datetime.utcnow()
     today_str = now.date().isoformat()
-    user_row = conn.execute("SELECT withdrawable, created_at, last_withdraw_date FROM users WHERE user_id=?", (user_id,)).fetchone()
+    user_row = conn.execute("SELECT withdrawable, created_at, last_withdraw_date, is_banned FROM users WHERE user_id=?", (user_id,)).fetchone()
     if not user_row: return {"error": "User not found"}
+    if user_row[3] == 1: return {"error": "Account banned"}
     withdrawable = user_row[0] or 0
     created_str = user_row[1]
     last_wd_date = user_row[2] or ""
@@ -456,10 +470,10 @@ def withdraw_req(user_id: int, r: WithdrawReq):
 def history(user_id: int):
     deps = conn.execute("SELECT amount, network, tx_hash, status, created_at FROM deposits WHERE user_id=? ORDER BY id DESC LIMIT 20", (user_id,)).fetchall()
     wds = conn.execute("SELECT amount, address, network, status, created_at FROM withdrawals WHERE user_id=? ORDER BY id DESC LIMIT 20", (user_id,)).fetchall()
-    refs = conn.execute("SELECT to_user, level, deposit_amount, bonus_amount, created_at FROM referral_logs WHERE from_user=? OR to_user=? ORDER BY id DESC LIMIT 20", (user_id, user_id)).fetchall()
+    refs = conn.execute("SELECT to_user, level, deposit_amount, bonus_amount, bonus_percent, created_at FROM referral_logs WHERE from_user=? OR to_user=? ORDER BY id DESC LIMIT 20", (user_id, user_id)).fetchall()
     return {"deposits": [{"amount":d[0],"network":d[1],"tx_hash":d[2],"status":d[3],"created_at":d[4]} for d in deps],
             "withdrawals": [{"amount":d[0],"address":d[1],"network":d[2],"status":d[3],"created_at":d[4]} for d in wds],
-            "referrals": [{"from":r[0],"to":r[1],"level":r[2],"deposit":r[3],"bonus":r[4],"at":r[5]} for r in refs]}
+            "referrals": [{"to":r[0],"level":r[1],"deposit":r[2],"bonus":r[3],"percent":r[4],"at":r[5]} for r in refs]}
 
 @app.get("/api/deposit-addresses")
 def addrs(): return DEPOSIT_ADDR
@@ -469,12 +483,62 @@ def stats():
     u = conn.execute("SELECT COUNT(*), COALESCE(SUM(balance),0), COALESCE(SUM(withdrawable),0), COALESCE(SUM(referral_earnings),0) FROM users").fetchone()
     pend_wd = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE status='pending'").fetchone()[0]
     total_ref = conn.execute("SELECT COALESCE(SUM(bonus_amount),0) FROM referral_logs").fetchone()[0] or 0
-    return {"total_users": u[0], "total_balance": u[1]+u[2], "active_now": u[0], "pending_withdrawals": pend_wd, "total_ref_paid": total_ref, "pending_deposits": 0}
+    total_dep = conn.execute("SELECT COALESCE(SUM(amount),0) FROM deposits").fetchone()[0] or 0
+    return {"total_users": u[0], "total_balance": u[1]+u[2], "active_now": u[0], "pending_withdrawals": pend_wd, "total_ref_paid": total_ref, "pending_deposits": 0, "total_deposits": total_dep}
 
 @app.get("/api/admin/users")
 def admin_users():
-    rows = conn.execute("SELECT user_id, balance, withdrawable, profit, daily_percent, ai_end, referred_by, referral_earnings, created_at, last_withdraw_date FROM users LIMIT 300").fetchall()
-    return [{"user_id":r[0],"balance":r[1],"withdrawable":r[2],"profit":r[3],"daily_percent":r[4],"ai_end":r[5],"referred_by":r[6],"ref_earn":r[7],"created_at":r[8],"last_wd":r[9]} for r in rows]
+    rows = conn.execute("SELECT user_id, username, balance, withdrawable, profit, daily_percent, ai_end, referred_by, referral_earnings, created_at, last_withdraw_date, total_deposit, total_withdraw, is_banned FROM users ORDER BY created_at DESC LIMIT 500").fetchall()
+    return [{"user_id":r[0],"username":r[1] or f"user_{r[0]}","balance":r[2],"withdrawable":r[3],"profit":r[4],"daily_percent":r[5],"ai_end":r[6],"referred_by":r[7],"ref_earn":r[8],"created_at":r[9],"last_wd":r[10],"total_deposit":r[11],"total_withdraw":r[12],"is_banned":r[13] or 0} for r in rows]
+
+@app.get("/api/admin/deposits")
+def admin_deps():
+    rows = conn.execute("SELECT id, user_id, amount, network, tx_hash, status, created_at FROM deposits ORDER BY id DESC LIMIT 100").fetchall()
+    return [{"id":r[0],"user_id":r[1],"amount":r[2],"network":r[3],"tx_hash":r[4],"status":r[5],"created_at":r[6]} for r in rows]
+
+@app.get("/api/admin/withdrawals")
+def admin_wds():
+    rows = conn.execute("SELECT id, user_id, amount, address, network, status, created_at FROM withdrawals ORDER BY id DESC LIMIT 100").fetchall()
+    return [{"id":r[0],"user_id":r[1],"amount":r[2],"address":r[3],"network":r[4],"status":r[5],"created_at":r[6]} for r in rows]
+
+class AdminUserAction(BaseModel):
+    user_id: int
+    action: str
+    amount: float = 0
+    reason: str = ""
+
+@app.post("/api/admin/user/action")
+def admin_user_action(req: AdminUserAction):
+    if req.action == "ban":
+        conn.execute("UPDATE users SET is_banned=1 WHERE user_id=?", (req.user_id,))
+    elif req.action == "unban":
+        conn.execute("UPDATE users SET is_banned=0 WHERE user_id=?", (req.user_id,))
+    elif req.action == "add_balance":
+        conn.execute("UPDATE users SET balance=balance+?, total_deposit=total_deposit+? WHERE user_id=?", (req.amount, req.amount, req.user_id))
+    elif req.action == "add_withdrawable":
+        conn.execute("UPDATE users SET withdrawable=withdrawable+?, referral_earnings=referral_earnings+? WHERE user_id=?", (req.amount, req.amount, req.user_id))
+    elif req.action == "set_balance":
+        conn.execute("UPDATE users SET balance=? WHERE user_id=?", (req.amount, req.user_id))
+    elif req.action == "delete":
+        conn.execute("DELETE FROM users WHERE user_id=?", (req.user_id,))
+    conn.commit()
+    return {"ok": True}
+
+class ApproveReq(BaseModel):
+    id: int; action: str
+
+@app.post("/api/admin/withdraw/action")
+def wd_action(r: ApproveReq):
+    wd = conn.execute("SELECT user_id, amount FROM withdrawals WHERE id=?", (r.id,)).fetchone()
+    if not wd: return {"error":"not found"}
+    if r.action=="approve":
+        conn.execute("UPDATE withdrawals SET status='approved' WHERE id=?", (r.id,))
+        conn.execute("UPDATE users SET total_withdraw=total_withdraw+? WHERE user_id=?", (wd[1], wd[0]))
+    else:
+        conn.execute("UPDATE withdrawals SET status='rejected' WHERE id=?", (r.id,))
+        conn.execute("UPDATE users SET withdrawable=withdrawable+? WHERE user_id=?", (wd[1], wd[0]))
+    conn.commit()
+    return {"ok":True}
 
 @app.get("/")
 def root(): return FileResponse("index.html")

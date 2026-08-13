@@ -1,5 +1,149 @@
-<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>PT_AI Admin</title><script src='https://cdn.tailwindcss.com'></script></head><body class='bg-[#0a0a0f] text-white p-6'><h1 class='text-2xl font-bold'>PT_AI Trading - Admin + 10 Level Referral</h1><p class='text-xs opacity-50'>L1 7% • L2-10 1% • Auto deposit • Auto claim 24h</p><div class='grid grid-cols-5 gap-4 mt-6 mb-6'><div class='bg-white/5 p-4 rounded-2xl'><p class='text-xs opacity-50'>USERS</p><p id='stat_users' class='text-xl font-bold'>0</p></div><div class='bg-white/5 p-4 rounded-2xl'><p class='text-xs opacity-50'>TOTAL BAL</p><p id='stat_bal' class='text-xl font-bold text-[#FFD60A]'>$0</p></div><div class='bg-yellow-500/10 p-4 rounded-2xl'><p class='text-xs text-yellow-400'>PEND WD</p><p id='pend_wd' class='text-xl font-bold text-yellow-400'>0</p></div><div class='bg-emerald-500/10 p-4 rounded-2xl'><p class='text-xs text-emerald-400'>TOTAL REF PAID</p><p id='ref_paid' class='text-xl font-bold text-emerald-400'>$0</p></div><div class='bg-[#FFD60A]/10 p-4 rounded-2xl'><p class='text-xs text-[#FFD60A]'>TIER SYSTEM</p><p class='text-[10px]'>20:7.6% 120:8.9% 500:9.6% 1200:10.9% 2500:11.8% 6000:13.6% 15000:14.9%</p></div></div><div class='grid grid-cols-3 gap-6'><div class='bg-white/5 rounded-2xl p-4'><h2 class='font-bold mb-3 text-sm'>Deposits Auto</h2><table class='w-full text-xs'><thead><tr><th>ID</th><th>User</th><th>Amt</th><th>Net</th></tr></thead><tbody id='deps'></tbody></table></div><div class='bg-white/5 rounded-2xl p-4'><h2 class='font-bold mb-3 text-sm'>Withdrawals</h2><table class='w-full text-xs'><thead><tr><th>ID</th><th>User</th><th>Amt</th><th>Status</th><th>Action</th></tr></thead><tbody id='wds'></tbody></table></div><div class='bg-white/5 rounded-2xl p-4'><h2 class='font-bold mb-3 text-sm'>Referral Logs</h2><table class='w-full text-[10px]'><thead><tr><th>From</th><th>To</th><th>Lvl</th><th>Bonus</th></tr></thead><tbody id='refs'></tbody></table></div></div><div class='mt-6 bg-white/5 rounded-2xl p-4'><h2 class='font-bold mb-3'>Users</h2><table class='w-full text-xs'><thead><tr><th>ID</th><th>Bal</th><th>Withd</th><th>Profit</th><th>%</th><th>AI End</th><th>Ref By</th><th>Ref Earn</th></tr></thead><tbody id='users'></tbody></table></div><script>
-async function load(){let s=await fetch('/api/admin/stats').then(r=>r.json()); document.getElementById('stat_users').innerText=s.total_users; document.getElementById('stat_bal').innerText='$'+Number(s.total_balance).toFixed(2); document.getElementById('pend_wd').innerText=s.pending_withdrawals; document.getElementById('ref_paid').innerText='$'+Number(s.total_ref_paid).toFixed(2); let deps=await fetch('/api/admin/deposits').then(r=>r.json()); document.getElementById('deps').innerHTML=deps.map(d=>`<tr class='border-t border-white/5'><td class='p-1'>${d.id}</td><td class='p-1'>${d.user_id}</td><td class='p-1'>$${d.amount}</td><td class='p-1'>${d.network}</td></tr>`).join(''); let wds=await fetch('/api/admin/withdrawals').then(r=>r.json()); document.getElementById('wds').innerHTML=wds.map(w=>`<tr class='border-t border-white/5'><td class='p-1'>${w.id}</td><td class='p-1'>${w.user_id}</td><td class='p-1'>$${w.amount}</td><td class='p-1 ${w.status=='pending'?'text-yellow-400':'text-green-400'}'>${w.status}</td><td class='p-1'>${w.status=='pending'?`<button onclick="actWd(${w.id},'approve')" class='bg-green-500/20 text-green-400 px-2 py-1 rounded mr-1'>Pay</button><button onclick="actWd(${w.id},'reject')" class='bg-red-500/20 text-red-400 px-2 py-1 rounded'>Refund</button>`:''}</td></tr>`).join(''); let refs=await fetch('/api/admin/referrals').then(r=>r.json()); document.getElementById('refs').innerHTML=refs.map(r=>`<tr class='border-t border-white/5'><td class='p-1'>${r.from_user}</td><td class='p-1'>${r.to_user}</td><td class='p-1'>L${r.level}</td><td class='p-1 text-[#FFD60A]'>$${r.bonus.toFixed(2)}</td></tr>`).join(''); let users=await fetch('/api/admin/users').then(r=>r.json()); document.getElementById('users').innerHTML=users.map(u=>`<tr class='border-t border-white/5'><td class='p-1'>${u.user_id}</td><td class='p-1'>$${u.balance.toFixed(2)}</td><td class='p-1 text-[#FFD60A]'>$${u.withdrawable.toFixed(2)}</td><td class='p-1'>$${u.profit.toFixed(2)}</td><td class='p-1'>${(u.daily_percent||0).toFixed(1)}%</td><td class='p-1 text-[9px]'>${u.ai_end?u.ai_end.slice(0,10):'No AI'}</td><td class='p-1'>${u.referred_by||'-'}</td><td class='p-1 text-emerald-400'>$${(u.ref_earn||0).toFixed(2)}</td></tr>`).join('');}
+<!DOCTYPE html>
+<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>PT_AI Admin - Full Control</title>
+<script src='https://cdn.tailwindcss.com'></script>
+<style>body{font-family:Inter,sans-serif}</style>
+</head>
+<body class='bg-[#0a0a0f] text-white p-4 min-h-screen'>
+<h1 class='text-2xl font-bold'>PT_AI Trading - Admin Control Panel</h1>
+<p class='text-xs opacity-50'>L1 7% • L2-10 1% • Real Telegram IDs • Full User Control • Auto Referral Bonus to Withdrawable</p>
+
+<div class='grid grid-cols-2 md:grid-cols-6 gap-4 mt-6 mb-6'>
+<div class='bg-white/5 p-4 rounded-2xl'><p class='text-xs opacity-50'>USERS</p><p id='stat_users' class='text-xl font-bold'>0</p></div>
+<div class='bg-white/5 p-4 rounded-2xl'><p class='text-xs opacity-50'>TOTAL BAL</p><p id='stat_bal' class='text-xl font-bold text-[#FFD60A]'>$0</p></div>
+<div class='bg-white/5 p-4 rounded-2xl'><p class='text-xs opacity-50'>TOTAL DEPOSITS</p><p id='total_dep' class='text-xl font-bold text-emerald-400'>$0</p></div>
+<div class='bg-yellow-500/10 p-4 rounded-2xl'><p class='text-xs text-yellow-400'>PEND WD</p><p id='pend_wd' class='text-xl font-bold text-yellow-400'>0</p></div>
+<div class='bg-emerald-500/10 p-4 rounded-2xl'><p class='text-xs text-emerald-400'>TOTAL REF PAID</p><p id='ref_paid' class='text-xl font-bold text-emerald-400'>$0</p></div>
+<div class='bg-[#FFD60A]/10 p-4 rounded-2xl'><p class='text-xs text-[#FFD60A]'>TIER SYSTEM</p><p class='text-[10px]'>20:7.6% 120:8.9% 500:9.6% 1200:10.9% 2500:11.8% 6000:13.6% 15000:14.9%</p></div>
+</div>
+
+<div class='grid grid-cols-1 md:grid-cols-3 gap-6'>
+<div class='bg-white/5 rounded-2xl p-4'><h2 class='font-bold mb-3 text-sm'>Deposits (Auto Approved)</h2>
+<table class='w-full text-xs'><thead><tr><th>ID</th><th>User</th><th>Amt</th><th>Net</th><th>Time</th></tr></thead><tbody id='deps'></tbody></table></div>
+<div class='bg-white/5 rounded-2xl p-4'><h2 class='font-bold mb-3 text-sm'>Withdrawals</h2>
+<table class='w-full text-xs'><thead><tr><th>ID</th><th>User</th><th>Amt</th><th>Status</th><th>Action</th></tr></thead><tbody id='wds'></tbody></table></div>
+<div class='bg-white/5 rounded-2xl p-4'><h2 class='font-bold mb-3 text-sm'>Referral Logs (Bonus → Withdrawable)</h2>
+<table class='w-full text-[10px]'><thead><tr><th>From (Depositor)</th><th>To (Referrer)</th><th>Lvl</th><th>Dep</th><th>%</th><th>Bonus</th></tr></thead><tbody id='refs'></tbody></table></div>
+</div>
+
+<div class='mt-6 bg-white/5 rounded-2xl p-4 overflow-x-auto'>
+<div class='flex justify-between items-center mb-3'>
+<h2 class='font-bold'>All Users - Full Control (Real Telegram IDs)</h2>
+<button onclick='load()' class='bg-white/10 px-3 py-1 rounded-full text-xs'>🔄 Refresh</button>
+</div>
+<table class='w-full text-xs'><thead class='text-[11px] opacity-60'><tr>
+<th class='p-2 text-left'>Telegram ID</th><th class='p-2 text-left'>Username</th><th class='p-2 text-right'>Balance</th><th class='p-2 text-right'>Withdrawable</th><th class='p-2 text-right'>Profit</th><th class='p-2'>% Day</th><th class='p-2'>AI End</th><th class='p-2'>Ref By</th><th class='p-2 text-right'>Ref Earn</th><th class='p-2'>Deposits</th><th class='p-2'>Status</th><th class='p-2'>Actions</th>
+</tr></thead><tbody id='users'></tbody></table>
+</div>
+
+<!-- User Action Modal -->
+<div id='actionModal' class='hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4'>
+<div class='bg-[#1a1a1f] rounded-2xl p-6 w-full max-w-md border border-white/10'>
+<h3 class='font-bold mb-3' id='modalTitle'>User Action</h3>
+<p class='text-xs opacity-60 mb-3' id='modalUser'>User ID: </p>
+<div id='modalContent'></div>
+<div class='flex gap-2 mt-4'>
+<button onclick='closeModal()' class='flex-1 bg-white/10 py-2 rounded-full text-sm'>Cancel</button>
+<button id='modalConfirm' class='flex-1 bg-[#FFD60A] text-black py-2 rounded-full text-sm font-bold'>Confirm</button>
+</div>
+</div>
+</div>
+
+<script>
+let selectedUser = null;
+async function load(){
+ let s=await fetch('/api/admin/stats').then(r=>r.json());
+ document.getElementById('stat_users').innerText=s.total_users;
+ document.getElementById('stat_bal').innerText='$'+Number(s.total_balance).toFixed(2);
+ document.getElementById('total_dep').innerText='$'+Number(s.total_deposits||0).toFixed(2);
+ document.getElementById('pend_wd').innerText=s.pending_withdrawals;
+ document.getElementById('ref_paid').innerText='$'+Number(s.total_ref_paid).toFixed(2);
+
+ let deps=await fetch('/api/admin/deposits').then(r=>r.json());
+ document.getElementById('deps').innerHTML=deps.map(d=>`<tr class='border-t border-white/5'><td class='p-1'>${d.id}</td><td class='p-1'>${d.user_id}</td><td class='p-1 text-[#26A17B]'>$${d.amount}</td><td class='p-1'>${d.network}</td><td class='p-1 text-[10px] opacity-50'>${d.created_at?d.created_at.slice(5,16):''}</td></tr>`).join('');
+
+ let wds=await fetch('/api/admin/withdrawals').then(r=>r.json());
+ document.getElementById('wds').innerHTML=wds.map(w=>`<tr class='border-t border-white/5'><td class='p-1'>${w.id}</td><td class='p-1'>${w.user_id}</td><td class='p-1'>$${w.amount}</td><td class='p-1 ${w.status=='pending'?'text-yellow-400':'text-green-400'}'>${w.status}</td><td class='p-1'>${w.status=='pending'?`<button onclick="actWd(${w.id},'approve')" class='bg-green-500/20 text-green-400 px-2 py-1 rounded mr-1 text-[10px]'>Pay</button><button onclick="actWd(${w.id},'reject')" class='bg-red-500/20 text-red-400 px-2 py-1 rounded text-[10px]'>Refund</button>`:''}</td></tr>`).join('');
+
+ let refs=await fetch('/api/admin/referrals').then(r=>r.json());
+ document.getElementById('refs').innerHTML=refs.map(r=>`<tr class='border-t border-white/5'><td class='p-1'>${r.from_user}</td><td class='p-1 text-[#FFD60A]'>${r.to_user}</td><td class='p-1'>L${r.level}</td><td class='p-1'>$${r.deposit}</td><td class='p-1 text-emerald-400'>${r.percent||0}%</td><td class='p-1 text-[#FFD60A] font-bold'>$${Number(r.bonus).toFixed(2)}</td></tr>`).join('');
+
+ let users=await fetch('/api/admin/users').then(r=>r.json());
+ document.getElementById('users').innerHTML=users.map(u=>`
+  <tr class='border-t border-white/5 ${u.is_banned?'bg-red-500/10':''}'>
+   <td class='p-2 font-mono font-bold'>${u.user_id}</td>
+   <td class='p-2'>${u.username||'user_'+u.user_id}</td>
+   <td class='p-2 text-right'>$${Number(u.balance).toFixed(2)}</td>
+   <td class='p-2 text-right text-[#FFD60A] font-bold'>$${Number(u.withdrawable).toFixed(2)}</td>
+   <td class='p-2 text-right'>$${Number(u.profit).toFixed(2)}</td>
+   <td class='p-2'>${(u.daily_percent||0).toFixed(1)}%</td>
+   <td class='p-2 text-[9px]'>${u.ai_end?u.ai_end.slice(0,10):'No AI'}</td>
+   <td class='p-2'>${u.referred_by||'-'}</td>
+   <td class='p-2 text-right text-emerald-400 font-bold'>$${Number(u.ref_earn||0).toFixed(2)}</td>
+   <td class='p-2 text-right'>$${Number(u.total_deposit||0).toFixed(2)}</td>
+   <td class='p-2'>${u.is_banned?'<span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-[10px]">BANNED</span>':'<span class="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-[10px]">ACTIVE</span>'}</td>
+   <td class='p-2'>
+    <div class='flex gap-1 flex-wrap'>
+     <button onclick='openAction(${u.user_id},"add_withdrawable")' class='bg-[#FFD60A]/20 text-[#FFD60A] px-2 py-1 rounded text-[10px]'>+WD</button>
+     <button onclick='openAction(${u.user_id},"add_balance")' class='bg-[#26A17B]/20 text-[#26A17B] px-2 py-1 rounded text-[10px]'>+BAL</button>
+     <button onclick='openAction(${u.user_id},"ban")' class='bg-red-500/20 text-red-400 px-2 py-1 rounded text-[10px]'>${u.is_banned?'Unban':'Ban'}</button>
+     <button onclick='openUserDetail(${u.user_id})' class='bg-white/10 px-2 py-1 rounded text-[10px]'>View</button>
+    </div>
+   </td>
+  </tr>`).join('');
+}
+
 async function actWd(id,action){await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action})}); load();}
+
+let currentAction = null;
+function openAction(userId, action){
+ selectedUser = userId;
+ currentAction = action;
+ document.getElementById('modalUser').innerText = 'User ID: ' + userId + ' (Real Telegram ID)';
+ document.getElementById('actionModal').classList.remove('hidden');
+ let title = ''; let content = '';
+ if(action === 'add_withdrawable'){
+  title = 'Add to Withdrawable (Referral Bonus)';
+  content = `<p class='text-xs opacity-70 mb-2'>Adds to withdrawable balance + referral earnings. User can withdraw instantly.</p><input id='actionAmount' type='number' placeholder='Amount USDT' class='w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm'>`;
+ } else if(action === 'add_balance'){
+  title = 'Add to Trading Balance';
+  content = `<p class='text-xs opacity-70 mb-2'>Adds to trading balance (AI profit calculation).</p><input id='actionAmount' type='number' placeholder='Amount USDT' class='w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm'>`;
+ } else if(action === 'ban'){
+  // Check if already banned
+  fetch('/api/admin/users').then(r=>r.json()).then(users=>{
+   let u = users.find(x=>x.user_id==userId);
+   if(u && u.is_banned){
+    title = 'Unban User';
+    content = `<p class='text-sm'>Unban user ${userId}?</p>`;
+    currentAction = 'unban';
+   } else {
+    title = 'Ban User';
+    content = `<p class='text-sm'>Ban user ${userId}? They cannot withdraw.</p>`;
+   }
+   document.getElementById('modalTitle').innerText = title;
+   document.getElementById('modalContent').innerHTML = content;
+  });
+  document.getElementById('modalTitle').innerText = 'Ban/Unban User';
+  document.getElementById('modalContent').innerHTML = '<p class="text-sm">Loading...</p>';
+  return;
+ }
+ document.getElementById('modalTitle').innerText = title;
+ document.getElementById('modalContent').innerHTML = content;
+ document.getElementById('modalConfirm').onclick = confirmAction;
+}
+function closeModal(){document.getElementById('actionModal').classList.add('hidden'); selectedUser=null; currentAction=null;}
+async function confirmAction(){
+ let amount = parseFloat(document.getElementById('actionAmount')?.value || 0);
+ if((currentAction.includes('add') ) && (!amount || amount<=0)){alert('Enter valid amount'); return;}
+ let res = await fetch('/api/admin/user/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:selectedUser, action:currentAction, amount:amount})});
+ let j = await res.json();
+ if(j.ok){alert('Done'); closeModal(); load();} else alert('Failed');
+}
+async function openUserDetail(userId){
+ let users = await fetch('/api/admin/users').then(r=>r.json());
+ let u = users.find(x=>x.user_id==userId);
+ if(!u) return alert('User not found');
+ alert(`User Detail:\nTelegram ID: ${u.user_id}\nUsername: ${u.username}\nBalance: $${u.balance}\nWithdrawable: $${u.withdrawable}\nRef By: ${u.referred_by||'None'}\nRef Earn: $${u.ref_earn}\nTotal Deposit: $${u.total_deposit}\nCreated: ${u.created_at}`);
+}
 load(); setInterval(load,5000);
 </script></body></html>
