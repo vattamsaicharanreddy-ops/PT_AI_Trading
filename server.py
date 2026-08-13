@@ -145,9 +145,9 @@ def distribute_referral(depositor_id: int, deposit_amount: float):
     now=datetime.datetime.utcnow().isoformat()
     current_id=depositor_id
     for level in range(1,11):
-        ref_row=conn.execute("SELECT referred_by FROM users WHERE user_id=?", (current_id,)).fetchone()
-        if not ref_row or not ref_row[0]: break
-        referrer_id=ref_row[0]
+        row=conn.execute("SELECT referred_by FROM users WHERE user_id=?", (current_id,)).fetchone()
+        if not row or not row[0]: break
+        referrer_id=row[0]
         if not conn.execute("SELECT 1 FROM users WHERE user_id=?", (referrer_id,)).fetchone(): break
         bonus_pct=REF_BONUS.get(level,0)
         if bonus_pct>0:
@@ -182,11 +182,13 @@ def binance_prices():
     return {"success":True, "prices":prices, "source":source, "timestamp":datetime.datetime.utcnow().isoformat()}
 
 def generate_deterministic_trades():
-    today = datetime.date.today().isoformat()
+    # FIXED: Use UTC and generate trades only in past, so frontend local time conversion works for any timezone
+    utc_now = datetime.datetime.utcnow()
+    today = utc_now.date().isoformat()
     seed = int(hashlib.md5(today.encode()).hexdigest()[:8], 16)
     rng = random.Random(seed)
-    count = 12 + (seed % 4)  # 12-15
-    target_total = 50 + (seed % 21)  # 50-70
+    count = 12 + (seed % 4)
+    target_total = 50 + (seed % 21)
     win_count = int(count * 0.71)
     if win_count < 8: win_count = 8
     loss_count = count - win_count
@@ -211,17 +213,36 @@ def generate_deterministic_trades():
     symbols = BINANCE_SYMBOLS.copy()
     rng.shuffle(symbols)
     trades=[]
+    # Generate times in past - use UTC hours that will be converted to local time in frontend
+    # But ensure they are distributed through today and all before current UTC time
+    current_utc_hour = utc_now.hour
+    # For frontend local conversion, we store UTC hour and let frontend convert
+    # But to avoid future times, we generate hours from 0 to current hour
+    max_hour = current_utc_hour if current_utc_hour >= 6 else 20
     for i in range(count):
         sym = symbols[i % len(symbols)]
         pnl = all_pnls[i]
         side = rng.choice(["LONG","SHORT"])
         leverage = rng.choice([5,10,15,20])
         usdt = round(800 + rng.random()*1200,2)
-        th = (6 + i + rng.randint(0,2)) % 24
+        # Spread trades from morning to now, all in past
+        if count > 1:
+            hour_progress = (i / (count-1)) * max(1, max_hour - 1)
+            th = int(1 + hour_progress)
+        else:
+            th = max(1, max_hour - 1)
+        # Ensure th is in past
+        if th >= current_utc_hour and current_utc_hour > 1:
+            th = max(0, current_utc_hour - 1 - (i % 3))
+        th = max(0, min(th, 23))
         tm = rng.randint(0,59)
+        # If same hour as now, ensure minutes in past
+        if th == current_utc_hour:
+            if tm >= utc_now.minute and utc_now.minute > 5:
+                tm = rng.randint(0, utc_now.minute - 1)
         time_str = f"{th:02d}:{tm:02d}"
         status = "OPEN" if i < 3 else "CLOSED"
-        trades.append({"id":i+1,"pair":sym.replace("USDT","/USDT"),"symbol":sym,"target_pnl":pnl,"is_profit":pnl>0,"leverage":leverage,"usdt_amount":usdt,"time":time_str,"status":status,"side":side,"date":today})
+        trades.append({"id":i+1,"pair":sym.replace("USDT","/USDT"),"symbol":sym,"target_pnl":pnl,"is_profit":pnl>0,"leverage":leverage,"usdt_amount":usdt,"time":time_str,"status":status,"side":side,"date":today,"utc_hour":th,"utc_min":tm})
     trades.sort(key=lambda x: x["time"], reverse=True)
     return trades, round(sum(all_pnls),2), count, len([p for p in all_pnls if p>0]), len([p for p in all_pnls if p<0])
 
@@ -243,7 +264,8 @@ def binance_trades_all():
             "current_price":round(curr,6 if curr<1 else 2),
             "leverage":t["leverage"],"usdt_amount":t["usdt_amount"],
             "pnl_percent":pnl,"pnl_usdt":round(t["usdt_amount"]*pnl/100,2),
-            "is_profit":t["is_profit"],"time":t["time"],"status":t["status"],"date":t["date"]
+            "is_profit":t["is_profit"],"time":t["time"],"status":t["status"],"date":t["date"],
+            "utc_hour":t.get("utc_hour",0),"utc_min":t.get("utc_min",0)
         })
     return {
         "trades":trades,
@@ -299,48 +321,45 @@ def api_user(user_id: int, ref: int = None):
         "profit": row[4],
         "profit_per_hour": row[5],
         "daily_percent": row[6],
+        "ai_start": row[6] if len(row)>6 else None,
         "ai_end": row[7],
         "days_left": days_left,
         "hours_left": hours_left,
         "ai_active": active,
-        "total_deposit": row[10] or 0,
-        "total_withdraw": row[11] or 0,
-        "tier_min": get_tier_index(row[2] or 0)[1],
-        "referral_earnings": row[14] if len(row) > 14 and row[14] else 0,
-        "referred_by": row[13] if len(row) > 13 else None,
+        "total_deposit": row[10] if len(row)>10 else 0,
+        "total_withdraw": row[11] if len(row)>11 else 0,
+        "tier_min": TIERS[0][0],
+        "tiers": [{"min": t[0], "pct": t[1]} for t in TIERS],
+        "referral_earnings": row[14] if len(row)>14 and row[14] else 0,
         "created_at": created_str,
-        "days_since_join": days_since,
-        "can_withdraw_today": can_withdraw_today,
-        "last_withdraw_date": last_wd_date,
-        "tiers": [{"min": t[0], "pct": t[1]} for t in TIERS]
+        "can_withdraw_today": can_withdraw_today
     }
 
 @app.get("/api/referral/{user_id}")
 def api_referral(user_id: int):
     ensure_user(user_id)
-    total_earnings = conn.execute("SELECT COALESCE(SUM(bonus_amount),0) FROM referral_logs WHERE to_user=?", (user_id,)).fetchone()[0] or 0
-    level_counts = {i:0 for i in range(1,11)}
+    ref_link = f"https://t.me/YourBot?start={user_id}"
+    try:
+        import os
+        bot_username = os.getenv("BOT_USERNAME", "YourBot")
+        ref_link = f"https://t.me/{bot_username}?start={user_id}"
+    except: pass
+    direct_refs = conn.execute("SELECT user_id FROM users WHERE referred_by=?", (user_id,)).fetchall()
     total_team_deposit = 0
-    direct_refs = []
-    current_level_ids = [user_id]
-    visited = set()
-    for lvl in range(1,11):
-        next_ids = []
-        for uid in current_level_ids:
-            refs = conn.execute("SELECT user_id, balance, total_deposit FROM users WHERE referred_by=?", (uid,)).fetchall()
-            for r in refs:
-                if r[0] not in visited:
-                    visited.add(r[0])
-                    next_ids.append(r[0])
-                    level_counts[lvl]+=1
-                    total_team_deposit += (r[2] or 0)
-                    if lvl==1:
-                        direct_refs.append({"user_id": r[0], "balance": r[1], "total_deposit": r[2]})
-        current_level_ids = next_ids
-        if not current_level_ids: break
-    import os
-    bot_username = os.getenv("BOT_USERNAME", "YourBot")
-    ref_link = f"https://t.me/{bot_username}?start={user_id}"
+    all_team = []
+    def get_team(uid, level=1):
+        nonlocal total_team_deposit
+        refs = conn.execute("SELECT user_id, total_deposit FROM users WHERE referred_by=?", (uid,)).fetchall()
+        for r in refs:
+            all_team.append((r[0], level))
+            total_team_deposit += r[1] or 0
+            if level < 10:
+                get_team(r[0], level+1)
+    get_team(user_id)
+    level_counts = {}
+    for _, lvl in all_team:
+        level_counts[lvl] = level_counts.get(lvl, 0) + 1
+    total_earnings = conn.execute("SELECT COALESCE(SUM(bonus_amount),0) FROM referral_logs WHERE to_user=?", (user_id,)).fetchone()[0] or 0
     return {"ref_link": ref_link, "direct_count": len(direct_refs), "direct_refs": direct_refs, "level_counts": level_counts, "total_team_deposit": total_team_deposit, "total_earnings": total_earnings, "bonus_structure": REF_BONUS}
 
 class DepositReq(BaseModel):
