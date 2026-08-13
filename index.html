@@ -97,16 +97,18 @@
 
 </div>
 
+
 <script>
-let tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-let userId = (tgUser && tgUser.id && tgUser.id > 1000) ? tgUser.id : (parseInt(new URLSearchParams(window.location.search).get('user_id')) || 123456789);
-console.log('Telegram user:', tgUser, 'Using userId:', userId);
-// For testing in browser without Telegram, use 123456789
-if (userId === 0 || userId < 1000) userId = 123456789;
-let urlParams = new URLSearchParams(window.location.search);
-let refParam = urlParams.get('ref') || window.Telegram?.WebApp?.initDataUnsafe?.start_param || null;
-let balance=0, withdrawable=0, profit=0, perHour=0, selectedNetwork='TRC20', wdNetwork='TRC20', addrs={}, canWithdrawToday=true;
-let realTrades=[];
+function safeSet(id, val){
+ let el = document.getElementById(id);
+ if (el) el.innerText = val;
+}
+function safeHTML(id, val){
+ let el = document.getElementById(id);
+ if (el) el.innerHTML = val;
+}
+
+
 
 function showTab(name){
  document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
@@ -117,37 +119,80 @@ function showTab(name){
 }
 
 async function init(){
- console.log('Fetching user:', userId, 'ref:', refParam);
+ let tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+ let userId = (tgUser && tgUser.id && tgUser.id > 1000) ? tgUser.id : (parseInt(new URLSearchParams(window.location.search).get('user_id')) || 123456789);
+ if (userId === 0 || userId < 1000) userId = 123456789;
+ window.userId = userId;
+ let urlParams = new URLSearchParams(window.location.search);
+ let refParam = urlParams.get('ref') || window.Telegram?.WebApp?.initDataUnsafe?.start_param || null;
+ let balance=0, withdrawable=0, profit=0, perHour=0, selectedNetwork='TRC20', wdNetwork='TRC20', addrs={}, canWithdrawToday=true;
+ let realTrades=[];
+ console.log('Init userId:', userId);
+ 
  let url = `/api/user/${userId}` + (refParam ? `?ref=${refParam}` : '');
  try {
   let r=await fetch(url); 
-  if (!r.ok) throw new Error('User API failed: '+r.status);
+  if (!r.ok) throw new Error('API '+r.status);
   let d=await r.json();
   console.log('User data:', d);
- balance=d.balance; withdrawable=d.withdrawable; profit=d.profit; perHour=d.profit_per_hour;
- canWithdrawToday=d.can_withdraw_today;
- document.getElementById('balTrading').innerText=balance.toFixed(2)+' USDT';
- document.getElementById('balWithdrawable').innerText=withdrawable.toFixed(2)+' USDT';
- document.getElementById('withdrawableTop').innerText=withdrawable.toFixed(2)+' USDT';
- document.getElementById('profitVal').innerText=profit.toFixed(2);
- document.getElementById('perHour').innerText=perHour.toFixed(4);
- document.getElementById('dailyPct').innerText=(d.daily_percent||0).toFixed(1)+'%';
- document.getElementById('tierPct').innerText=(d.daily_percent||0).toFixed(1)+'%';
- document.getElementById('earnPct').innerText=(d.daily_percent||0).toFixed(1)+'%';
- document.getElementById('aiDays').innerText=d.days_left;
- document.getElementById('aiHours').innerText=d.hours_left;
- document.getElementById('balTopMini').innerText=balance.toFixed(0);
- document.getElementById('wdAvailable').innerText=withdrawable.toFixed(2)+' USDT';
- document.getElementById('refEarn').innerText=d.referral_earnings.toFixed(2)+' USDT';
- document.getElementById('userIdDisplay').innerText=userId;
- document.getElementById('userBal').innerText=balance.toFixed(2)+' USDT';
- document.getElementById('userWd').innerText=withdrawable.toFixed(2)+' USDT';
- document.getElementById('joinedDate').innerText=d.created_at ? d.created_at.slice(0,10) : '-';
- document.getElementById('totalDep').innerText=(d.total_deposit||0).toFixed(2)+' USDT';
- document.getElementById('totalWd').innerText=(d.total_withdraw||0).toFixed(2)+' USDT';
- document.getElementById('wdBtn').innerText=canWithdrawToday ? 'Withdraw USDT' : 'Already withdrew today';
- document.getElementById('wdBtn').disabled=!canWithdrawToday;
- if(!d.ai_active){document.getElementById('aiStatus').innerText='EXPIRED'; document.getElementById('aiDot').innerText='🔴';}
+  balance=d.balance; withdrawable=d.withdrawable; profit=d.profit; perHour=d.profit_per_hour;
+  canWithdrawToday=d.can_withdraw_today;
+  safeSet('balTrading', balance.toFixed(2)+' USDT');
+  safeSet('balWithdrawable', withdrawable.toFixed(2)+' USDT');
+  safeSet('withdrawableTop', withdrawable.toFixed(2)+' USDT');
+  safeSet('profitVal', profit.toFixed(2));
+  safeSet('perHour', perHour.toFixed(4));
+  safeSet('dailyPct', (d.daily_percent||0).toFixed(1)+'%');
+  safeSet('tierPct', (d.daily_percent||0).toFixed(1)+'%');
+  safeSet('earnPct', (d.daily_percent||0).toFixed(1)+'%');
+  safeSet('aiDays', d.days_left);
+  safeSet('aiHours', d.hours_left);
+  safeSet('balTopMini', balance.toFixed(0));
+  safeSet('wdAvailable', withdrawable.toFixed(2)+' USDT');
+  safeSet('refEarn', d.referral_earnings.toFixed(2)+' USDT');
+  safeSet('refEarned', d.referral_earnings.toFixed(2)+' USDT');
+  safeSet('userIdDisplay', userId);
+  safeSet('userBal', balance.toFixed(2)+' USDT');
+  safeSet('userWd', withdrawable.toFixed(2)+' USDT');
+  safeSet('joinedDate', d.created_at ? d.created_at.slice(0,10) : '-');
+  safeSet('totalDep', (d.total_deposit||0).toFixed(2)+' USDT');
+  safeSet('totalWd', (d.total_withdraw||0).toFixed(2)+' USDT');
+  let wdBtn = document.getElementById('wdBtn');
+  if (wdBtn){ wdBtn.innerText=canWithdrawToday ? 'Withdraw USDT' : 'Already withdrew today'; wdBtn.disabled=!canWithdrawToday; }
+  if(!d.ai_active){ safeSet('aiStatus','EXPIRED'); safeSet('aiDot','🔴'); }
+  // Tiers
+  let tierHtml=''; let tableHtml='';
+  (d.tiers||[]).forEach(t=>{
+   if(t.min>=0){
+    let isActive = balance>=t.min && t.min>0;
+    let cls = isActive ? 'bg-[#26A17B]/20 border-[#26A17B]/40 text-white' : 'bg-white/5 border-white/5 opacity-70';
+    let badge = isActive ? '<span class="bg-[#26A17B] text-white text-[7px] px-1.5 py-0.5 rounded-full">ACTIVE</span>' : (t.min==0?'':'<span class="bg-white/10 text-[7px] px-1.5 py-0.5 rounded-full">LOCKED</span>');
+    if(t.min>0){
+     tierHtml+=`<div class='border rounded-xl p-2.5 ${cls}'><div class='flex justify-between'><div class='flex gap-2'><div class='w-7 h-7 bg-[#26A17B] rounded-full flex items-center justify-center text-[10px] font-bold'>₮</div><div><p class='font-bold text-[11px]'>≥${t.min} USDT ${badge}</p><p class='text-[8px] opacity-60'>${(t.min * t.pct/100).toFixed(2)} USDT/day</p></div></div><div class='text-right'><p class='font-bold text-[#FFD60A] text-[11px]'>${t.pct}%/day</p></div></div></div>`;
+    }
+    tableHtml+=`<tr class='border-t border-white/5'><td class='py-1'>${t.min} USDT</td><td class='py-1 text-[#FFD60A]'>${t.pct}%</td><td class='py-1'>${(t.min * t.pct/100).toFixed(2)} USDT/day</td></tr>`;
+   }
+  });
+  safeHTML('tierList', tierHtml);
+  safeHTML('tierTable', tableHtml);
+ } catch(e){
+  console.error('User load failed', e);
+  alert('Failed to load user: '+e.message);
+  return;
+ }
+ try {
+  let a=await fetch('/api/deposit-addresses'); 
+  addrs=await a.json(); 
+  console.log('Addrs', addrs);
+  if (typeof renderNetworks === 'function') renderNetworks(); 
+  if (typeof selectNetwork === 'function') selectNetwork('TRC20'); 
+ } catch(e){ console.error('Addr fail', e); safeSet('depositAddr','Set in server.py DEPOSIT_ADDR'); }
+ try { await loadHistory(); } catch(e){ console.error(e); }
+ try { await loadReferral(); } catch(e){ console.error(e); }
+ try { await loadRealTrades(); } catch(e){ console.error(e); }
+ setInterval(()=>{if(perHour>0){ let el=document.getElementById('aiStatus'); if(el && el.innerText!='EXPIRED'){ profit+=perHour/3600; safeSet('profitVal', profit.toFixed(2)); }}},1000);
+ setInterval(()=>{ if (typeof updateLivePricesOnly === 'function') updateLivePricesOnly(); }, 5000);
+}
  let tierHtml=''; let tableHtml='';
  (d.tiers||[]).forEach(t=>{
   if(t.min>0){
@@ -160,27 +205,12 @@ async function init(){
  });
  document.getElementById('tierList').innerHTML=tierHtml;
  document.getElementById('tierTable').innerHTML=tableHtml;
- try {
-   let a=await fetch('/api/deposit-addresses'); 
-   if (!a.ok) throw new Error('Deposit addresses failed');
-   addrs=await a.json(); 
-   console.log('Addrs:', addrs);
-   renderNetworks(); selectNetwork('TRC20'); 
-  } catch(e){ console.error('Deposit addr error:', e); document.getElementById('depositAddr').innerText='Set addresses in server.py DEPOSIT_ADDR'; }
-  
-  try { await loadHistory(); } catch(e){ console.error('History error', e); }
-  try { await loadReferral(); } catch(e){ console.error('Referral error', e); document.getElementById('refLink').innerText='https://t.me/'+(d.bot_username||'YourBot')+'?start='+userId; }
-  try { await loadRealTrades(); } catch(e){ console.error('Trades error', e); }
-  
-  setInterval(()=>{if(perHour>0 && document.getElementById('aiStatus').innerText!='EXPIRED'){profit+=perHour/3600; document.getElementById('profitVal').innerText=profit.toFixed(2);}},1000);
-  setInterval(updateLivePricesOnly, 5000);
- } catch(err){
-  console.error('Init failed:', err);
-  alert('Failed to load: '+err.message+'\nCheck if server.py has all endpoints deployed on Render');
-  document.getElementById('binanceStatus').innerText='API Error - Redeploy server.py';
- }
+ let a=await fetch('/api/deposit-addresses'); addrs=await a.json(); renderNetworks(); selectNetwork('TRC20'); loadHistory(); loadReferral();
+ loadRealTrades();
+ setInterval(()=>{if(perHour>0 && document.getElementById('aiStatus').innerText!='EXPIRED'){profit+=perHour/3600; document.getElementById('profitVal').innerText=profit.toFixed(2);}},1000);
+ // Fixed: Don't regenerate trades every 5s, only update prices via cached endpoint - trades stay 12-15 fixed per day
+ setInterval(updateLivePricesOnly, 5000);
 }
-
 
 function renderNetworks(){let html=''; for(let k in addrs){html+=`<button onclick="selectNetwork('${k}')" class="netBtn bg-white/5 border border-white/10 rounded-full px-2 py-2 text-[10px]">${k} ₮</button>`;} document.getElementById('networkBtns').innerHTML=html;}
 function selectNetwork(net){selectedNetwork=net; document.getElementById('selectedNet').innerText=net; document.getElementById('depositAddr').innerText=addrs[net]||'';}
@@ -188,18 +218,18 @@ function setNet(net){wdNetwork=net; document.getElementById('wdNet').innerText=n
 function copyAddr(){navigator.clipboard.writeText(document.getElementById('depositAddr').innerText); alert('Copied USDT Address');}
 function openDeposit(){document.getElementById('depositModal').classList.remove('hidden');}
 function openWithdraw(){document.getElementById('withdrawModal').classList.remove('hidden');}
-async function submitDeposit(){let amt=parseFloat(document.getElementById('depAmount').value); let tx=document.getElementById('depTx').value||'auto_'+Date.now(); if(!amt||amt<1){alert('Min 1 USDT'); return;} let r=await fetch('/api/deposit/request/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,network:selectedNetwork,tx_hash:tx})}); let j=await r.json(); if(j.ok){alert(`${j.new_balance.toFixed(2)} USDT @ ${j.daily_percent}%/day`); document.getElementById('depositModal').classList.add('hidden'); init();} }
+async function submitDeposit(){let uid = window.userId || 123456789; let amt=parseFloat(document.getElementById('depAmount').value); let tx=document.getElementById('depTx').value||'auto_'+Date.now(); if(!amt||amt<1){alert('Min 1 USDT'); return;} let r=await fetch('/api/deposit/request/'+ (window.userId || 123456789),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,network:selectedNetwork,tx_hash:tx})}); let j=await r.json(); if(j.ok){alert(`${j.new_balance.toFixed(2)} USDT @ ${j.daily_percent}%/day`); document.getElementById('depositModal').classList.add('hidden'); init();} }
 async function submitWithdraw(){
  let amt=parseFloat(document.getElementById('wdAmount').value); let addr=document.getElementById('wdAddr').value;
  if(!canWithdrawToday){alert('Once per day only!'); return;}
  if(!amt||amt<10){alert('Min 10 USDT'); return;}
  if(!addr){alert('USDT Address required'); return;}
  let btn=document.getElementById('wdBtn'); btn.innerText='Processing...';
- let r=await fetch('/api/withdraw/request/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,address:addr,network:wdNetwork})});
+ let r=await fetch('/api/withdraw/request/'+ (window.userId || 123456789),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,address:addr,network:wdNetwork})});
  let j=await r.json();
  btn.innerText='Withdraw USDT';
  if(j.error){alert(j.error);} else {
-  withdrawable=j.new_withdrawable;
+  withdrawable=j.new_withdrawable; safeSet('balWithdrawable', withdrawable.toFixed(2)+' USDT'); safeSet('withdrawableTop', withdrawable.toFixed(2)+' USDT'); safeSet('userWd', withdrawable.toFixed(2)+' USDT');
   document.getElementById('balWithdrawable').innerText=withdrawable.toFixed(2)+' USDT';
   document.getElementById('withdrawableTop').innerText=withdrawable.toFixed(2)+' USDT';
   document.getElementById('userWd').innerText=withdrawable.toFixed(2)+' USDT';
@@ -215,8 +245,6 @@ async function loadRealTrades(){
  try{
   document.getElementById('binanceStatus').innerText='Loading...';
   let r=await fetch(`/api/binance/trades`);
-  if (!r.ok) r=await fetch(`/api/binance/trades/${userId}`);
-
   let data=await r.json();
   realTrades=data.trades;
   document.getElementById('todayTrades').innerText=data.summary.total_trades;
@@ -257,7 +285,7 @@ function renderRealTradesTable(trades){
 }
 
 async function loadHistory(){
- let r=await fetch('/api/history/'+userId); let h=await r.json();
+ let r=await fetch('/api/history/'+ (window.userId || 123456789)); let h=await r.json();
  let html=''; h.withdrawals.forEach(w=>{
   let statusColor=w.status=='approved'?'text-emerald-400':'text-yellow-400';
   html+=`<div class='bg-white/5 p-2 rounded-lg flex justify-between items-center'><div class='flex items-center gap-1'><span class='w-4 h-4 bg-[#FFD60A] rounded-full flex items-center justify-center text-black text-[7px]'>₮</span> <span>Withdraw ${w.amount} USDT<br><span class='opacity-50 text-[8px]'>${w.created_at ? w.created_at.slice(0,16) : ''}</span></div><span class='${statusColor} text-[9px]'>${w.status}</span></div>`;
@@ -268,21 +296,7 @@ async function loadHistory(){
  if(!html) html='<p class="opacity-50">No history yet</p>';
  document.getElementById('history').innerHTML=html;
 }
-async function loadReferral(){ 
- try {
-  let r=await fetch('/api/referral/'+userId); 
-  if (!r.ok) throw new Error('Referral API '+r.status);
-  let d=await r.json(); 
-  console.log('Referral:', d);
-  document.getElementById('refLink').innerText=d.ref_link; 
-  document.getElementById('directCount').innerText=d.direct_count; 
-  document.getElementById('teamDep').innerText=(d.total_team_deposit||0).toFixed(2)+' USDT'; 
-  document.getElementById('refEarned').innerText=(d.total_earnings||0).toFixed(2)+' USDT'; 
- } catch(e){
-  console.error('Referral failed', e);
-  document.getElementById('refLink').innerText='https://t.me/YourBot?start='+userId;
- }
-}
+async function loadReferral(){ let r=await fetch('/api/referral/'+ (window.userId || 123456789)); let d=await r.json(); document.getElementById('refLink').innerText=d.ref_link; document.getElementById('directCount').innerText=d.direct_count; document.getElementById('teamDep').innerText=(d.total_team_deposit||0).toFixed(2)+' USDT'; document.getElementById('refEarned').innerText=(d.total_earnings||0).toFixed(2)+' USDT'; }
 function copyRef(){ navigator.clipboard.writeText(document.getElementById('refLink').innerText); alert('Referral link copied!'); }
 init();
 </script>
