@@ -111,9 +111,17 @@ def ensure_user(user_id: int, username="", referred_by=None):
                      (user_id, uname, ref, now.isoformat(), now.isoformat(), now.isoformat(), len(TIERS)-1))
         conn.commit()
         return conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
+    # FIXED: Update username and also set referred_by if not set before and ref provided
     if username and row[1] != username:
         conn.execute("UPDATE users SET username=? WHERE user_id=?", (username, user_id))
         conn.commit()
+    if referred_by and (len(row)>13 and (row[13] is None or row[13]==0)):
+        try:
+            ref_id=int(referred_by)
+            if ref_id!=user_id and ref_id>0 and conn.execute("SELECT 1 FROM users WHERE user_id=?", (ref_id,)).fetchone():
+                conn.execute("UPDATE users SET referred_by=? WHERE user_id=?", (ref_id, user_id))
+                conn.commit()
+        except: pass
     return conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
 
 def recalc_profit(user_id: int):
@@ -524,7 +532,13 @@ class AdminUserAction(BaseModel):
 def admin_user_action(req: AdminUserAction):
     if req.action == "ban": conn.execute("UPDATE users SET is_banned=1 WHERE user_id=?", (req.user_id,))
     elif req.action == "unban": conn.execute("UPDATE users SET is_banned=0 WHERE user_id=?", (req.user_id,))
-    elif req.action == "add_balance": conn.execute("UPDATE users SET balance=balance+?, total_deposit=total_deposit+? WHERE user_id=?", (req.amount, req.amount, req.user_id))
+    elif req.action == "add_balance": 
+        conn.execute("UPDATE users SET balance=balance+?, total_deposit=total_deposit+? WHERE user_id=?", (req.amount, req.amount, req.user_id))
+        conn.commit()
+        # FIXED: Also distribute referral bonus when admin adds balance (for testing referral)
+        try: distribute_referral(req.user_id, req.amount)
+        except: pass
+        return {"ok": True}
     elif req.action == "add_withdrawable": conn.execute("UPDATE users SET withdrawable=withdrawable+?, referral_earnings=referral_earnings+? WHERE user_id=?", (req.amount, req.amount, req.user_id))
     elif req.action == "set_balance": conn.execute("UPDATE users SET balance=? WHERE user_id=?", (req.amount, req.user_id))
     elif req.action == "delete": conn.execute("DELETE FROM users WHERE user_id=?", (req.user_id,))

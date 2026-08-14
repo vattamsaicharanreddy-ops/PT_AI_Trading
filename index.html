@@ -72,7 +72,11 @@
 
 <div id='tab-referral' class='tab-content hidden'>
 <div class='mx-4 mt-5 bg-gradient-to-br from-[#FFD60A]/20 to-[#FFA600]/10 border border-[#FFD60A]/30 rounded-[28px] p-5'>
-<h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Referral</h3>
+<h3 class='font-bold text-base flex items-center gap-2'><span class='w-8 h-8 bg-[#26A17B] rounded-full flex items-center justify-center text-sm'>₮</span> Referral - Earn up to 16%</h3>
+<div class='mt-3 bg-black/30 rounded-xl p-3 text-xs'>
+<p class='font-bold text-[#FFD60A]'>💰 Commission: L1 7% • L2-L10 1% each (up to 16%)</p>
+<p class='opacity-70 mt-1'>When someone joins via your link and deposits, bonus added instantly to your WALLET (withdrawable). Example: Friend deposits $100 → You get $7 instantly withdrawable.</p>
+</div>
 <div class='mt-4 bg-black/50 rounded-xl p-4'><p class='text-xs opacity-50'>YOUR REFERRAL LINK</p><p id='refLink' class='text-sm break-all mt-2 font-mono'>Loading...</p><div class='flex gap-2 mt-3'><button onclick='copyRef()' class='bg-white text-black px-4 py-2 rounded-full text-sm font-bold'>Copy Link</button><button onclick='shareRef()' class='bg-[#FFD60A] text-black px-4 py-2 rounded-full text-sm font-bold'>Share</button></div></div>
 <div class='mt-4 grid grid-cols-3 gap-3 text-center'><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>DIRECT</p><p id='directCount' class='font-bold text-lg'>0</p></div><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>TEAM</p><p id='teamDep' class='font-bold text-[#FFD60A]'>0 USDT</p></div><div class='bg-white/5 rounded-xl p-3'><p class='text-xs opacity-50'>EARNED</p><p id='refEarned' class='font-bold text-emerald-400'>0 USDT</p></div></div>
 <div class='mt-4 bg-[#121214] border border-white/10 rounded-[20px] p-4'><h3 class='font-bold text-sm mb-3'>👥 My Direct Referrals</h3><div id='directList' class='space-y-2 text-sm'><p class='opacity-50'>Loading...</p></div></div>
@@ -547,23 +551,54 @@ async function loadHistory(){
 }
 
 async function loadReferral(){
- let r=await fetch('/api/referral/'+userId);
- if(!r.ok) throw new Error('ref '+r.status);
- let d=await r.json();
- safeSet('refLink', d.ref_link);
- safeSet('directCount', d.direct_count);
- safeSet('teamDep', (d.total_team_deposit||0).toFixed(2)+' USDT');
- safeSet('refEarned', (d.total_earnings||0).toFixed(2)+' USDT');
- let directHtml='';
- if(d.direct_refs && d.direct_refs.length>0){
-   d.direct_refs.forEach(ref=>{ directHtml+=`<div class='bg-white/5 p-3 rounded-xl flex justify-between items-center'><div><p class='font-bold'>${ref.username||'user_'+ref.user_id}</p><p class='text-xs opacity-50'>ID: ${ref.user_id} • Deposit: $${(ref.deposit||0).toFixed(2)}</p></div><span class='text-emerald-400 text-xs'>Active</span></div>`; });
- } else { directHtml='<p class="opacity-50">No direct referrals yet. Share your link!</p>'; }
- safeHTML('directList', directHtml);
- let histHtml='';
- if(d.logs && d.logs.length>0){
-   d.logs.forEach(log=>{ histHtml+=`<div class='bg-white/5 p-3 rounded-xl flex justify-between'><div><p class='font-bold'>From: ${log.from} • Level ${log.level}</p><p class='opacity-50'>Deposit $${log.deposit} • ${log.percent}% bonus</p></div><span class='text-emerald-400 font-bold'>+$${log.bonus.toFixed(2)}</span></div>`; });
- } else { histHtml='<p class="opacity-50">No earnings yet.</p>'; }
- safeHTML('refHistory', histHtml);
+ try{
+  let r=await fetch('/api/referral/'+userId);
+  if(!r.ok) throw new Error('ref '+r.status);
+  let d=await r.json();
+  console.log('Referral data:', d);
+  safeSet('refLink', d.ref_link||('https://t.me/YourBot?start='+userId));
+  safeSet('directCount', d.direct_count||0);
+  try{ safeSet('teamDep', (parseFloat(d.total_team_deposit)||0).toFixed(2)+' USDT'); }catch(e){ safeSet('teamDep','0.00 USDT'); }
+  try{ safeSet('refEarned', (parseFloat(d.total_earnings)||0).toFixed(2)+' USDT'); }catch(e){ safeSet('refEarned','0.00 USDT'); }
+  
+  // FIXED: Show direct referrals with deposit info
+  let directHtml='';
+  if(d.direct_refs && d.direct_refs.length>0){
+    d.direct_refs.forEach(ref=>{ 
+      let dep = 0;
+      try{ dep = parseFloat(ref.deposit)||0; }catch(e){ dep=0; }
+      directHtml+=`<div class='bg-white/5 p-3 rounded-xl flex justify-between items-center'><div><p class='font-bold'>${ref.username||'user_'+ref.user_id}</p><p class='text-xs opacity-50'>ID: ${ref.user_id} • Deposit: $${dep.toFixed(2)} • Balance: $${(parseFloat(ref.balance)||0).toFixed(2)}</p></div><span class='text-emerald-400 text-xs'>Active</span></div>`; 
+    });
+  } else { 
+    directHtml='<p class="opacity-50 text-sm">No direct referrals yet. Share your link! When friends deposit, you earn 7% instantly to your withdrawable wallet.</p>'; 
+  }
+  safeHTML('directList', directHtml);
+  
+  // FIXED: Show earnings history with bonus added to withdrawal balance
+  let histHtml='';
+  if(d.logs && d.logs.length>0){
+    d.logs.forEach(log=>{ 
+      let bonus=0, dep=0, pct=0;
+      try{ bonus = parseFloat(log.bonus)||0; }catch(e){ bonus=0; }
+      try{ dep = parseFloat(log.deposit)||0; }catch(e){ dep=0; }
+      try{ pct = parseFloat(log.percent)||0; }catch(e){ pct=0; }
+      let timeStr = log.at ? log.at.slice(0,16) : '';
+      histHtml+=`<div class='bg-gradient-to-br from-emerald-500/10 to-[#26A17B]/5 border border-emerald-500/20 p-3 rounded-xl flex justify-between'><div><p class='font-bold'>From: ${log.from} • Level ${log.level} • ${pct}%</p><p class='opacity-60 text-xs'>Deposit $${dep.toFixed(2)} • ${timeStr} • Added to withdrawable</p></div><span class='text-emerald-400 font-bold'>+$${bonus.toFixed(2)}</span></div>`; 
+    });
+  } else { 
+    histHtml='<p class="opacity-50 text-sm">No earnings yet. When your referrals deposit (min $20), you get 7% Level 1 and 1% Level 2-10 instantly added to your wallet (withdrawable balance). Example: Friend deposits $100 → You get $7 instantly.</p>'; 
+  }
+  safeHTML('refHistory', histHtml);
+  
+  // FIXED: Also refresh withdrawable balance when referral earnings updated
+  if(d.total_earnings && parseFloat(d.total_earnings)>0){
+    refreshQuickStats();
+  }
+ }catch(e){
+   console.error('loadReferral error', e);
+   safeHTML('directList','<p class="opacity-50 text-sm">Failed to load referrals: '+e.message+'</p>');
+   safeHTML('refHistory','<p class="opacity-50 text-sm">Failed to load earnings</p>');
+ }
 }
 function copyRef(){ let el=$('refLink'); if(el){ let text=el.innerText; if(text.includes('Loading')){ alert('Referral link not loaded'); return; } navigator.clipboard.writeText(text); alert('Copied!'); } }
 function shareRef(){ let el=$('refLink'); if(el && navigator.share){ navigator.share({title:'PT_AI Trading', text:'Join PT_AI Trading', url: el.innerText}); } else { copyRef(); } }
