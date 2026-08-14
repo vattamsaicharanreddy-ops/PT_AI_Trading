@@ -98,7 +98,7 @@ def generate_invoice_id():
 def ensure_user(user_id: int, username="", referred_by=None):
     if not user_id or user_id < 1: user_id = 123456789
     row = conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.utcnow().isoformat()
     if not row:
         ref=None
         if referred_by:
@@ -108,9 +108,21 @@ def ensure_user(user_id: int, username="", referred_by=None):
             except: pass
         uname = username or f"user_{user_id}"
         conn.execute("INSERT INTO users (user_id, username, referred_by, created_at, last_claim, last_auto_claim, current_tier) VALUES (?,?,?,?,?,?,?)",
-                     (user_id, uname, ref, now.isoformat(), now.isoformat(), now.isoformat(), len(TIERS)-1))
+                     (user_id, uname, ref, now, now, now, len(TIERS)-1))
         conn.commit()
         return conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
+    # FIXED: Update username and also set referred_by if not set before and ref provided
+    if username and row[1] != username:
+        conn.execute("UPDATE users SET username=? WHERE user_id=?", (username, user_id))
+        conn.commit()
+    if referred_by and (len(row)>13 and (row[13] is None or row[13]==0)):
+        try:
+            ref_id=int(referred_by)
+            if ref_id!=user_id and ref_id>0 and conn.execute("SELECT 1 FROM users WHERE user_id=?", (ref_id,)).fetchone():
+                conn.execute("UPDATE users SET referred_by=? WHERE user_id=?", (ref_id, user_id))
+                conn.commit()
+        except: pass
+    return conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
     # FIXED: Update username and also set referred_by if not set before and ref provided
     if username and row[1] != username:
         conn.execute("UPDATE users SET username=? WHERE user_id=?", (username, user_id))
@@ -228,14 +240,14 @@ def process_invoice_payment(invoice_id: str, tx_hash: str, actual_amount: float)
         new_bal = old_bal + actual_amount
         tier_idx, _, daily_pct = get_tier_index(new_bal)
         per_hour = (new_bal * daily_pct / 100) / 24 if daily_pct>0 else 0
+        ai_start = datetime.datetime.utcnow().isoformat()
         ai_end = (datetime.datetime.utcnow() + datetime.timedelta(days=30)).isoformat()
         conn.execute("UPDATE deposits SET status='verified', tx_hash=?, actual_amount=?, verified_at=? WHERE invoice_id=?", (tx_hash, actual_amount, now, invoice_id))
         conn.execute("INSERT OR IGNORE INTO used_tx_hashes (tx_hash, used_at) VALUES (?,?)", (tx_hash, now))
-        conn.execute("""UPDATE users SET balance=?, profit_per_hour=?, daily_percent=?, total_deposit=total_deposit+?, ai_end=?, current_tier=?, last_claim=? WHERE user_id=?""",
-                     (new_bal, per_hour, daily_pct, actual_amount, ai_end, tier_idx, now, user_id))
+        conn.execute("UPDATE users SET balance=?, profit_per_hour=?, daily_percent=?, total_deposit=total_deposit+?, ai_start=?, ai_end=?, current_tier=?, last_claim=? WHERE user_id=?",
+                     (new_bal, per_hour, daily_pct, actual_amount, ai_start, ai_end, tier_idx, now, user_id))
         conn.commit()
         distribute_referral(user_id, actual_amount)
-        print(f"Invoice {invoice_id} verified: user {user_id} +${actual_amount}")
         return True, f"Verified {actual_amount} USDT"
     except Exception as e:
         print(f"Process invoice error: {e}")
@@ -346,15 +358,14 @@ def binance_trades_all():
 def api_user(user_id: int, ref: int = None, username: str = None):
     if user_id == 0: user_id = 123456789
     ensure_user(user_id, username=username or "", referred_by=ref)
-    # BAN CHECK - block banned users
     try:
         bc = conn.execute("SELECT is_banned FROM users WHERE user_id=?", (user_id,)).fetchone()
         if bc and bc[0]==1:
-            return {"error": "Account suspended", "is_banned": 1, "ban_message": "Your account has been suspended for violating Telegram policies and community guidelines. Please contact support if you believe this is a mistake.", "user_id": user_id}
+            return {"error": "Account suspended", "is_banned": 1, "ban_message": "violating Telegram policies", "user_id": user_id, "balance": 0, "withdrawable": 0, "profit": 0, "profit_per_hour": 0, "daily_percent": 0, "ai_end": None, "days_left": 0, "hours_left": 0, "ai_active": False, "total_deposit": 0, "total_withdraw": 0, "tiers": [{"min": t[0], "pct": t[1]} for t in TIERS], "referral_earnings": 0, "created_at": "", "can_withdraw_today": False, "referred_by": None, "direct_referrals": 0, "is_banned": 1}
     except: pass
     row = recalc_profit(user_id)
     if not row: return {"error":"User not found"}
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.utcnow().isoformat()
     created_str = row[15] if len(row) > 15 and row[15] else now.isoformat()
     ai_end_str = row[7]
     if ai_end_str:
@@ -370,18 +381,23 @@ def api_user(user_id: int, ref: int = None, username: str = None):
     today_count = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE user_id=? AND DATE(created_at)=DATE('now')", (user_id,)).fetchone()[0]
     if today_count > 0: can_withdraw_today = False
     direct_count = conn.execute("SELECT COUNT(*) FROM users WHERE referred_by=?", (user_id,)).fetchone()[0]
-    # FIXED BUG 1: Correct stats - total_deposit = sum verified deposits, total_withdraw = sum approved withdrawals ONLY
-    # Never mix, never fallback to same column causing deposit to show as withdraw
+    # FIXED TOTAL DEPOSIT ZERO - sum + column (admin add_balance)
     try:
         total_dep_calc = conn.execute("SELECT COALESCE(SUM(actual_amount),0) FROM deposits WHERE user_id=? AND status='verified'", (user_id,)).fetchone()[0] or 0
         if total_dep_calc == 0:
             total_dep_calc = conn.execute("SELECT COALESCE(SUM(expected_amount),0) FROM deposits WHERE user_id=? AND status='verified'", (user_id,)).fetchone()[0] or 0
     except: total_dep_calc = 0
     try:
+        col_dep = conn.execute("SELECT COALESCE(total_deposit,0) FROM users WHERE user_id=?", (user_id,)).fetchone()[0] or 0
+    except: col_dep = 0
+    try:
+        total_deposit = float(max(float(total_dep_calc or 0), float(col_dep or 0)))
+        if total_deposit==0 and row[2] and float(row[2])>0:
+            total_deposit = float(row[2])
+    except: total_deposit = 0.0
+    try:
         total_wd_calc = conn.execute("SELECT COALESCE(SUM(amount),0) FROM withdrawals WHERE user_id=? AND status='approved'", (user_id,)).fetchone()[0] or 0
     except: total_wd_calc = 0
-    try: total_deposit = float(total_dep_calc)
-    except: total_deposit = 0.0
     try: total_withdraw = float(total_wd_calc)
     except: total_withdraw = 0.0
     # total_withdraw is ONLY approved withdrawals, never equals deposit unless actually withdrawn
@@ -417,11 +433,6 @@ class InvoiceReq(BaseModel):
 def create_invoice(user_id: int, r: InvoiceReq):
     if user_id == 0: user_id = 123456789
     ensure_user(user_id)
-    try:
-        bc = conn.execute("SELECT is_banned FROM users WHERE user_id=?", (user_id,)).fetchone()
-        if bc and bc[0]==1:
-            return {"error": "Account suspended due to policy violation. Contact support."}
-    except: pass
     if r.amount < 20: return {"error": "Min deposit 20 USDT required"}
     if r.network not in DEPOSIT_ADDR: return {"error": f"Unsupported network {r.network}"}
     existing = conn.execute("SELECT invoice_id, expires_at FROM deposits WHERE user_id=? AND status='awaiting_payment' AND expires_at > ? LIMIT 1", (user_id, datetime.datetime.utcnow().isoformat())).fetchone()
@@ -435,7 +446,7 @@ def create_invoice(user_id: int, r: InvoiceReq):
         except: pass
     invoice_id = generate_invoice_id()
     expected_amount = round(r.amount, 2)
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.utcnow().isoformat()
     expires_at = now + datetime.timedelta(minutes=15)
     conn.execute("INSERT INTO deposits (user_id, amount, expected_amount, network, status, invoice_id, created_at, expires_at, tx_hash, actual_amount) VALUES (?,?,?,?,?,?,?,?,?,?)",
                  (user_id, r.amount, expected_amount, r.network, "awaiting_payment", invoice_id, now.isoformat(), expires_at.isoformat(), "", 0))
@@ -446,7 +457,7 @@ def create_invoice(user_id: int, r: InvoiceReq):
 def invoice_status(invoice_id: str):
     row = conn.execute("SELECT user_id, amount, expected_amount, network, status, tx_hash, actual_amount, created_at, expires_at, verified_at FROM deposits WHERE invoice_id=?", (invoice_id,)).fetchone()
     if not row: return {"error": "Invoice not found"}
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.utcnow().isoformat()
     try:
         exp_dt = datetime.datetime.fromisoformat(row[8])
         time_left = (exp_dt - now).total_seconds()
@@ -596,13 +607,8 @@ class WithdrawReq(BaseModel):
 def withdraw_req(user_id: int, r: WithdrawReq):
     if user_id == 0: user_id = 123456789
     ensure_user(user_id)
-    try:
-        bc = conn.execute("SELECT is_banned FROM users WHERE user_id=?", (user_id,)).fetchone()
-        if bc and bc[0]==1:
-            return {"error": "Account suspended due to policy violation. Withdrawals disabled."}
-    except: pass
     recalc_profit(user_id)
-    now = datetime.datetime.utcnow(); today_str = now.date().isoformat()
+    now = datetime.datetime.utcnow().isoformat(); today_str = now.date().isoformat()
     user_row = conn.execute("SELECT withdrawable, created_at, last_withdraw_date, is_banned, total_withdraw FROM users WHERE user_id=?", (user_id,)).fetchone()
     if not user_row: return {"error": "User not found"}
     if user_row[3] == 1: return {"error": "Account banned"}

@@ -8,6 +8,17 @@
 </head>
 <body class='bg-[#050507] text-white min-h-screen flex justify-center'>
 
+<div id='bannedOverlay' class='hidden fixed inset-0 z-[10000] bg-[#050507] flex flex-col items-center justify-center p-6 text-center'>
+  <div class='w-24 h-24 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-4xl mb-6'>🚫</div>
+  <h2 class='text-2xl font-extrabold text-white'>Account Suspended</h2>
+  <p class='mt-3 text-sm text-white/70 max-w-[320px]'>Your account has been suspended for <span class='text-red-400 font-bold'>violating Telegram policies</span> and community guidelines.</p>
+  <div class='mt-5 bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-left w-full max-w-[360px]'>
+    <p class='text-xs font-bold text-red-400'>❌ Reason: Policy Violation</p>
+    <p class='text-xs text-white/60 mt-2'>Bot access revoked on loading page only</p>
+  </div>
+</div>
+
+
 <!-- PT_AI Custom Branded Loader - Fixes Render 'Application Loading' confusion -->
 <div id='initialLoader' style='position:fixed;inset:0;z-index:9999;background:#050507;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.4s ease'>
   <div style='width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#6C3BFF,#FFD60A);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:32px;letter-spacing:1px;animation:pulse 1.5s infinite'>PT</div>
@@ -223,6 +234,22 @@ let balance=0, withdrawable=0, profit=0, perHour=0, selectedNetwork='TRC20', wdN
 let currentInvoiceId=null, invoiceTimerInterval=null, invoicePollInterval=null;
 let totalDeposit=0, totalWithdraw=0;
 
+async function checkBanImmediate(){
+  try{
+    let r=await fetch('/api/user/'+userId);
+    if(!r.ok) return false;
+    let d=await r.json();
+    if(d && (d.is_banned==1 || (d.error && d.error.toLowerCase().includes('suspend')))){
+      let b=document.getElementById('bannedOverlay');
+      if(b){ b.classList.remove('hidden'); b.style.display='flex'; }
+      let l=document.getElementById('initialLoader');
+      if(l){ l.style.display='none'; }
+      document.body.style.overflow='hidden';
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
 function showTab(name){
  document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
  let el=$('tab-'+name); if(el) el.classList.remove('hidden');
@@ -237,13 +264,15 @@ function showTab(name){
 function refreshQuickStats(){
  fetch('/api/user/'+userId).then(r=>r.json()).then(data=>{
    if(data && !data.error){
-     try{ totalDeposit = parseFloat(data.total_deposit)||0; }catch(e){ totalDeposit=0; }
+     try{ 
+       totalDeposit = parseFloat(data.total_deposit)||0; 
+       // FIX: if server returns 0 but balance exists (admin add_balance), use balance
+       if(totalDeposit==0 && data.balance && parseFloat(data.balance)>0) totalDeposit=parseFloat(data.balance);
+     }catch(e){ totalDeposit=0; }
      try{ totalWithdraw = parseFloat(data.total_withdraw)||0; }catch(e){ totalWithdraw=0; }
      try{ balance = parseFloat(data.balance)||0; }catch(e){ balance=0; }
      try{ profit = parseFloat(data.profit)||0; }catch(e){ profit=0; }
      try{ withdrawable = parseFloat(data.withdrawable)||0; }catch(e){ withdrawable=0; }
-     // FIXED BUG 1: totalWithdraw is ONLY approved withdrawals, never deposit
-     // FIXED BUG 3: Update AI status instantly based on balance
      updateQuickStatsDisplay();
      updateAIStatusDisplay(data);
    }
@@ -302,6 +331,7 @@ function updateQuickStatsDisplay(){
 
 
 async function init(){
+ try{ let banned=await checkBanImmediate(); if(banned) return; }catch(e){}
  renderTiers(STATIC_TIERS, 0);
  renderNetworks();
  setNetAddr(selectedNetwork);
@@ -312,19 +342,13 @@ async function init(){
   let r=await fetch('/api/user/'+userId+userQ);
   if(!r.ok) throw new Error('user api '+r.status);
   let data=await r.json();
-  if(data.is_banned==1 || (data.error && data.error.toLowerCase().includes('suspend'))){
-     document.getElementById('bannedOverlay')?.classList.remove('hidden');
-     let il=document.getElementById('initialLoader'); if(il) il.style.display='none';
-     document.body.style.overflow='hidden';
-     safeSet('realIdWarning','🚫 Suspended - Policy Violation');
-     throw new Error('BANNED');
-  }
+  if(data.is_banned==1 || (data.error && data.error.toLowerCase().includes('suspend'))){ let b=document.getElementById('bannedOverlay'); if(b){ b.classList.remove('hidden'); b.style.display='flex'; } let l=document.getElementById('initialLoader'); if(l) l.style.display='none'; throw new Error('BANNED'); }
   if(data.error) throw new Error(data.error);
   try{ balance=parseFloat(data.balance)||0; }catch(e){ balance=0; }
   try{ withdrawable=parseFloat(data.withdrawable)||0; }catch(e){ withdrawable=0; }
   try{ profit=parseFloat(data.profit)||0; }catch(e){ profit=0; }
   try{ perHour=parseFloat(data.profit_per_hour)||0; }catch(e){ perHour=0; }
-  try{ totalDeposit=parseFloat(data.total_deposit)||0; }catch(e){ totalDeposit=0; }
+  try{ totalDeposit=parseFloat(data.total_deposit)||0; if(totalDeposit==0 && data.balance && parseFloat(data.balance)>0) totalDeposit=parseFloat(data.balance); }catch(e){ totalDeposit=0; }
   try{ totalWithdraw=parseFloat(data.total_withdraw)||0; }catch(e){ totalWithdraw=0; }
   try{ safeSet('profitVal', (parseFloat(profit)||0).toFixed(2)); }catch(e){ safeSet('profitVal','0.00'); }
   try{ safeSet('perHour', (parseFloat(perHour)||0).toFixed(2)); }catch(e){ safeSet('perHour','0.00'); }
@@ -342,7 +366,7 @@ async function init(){
   // FIXED BUG 3: AI status based on balance>=20 and ai_active flag
   updateAIStatusDisplay(data);
   renderTiers(data.tiers || STATIC_TIERS, balance);
- }catch(e){ if(e.message=='BANNED') return; safeSet('realIdWarning','Error: '+e.message); renderTiers(STATIC_TIERS, balance); }
+ }catch(e){ safeSet('realIdWarning','Error: '+e.message); renderTiers(STATIC_TIERS, balance); }
  try{ await loadRealTrades(); }catch(e){ safeSet('binanceStatus','Error'); }
  try{ await loadHistory(); }catch(e){}
  try{ await loadReferral(); }catch(e){}
