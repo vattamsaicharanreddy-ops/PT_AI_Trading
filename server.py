@@ -364,29 +364,21 @@ def api_user(user_id: int, ref: int = None, username: str = None):
     today_count = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE user_id=? AND DATE(created_at)=DATE('now')", (user_id,)).fetchone()[0]
     if today_count > 0: can_withdraw_today = False
     direct_count = conn.execute("SELECT COUNT(*) FROM users WHERE referred_by=?", (user_id,)).fetchone()[0]
-    # FIXED: Calculate from actual verified deposits and approved withdrawals for accuracy - instant update
+    # FIXED BUG 1: Correct stats - total_deposit = sum verified deposits, total_withdraw = sum approved withdrawals ONLY
+    # Never mix, never fallback to same column causing deposit to show as withdraw
     try:
         total_dep_calc = conn.execute("SELECT COALESCE(SUM(actual_amount),0) FROM deposits WHERE user_id=? AND status='verified'", (user_id,)).fetchone()[0] or 0
         if total_dep_calc == 0:
-            total_dep_calc = conn.execute("SELECT COALESCE(SUM(amount),0) FROM deposits WHERE user_id=? AND status IN ('verified','approved')", (user_id,)).fetchone()[0] or 0
+            total_dep_calc = conn.execute("SELECT COALESCE(SUM(expected_amount),0) FROM deposits WHERE user_id=? AND status='verified'", (user_id,)).fetchone()[0] or 0
     except: total_dep_calc = 0
     try:
         total_wd_calc = conn.execute("SELECT COALESCE(SUM(amount),0) FROM withdrawals WHERE user_id=? AND status='approved'", (user_id,)).fetchone()[0] or 0
     except: total_wd_calc = 0
-    # Use calculated values, fallback to row columns
-    # FIXED: Ensure numbers, handle None, and only count verified/approved
-    try: total_deposit = float(total_dep_calc) if total_dep_calc else float(row[10] if len(row)>10 and row[10] is not None else 0)
+    try: total_deposit = float(total_dep_calc)
     except: total_deposit = 0.0
-    try: total_withdraw = float(total_wd_calc) if total_wd_calc else float(row[11] if len(row)>11 and row[11] is not None else 0)
+    try: total_withdraw = float(total_wd_calc)
     except: total_withdraw = 0.0
-    # Ensure total_withdraw never equals total_deposit unless actually withdrawn - fix bug where both show same
-    if total_withdraw > 0 and total_deposit == total_withdraw:
-        # Double check from DB if this is real withdrawal or bug
-        try:
-            real_wd_count = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE user_id=? AND status='approved'", (user_id,)).fetchone()[0] or 0
-            if real_wd_count == 0:
-                total_withdraw = 0.0
-        except: pass
+    # total_withdraw is ONLY approved withdrawals, never equals deposit unless actually withdrawn
     return {"user_id": row[0], "username": row[1] or f"user_{row[0]}", "balance": row[2], "withdrawable": row[3], "profit": row[4], "profit_per_hour": row[5], "daily_percent": row[6], "ai_end": row[7], "days_left": days_left, "hours_left": hours_left, "ai_active": active, "total_deposit": total_deposit, "total_withdraw": total_withdraw, "tiers": [{"min": t[0], "pct": t[1]} for t in TIERS], "referral_earnings": row[14] if len(row)>14 and row[14] else 0, "created_at": created_str, "can_withdraw_today": can_withdraw_today, "referred_by": row[13] if len(row)>13 else None, "direct_referrals": direct_count, "is_banned": row[17] if len(row)>17 and row[17] else 0}
 
 
@@ -575,8 +567,10 @@ def dep_action(r: ApproveReq):
         new_bal = old_bal + dep[2]
         tier_idx, _, daily_pct = get_tier_index(new_bal)
         per_hour = (new_bal * daily_pct / 100) / 24 if daily_pct>0 else 0
+        ai_start = datetime.datetime.utcnow().isoformat()
         ai_end = (datetime.datetime.utcnow() + datetime.timedelta(days=30)).isoformat()
-        conn.execute("UPDATE users SET balance=?, profit_per_hour=?, daily_percent=?, total_deposit=total_deposit+?, ai_end=? WHERE user_id=?", (new_bal, per_hour, daily_pct, dep[2], ai_end, dep[0]))
+        now = datetime.datetime.utcnow().isoformat()
+        conn.execute("UPDATE users SET balance=?, profit_per_hour=?, daily_percent=?, total_deposit=total_deposit+?, ai_start=?, ai_end=?, current_tier=?, last_claim=? WHERE user_id=?", (new_bal, per_hour, daily_pct, dep[2], ai_start, ai_end, tier_idx, now, dep[0]))
         conn.commit()
         distribute_referral(dep[0], dep[2])
     else:

@@ -7,6 +7,17 @@
 <style>body{font-family:'Inter',sans-serif;} .tab-active{background:white;color:black} .tab-inactive{opacity:0.5} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}} .animate-pulse{animation:pulse 2s infinite}</style>
 </head>
 <body class='bg-[#050507] text-white min-h-screen flex justify-center'>
+
+<!-- PT_AI Custom Branded Loader - Fixes Render 'Application Loading' confusion -->
+<div id='initialLoader' style='position:fixed;inset:0;z-index:9999;background:#050507;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.4s ease'>
+  <div style='width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#6C3BFF,#FFD60A);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:32px;letter-spacing:1px;animation:pulse 1.5s infinite'>PT</div>
+  <p style='margin-top:20px;font-weight:800;letter-spacing:4px;font-size:14px'>PT_AI TRADING</p>
+  <p style='margin-top:8px;font-size:12px;opacity:0.6;letter-spacing:2px'>AI TRADING • TECH • CRYPTO</p>
+  <div style='margin-top:24px;width:120px;height:3px;background:rgba(255,255,255,0.1);border-radius:999px;overflow:hidden'><div id='loaderBar' style='height:100%;width:40%;background:#FFD60A;border-radius:999px;animation:loaderSlide 1.2s infinite'></div></div>
+  <p id='loaderText' style='margin-top:12px;font-size:11px;opacity:0.5'>Initializing AI Systems...</p>
+</div>
+<style>@keyframes loaderSlide{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}} @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}</style>
+
 <div class='w-full max-w-[420px] bg-[#050507] min-h-screen relative pb-28'>
 <header class='flex justify-between items-center p-5 pt-10'><span class='text-sm tracking-[3px] font-bold'>PT_AI Trading</span><span class='text-xs px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'>● LIVE</span></header>
 
@@ -226,35 +237,38 @@ function showTab(name){
 function refreshQuickStats(){
  fetch('/api/user/'+userId).then(r=>r.json()).then(data=>{
    if(data && !data.error){
-     // FIXED: Parse as float, handle null/string, prevent toFixed error
      try{ totalDeposit = parseFloat(data.total_deposit)||0; }catch(e){ totalDeposit=0; }
      try{ totalWithdraw = parseFloat(data.total_withdraw)||0; }catch(e){ totalWithdraw=0; }
      try{ balance = parseFloat(data.balance)||0; }catch(e){ balance=0; }
      try{ profit = parseFloat(data.profit)||0; }catch(e){ profit=0; }
      try{ withdrawable = parseFloat(data.withdrawable)||0; }catch(e){ withdrawable=0; }
-     // FIXED: Ensure totalWithdraw only counts approved withdrawals, not deposits
-     // If totalWithdraw equals totalDeposit but no approved withdrawals, set to 0 (bug fix)
-     if(totalWithdraw>0 && totalWithdraw==totalDeposit){
-       // Verify via history API if needed
-       fetch('/api/history/'+userId).then(r=>r.json()).then(h=>{
-         let approvedWds = (h.withdrawals||[]).filter(w=>w.status==='approved');
-         let realTotalWd = approvedWds.reduce((sum,w)=>sum+(parseFloat(w.amount)||0),0);
-         if(realTotalWd==0 && totalWithdraw==totalDeposit){
-           totalWithdraw=0;
-         } else {
-           totalWithdraw=realTotalWd;
-         }
-         updateQuickStatsDisplay();
-       }).catch(()=>{ updateQuickStatsDisplay(); });
-     } else {
-       updateQuickStatsDisplay();
-     }
+     // FIXED BUG 1: totalWithdraw is ONLY approved withdrawals, never deposit
+     // FIXED BUG 3: Update AI status instantly based on balance
+     updateQuickStatsDisplay();
+     updateAIStatusDisplay(data);
    }
  }).catch(e=>{ console.log('quick stats refresh failed', e); });
 }
 
+function updateAIStatusDisplay(data){
+  try{
+    let isActive = false;
+    if(data){
+      if(data.ai_active) isActive = true;
+      else if(parseFloat(data.balance)||0 >= 20) isActive = true;
+      else if(data.days_left>0 || data.hours_left>0) isActive = true;
+    } else {
+      if(balance>=20) isActive = true;
+    }
+    safeSet('aiStatus', isActive ? 'AI ACTIVE' : 'AI INACTIVE');
+    let dot=$('aiDot'); if(dot) dot.innerText = isActive ? '🟢' : '🔴';
+    if(data && data.daily_percent) { safeSet('tierPct', parseFloat(data.daily_percent).toFixed(1)); safeSet('dailyPct', parseFloat(data.daily_percent).toFixed(1)+'%'); }
+    else if(balance>=20){ let pct=0; for(let t of STATIC_TIERS){ if(balance>=t.min){ pct=t.pct; break; } } safeSet('tierPct', pct); safeSet('dailyPct', pct+'%'); }
+  }catch(e){ console.log('AI status update err', e); }
+}
+
 function updateQuickStatsDisplay(){
- // FIXED: Ensure numbers, handle zero, prevent "Loading" and toFixed errors
+ // FIXED BUG 1: Clean stats, no mixing deposit into withdraw
  try{
    let depNum = parseFloat(totalDeposit)||0;
    let wdNum = parseFloat(totalWithdraw)||0;
@@ -267,13 +281,16 @@ function updateQuickStatsDisplay(){
    safeSet('quickProfit', profNum.toFixed(2)+' USDT');
    safeSet('balTopMini', balNum.toFixed(2));
    safeSet('withdrawableTop', wdBalNum.toFixed(2)+' USDT');
-   // Also update other balance displays to show 0 instead of Loading
    safeSet('userBal', balNum.toFixed(2)+' USDT');
    safeSet('userWd', wdBalNum.toFixed(2)+' USDT');
    safeSet('profitVal', profNum.toFixed(2));
+   // FIXED BUG 3: If funds added (>=20), force AI ACTIVE immediately
+   if(balNum >= 20){
+     safeSet('aiStatus', 'AI ACTIVE');
+     let dot=$('aiDot'); if(dot) dot.innerText='🟢';
+   }
  }catch(e){
    console.log('updateQuickStatsDisplay error', e);
-   // Fallback: show 0
    safeSet('totalDep', '0.00 USDT');
    safeSet('totalWd', '0.00 USDT');
    safeSet('quickBal', '0.00 USDT');
@@ -282,6 +299,7 @@ function updateQuickStatsDisplay(){
    safeSet('withdrawableTop', '0.00 USDT');
  }
 }
+
 
 async function init(){
  renderTiers(STATIC_TIERS, 0);
@@ -314,8 +332,8 @@ async function init(){
   safeSet('aiHours', data.hours_left||0);
   try{ safeSet('joinedDate', data.created_at ? data.created_at.slice(0,10) : new Date().toISOString().slice(0,10)); }catch(e){ safeSet('joinedDate','-'); }
   safeSet('realIdWarning', data.user_id==123456789?'⚠️ Test ID - Open via Telegram Bot':'User ID: '+(data.user_id||userId));
-  safeSet('aiStatus', data.ai_active ? 'AI ACTIVE' : 'AI INACTIVE');
-  let dot = $('aiDot'); if(dot) dot.innerText = data.ai_active ? '🟢' : '🔴';
+  // FIXED BUG 3: AI status based on balance>=20 and ai_active flag
+  updateAIStatusDisplay(data);
   renderTiers(data.tiers || STATIC_TIERS, balance);
  }catch(e){ safeSet('realIdWarning','Error: '+e.message); renderTiers(STATIC_TIERS, balance); }
  try{ await loadRealTrades(); }catch(e){ safeSet('binanceStatus','Error'); }
@@ -383,7 +401,10 @@ function updateInvoiceUI(data){
    $('invoiceVerifiedBox')?.classList.remove('hidden');
    safeSet('verifiedAmount', data.actual_amount);
    safeSet('verifiedTx', data.tx_hash);
-   safeSet('invoiceStatusDetail', 'Payment verified! Balance credited. Stats updated instantly.');
+   safeSet('invoiceStatusDetail', 'Payment verified! Balance credited. AI now ACTIVE. Stats updated.');
+   // FIXED BUG 3: Instant AI ACTIVE on funds added
+   safeSet('aiStatus', 'AI ACTIVE');
+   let dot=$('aiDot'); if(dot) dot.innerText='🟢';
    clearInvoiceTimers();
    setTimeout(()=>{ 
      init(); 
@@ -434,7 +455,8 @@ async function checkInvoiceNow(){
    let j=await r.json();
    if(btn){ btn.innerText='🔄 Check Now'; btn.disabled=false; }
    if(j.ok && j.status==='verified'){
-     alert('✅ Payment verified! '+j.amount+' USDT credited! Stats updated.');
+     alert('✅ Payment verified! '+j.amount+' USDT credited! AI ACTIVE now.');
+     safeSet('aiStatus','AI ACTIVE'); let d=$('aiDot'); if(d) d.innerText='🟢';
      init(); loadHistory(); refreshQuickStats();
      let status=await fetch('/api/deposit/invoice_status/'+currentInvoiceId).then(r=>r.json());
      updateInvoiceUI(status);
@@ -603,7 +625,12 @@ async function loadReferral(){
 function copyRef(){ let el=$('refLink'); if(el){ let text=el.innerText; if(text.includes('Loading')){ alert('Referral link not loaded'); return; } navigator.clipboard.writeText(text); alert('Copied!'); } }
 function shareRef(){ let el=$('refLink'); if(el && navigator.share){ navigator.share({title:'PT_AI Trading', text:'Join PT_AI Trading', url: el.innerText}); } else { copyRef(); } }
 
-init();
+async function hideInitialLoader(){
+  let l=$('initialLoader'); if(l){ l.style.opacity='0'; setTimeout(()=>{ l.style.display='none'; }, 400); }
+}
+init().then(()=>{ hideInitialLoader(); }).catch(()=>{ hideInitialLoader(); });
+// Fallback hide after 2.5s even if API slow
+setTimeout(hideInitialLoader, 2500);
 setInterval(refreshQuickStats, 3000);
 setInterval(async ()=>{ try{ let r=await fetch('/api/binance/trades'); if(!r.ok) return; let data=await r.json(); safeSet('todayTrades', data.summary.total_trades); safeSet('profitTrades', data.summary.profit_trades); safeSet('lossTrades', data.summary.loss_trades); safeSet('totalPnl', (data.summary.total_pnl_percent>0?'+':'')+data.summary.total_pnl_percent.toFixed(2)+'%'); safeSet('binanceStatus','Live • '+data.summary.total_trades+' trades'); }catch(e){} }, 10000);
 </script>
