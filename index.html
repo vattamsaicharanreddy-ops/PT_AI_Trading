@@ -408,6 +408,7 @@ function copyInvoiceAmount(){ let amt=$('invoiceAmount')?.innerText; if(amt){ na
 async function createInvoice(){
  let amt=parseFloat($('depAmount')?.value);
  let net=(selectedNetwork||'TRC20').toUpperCase();
+ let numericUserId=Number(userId);
  let btn=$('createInvoiceBtn');
 
  if(!Number.isFinite(amt) || amt < 20){
@@ -415,8 +416,8 @@ async function createInvoice(){
    return;
  }
 
- if(!userId){
-   alert('❌ User ID is not available. Please reopen the Telegram app.');
+ if(!Number.isSafeInteger(numericUserId) || numericUserId <= 0){
+   alert('❌ User ID is invalid. Please reopen the Telegram app.');
    return;
  }
 
@@ -432,7 +433,7 @@ async function createInvoice(){
  }
 
  try{
-   const url='/api/deposit/create_invoice/'+encodeURIComponent(String(userId));
+   const url='/api/deposit/create_invoice/'+encodeURIComponent(String(numericUserId));
    const payload={amount:amt,network:net};
 
    console.log('[Deposit] Creating invoice:', url, payload);
@@ -459,11 +460,21 @@ async function createInvoice(){
    console.log('[Deposit] Response:', r.status, j);
 
    if(!r.ok){
-     throw new Error(
-       j?.error ||
-       j?.detail ||
-       ('HTTP '+r.status+' '+r.statusText)
-     );
+     let serverError = j?.error || j?.message || j?.detail;
+
+     if(typeof serverError === 'object'){
+       try{
+         serverError = JSON.stringify(serverError, null, 2);
+       }catch(_){
+         serverError = String(serverError);
+       }
+     }
+
+     if(!serverError){
+       serverError = 'HTTP '+r.status+' '+r.statusText;
+     }
+
+     throw new Error(String(serverError));
    }
 
    if(j.error){
@@ -491,7 +502,19 @@ async function createInvoice(){
      btn.style.opacity='1';
    }
 
-   alert('❌ Create invoice failed:\n'+(e?.message||String(e)));
+   const msg = e?.message || String(e);
+
+   if($('depositCreateStatus')){
+     safeSet(
+       'depositCreateStatus',
+       '❌ '+msg
+     );
+   }
+
+   alert(
+     '❌ Create invoice failed:\n\n' +
+     msg
+   );
  }
 }
 
