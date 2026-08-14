@@ -62,12 +62,12 @@ CONFIG = {
     ),
 
     # --- Links ---
-    "GROUP_USERNAME": "PT-Group",
-    "CHANNEL_USERNAME": "PT-Channel",
-    "SUPPORT_USERNAME": "PT-Support",
-    "GROUP_LINK": "https://t.me/PTGroup",
-    "CHANNEL_LINK": "https://t.me/PTChannel",
-    "SUPPORT_LINK": "https://t.me/PTSupport",
+    "GROUP_USERNAME": "PT_AI_Trading_Group",
+    "CHANNEL_USERNAME": "PT_AI_Trading",
+    "SUPPORT_USERNAME": "PT_AI_Support",
+    "GROUP_LINK": "https://t.me/PT_AI_Trading_Group",
+    "CHANNEL_LINK": "https://t.me/PT_AI_Trading",
+    "SUPPORT_LINK": "https://t.me/PT_AI_Support",
 
     # --- Buttons ---
     "BUTTONS": {
@@ -108,12 +108,15 @@ if not BOT_TOKEN or "PASTE" in BOT_TOKEN:
 WEBAPP_URL = os.getenv("WEBAPP_URL", os.getenv("RENDER_EXTERNAL_URL", "https://your-app.onrender.com")).strip()
 BOT_USERNAME = os.getenv("BOT_USERNAME", "YourBot")
 
-GROUP_LINK = os.getenv("GROUP_LINK", CONFIG["GROUP_LINK"])
-CHANNEL_LINK = os.getenv("CHANNEL_LINK", CONFIG["CHANNEL_LINK"])
-SUPPORT_LINK = os.getenv("SUPPORT_LINK", CONFIG["SUPPORT_LINK"])
-GROUP_USERNAME = os.getenv("GROUP_USERNAME", CONFIG["GROUP_USERNAME"])
-CHANNEL_USERNAME = os.getenv("CHANNEL_USERNAME", CONFIG["CHANNEL_USERNAME"])
-SUPPORT_USERNAME = os.getenv("SUPPORT_USERNAME", CONFIG["SUPPORT_USERNAME"])
+# Official Telegram destinations.
+# These are intentionally fixed here so stale Render environment variables
+# cannot override the links used by the Start/menu buttons.
+GROUP_LINK = "https://t.me/PT_AI_Trading_Group"
+CHANNEL_LINK = "https://t.me/PT_AI_Trading"
+SUPPORT_LINK = "https://t.me/PT_AI_Support"
+GROUP_USERNAME = "PT_AI_Trading_Group"
+CHANNEL_USERNAME = "PT_AI_Trading"
+SUPPORT_USERNAME = "PT_AI_Support"
 BANNER_URL = os.getenv("BANNER_URL", CONFIG["BANNER_URL"])
 BANNER_FILE = os.getenv("BANNER_FILE", CONFIG["BANNER_FILE"])
 
