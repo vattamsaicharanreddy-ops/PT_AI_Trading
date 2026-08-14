@@ -38,6 +38,15 @@
 </div>
 
 <div id='tab-home' class='tab-content'>
+<div id='ptTelegramLinks' class='mx-4 mt-4 bg-[#121214] border border-white/10 rounded-[24px] p-4'>
+  <h3 class='font-bold text-sm mb-3'>PT Community</h3>
+  <div class='grid grid-cols-3 gap-2'>
+    <button onclick='openPTGroup()' class='bg-white/10 hover:bg-white/15 px-3 py-3 rounded-xl text-xs font-bold'>PT-Group</button>
+    <button onclick='openPTChannel()' class='bg-white/10 hover:bg-white/15 px-3 py-3 rounded-xl text-xs font-bold'>PT-Channel</button>
+    <button onclick='openPTSupport()' class='bg-white/10 hover:bg-white/15 px-3 py-3 rounded-xl text-xs font-bold'>Support</button>
+  </div>
+</div>
+
 <div class='mt-5 mx-4 bg-gradient-to-br from-[#6C3BFF] via-[#8A5CFF] to-[#A5A6F6] rounded-[28px] p-6'>
 <p class='text-white/70 text-sm'>Daily AI Profit • <span id='dailyPct'>0%</span> • Real Trading</p>
 <h1 class='text-[36px] font-extrabold leading-none mt-2 flex items-center gap-2'><span class='text-[20px] bg-white/20 w-10 h-10 rounded-full flex items-center justify-center'>₮</span> <span id='profitVal'>0.00</span> <span class='text-base opacity-60'>USDT</span></h1>
@@ -179,6 +188,20 @@
 function $(id){return document.getElementById(id);}
 function safeSet(id, val){ let el=$(id); if(el) el.innerText=val; }
 function safeHTML(id, val){ let el=$(id); if(el) el.innerHTML=val; }
+function openTelegramLink(url){
+  try{
+    const tg = window.Telegram?.WebApp;
+    if(tg && typeof tg.openTelegramLink === 'function'){
+      tg.openTelegramLink(url);
+      return;
+    }
+  }catch(e){}
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+function openPTGroup(){ openTelegramLink('https://t.me/PT_AI_Trading_Group'); }
+function openPTChannel(){ openTelegramLink('https://t.me/PT_AI_Trading'); }
+function openPTSupport(){ openTelegramLink('https://t.me/PT_AI_Support'); }
+
 
 const FALLBACK_ADDRS = {
  "TRC20": "TDABxPiFnpzUsY7j6sHaq4jJxU7Nz6xcFx",
