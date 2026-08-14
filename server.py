@@ -2116,82 +2116,206 @@ def api_referral(user_id: int):
     }
 
 
-# ============================================================
-# DEPOSITS
-# ============================================================
-
-class InvoiceReq(BaseModel):
-    amount: float
-    network: str
-
-
 @app.post("/api/deposit/create_invoice/{user_id}")
-def create_invoice(
-    user_id: int,
-    r: InvoiceReq
-):
-
-    if user_id == 0:
-        user_id = 123456789
-
+def create_invoice(user_id: int, r: InvoiceReq):
+    if user_id == 0: user_id = 123456789
     ensure_user(user_id)
-
-    if r.amount < 20:
-        return {
-            "error":
-                "Min deposit 20 USDT required"
-        }
-
-    if r.network not in DEPOSIT_ADDR:
-        return {
-            "error":
-                f"Unsupported network {r.network}"
-        }
-
-    existing = conn.execute(
-        """
-        SELECT
-            invoice_id,
-            expires_at
-        FROM deposits
-        WHERE user_id=?
-        AND status='awaiting_payment'
-        AND expires_at > ?
-        LIMIT 1
-        """,
-        (
-            user_id,
-            datetime.datetime.utcnow().isoformat()
-        )
-    ).fetchone()
-
+    if r.amount < 20: return {"error": "Min deposit 20 USDT required"}
+    if r.network not in DEPOSIT_ADDR: return {"error": f"Unsupported network {r.network}"}
+    existing = conn.execute("SELECT invoice_id, expires_at FROM deposits WHERE user_id=? AND status='awaiting_payment' AND expires_at > ? LIMIT 1", (user_id, datetime.datetime.utcnow().isoformat())).fetchone()
     if existing:
-
         try:
+            exp_dt = datetime.datetime.fromisoformat(existing[1])
+            if datetime.datetime.utcnow() < exp_dt:
+                inv = conn.execute("SELECT invoice_id, amount, expected_amount, network, created_at, expires_at, status FROM deposits WHERE invoice_id=?", (existing[0],)).fetchone()
+                if inv:
+                    return {"ok": True, "invoice_id": inv[0], "amount": inv[1], "expected_amount": inv[2], "network": inv[3], "address": DEPOSIT_ADDR[inv[3]], "created_at": inv[4], "expires_at": inv[5], "status": inv[6], "message": "Existing invoice returned"}
+        except: pass
+    invoice_id = generate_invoice_id()
+    expected_amount = round(r.amount, 2)
+    now = datetime.datetime.utcnow()
+    expires_at = now + datetime.timedelta(minutes=15)
+    conn.execute("INSERT INTO deposits (user_id, amount, expected_amount, network, status, invoice_id, created_at, expires_at, tx_hash, actual_amount) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                 (user_id, r.amount, expected_amount, r.network, "awaiting_payment", invoice_id, now.isoformat(), expires_at.isoformat(), "", 0))
+    conn.commit()
+    return {"ok": True, "invoice_id": invoice_id, "amount": r.amount, "expected_amount": expected_amount, "network": r.network, "address": DEPOSIT_ADDR[r.network], "created_at": now.isoformat(), "expires_at": expires_at.isoformat(), "status": "awaiting_payment"}
 
-            exp_dt = (
-                datetime.datetime
-                .fromisoformat(
-                    existing[1]
-                )
-            )
+@app.get("/api/deposit/invoice_status/{invoice_id}")
+def invoice_status(invoice_id: str):
+    row = conn.execute("SELECT user_id, amount, expected_amount, network, status, tx_hash, actual_amount, created_at, expires_at, verified_at FROM deposits WHERE invoice_id=?", (invoice_id,)).fetchone()
+    if not row: return {"error": "Invoice not found"}
+    now = datetime.datetime.utcnow()
+    try:
+        exp_dt = datetime.datetime.fromisoformat(row[8])
+        time_left = (exp_dt - now).total_seconds()
+        if time_left < 0: time_left = 0
+        if time_left == 0 and row[4] == 'awaiting_payment':
+            conn.execute("UPDATE deposits SET status='expired' WHERE invoice_id=?", (invoice_id,))
+            conn.commit()
+            row = list(row); row[4] = 'expired'
+    except: time_left = 0
+    return {"invoice_id": invoice_id, "user_id": row[0], "amount": row[1], "expected_amount": row[2], "network": row[3], "status": row[4], "tx_hash": row[5], "actual_amount": row[6], "created_at": row[7], "expires_at": row[8], "verified_at": row[9], "address": DEPOSIT_ADDR.get(row[3], ""), "time_left_seconds": int(time_left), "time_left_formatted": f"{int(time_left//60)}:{int(time_left%60):02d}"}
 
-            if (
-                datetime.datetime.utcnow()
-                < exp_dt
-            ):
+@app.post("/api/deposit/check_now/{invoice_id}")
+def check_invoice_now(invoice_id: str):
+    row = conn.execute("SELECT user_id, network, expected_amount, created_at, status FROM deposits WHERE invoice_id=?", (invoice_id,)).fetchone()
+    if not row: return {"error": "Invoice not found"}
+    if row[4] == 'verified': return {"ok": True, "status": "verified", "message": "Already verified"}
+    if row[4] == 'expired': return {"error": "Invoice expired"}
+    if row[1] == 'TRC20':
+        transfers = check_trc20_deposits_to_address()
+        for tr in transfers:
+            try:
+                tx_hash = tr.get('transaction_id') or tr.get('transactionHash') or tr.get('hash')
+                if not tx_hash: continue
+                if conn.execute("SELECT 1 FROM used_tx_hashes WHERE tx_hash=?", (tx_hash,)).fetchone(): continue
+                quant = tr.get('quant') or '0'
+                try: amount = float(quant) / 1e6 if float(quant) > 1000000 else float(quant)
+                except: continue
+                if abs(amount - row[2]) <= 1.0:
+                    success, msg = process_invoice_payment(invoice_id, tx_hash, amount)
+                    if success: return {"ok": True, "status": "verified", "amount": amount, "tx_hash": tx_hash, "message": msg}
+            except: continue
+        return {"ok": False, "status": "awaiting_payment", "message": "No payment found yet."}
+    else:
+        return {"ok": False, "status": "awaiting_payment", "message": f"Auto detection for {row[1]} manual."}
 
-                inv = conn.execute(
-                    """
-                    SELECT
-                        invoice_id,
-                        amount,
-                        expected_amount,
-                        network,
-                        created_at,
-                        expires_at,
-                        status
-                    FROM deposits
-                    WHERE invoice_id=?
-                    """,
-                    (existing
+@app.get("/api/history/{user_id}")
+def history(user_id: int):
+    if user_id == 0: user_id = 123456789
+    deps = conn.execute("SELECT id, amount, expected_amount, network, tx_hash, status, actual_amount, created_at, expires_at, invoice_id FROM deposits WHERE user_id=? ORDER BY id DESC LIMIT 20", (user_id,)).fetchall()
+    wds = conn.execute("SELECT amount, address, network, status, created_at, tx_hash FROM withdrawals WHERE user_id=? ORDER BY id DESC LIMIT 20", (user_id,)).fetchall()
+    return {"deposits": [{"id":d[0],"amount":d[1],"expected":d[2],"network":d[3],"tx_hash":d[4],"status":d[5],"actual":d[6],"created_at":d[7],"expires_at":d[8],"invoice_id":d[9]} for d in deps], "withdrawals": [{"amount":d[0],"address":d[1],"network":d[2],"status":d[3],"created_at":d[4],"tx_hash":d[5]} for d in wds]}
+
+@app.get("/api/deposit-addresses")
+def addrs(): return DEPOSIT_ADDR
+
+@app.get("/api/wallet/balance")
+def wallet_balance():
+    balances = {}
+    for net, addr in DEPOSIT_ADDR.items():
+        balances[net] = {"address": addr}
+    return balances
+
+@app.get("/api/admin/stats")
+def stats():
+    u = conn.execute("SELECT COUNT(*), COALESCE(SUM(balance),0), COALESCE(SUM(withdrawable),0) FROM users").fetchone()
+    pend_wd = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE status='pending'").fetchone()[0]
+    pend_dep = conn.execute("SELECT COUNT(*) FROM deposits WHERE status='awaiting_payment'").fetchone()[0]
+    total_ref = conn.execute("SELECT COALESCE(SUM(bonus_amount),0) FROM referral_logs").fetchone()[0] or 0
+    total_dep = conn.execute("SELECT COALESCE(SUM(actual_amount),0) FROM deposits WHERE status='verified'").fetchone()[0] or 0
+    return {"total_users": u[0], "total_balance": (u[1] or 0)+(u[2] or 0), "active_now": u[0], "pending_withdrawals": pend_wd, "pending_deposits": pend_dep, "total_ref_paid": total_ref, "total_deposits": total_dep}
+
+@app.get("/api/admin/users")
+def admin_users():
+    rows = conn.execute("SELECT user_id, username, balance, withdrawable, profit, daily_percent, ai_end, referred_by, referral_earnings, created_at, last_withdraw_date, total_deposit, total_withdraw, is_banned FROM users ORDER BY created_at DESC LIMIT 500").fetchall()
+    return [{"user_id":r[0],"username":r[1] or f"user_{r[0]}","balance":r[2],"withdrawable":r[3],"profit":r[4],"daily_percent":r[5],"ai_end":r[6],"referred_by":r[7],"ref_earn":r[8],"created_at":r[9],"last_wd":r[10],"total_deposit":r[11],"total_withdraw":r[12],"is_banned":r[13] or 0} for r in rows]
+
+@app.get("/api/admin/deposits")
+def admin_deps():
+    rows = conn.execute("SELECT id, user_id, amount, expected_amount, network, tx_hash, status, actual_amount, created_at, expires_at, invoice_id FROM deposits ORDER BY id DESC LIMIT 100").fetchall()
+    return [{"id":r[0],"user_id":r[1],"amount":r[2],"expected":r[3],"network":r[4],"tx_hash":r[5],"status":r[6],"actual":r[7],"created_at":r[8],"expires_at":r[9],"invoice_id":r[10]} for r in rows]
+
+@app.get("/api/admin/withdrawals")
+def admin_wds():
+    rows = conn.execute("SELECT id, user_id, amount, address, network, status, created_at, tx_hash FROM withdrawals ORDER BY id DESC LIMIT 100").fetchall()
+    return [{"id":r[0],"user_id":r[1],"amount":r[2],"address":r[3],"network":r[4],"status":r[5],"created_at":r[6],"tx_hash":r[7]} for r in rows]
+
+@app.get("/api/admin/referrals")
+def admin_referrals():
+    rows = conn.execute("SELECT from_user, to_user, level, deposit_amount, bonus_amount, bonus_percent, created_at FROM referral_logs ORDER BY id DESC LIMIT 100").fetchall()
+    return [{"from_user": r[0], "to_user": r[1], "level": r[2], "deposit": r[3], "bonus": r[4], "percent": r[5], "at": r[6]} for r in rows]
+
+class AdminUserAction(BaseModel):
+    user_id: int; action: str; amount: float = 0
+
+@app.post("/api/admin/user/action")
+def admin_user_action(req: AdminUserAction):
+    if req.action == "ban": conn.execute("UPDATE users SET is_banned=1 WHERE user_id=?", (req.user_id,))
+    elif req.action == "unban": conn.execute("UPDATE users SET is_banned=0 WHERE user_id=?", (req.user_id,))
+    elif req.action == "add_balance": 
+        conn.execute("UPDATE users SET balance=balance+?, total_deposit=total_deposit+? WHERE user_id=?", (req.amount, req.amount, req.user_id))
+        conn.commit()
+        # FIXED: Also distribute referral bonus when admin adds balance (for testing referral)
+        try: distribute_referral(req.user_id, req.amount)
+        except: pass
+        return {"ok": True}
+    elif req.action == "add_withdrawable": conn.execute("UPDATE users SET withdrawable=withdrawable+?, referral_earnings=referral_earnings+? WHERE user_id=?", (req.amount, req.amount, req.user_id))
+    elif req.action == "set_balance": conn.execute("UPDATE users SET balance=? WHERE user_id=?", (req.amount, req.user_id))
+    elif req.action == "delete": conn.execute("DELETE FROM users WHERE user_id=?", (req.user_id,))
+    conn.commit()
+    return {"ok": True}
+
+class ApproveReq(BaseModel):
+    id: int; action: str; tx_hash: str = ""; note: str = ""
+
+@app.post("/api/admin/withdraw/action")
+def wd_action(r: ApproveReq):
+    wd = conn.execute("SELECT user_id, amount, address, network FROM withdrawals WHERE id=?", (r.id,)).fetchone()
+    if not wd: return {"error":"not found"}
+    if r.action=="approve":
+        conn.execute("UPDATE withdrawals SET status='approved', tx_hash=?, admin_note=? WHERE id=?", (r.tx_hash, r.note or "Sent from self-custody", r.id))
+        conn.execute("UPDATE users SET total_withdraw=total_withdraw+? WHERE user_id=?", (wd[1], wd[0]))
+    else:
+        conn.execute("UPDATE withdrawals SET status='rejected', admin_note=? WHERE id=?", (r.note or "Rejected", r.id))
+        conn.execute("UPDATE users SET withdrawable=withdrawable+? WHERE user_id=?", (wd[1], wd[0]))
+    conn.commit()
+    return {"ok":True}
+
+@app.post("/api/admin/deposit/action")
+def dep_action(r: ApproveReq):
+    dep = conn.execute("SELECT user_id, amount, expected_amount FROM deposits WHERE id=?", (r.id,)).fetchone()
+    if not dep: return {"error":"not found"}
+    if r.action=="approve":
+        now = datetime.datetime.utcnow().isoformat()
+        fake_tx = r.tx_hash or f"admin_approved_{r.id}_{int(time.time())}"
+        conn.execute("UPDATE deposits SET status='verified', tx_hash=?, actual_amount=expected_amount, verified_at=? WHERE id=?", (fake_tx, now, r.id))
+        conn.execute("INSERT OR IGNORE INTO used_tx_hashes (tx_hash, used_at) VALUES (?,?)", (fake_tx, now))
+        old_row = conn.execute("SELECT balance FROM users WHERE user_id=?", (dep[0],)).fetchone()
+        old_bal = old_row[0] or 0
+        new_bal = old_bal + dep[2]
+        tier_idx, _, daily_pct = get_tier_index(new_bal)
+        per_hour = (new_bal * daily_pct / 100) / 24 if daily_pct>0 else 0
+        ai_start = datetime.datetime.utcnow().isoformat()
+        ai_end = (datetime.datetime.utcnow() + datetime.timedelta(days=30)).isoformat()
+        now = datetime.datetime.utcnow().isoformat()
+        conn.execute("UPDATE users SET balance=?, profit_per_hour=?, daily_percent=?, total_deposit=total_deposit+?, ai_start=?, ai_end=?, current_tier=?, last_claim=? WHERE user_id=?", (new_bal, per_hour, daily_pct, dep[2], ai_start, ai_end, tier_idx, now, dep[0]))
+        conn.commit()
+        distribute_referral(dep[0], dep[2])
+    else:
+        conn.execute("UPDATE deposits SET status='failed' WHERE id=?", (r.id,))
+        conn.commit()
+    return {"ok":True}
+
+class WithdrawReq(BaseModel):
+    amount: float; address: str; network: str
+
+@app.post("/api/withdraw/request/{user_id}")
+def withdraw_req(user_id: int, r: WithdrawReq):
+    if user_id == 0: user_id = 123456789
+    ensure_user(user_id)
+    recalc_profit(user_id)
+    now = datetime.datetime.utcnow(); today_str = now.date().isoformat()
+    user_row = conn.execute("SELECT withdrawable, created_at, last_withdraw_date, is_banned, total_withdraw FROM users WHERE user_id=?", (user_id,)).fetchone()
+    if not user_row: return {"error": "User not found"}
+    if user_row[3] == 1: return {"error": "Account banned"}
+    withdrawable = user_row[0] or 0
+    if r.amount < 10: return {"error": "Min withdraw 10 USDT"}
+    if withdrawable < r.amount: return {"error": f"Insufficient. You have {withdrawable:.2f} USDT"}
+    last_wd_date = user_row[2] or ""
+    if last_wd_date == today_str: return {"error": "Once per day only. Try tomorrow."}
+    today_count = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE user_id=? AND DATE(created_at)=DATE('now')", (user_id,)).fetchone()[0]
+    if today_count > 0: return {"error": "Once per day only. Try tomorrow."}
+    new_w = withdrawable - r.amount
+    conn.execute("UPDATE users SET withdrawable=?, last_withdraw_date=? WHERE user_id=?", (new_w, today_str, user_id))
+    conn.execute("INSERT INTO withdrawals (user_id, amount, address, network, status, created_at, auto_approved) VALUES (?,?,?,?,?,?,?)",
+                 (user_id, r.amount, r.address, r.network, "pending", now.isoformat(), 0))
+    conn.commit()
+    return {"ok": True, "new_withdrawable": new_w, "message": f"Withdrawal of {r.amount} USDT requested. Admin will send from self-custody wallet."}
+
+@app.get("/")
+def root(): return FileResponse("index.html")
+@app.get("/admin")
+def admin_page(): return FileResponse("admin.html")
+@app.get("/health")
+def health(): return {"ok": True, "self_custody": True, "quick_stats_fixed": True}
