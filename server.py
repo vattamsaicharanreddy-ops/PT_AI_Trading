@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Body
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -2116,8 +2116,17 @@ def api_referral(user_id: int):
     }
 
 
+# ============================================================
+# DEPOSITS
+# ============================================================
+
+class InvoiceReq(BaseModel):
+    amount: float
+    network: str
+
+
 @app.post("/api/deposit/create_invoice/{user_id}")
-def create_invoice(user_id: int, r: InvoiceReq):
+def create_invoice(user_id: int, r: InvoiceReq = Body(...)):
     if user_id == 0: user_id = 123456789
     ensure_user(user_id)
     if r.amount < 20: return {"error": "Min deposit 20 USDT required"}
