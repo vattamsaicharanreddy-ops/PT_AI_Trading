@@ -98,7 +98,7 @@ def generate_invoice_id():
 def ensure_user(user_id: int, username="", referred_by=None):
     if not user_id or user_id < 1: user_id = 123456789
     row = conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
-    now = datetime.datetime.utcnow().isoformat()
+    now_str = datetime.datetime.utcnow().isoformat()
     if not row:
         ref=None
         if referred_by:
@@ -108,11 +108,10 @@ def ensure_user(user_id: int, username="", referred_by=None):
             except: pass
         uname = username or f"user_{user_id}"
         conn.execute("INSERT INTO users (user_id, username, referred_by, created_at, last_claim, last_auto_claim, current_tier) VALUES (?,?,?,?,?,?,?)",
-                     (user_id, uname, ref, now, now, now, len(TIERS)-1))
+                     (user_id, uname, ref, now_str, now_str, now_str, len(TIERS)-1))
         conn.commit()
         return conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
-    # FIXED: Update username and also set referred_by if not set before and ref provided
-    if username and row[1] != username:
+    if username and len(row)>1 and row[1] != username:
         conn.execute("UPDATE users SET username=? WHERE user_id=?", (username, user_id))
         conn.commit()
     if referred_by and (len(row)>13 and (row[13] is None or row[13]==0)):
@@ -248,6 +247,7 @@ def process_invoice_payment(invoice_id: str, tx_hash: str, actual_amount: float)
                      (new_bal, per_hour, daily_pct, actual_amount, ai_start, ai_end, tier_idx, now, user_id))
         conn.commit()
         distribute_referral(user_id, actual_amount)
+        print(f"Invoice {invoice_id} verified: user {user_id} +${actual_amount}")
         return True, f"Verified {actual_amount} USDT"
     except Exception as e:
         print(f"Process invoice error: {e}")
@@ -357,51 +357,68 @@ def binance_trades_all():
 @app.get("/api/user/{user_id}")
 def api_user(user_id: int, ref: int = None, username: str = None):
     if user_id == 0: user_id = 123456789
-    ensure_user(user_id, username=username or "", referred_by=ref)
     try:
-        bc = conn.execute("SELECT is_banned FROM users WHERE user_id=?", (user_id,)).fetchone()
-        if bc and bc[0]==1:
-            return {"error": "Account suspended", "is_banned": 1, "ban_message": "violating Telegram policies", "user_id": user_id, "balance": 0, "withdrawable": 0, "profit": 0, "profit_per_hour": 0, "daily_percent": 0, "ai_end": None, "days_left": 0, "hours_left": 0, "ai_active": False, "total_deposit": 0, "total_withdraw": 0, "tiers": [{"min": t[0], "pct": t[1]} for t in TIERS], "referral_earnings": 0, "created_at": "", "can_withdraw_today": False, "referred_by": None, "direct_referrals": 0, "is_banned": 1}
-    except: pass
-    row = recalc_profit(user_id)
-    if not row: return {"error":"User not found"}
-    now = datetime.datetime.utcnow().isoformat()
-    created_str = row[15] if len(row) > 15 and row[15] else now.isoformat()
-    ai_end_str = row[7]
-    if ai_end_str:
+        ensure_user(user_id, username=username or "", referred_by=ref)
+        # BAN CHECK - must be first
         try:
-            ai_end_dt = datetime.datetime.fromisoformat(ai_end_str)
-            remaining = ai_end_dt - now
-            days_left = max(0, remaining.days); hours_left = max(0, int(remaining.total_seconds()//3600 %24)); active = now < ai_end_dt
-        except: days_left=0; hours_left=0; active=False
-    else: days_left=0; hours_left=0; active=False
-    today_str = now.date().isoformat()
-    last_wd_date = row[16] if len(row) > 16 and row[16] else ""
-    can_withdraw_today = last_wd_date != today_str
-    today_count = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE user_id=? AND DATE(created_at)=DATE('now')", (user_id,)).fetchone()[0]
-    if today_count > 0: can_withdraw_today = False
-    direct_count = conn.execute("SELECT COUNT(*) FROM users WHERE referred_by=?", (user_id,)).fetchone()[0]
-    # FIXED TOTAL DEPOSIT ZERO - sum + column (admin add_balance)
-    try:
-        total_dep_calc = conn.execute("SELECT COALESCE(SUM(actual_amount),0) FROM deposits WHERE user_id=? AND status='verified'", (user_id,)).fetchone()[0] or 0
-        if total_dep_calc == 0:
-            total_dep_calc = conn.execute("SELECT COALESCE(SUM(expected_amount),0) FROM deposits WHERE user_id=? AND status='verified'", (user_id,)).fetchone()[0] or 0
-    except: total_dep_calc = 0
-    try:
-        col_dep = conn.execute("SELECT COALESCE(total_deposit,0) FROM users WHERE user_id=?", (user_id,)).fetchone()[0] or 0
-    except: col_dep = 0
-    try:
-        total_deposit = float(max(float(total_dep_calc or 0), float(col_dep or 0)))
-        if total_deposit==0 and row[2] and float(row[2])>0:
-            total_deposit = float(row[2])
-    except: total_deposit = 0.0
-    try:
-        total_wd_calc = conn.execute("SELECT COALESCE(SUM(amount),0) FROM withdrawals WHERE user_id=? AND status='approved'", (user_id,)).fetchone()[0] or 0
-    except: total_wd_calc = 0
-    try: total_withdraw = float(total_wd_calc)
-    except: total_withdraw = 0.0
-    # total_withdraw is ONLY approved withdrawals, never equals deposit unless actually withdrawn
-    return {"user_id": row[0], "username": row[1] or f"user_{row[0]}", "balance": row[2], "withdrawable": row[3], "profit": row[4], "profit_per_hour": row[5], "daily_percent": row[6], "ai_end": row[7], "days_left": days_left, "hours_left": hours_left, "ai_active": active, "total_deposit": total_deposit, "total_withdraw": total_withdraw, "tiers": [{"min": t[0], "pct": t[1]} for t in TIERS], "referral_earnings": row[14] if len(row)>14 and row[14] else 0, "created_at": created_str, "can_withdraw_today": can_withdraw_today, "referred_by": row[13] if len(row)>13 else None, "direct_referrals": direct_count, "is_banned": row[17] if len(row)>17 and row[17] else 0}
+            bc = conn.execute("SELECT is_banned FROM users WHERE user_id=?", (user_id,)).fetchone()
+            if bc and bc[0]==1:
+                return {"error": "Account suspended", "is_banned": 1, "ban_message": "violating Telegram policies", "user_id": user_id, "balance": 0, "withdrawable": 0, "profit": 0, "profit_per_hour": 0, "daily_percent": 0, "ai_end": None, "days_left": 0, "hours_left": 0, "ai_active": False, "total_deposit": 0, "total_withdraw": 0, "tiers": [{"min": t[0], "pct": t[1]} for t in TIERS], "referral_earnings": 0, "created_at": "", "can_withdraw_today": False, "referred_by": None, "direct_referrals": 0, "is_banned": 1}
+        except: pass
+        row = recalc_profit(user_id)
+        if not row: return {"error":"User not found"}
+        # Safely get columns by index with fallback
+        def safe_idx(idx, default=None):
+            try:
+                return row[idx] if len(row)>idx else default
+            except:
+                return default
+        now = datetime.datetime.utcnow()
+        created_str = safe_idx(15) or now.isoformat()
+        ai_end_str = safe_idx(7)
+        if ai_end_str:
+            try:
+                ai_end_dt = datetime.datetime.fromisoformat(ai_end_str)
+                remaining = ai_end_dt - now
+                days_left = max(0, remaining.days); hours_left = max(0, int(remaining.total_seconds()//3600 %24)); active = now < ai_end_dt
+            except: days_left=0; hours_left=0; active=False
+        else: days_left=0; hours_left=0; active=False
+        last_wd_date = safe_idx(16) or ""
+        today_str = now.date().isoformat()
+        can_withdraw_today = last_wd_date != today_str
+        try:
+            today_count = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE user_id=? AND DATE(created_at)=DATE('now')", (user_id,)).fetchone()[0]
+            if today_count > 0: can_withdraw_today = False
+        except: pass
+        try:
+            direct_count = conn.execute("SELECT COUNT(*) FROM users WHERE referred_by=?", (user_id,)).fetchone()[0]
+        except: direct_count = 0
+        # FIXED TOTAL DEPOSIT ZERO - sum + column + balance fallback
+        try:
+            total_dep_calc = conn.execute("SELECT COALESCE(SUM(actual_amount),0) FROM deposits WHERE user_id=? AND status='verified'", (user_id,)).fetchone()[0] or 0
+            if total_dep_calc == 0:
+                total_dep_calc = conn.execute("SELECT COALESCE(SUM(expected_amount),0) FROM deposits WHERE user_id=? AND status='verified'", (user_id,)).fetchone()[0] or 0
+        except: total_dep_calc = 0
+        try:
+            col_dep = conn.execute("SELECT COALESCE(total_deposit,0) FROM users WHERE user_id=?", (user_id,)).fetchone()[0] or 0
+        except: col_dep = 0
+        try:
+            bal = float(safe_idx(2) or 0)
+            total_deposit = float(max(float(total_dep_calc or 0), float(col_dep or 0)))
+            if total_deposit==0 and bal>0:
+                total_deposit = bal
+        except: total_deposit = 0.0
+        try:
+            total_wd_calc = conn.execute("SELECT COALESCE(SUM(amount),0) FROM withdrawals WHERE user_id=? AND status='approved'", (user_id,)).fetchone()[0] or 0
+        except: total_wd_calc = 0
+        try: total_withdraw = float(total_wd_calc)
+        except: total_withdraw = 0.0
+        return {"user_id": safe_idx(0), "username": safe_idx(1) or f"user_{safe_idx(0)}", "balance": safe_idx(2) or 0, "withdrawable": safe_idx(3) or 0, "profit": safe_idx(4) or 0, "profit_per_hour": safe_idx(5) or 0, "daily_percent": safe_idx(6) or 0, "ai_end": safe_idx(7), "days_left": days_left, "hours_left": hours_left, "ai_active": active, "total_deposit": total_deposit, "total_withdraw": total_withdraw, "tiers": [{"min": t[0], "pct": t[1]} for t in TIERS], "referral_earnings": safe_idx(14) or 0, "created_at": created_str, "can_withdraw_today": can_withdraw_today, "referred_by": safe_idx(13), "direct_referrals": direct_count, "is_banned": safe_idx(17) or 0}
+    except Exception as e:
+        print(f"api_user error for {user_id}: {e}")
+        import traceback; traceback.print_exc()
+        return {"error": f"Server error: {str(e)}", "user_id": user_id, "balance": 0, "withdrawable": 0, "profit": 0, "total_deposit": 0, "total_withdraw": 0, "ai_active": False, "days_left": 0, "hours_left": 0}
+
 
 
 @app.get("/api/referral/{user_id}")
@@ -446,7 +463,7 @@ def create_invoice(user_id: int, r: InvoiceReq):
         except: pass
     invoice_id = generate_invoice_id()
     expected_amount = round(r.amount, 2)
-    now = datetime.datetime.utcnow().isoformat()
+    now = datetime.datetime.utcnow()
     expires_at = now + datetime.timedelta(minutes=15)
     conn.execute("INSERT INTO deposits (user_id, amount, expected_amount, network, status, invoice_id, created_at, expires_at, tx_hash, actual_amount) VALUES (?,?,?,?,?,?,?,?,?,?)",
                  (user_id, r.amount, expected_amount, r.network, "awaiting_payment", invoice_id, now.isoformat(), expires_at.isoformat(), "", 0))
@@ -457,7 +474,7 @@ def create_invoice(user_id: int, r: InvoiceReq):
 def invoice_status(invoice_id: str):
     row = conn.execute("SELECT user_id, amount, expected_amount, network, status, tx_hash, actual_amount, created_at, expires_at, verified_at FROM deposits WHERE invoice_id=?", (invoice_id,)).fetchone()
     if not row: return {"error": "Invoice not found"}
-    now = datetime.datetime.utcnow().isoformat()
+    now = datetime.datetime.utcnow()
     try:
         exp_dt = datetime.datetime.fromisoformat(row[8])
         time_left = (exp_dt - now).total_seconds()
@@ -608,7 +625,7 @@ def withdraw_req(user_id: int, r: WithdrawReq):
     if user_id == 0: user_id = 123456789
     ensure_user(user_id)
     recalc_profit(user_id)
-    now = datetime.datetime.utcnow().isoformat(); today_str = now.date().isoformat()
+    now = datetime.datetime.utcnow(); today_str = now.date().isoformat()
     user_row = conn.execute("SELECT withdrawable, created_at, last_withdraw_date, is_banned, total_withdraw FROM users WHERE user_id=?", (user_id,)).fetchone()
     if not user_row: return {"error": "User not found"}
     if user_row[3] == 1: return {"error": "Account banned"}
