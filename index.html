@@ -128,7 +128,7 @@
 <div class='mt-4 grid grid-cols-3 gap-2' id='networkBtns'></div>
 <div class='mt-4 bg-white/5 p-4 rounded-xl'><p class='text-xs opacity-50'>DEPOSIT ADDRESS (<span id='selectedNet'>TRC20</span>)</p><p id='depositAddr' class='text-sm break-all font-mono mt-2'>Loading...</p><button onclick='copyAddr()' class='mt-3 text-sm bg-white/10 px-4 py-2 rounded-full'>Copy Address</button></div>
 <input id='depAmount' type='number' placeholder='Amount USDT (Min 20)' class='mt-4 w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-base'>
-<button onclick='createInvoice()' id='createInvoiceBtn' class='mt-4 w-full bg-[#26A17B] text-white py-4 rounded-full font-bold text-base'>Create Deposit Invoice</button>
+<button onclick='createInvoice()' id='createInvoiceBtn' class='mt-4 w-full bg-[#26A17B] text-white py-4 rounded-full font-bold text-base'>Create Deposit Invoice</button><div id='depositCreateStatus' class='mt-3 text-xs text-white/60 text-center min-h-[18px]'></div>
 <button onclick='document.getElementById("depositModal").classList.add("hidden")' class='mt-3 w-full bg-white/5 py-4 rounded-full text-base'>Close</button>
 </div>
 <div id='depositStep2' class='hidden'>
@@ -386,7 +386,18 @@ function renderNetworks(){
 }
 function setNetAddr(net){ selectedNetwork=net; safeSet('selectedNet', net); safeSet('depositAddr', addrs[net]||FALLBACK_ADDRS[net]||'Loading...'); renderNetworks(); }
 function copyAddr(){ let addr=$('depositAddr')?.innerText; if(addr) navigator.clipboard.writeText(addr.split(' ')[0]); alert('Copied: '+addr); }
-function openDeposit(){ $('depositModal')?.classList.remove('hidden'); showDepositStep1(); }
+function openDeposit(){
+ $('depositModal')?.classList.remove('hidden');
+ showDepositStep1();
+ const btn=$('createInvoiceBtn');
+ const status=$('depositCreateStatus');
+ if(btn){
+   btn.innerText='Create Deposit Invoice';
+   btn.disabled=false;
+   btn.style.opacity='1';
+ }
+ if(status) status.innerText='';
+}
 function showDepositStep1(){ $('depositStep1')?.classList.remove('hidden'); $('depositStep2')?.classList.add('hidden'); }
 function showDepositStep2(){ $('depositStep1')?.classList.add('hidden'); $('depositStep2')?.classList.remove('hidden'); }
 function openWithdraw(){ safeSet('wdAvailable', withdrawable.toFixed(2)+' USDT'); $('withdrawModal')?.classList.remove('hidden'); }
@@ -396,16 +407,92 @@ function copyInvoiceAmount(){ let amt=$('invoiceAmount')?.innerText; if(amt){ na
 
 async function createInvoice(){
  let amt=parseFloat($('depAmount')?.value);
- if(!amt || amt < 20){ alert('❌ Min deposit 20 USDT required!'); return; }
+ let net=(selectedNetwork||'TRC20').toUpperCase();
  let btn=$('createInvoiceBtn');
- if(btn){ btn.innerText='Creating invoice...'; btn.disabled=true; }
+
+ if(!Number.isFinite(amt) || amt < 20){
+   alert('❌ Min deposit 20 USDT required!');
+   return;
+ }
+
+ if(!userId){
+   alert('❌ User ID is not available. Please reopen the Telegram app.');
+   return;
+ }
+
+ if(!net){
+   alert('❌ Please select a deposit network.');
+   return;
+ }
+
+ if(btn){
+   btn.innerText='Creating invoice...';
+   btn.disabled=true;
+   btn.style.opacity='0.7';
+ }
+
  try{
-   let r=await fetch('/api/deposit/create_invoice/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,network:selectedNetwork})});
-   let j=await r.json();
-   if(btn){ btn.innerText='Create Deposit Invoice'; btn.disabled=false; }
-   if(j.error){ alert('❌ '+j.error); return; }
-   if(j.ok){ currentInvoiceId=j.invoice_id; showInvoiceStep2(j.invoice_id); }
- }catch(e){ if(btn){ btn.innerText='Create Deposit Invoice'; btn.disabled=false; } alert('Failed: '+e.message); }
+   const url='/api/deposit/create_invoice/'+encodeURIComponent(String(userId));
+   const payload={amount:amt,network:net};
+
+   console.log('[Deposit] Creating invoice:', url, payload);
+
+   const r=await fetch(url,{
+     method:'POST',
+     headers:{
+       'Content-Type':'application/json',
+       'Accept':'application/json'
+     },
+     body:JSON.stringify(payload)
+   });
+
+   const raw=await r.text();
+   let j=null;
+
+   try{
+     j=raw ? JSON.parse(raw) : {};
+   }catch(parseErr){
+     console.error('[Deposit] Invalid JSON response:', raw);
+     throw new Error('Server returned an invalid response (HTTP '+r.status+').');
+   }
+
+   console.log('[Deposit] Response:', r.status, j);
+
+   if(!r.ok){
+     throw new Error(
+       j?.error ||
+       j?.detail ||
+       ('HTTP '+r.status+' '+r.statusText)
+     );
+   }
+
+   if(j.error){
+     throw new Error(j.error);
+   }
+
+   if(!j.ok || !j.invoice_id){
+     throw new Error('Invoice was not created. Server response: '+raw);
+   }
+
+   currentInvoiceId=j.invoice_id;
+
+   if(btn){
+     btn.innerText='Invoice Created ✓';
+   }
+
+   showInvoiceStep2(j.invoice_id);
+
+ }catch(e){
+   console.error('[Deposit] Create invoice failed:',e);
+
+   if(btn){
+     btn.innerText='Create Deposit Invoice';
+     btn.disabled=false;
+     btn.style.opacity='1';
+   }
+
+   alert('❌ Create invoice failed:\n'+(e?.message||String(e)));
+ }
 }
 
 async function showInvoiceStep2(invoiceId){
