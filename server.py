@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sqlite3, datetime, os, json, urllib.request, random, hashlib, time, threading, string
+from decimal import Decimal, ROUND_DOWN
 
 app = FastAPI(title="PT_AI Trading - Self Custody - Fixed Quick Stats")
 
@@ -692,13 +693,19 @@ def wd_action(r: ApproveReq):
     wd = conn.execute("SELECT user_id, amount, address, network FROM withdrawals WHERE id=?", (r.id,)).fetchone()
     if not wd: return {"error":"not found"}
     if r.action=="approve":
-        conn.execute("UPDATE withdrawals SET status='approved', tx_hash=?, admin_note=? WHERE id=?", (r.tx_hash, r.note or "Sent from self-custody", r.id))
-        conn.execute("UPDATE users SET total_withdraw=total_withdraw+? WHERE user_id=?", (wd[1], wd[0]))
+        # Admin approval from day 7 onward now triggers the REAL blockchain send.
+        # No manual TX hash is accepted/required.
+        result = complete_real_withdrawal(
+            r.id, wd[0], wd[1], wd[2], wd[3],
+            r.note or "Approved and sent from self-custody wallet",
+        )
+        return result
+
     else:
         conn.execute("UPDATE withdrawals SET status='rejected', admin_note=? WHERE id=?", (r.note or "Rejected", r.id))
         conn.execute("UPDATE users SET withdrawable=withdrawable+? WHERE user_id=?", (wd[1], wd[0]))
-    conn.commit()
-    return {"ok":True}
+        conn.commit()
+        return {"ok":True, "status":"rejected"}
 
 @app.post("/api/admin/deposit/action")
 def dep_action(r: ApproveReq):
@@ -877,6 +884,356 @@ def dep_action(r: ApproveReq):
     }
 
 
+
+# ============================================================
+# AUTOMATIC REAL USDT WITHDRAWALS
+# Networks: TRC20, BEP20, ERC20
+# ============================================================
+
+WITHDRAWAL_GROUP_CHAT = os.getenv("WITHDRAWAL_GROUP_CHAT", "@PT_AI_Trading_Group").strip()
+TELEGRAM_BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
+
+# RPC endpoints can be replaced in Render without changing code.
+BSC_RPC_URL = os.getenv("BSC_RPC_URL", "https://bsc-dataseed.binance.org").strip()
+ETH_RPC_URL = os.getenv("ETH_RPC_URL", "https://ethereum-rpc.publicnode.com").strip()
+TRON_RPC_URL = os.getenv("TRON_RPC_URL", "").strip()
+
+# Signing keys MUST be stored only in Render environment variables.
+EVM_PRIVATE_KEY = os.getenv("EVM_PRIVATE_KEY", "").strip()
+TRON_PRIVATE_KEY = os.getenv("TRON_PRIVATE_KEY", "").strip()
+
+USDT_CONTRACTS = {
+    "BEP20": "0x55d398326f99059fF775485246999027B3197955",
+    "ERC20": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+}
+EVM_CHAINS = {
+    "BEP20": {"rpc": BSC_RPC_URL, "chain_id": 56, "explorer": "https://bscscan.com/tx/"},
+    "ERC20": {"rpc": ETH_RPC_URL, "chain_id": 1, "explorer": "https://etherscan.io/tx/"},
+}
+TRC20_USDT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+
+WITHDRAWAL_SEND_LOCK = threading.Lock()
+
+# Idempotency/public announcement tracking.
+conn.execute("""
+CREATE TABLE IF NOT EXISTS withdrawal_announcements (
+    withdrawal_id INTEGER PRIMARY KEY,
+    tx_hash TEXT NOT NULL,
+    posted_at TEXT NOT NULL
+)
+""")
+conn.commit()
+
+ERC20_ABI = [
+    {
+        "constant": False,
+        "inputs": [
+            {"name": "_to", "type": "address"},
+            {"name": "_value", "type": "uint256"}
+        ],
+        "name": "transfer",
+        "outputs": [{"name": "", "type": "bool"}],
+        "type": "function",
+    },
+    {
+        "constant": True,
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [{"name": "", "type": "uint8"}],
+        "type": "function",
+    },
+]
+
+
+def withdrawal_explorer_url(network, tx_hash):
+    network = (network or "").upper().strip()
+    tx_hash = (tx_hash or "").strip()
+    if not tx_hash:
+        return None
+    if network == "TRC20":
+        return f"https://tronscan.org/#/transaction/{tx_hash}"
+    if network == "BEP20":
+        return f"https://bscscan.com/tx/{tx_hash}"
+    if network == "ERC20":
+        return f"https://etherscan.io/tx/{tx_hash}"
+    return None
+
+
+def withdrawal_day_number(created_at, now=None):
+    """Day 1..6 = automatic. Day 7 onward = admin approval."""
+    now = now or datetime.datetime.utcnow()
+    try:
+        created = datetime.datetime.fromisoformat(created_at)
+        return (now.date() - created.date()).days + 1
+    except Exception:
+        return 7
+
+
+def is_first_six_days(created_at, now=None):
+    return withdrawal_day_number(created_at, now) <= 6
+
+
+def validate_evm_recipient(address):
+    try:
+        from web3 import Web3
+        return Web3.is_address(address)
+    except Exception:
+        return bool(re.fullmatch(r"0x[a-fA-F0-9]{40}", address or ""))
+
+
+def validate_tron_recipient(address):
+    try:
+        from tronpy.keys import to_base58check_address
+        to_base58check_address(address)
+        return bool(address and address.startswith("T"))
+    except Exception:
+        return bool(re.fullmatch(r"T[1-9A-HJ-NP-Za-km-z]{33}", address or ""))
+
+
+def send_evm_usdt(network, recipient, amount):
+    """Sign and broadcast a real BEP20/ERC20 USDT transfer."""
+    if not EVM_PRIVATE_KEY:
+        raise RuntimeError("EVM_PRIVATE_KEY is not configured")
+
+    if network not in EVM_CHAINS:
+        raise RuntimeError(f"Unsupported EVM network: {network}")
+
+    if not validate_evm_recipient(recipient):
+        raise RuntimeError("Invalid BEP20/ERC20 recipient address")
+
+    from web3 import Web3
+
+    cfg = EVM_CHAINS[network]
+    w3 = Web3(Web3.HTTPProvider(cfg["rpc"], request_kwargs={"timeout": 20}))
+    if not w3.is_connected():
+        raise RuntimeError(f"{network} RPC is unavailable")
+
+    account = w3.eth.account.from_key(EVM_PRIVATE_KEY)
+    sender = account.address
+    token = w3.eth.contract(
+        address=Web3.to_checksum_address(USDT_CONTRACTS[network]),
+        abi=ERC20_ABI,
+    )
+    recipient = Web3.to_checksum_address(recipient)
+
+    decimals = int(token.functions.decimals().call())
+    units = int(
+        (Decimal(str(amount)) * (Decimal(10) ** decimals))
+        .to_integral_value(rounding=ROUND_DOWN)
+    )
+    if units <= 0:
+        raise RuntimeError("Withdrawal amount is too small")
+
+    token_balance = int(token.functions.balanceOf(sender).call())
+    if token_balance < units:
+        raise RuntimeError("Insufficient USDT balance in withdrawal wallet")
+
+    nonce = w3.eth.get_transaction_count(sender, "pending")
+    gas_price = w3.eth.gas_price
+
+    tx = token.functions.transfer(recipient, units).build_transaction({
+        "from": sender,
+        "nonce": nonce,
+        "chainId": cfg["chain_id"],
+        "gas": 100000,
+        "gasPrice": gas_price,
+        "value": 0,
+    })
+
+    try:
+        tx["gas"] = int(w3.eth.estimate_gas(tx))
+    except Exception:
+        pass
+
+    signed = w3.eth.account.sign_transaction(tx, EVM_PRIVATE_KEY)
+    raw = getattr(signed, "raw_transaction", None) or getattr(signed, "rawTransaction")
+    tx_hash = w3.eth.send_raw_transaction(raw)
+    return w3.to_hex(tx_hash)
+
+
+def send_trc20_usdt(recipient, amount):
+    """Sign and broadcast a real TRC20 USDT transfer using TronPy."""
+    if not TRON_PRIVATE_KEY:
+        raise RuntimeError("TRON_PRIVATE_KEY is not configured")
+
+    if not validate_tron_recipient(recipient):
+        raise RuntimeError("Invalid TRC20 recipient address")
+
+    from tronpy import Tron
+    from tronpy.keys import PrivateKey
+
+    client = Tron(network="mainnet")
+    if TRON_RPC_URL:
+        client = Tron(network="mainnet", provider=None)
+
+    private_key_hex = TRON_PRIVATE_KEY.lower().replace("0x", "")
+    try:
+        priv = PrivateKey(bytes.fromhex(private_key_hex))
+    except Exception as e:
+        raise RuntimeError(f"Invalid TRON private key: {e}")
+
+    owner = priv.public_key.to_base58check_address()
+    contract = client.get_contract(TRC20_USDT)
+    units = int(
+        (Decimal(str(amount)) * Decimal(1000000))
+        .to_integral_value(rounding=ROUND_DOWN)
+    )
+    if units <= 0:
+        raise RuntimeError("Withdrawal amount is too small")
+
+    # Check USDT balance before signing.
+    try:
+        token_balance = int(contract.functions.balanceOf(owner))
+    except Exception as e:
+        raise RuntimeError(f"Unable to read TRC20 USDT balance: {e}")
+
+    if token_balance < units:
+        raise RuntimeError("Insufficient TRC20 USDT balance in withdrawal wallet")
+
+    txn = (
+        contract.functions.transfer(recipient, units)
+        .with_owner(owner)
+        .fee_limit(30_000_000)
+        .build()
+        .sign(priv)
+    )
+    result = txn.broadcast()
+    if not result.get("result"):
+        raise RuntimeError(f"TRON broadcast failed: {result}")
+
+    return result.get("txid") or result.get("transaction", {}).get("txID")
+
+
+def send_real_usdt(network, recipient, amount):
+    network = (network or "").upper().strip()
+    # Prevent two simultaneous approvals from using the same nonce.
+    with WITHDRAWAL_SEND_LOCK:
+        if network == "TRC20":
+            tx_hash = send_trc20_usdt(recipient, amount)
+        elif network in ("BEP20", "ERC20"):
+            tx_hash = send_evm_usdt(network, recipient, amount)
+        else:
+            raise RuntimeError("Only TRC20, BEP20 and ERC20 withdrawals are supported")
+
+    if not tx_hash:
+        raise RuntimeError("Blockchain did not return a transaction hash")
+
+    return str(tx_hash)
+
+
+def send_withdrawal_telegram_announcement(withdrawal_id, amount, network, tx_hash):
+    if not TELEGRAM_BOT_TOKEN:
+        return False, "BOT_TOKEN not configured"
+
+    explorer = withdrawal_explorer_url(network, tx_hash)
+    if not explorer:
+        return False, f"Unsupported network: {network}"
+
+    if conn.execute(
+        "SELECT 1 FROM withdrawal_announcements WHERE withdrawal_id=?",
+        (withdrawal_id,)
+    ).fetchone():
+        return True, "Already announced"
+
+    amount_text = f"{float(amount):,.2f}".rstrip("0").rstrip(".")
+    message = (
+        "💸 <b>WITHDRAWAL COMPLETED</b>\n\n"
+        f"💰 Amount: <b>{amount_text} USDT</b>\n"
+        f"🌐 Network: <b>{network.upper()}</b>\n"
+        "✅ Real blockchain transaction broadcast\n\n"
+        f'🔎 <a href="{explorer}">Verify Transaction</a>\n\n'
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "🤖 <b>PT-AI Trading</b>"
+    )
+
+    payload = json.dumps({
+        "chat_id": WITHDRAWAL_GROUP_CHAT,
+        "text": message,
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True,
+    }).encode("utf-8")
+
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+
+    try:
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/json", "User-Agent": "PT-AI-Trading/1.0"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=15) as response:
+            result = json.loads(response.read().decode("utf-8"))
+
+        if not result.get("ok"):
+            return False, result.get("description", "Telegram API rejected message")
+
+        conn.execute(
+            "INSERT INTO withdrawal_announcements (withdrawal_id, tx_hash, posted_at) VALUES (?,?,?)",
+            (withdrawal_id, tx_hash, datetime.datetime.utcnow().isoformat()),
+        )
+        conn.commit()
+        return True, "Announcement posted"
+    except Exception as e:
+        print(f"Withdrawal Telegram announcement error: {e}")
+        return False, str(e)
+
+
+def complete_real_withdrawal(withdrawal_id, user_id, amount, address, network, admin_note=""):
+    """Broadcast once, persist the real hash, then announce it."""
+    existing = conn.execute(
+        "SELECT status, tx_hash FROM withdrawals WHERE id=?",
+        (withdrawal_id,)
+    ).fetchone()
+    if not existing:
+        return {"ok": False, "error": "Withdrawal not found"}
+
+    if existing[0] == "approved" and existing[1]:
+        return {
+            "ok": True,
+            "status": "approved",
+            "tx_hash": existing[1],
+            "message": "Withdrawal already completed",
+        }
+
+    try:
+        tx_hash = send_real_usdt(network, address, amount)
+    except Exception as e:
+        print(f"REAL withdrawal failed id={withdrawal_id}: {e}")
+        # Keep it pending so an admin can retry after fixing wallet/RPC/gas.
+        conn.execute(
+            "UPDATE withdrawals SET admin_note=? WHERE id=?",
+            (f"Automatic send failed: {str(e)}", withdrawal_id),
+        )
+        conn.commit()
+        return {"ok": False, "error": str(e), "status": "pending"}
+
+    now = datetime.datetime.utcnow().isoformat()
+    conn.execute(
+        "UPDATE withdrawals SET status='approved', tx_hash=?, admin_note=? WHERE id=?",
+        (tx_hash, admin_note or "Sent automatically from self-custody wallet", withdrawal_id),
+    )
+    conn.execute(
+        "UPDATE users SET total_withdraw=total_withdraw+? WHERE user_id=?",
+        (amount, user_id),
+    )
+    conn.commit()
+
+    posted, post_message = send_withdrawal_telegram_announcement(
+        withdrawal_id, amount, network, tx_hash
+    )
+
+    return {
+        "ok": True,
+        "status": "approved",
+        "tx_hash": tx_hash,
+        "explorer_url": withdrawal_explorer_url(network, tx_hash),
+        "telegram_announced": posted,
+        "telegram_message": post_message,
+        "completed_at": now,
+    }
+
+
 class WithdrawReq(BaseModel):
     amount: float; address: str; network: str
 
@@ -896,12 +1253,71 @@ def withdraw_req(user_id: int, r: WithdrawReq):
     if last_wd_date == today_str: return {"error": "Once per day only. Try tomorrow."}
     today_count = conn.execute("SELECT COUNT(*) FROM withdrawals WHERE user_id=? AND DATE(created_at)=DATE('now')", (user_id,)).fetchone()[0]
     if today_count > 0: return {"error": "Once per day only. Try tomorrow."}
+    network = (r.network or "").upper().strip()
+    if network not in ("TRC20", "BEP20", "ERC20"):
+        return {"error": "Only TRC20, BEP20 and ERC20 withdrawals are supported"}
+
+    if network == "TRC20" and not validate_tron_recipient(r.address.strip()):
+        return {"error": "Invalid TRC20 address"}
+    if network in ("BEP20", "ERC20") and not validate_evm_recipient(r.address.strip()):
+        return {"error": f"Invalid {network} address"}
+
     new_w = withdrawable - r.amount
-    conn.execute("UPDATE users SET withdrawable=?, last_withdraw_date=? WHERE user_id=?", (new_w, today_str, user_id))
-    conn.execute("INSERT INTO withdrawals (user_id, amount, address, network, status, created_at, auto_approved) VALUES (?,?,?,?,?,?,?)",
-                 (user_id, r.amount, r.address, r.network, "pending", now.isoformat(), 0))
+    created_at = now.isoformat()
+    day_number = withdrawal_day_number(user_row[1], now)
+    auto_allowed = day_number <= 6
+
+    conn.execute(
+        "UPDATE users SET withdrawable=?, last_withdraw_date=? WHERE user_id=?",
+        (new_w, today_str, user_id),
+    )
+    cur = conn.execute(
+        "INSERT INTO withdrawals (user_id, amount, address, network, status, created_at, auto_approved, admin_note) VALUES (?,?,?,?,?,?,?,?)",
+        (
+            user_id, r.amount, r.address.strip(), network, "pending",
+            created_at, 1 if auto_allowed else 0,
+            "Automatic withdrawal: account day %d" % day_number if auto_allowed
+            else "Manual admin approval required from account day 7",
+        ),
+    )
+    withdrawal_id = cur.lastrowid
     conn.commit()
-    return {"ok": True, "new_withdrawable": new_w, "message": f"Withdrawal of {r.amount} USDT requested. Admin will send from self-custody wallet."}
+
+    if auto_allowed:
+        result = complete_real_withdrawal(
+            withdrawal_id, user_id, r.amount, r.address.strip(), network,
+            f"Automatic withdrawal completed on account day {day_number}",
+        )
+        if result.get("ok"):
+            return {
+                "ok": True,
+                "status": "approved",
+                "auto_approved": True,
+                "account_day": day_number,
+                "new_withdrawable": new_w,
+                "tx_hash": result.get("tx_hash"),
+                "explorer_url": result.get("explorer_url"),
+                "message": "Withdrawal sent automatically.",
+            }
+        return {
+            "ok": True,
+            "status": "pending",
+            "auto_approved": True,
+            "account_day": day_number,
+            "new_withdrawable": new_w,
+            "withdrawal_id": withdrawal_id,
+            "message": "Automatic withdrawal could not be sent yet. It remains pending for admin review.",
+        }
+
+    return {
+        "ok": True,
+        "status": "pending",
+        "auto_approved": False,
+        "account_day": day_number,
+        "new_withdrawable": new_w,
+        "withdrawal_id": withdrawal_id,
+        "message": "Withdrawal submitted. Admin approval is required from day 7 onward.",
+    }
 
 @app.get("/")
 def root(): return FileResponse("index.html")

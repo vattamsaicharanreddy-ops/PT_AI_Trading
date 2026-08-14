@@ -2,3 +2,5 @@ fastapi
 uvicorn
 python-telegram-bot==21.7
 python-dotenv
+web3>=7.0,<8
+tronpy>=0.5,<1
