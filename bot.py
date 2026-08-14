@@ -9,7 +9,7 @@ CONFIG = {
     "BANNER_FILE": "banner.jpg",  # Put banner.jpg in same folder
     "BANNER_URL": "",  # Or set URL: https://your-domain.com/banner.jpg
     "BANNER_CAPTION": (
-        "🚀 AI-Powered Trading.\n"
+        "ðŸš€ AI-Powered Trading.\n"
         "Built for Trust.\n\n"
         "Intelligent. Transparent. Secure.\n"
         "Let AI work for you, 24/7."
@@ -18,14 +18,14 @@ CONFIG = {
     # --- About Company ---
     "COMPANY_NAME": "PT-AI Intelligent Trading System",
     "COMPANY_ABOUT": (
-        "🤖 About PT-AI Trading:\n"
+        "ðŸ¤– About PT-AI Trading:\n"
         "PT-AI is an advanced AI-powered automated crypto trading platform. "
         "Our intelligent algorithms analyze real-time market opportunities and execute trades automatically. "
         "No trading experience needed! Secure, reliable, and transparent.\n\n"
-        "🔒 Bank-level security to protect your assets\n"
-        "🧠 Advanced AI algorithms for consistent results\n"
-        "📊 Real-time data and verifiable results\n"
-        "🎧 Professional team always here for you"
+        "ðŸ”’ Bank-level security to protect your assets\n"
+        "ðŸ§  Advanced AI algorithms for consistent results\n"
+        "ðŸ“Š Real-time data and verifiable results\n"
+        "ðŸŽ§ Professional team always here for you"
     ),
 
     # --- Stats (like in screenshot bottom of banner) ---
@@ -38,27 +38,27 @@ CONFIG = {
 
     # --- Functions / Features (shown when /start clicked) ---
     "FUNCTIONS": [
-        "⚡ Real-time market opportunity analysis",
-        "🤖 AI-powered automated trade execution",
-        "📈 Daily investment returns of up to 11.2% to 18% — the more tokens you have, the higher your returns!",
-        "💰 Earn up to 16% commission from your 10-level referral network!",
-        "🔒 Secure & Reliable - Bank-level security",
-        "🧠 AI-Powered Strategies - Advanced algorithms",
-        "📊 Transparent Performance - Real-time verifiable results",
-        "🎧 24/7 Support - Professional team"
+        "âš¡ Real-time market opportunity analysis",
+        "ðŸ¤– AI-powered automated trade execution",
+        "ðŸ“ˆ Daily investment returns of up to 11.2% to 18% â€” the more tokens you have, the higher your returns!",
+        "ðŸ’° Earn up to 16% commission from your 10-level referral network!",
+        "ðŸ”’ Secure & Reliable - Bank-level security",
+        "ðŸ§  AI-Powered Strategies - Advanced algorithms",
+        "ðŸ“Š Transparent Performance - Real-time verifiable results",
+        "ðŸŽ§ 24/7 Support - Professional team"
     ],
 
     # --- Tiers Info ---
     "TIERS_TEXT": (
-        "💎 Profit Tiers:\n"
-        "• $20+ → 7.6% /day\n"
-        "• $120+ → 8.9% /day\n"
-        "• $500+ → 9.6% /day\n"
-        "• $1200+ → 10.9% /day\n"
-        "• $2500+ → 11.8% /day\n"
-        "• $6000+ → 13.6% /day\n"
-        "• $15000+ → 14.9% /day\n\n"
-        "⏰ AI active 30 days per tier upgrade"
+        "ðŸ’Ž Profit Tiers:\n"
+        "â€¢ $20+ â†’ 7.6% /day\n"
+        "â€¢ $120+ â†’ 8.9% /day\n"
+        "â€¢ $500+ â†’ 9.6% /day\n"
+        "â€¢ $1200+ â†’ 10.9% /day\n"
+        "â€¢ $2500+ â†’ 11.8% /day\n"
+        "â€¢ $6000+ â†’ 13.6% /day\n"
+        "â€¢ $15000+ â†’ 14.9% /day\n\n"
+        "â° AI active 30 days per tier upgrade"
     ),
 
     # --- Links ---
@@ -71,18 +71,18 @@ CONFIG = {
 
     # --- Buttons ---
     "BUTTONS": {
-        "ENTER_MINI_APP": "🚀 Enter Mini App",
-        "INVITE": "👥 Invite friends",
-        "GROUP": "💸 PT-Group",
-        "CHANNEL": "📢 PT-Channel",
-        "SUPPORT": "🆘 Support",
-        "ABOUT": "🏢 About Company",
-        "FUNCTIONS": "⚙️ Functions",
-        "MENU": "📋 Menu"
+        "ENTER_MINI_APP": "ðŸš€ Enter Mini App",
+        "INVITE": "ðŸ‘¥ Invite friends",
+        "GROUP": "ðŸ’¸ PT-Group",
+        "CHANNEL": "ðŸ“¢ PT-Channel",
+        "SUPPORT": "ðŸ†˜ Support",
+        "ABOUT": "ðŸ¢ About Company",
+        "FUNCTIONS": "âš™ï¸ Functions",
+        "MENU": "ðŸ“‹ Menu"
     },
 
-    "DIVIDER": "━━━━━━━━━━━━━━━━━━━━━",
-    "FOOTER": "👇 Click the mini app below to open your control panel and start earning money."
+    "DIVIDER": "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”",
+    "FOOTER": "ðŸ‘‡ Click the mini app below to open your control panel and start earning money."
 }
 
 import os, sqlite3, datetime
@@ -102,7 +102,7 @@ if not BOT_TOKEN or "PASTE" in BOT_TOKEN:
                     break
 
 if not BOT_TOKEN or "PASTE" in BOT_TOKEN:
-    print("❌ Bot token not set!")
+    print("âŒ Bot token not set!")
     exit(1)
 
 WEBAPP_URL = os.getenv("WEBAPP_URL", os.getenv("RENDER_EXTERNAL_URL", "https://your-app.onrender.com")).strip()
@@ -129,9 +129,9 @@ conn.execute("""CREATE TABLE IF NOT EXISTS users (
 conn.commit()
 
 def build_start_message():
-    funcs = "\n".join([f"• {f}" for f in CONFIG["FUNCTIONS"][:4]])
+    funcs = "\n".join([f"â€¢ {f}" for f in CONFIG["FUNCTIONS"][:4]])
     stats = CONFIG["STATS"]
-    text = f"""🎉 Welcome to the {CONFIG["COMPANY_NAME"]}!
+    text = f"""ðŸŽ‰ Welcome to the {CONFIG["COMPANY_NAME"]}!
 
 Your AI trading system is ready.
 
@@ -139,14 +139,14 @@ Your AI trading system is ready.
 
 {CONFIG["DIVIDER"]}
 
-🏢 About Company:
+ðŸ¢ About Company:
 {CONFIG["COMPANY_ABOUT"]}
 
 {CONFIG["DIVIDER"]}
 
-📊 Our Stats:
-👥 {stats["USERS"]} | 💰 {stats["ASSETS"]}
-🏆 {stats["WIN_RATE"]} | 🔒 {stats["TRANSPARENT"]}
+ðŸ“Š Our Stats:
+ðŸ‘¥ {stats["USERS"]} | ðŸ’° {stats["ASSETS"]}
+ðŸ† {stats["WIN_RATE"]} | ðŸ”’ {stats["TRANSPARENT"]}
 
 {CONFIG["DIVIDER"]}
 
@@ -154,9 +154,9 @@ Your AI trading system is ready.
 
 {CONFIG["DIVIDER"]}
 
-💸 Withdrawal and AI-powered real-time trading group: {GROUP_USERNAME}
-📢 Official latest news channel: {CHANNEL_USERNAME}
-📊 Customer Support: {SUPPORT_USERNAME}
+ðŸ’¸ Withdrawal and AI-powered real-time trading group: {GROUP_USERNAME}
+ðŸ“¢ Official latest news channel: {CHANNEL_USERNAME}
+ðŸ“Š Customer Support: {SUPPORT_USERNAME}
 
 {CONFIG["FOOTER"]}
 """
@@ -183,7 +183,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conn.commit()
         if ref:
             try:
-                await context.bot.send_message(chat_id=ref, text=f"🎉 New referral! User {uid} ({username}) joined via your link. Earn 7% when they deposit!")
+                await context.bot.send_message(chat_id=ref, text=f"ðŸŽ‰ New referral! User {uid} ({username}) joined via your link. Earn 7% when they deposit!")
             except: pass
 
     # 1. First send Banner Image (like in your screenshot)
@@ -192,7 +192,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with open(BANNER_FILE, 'rb') as photo:
                 await update.message.reply_photo(
                     photo=photo,
-                    caption=CONFIG["BANNER_CAPTION"] + f"\n\n👥 {CONFIG['STATS']['USERS']} | 💰 {CONFIG['STATS']['ASSETS']} | 🏆 {CONFIG['STATS']['WIN_RATE']} | 🔒 {CONFIG['STATS']['TRANSPARENT']}"
+                    caption=CONFIG["BANNER_CAPTION"] + f"\n\nðŸ‘¥ {CONFIG['STATS']['USERS']} | ðŸ’° {CONFIG['STATS']['ASSETS']} | ðŸ† {CONFIG['STATS']['WIN_RATE']} | ðŸ”’ {CONFIG['STATS']['TRANSPARENT']}"
                 )
         elif BANNER_URL:
             await update.message.reply_photo(photo=BANNER_URL, caption=CONFIG["BANNER_CAPTION"])
@@ -232,38 +232,38 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     if query.data == "about":
-        about_text = f"""🏢 About {CONFIG["COMPANY_NAME"]}
+        about_text = f"""ðŸ¢ About {CONFIG["COMPANY_NAME"]}
 
 {CONFIG["COMPANY_ABOUT"]}
 
-📊 Our Performance:
-👥 {CONFIG["STATS"]["USERS"]}
-💰 {CONFIG["STATS"]["ASSETS"]}
-🏆 {CONFIG["STATS"]["WIN_RATE"]}
-🔒 {CONFIG["STATS"]["TRANSPARENT"]}
+ðŸ“Š Our Performance:
+ðŸ‘¥ {CONFIG["STATS"]["USERS"]}
+ðŸ’° {CONFIG["STATS"]["ASSETS"]}
+ðŸ† {CONFIG["STATS"]["WIN_RATE"]}
+ðŸ”’ {CONFIG["STATS"]["TRANSPARENT"]}
 
-🔐 Security:
-• Bank-level security to protect your assets
-• Encrypted & 2FA protection
-• Your security is our priority
+ðŸ” Security:
+â€¢ Bank-level security to protect your assets
+â€¢ Encrypted & 2FA protection
+â€¢ Your security is our priority
 
-🌍 Mission:
+ðŸŒ Mission:
 To make AI-powered crypto trading accessible to everyone, no experience needed. Let AI work for you, 24/7.
 
-💬 Join our community:
+ðŸ’¬ Join our community:
 {CONFIG["GROUP_USERNAME"]} - Trading & Withdrawal Group
 {CONFIG["CHANNEL_USERNAME"]} - Latest News
 {CONFIG["SUPPORT_USERNAME"]} - Customer Support
 """
         keyboard = [
             [InlineKeyboardButton(CONFIG["BUTTONS"]["ENTER_MINI_APP"], web_app=WebAppInfo(url=f"{WEBAPP_URL}?tg_id={uid}&username={username}"))],
-            [InlineKeyboardButton("🔙 Back", callback_data="back_start")]
+            [InlineKeyboardButton("ðŸ”™ Back", callback_data="back_start")]
         ]
         await query.message.reply_text(about_text, reply_markup=InlineKeyboardMarkup(keyboard), disable_web_page_preview=True)
 
     elif query.data == "functions":
         funcs_text = "\n\n".join([f"{i+1}. {f}" for i, f in enumerate(CONFIG["FUNCTIONS"])])
-        functions_text = f"""⚙️ PT-AI Trading Functions
+        functions_text = f"""âš™ï¸ PT-AI Trading Functions
 
 Our AI System Provides:
 
@@ -275,7 +275,7 @@ Our AI System Provides:
 
 {CONFIG["DIVIDER"]}
 
-💡 How it Works:
+ðŸ’¡ How it Works:
 1. Deposit USDT (Min $20)
 2. AI analyzes real-time market opportunities
 3. AI executes trades automatically
@@ -283,38 +283,38 @@ Our AI System Provides:
 5. Profit auto-credited every 24h to withdrawable wallet
 6. Withdraw anytime (Min $10, once per day)
 
-🔒 No trading experience needed! Fully automated.
+ðŸ”’ No trading experience needed! Fully automated.
 """
         keyboard = [
             [InlineKeyboardButton(CONFIG["BUTTONS"]["ENTER_MINI_APP"], web_app=WebAppInfo(url=f"{WEBAPP_URL}?tg_id={uid}&username={username}"))],
-            [InlineKeyboardButton("🔙 Back", callback_data="back_start")]
+            [InlineKeyboardButton("ðŸ”™ Back", callback_data="back_start")]
         ]
         await query.message.reply_text(functions_text, reply_markup=InlineKeyboardMarkup(keyboard))
 
     elif query.data == "invite":
         ref_link = f"https://t.me/{BOT_USERNAME}?start={uid}"
-        invite_text = f"""👥 Your 10-Level Referral Link:
+        invite_text = f"""ðŸ‘¥ Your 10-Level Referral Link:
 
-🔗 {ref_link}
+ðŸ”— {ref_link}
 
-💰 Commission:
-• Level 1 (Direct): 7%
-• Level 2-10: 1% each
-• Total: Up to 16%!
+ðŸ’° Commission:
+â€¢ Level 1 (Direct): 7%
+â€¢ Level 2-10: 1% each
+â€¢ Total: Up to 16%!
 
-📈 How to earn:
+ðŸ“ˆ How to earn:
 1. Share your link
 2. Friends deposit & start AI trading
 3. You earn instantly to withdrawable wallet
 4. Withdraw anytime
 
-🚀 Share now!
+ðŸš€ Share now!
 
 Your link: {ref_link}"""
         keyboard = [
-            [InlineKeyboardButton("📤 Share Link", url=f"https://t.me/share/url?url={ref_link}&text=Join PT-AI Trading - AI up to 18% daily!")],
+            [InlineKeyboardButton("ðŸ“¤ Share Link", url=f"https://t.me/share/url?url={ref_link}&text=Join PT-AI Trading - AI up to 18% daily!")],
             [InlineKeyboardButton(CONFIG["BUTTONS"]["ENTER_MINI_APP"], web_app=WebAppInfo(url=f"{WEBAPP_URL}?tg_id={uid}&username={username}"))],
-            [InlineKeyboardButton("🔙 Back", callback_data="back_start")]
+            [InlineKeyboardButton("ðŸ”™ Back", callback_data="back_start")]
         ]
         await query.message.reply_text(invite_text, reply_markup=InlineKeyboardMarkup(keyboard))
 
@@ -324,19 +324,19 @@ Your link: {ref_link}"""
         wd = row[1] if row else 0
         pct = row[2] if row and len(row)>2 and row[2] else 0
         prof = row[3] if row and len(row)>3 and row[3] else 0
-        menu_text = f"""📋 PT-AI Trading Menu
+        menu_text = f"""ðŸ“‹ PT-AI Trading Menu
 
-👤 {username} (ID: {uid})
-💼 Trading: ${bal:.2f} @ {pct:.1f}%/day
-💰 Profit: ${prof:.2f}
-💸 Wallet: ${wd:.2f}
+ðŸ‘¤ {username} (ID: {uid})
+ðŸ’¼ Trading: ${bal:.2f} @ {pct:.1f}%/day
+ðŸ’° Profit: ${prof:.2f}
+ðŸ’¸ Wallet: ${wd:.2f}
 
 Choose action:"""
         keyboard = [
             [InlineKeyboardButton(CONFIG["BUTTONS"]["ENTER_MINI_APP"], web_app=WebAppInfo(url=f"{WEBAPP_URL}?tg_id={uid}&username={username}"))],
             [InlineKeyboardButton(CONFIG["BUTTONS"]["INVITE"], callback_data="invite")],
             [InlineKeyboardButton(CONFIG["BUTTONS"]["ABOUT"], callback_data="about")],
-            [InlineKeyboardButton("🔙 Back", callback_data="back_start")]
+            [InlineKeyboardButton("ðŸ”™ Back", callback_data="back_start")]
         ]
         await query.message.reply_text(menu_text, reply_markup=InlineKeyboardMarkup(keyboard))
 
@@ -361,18 +361,18 @@ Choose action:"""
         await query.message.reply_text(welcome_text, reply_markup=InlineKeyboardMarkup(keyboard), disable_web_page_preview=True)
 
 def main():
-    print("✅ PT-AI Bot with Banner + About + Functions")
-    print(f"🤖 Bot: @{BOT_USERNAME}")
-    print(f"🌐 WebApp: {WEBAPP_URL}")
-    print(f"📸 Banner: {BANNER_FILE} (put banner.jpg in folder)")
-    print(f"🏢 About: {CONFIG['COMPANY_NAME']}")
-    print(f"⚙️ Functions: {len(CONFIG['FUNCTIONS'])} features")
+    print("âœ… PT-AI Bot with Banner + About + Functions")
+    print(f"ðŸ¤– Bot: @{BOT_USERNAME}")
+    print(f"ðŸŒ WebApp: {WEBAPP_URL}")
+    print(f"ðŸ“¸ Banner: {BANNER_FILE} (put banner.jpg in folder)")
+    print(f"ðŸ¢ About: {CONFIG['COMPANY_NAME']}")
+    print(f"âš™ï¸ Functions: {len(CONFIG['FUNCTIONS'])} features")
     print(f"")
     print(f"To customize, edit CONFIG at top of bot.py")
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(callback_handler))
-    print(f"🚀 Bot polling started - Test /start in Telegram!")
+    print(f"ðŸš€ Bot polling started - Test /start in Telegram!")
     app.run_polling()
 
 if __name__ == "__main__":

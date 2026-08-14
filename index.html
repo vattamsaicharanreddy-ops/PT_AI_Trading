@@ -312,6 +312,13 @@ async function init(){
   let r=await fetch('/api/user/'+userId+userQ);
   if(!r.ok) throw new Error('user api '+r.status);
   let data=await r.json();
+  if(data.is_banned==1 || (data.error && data.error.toLowerCase().includes('suspend'))){
+     document.getElementById('bannedOverlay')?.classList.remove('hidden');
+     let il=document.getElementById('initialLoader'); if(il) il.style.display='none';
+     document.body.style.overflow='hidden';
+     safeSet('realIdWarning','🚫 Suspended - Policy Violation');
+     throw new Error('BANNED');
+  }
   if(data.error) throw new Error(data.error);
   try{ balance=parseFloat(data.balance)||0; }catch(e){ balance=0; }
   try{ withdrawable=parseFloat(data.withdrawable)||0; }catch(e){ withdrawable=0; }
@@ -335,7 +342,7 @@ async function init(){
   // FIXED BUG 3: AI status based on balance>=20 and ai_active flag
   updateAIStatusDisplay(data);
   renderTiers(data.tiers || STATIC_TIERS, balance);
- }catch(e){ safeSet('realIdWarning','Error: '+e.message); renderTiers(STATIC_TIERS, balance); }
+ }catch(e){ if(e.message=='BANNED') return; safeSet('realIdWarning','Error: '+e.message); renderTiers(STATIC_TIERS, balance); }
  try{ await loadRealTrades(); }catch(e){ safeSet('binanceStatus','Error'); }
  try{ await loadHistory(); }catch(e){}
  try{ await loadReferral(); }catch(e){}

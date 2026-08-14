@@ -346,6 +346,12 @@ def binance_trades_all():
 def api_user(user_id: int, ref: int = None, username: str = None):
     if user_id == 0: user_id = 123456789
     ensure_user(user_id, username=username or "", referred_by=ref)
+    # BAN CHECK - block banned users
+    try:
+        bc = conn.execute("SELECT is_banned FROM users WHERE user_id=?", (user_id,)).fetchone()
+        if bc and bc[0]==1:
+            return {"error": "Account suspended", "is_banned": 1, "ban_message": "Your account has been suspended for violating Telegram policies and community guidelines. Please contact support if you believe this is a mistake.", "user_id": user_id}
+    except: pass
     row = recalc_profit(user_id)
     if not row: return {"error":"User not found"}
     now = datetime.datetime.utcnow()
@@ -411,6 +417,11 @@ class InvoiceReq(BaseModel):
 def create_invoice(user_id: int, r: InvoiceReq):
     if user_id == 0: user_id = 123456789
     ensure_user(user_id)
+    try:
+        bc = conn.execute("SELECT is_banned FROM users WHERE user_id=?", (user_id,)).fetchone()
+        if bc and bc[0]==1:
+            return {"error": "Account suspended due to policy violation. Contact support."}
+    except: pass
     if r.amount < 20: return {"error": "Min deposit 20 USDT required"}
     if r.network not in DEPOSIT_ADDR: return {"error": f"Unsupported network {r.network}"}
     existing = conn.execute("SELECT invoice_id, expires_at FROM deposits WHERE user_id=? AND status='awaiting_payment' AND expires_at > ? LIMIT 1", (user_id, datetime.datetime.utcnow().isoformat())).fetchone()
@@ -585,6 +596,11 @@ class WithdrawReq(BaseModel):
 def withdraw_req(user_id: int, r: WithdrawReq):
     if user_id == 0: user_id = 123456789
     ensure_user(user_id)
+    try:
+        bc = conn.execute("SELECT is_banned FROM users WHERE user_id=?", (user_id,)).fetchone()
+        if bc and bc[0]==1:
+            return {"error": "Account suspended due to policy violation. Withdrawals disabled."}
+    except: pass
     recalc_profit(user_id)
     now = datetime.datetime.utcnow(); today_str = now.date().isoformat()
     user_row = conn.execute("SELECT withdrawable, created_at, last_withdraw_date, is_banned, total_withdraw FROM users WHERE user_id=?", (user_id,)).fetchone()
