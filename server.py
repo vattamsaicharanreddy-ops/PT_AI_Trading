@@ -416,9 +416,18 @@ def binance_trades():
     total_trades_for_day = 16 + (seed % 3)
     trades_all = []
     for i in range(total_trades_for_day):
-        base_minutes = int((i + 0.5) * (1440 / total_trades_for_day))
-        jitter = rng.randint(-20, 20)
-        trade_minutes = max(0, min(1439, base_minutes + jitter))
+        # FIX: First trade always 00:05-00:25, so at 00:33 it's already past, never future
+        if i == 0:
+            trade_minutes = rng.randint(5, 25)  # First trade always early morning, before 00:30
+        else:
+            # Rest of day spread from 01:00 to 23:30
+            # Divide remaining day (1425 mins from 01:00 to 23:45) among remaining trades
+            remaining = total_trades_for_day - 1
+            slot = 1425 // remaining
+            base = 60 + i * slot  # Start from 01:00
+            jitter = rng.randint(-20, 20)
+            trade_minutes = max(60, min(1439, base + jitter))
+        
         hour = trade_minutes // 60
         minute = trade_minutes % 60
         time_str = f"{hour:02d}:{minute:02d}"
@@ -454,9 +463,10 @@ def binance_trades():
             "date": today_str
         })
     current_minutes = ist_now.hour * 60 + ist_now.minute
+    # STRICT: Only show trades where trade time <= current time - NEVER future
     visible_trades = [t for t in trades_all if t["minutes"] <= current_minutes]
-    if len(visible_trades) == 0 and current_minutes >= 30:
-        visible_trades = trades_all[:1]
+    # If no trades yet (before first trade at 00:05-00:25), show 0 trades with message - DO NOT show future trade
+
     for t in visible_trades:
         t.pop("minutes", None)
     for t in trades_all:
