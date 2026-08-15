@@ -8,7 +8,6 @@ from psycopg2 import pool
 DATABASE_URL = os.getenv("DATABASE_URL")
 USE_POSTGRES = DATABASE_URL is not None
 
-# Connection pool for postgres
 pg_pool = None
 if USE_POSTGRES:
     try:
@@ -18,7 +17,6 @@ if USE_POSTGRES:
         print(f"❌ Postgres pool error: {e}")
         USE_POSTGRES = False
 
-# SQLite path - use Render Disk if exists
 SQLITE_PATH = "/data/bot.db" if os.path.exists("/data") else "bot.db"
 
 def get_conn():
@@ -35,81 +33,11 @@ def put_conn(conn):
     else:
         conn.close()
 
-def execute(query, params=(), fetch=None):
-    """Unified execute that handles both sqlite (?) and postgres (%s)"""
-    conn = get_conn()
-    try:
-        # Convert ? to %s for postgres
-        if USE_POSTGRES:
-            # Replace ? with %s
-            query_pg = query.replace("?", "%s")
-            # Handle SQLite specific syntax
-            query_pg = query_pg.replace("AUTOINCREMENT", "")
-            query_pg = query_pg.replace("INTEGER PRIMARY KEY", "SERIAL PRIMARY KEY")
-            # Fix DATE('now') -> CURRENT_DATE for postgres
-            query_pg = query_pg.replace("DATE('now')", "CURRENT_DATE")
-            query_pg = query_pg.replace("DATE("now")", "CURRENT_DATE")
-            cur = conn.cursor(cursor_factory=RealDictCursor)
-            cur.execute(query_pg, params)
-        else:
-            cur = conn.cursor()
-            cur.execute(query, params)
-        
-        result = None
-        if fetch == "one":
-            result = cur.fetchone()
-        elif fetch == "all":
-            result = cur.fetchall()
-        elif fetch == "count":
-            result = cur.rowcount
-        
-        if not USE_POSTGRES or query.strip().upper().startswith("SELECT") is False:
-            try:
-                conn.commit()
-            except:
-                pass
-        
-        # For insert, get lastrowid
-        last_id = None
-        try:
-            if hasattr(cur, 'lastrowid'):
-                last_id = cur.lastrowid
-            else:
-                # postgres RETURNING id handling would need separate query
-                pass
-        except:
-            pass
-        
-        cur.close()
-        return result, last_id
-    finally:
-        put_conn(conn)
-
-def execute_with_conn(conn, query, params=(), fetch=None):
-    """Execute using existing connection - for transactions"""
-    if USE_POSTGRES:
-        query = query.replace("?", "%s")
-        query = query.replace("AUTOINCREMENT", "")
-        query = query.replace("INTEGER PRIMARY KEY", "SERIAL PRIMARY KEY")
-        query = query.replace("DATE('now')", "CURRENT_DATE")
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-    else:
-        cur = conn.cursor()
-    cur.execute(query, params)
-    result = None
-    if fetch == "one":
-        result = cur.fetchone()
-    elif fetch == "all":
-        result = cur.fetchall()
-    cur.close()
-    return result
-
 def init_db():
     conn = get_conn()
     try:
         if USE_POSTGRES:
             cur = conn.cursor()
-            # Users
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     user_id BIGINT PRIMARY KEY,
@@ -192,7 +120,6 @@ def init_db():
             conn.commit()
             cur.close()
         else:
-            # SQLite version (same as your old)
             conn.execute("""CREATE TABLE IF NOT EXISTS users (
              user_id INTEGER PRIMARY KEY, username TEXT,
              balance REAL DEFAULT 0, withdrawable REAL DEFAULT 0, profit REAL DEFAULT 0,
