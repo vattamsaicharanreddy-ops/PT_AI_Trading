@@ -513,6 +513,96 @@ def admin_user_action(action: AdminAction):
     finally:put_conn(conn)
 
 
+
+@app.get("/api/admin/env/status")
+def admin_env_status():
+    return {
+        "BOT_TOKEN": "SET ✅" if BOT_TOKEN else "MISSING ❌",
+        "BOT_TOKEN_preview": (BOT_TOKEN[:6]+"..."+BOT_TOKEN[-4:] if BOT_TOKEN and len(BOT_TOKEN)>10 else ""),
+        "GROUP_ID": GROUP_ID or "NOT SET",
+        "CHANNEL_ID": CHANNEL_ID or "NOT SET",
+        "SUPPORT_ID": SUPPORT_ID or "NOT SET",
+        "GROUP_LINK": GROUP_LINK,
+        "CHANNEL_LINK": CHANNEL_LINK,
+        "BOT_USERNAME": os.getenv("BOT_USERNAME",""),
+        "has_bot_token": bool(BOT_TOKEN),
+        "group_id_resolved": resolve_group_id("group"),
+    }
+
+class EnvSave(BaseModel):
+    bot_token: str = ""
+    group_id: str = ""
+    channel_id: str = ""
+    support_id: str = ""
+    bot_username: str = ""
+
+@app.post("/api/admin/env/save")
+def admin_env_save(req: EnvSave):
+    global BOT_TOKEN, GROUP_ID, CHANNEL_ID, SUPPORT_ID
+    # Update in-memory
+    if req.bot_token.strip():
+        BOT_TOKEN = req.bot_token.strip()
+        os.environ["BOT_TOKEN"] = BOT_TOKEN
+    if req.group_id.strip():
+        GROUP_ID = req.group_id.strip()
+        os.environ["GROUP_ID"] = GROUP_ID
+    if req.channel_id.strip():
+        CHANNEL_ID = req.channel_id.strip()
+        os.environ["CHANNEL_ID"] = CHANNEL_ID
+    if req.support_id.strip():
+        SUPPORT_ID = req.support_id.strip()
+        os.environ["SUPPORT_ID"] = SUPPORT_ID
+    if req.bot_username.strip():
+        os.environ["BOT_USERNAME"] = req.bot_username.strip()
+    
+    # Try save to file for persistence on Render disk (if /data exists) and local bot_token.txt fallback
+    try:
+        with open("bot_token.txt","w") as ft:
+            ft.write(BOT_TOKEN)
+    except: pass
+    try:
+        env_content = f"BOT_TOKEN={BOT_TOKEN}\nGROUP_ID={GROUP_ID}\nCHANNEL_ID={CHANNEL_ID}\nSUPPORT_ID={SUPPORT_ID}\nBOT_USERNAME={os.getenv('BOT_USERNAME','')}\n"
+        # save to .env for reference
+        with open(".env","w") as fe:
+            fe.write(env_content)
+        if os.path.exists("/data"):
+            with open("/data/env_backup.txt","w") as fb:
+                fb.write(env_content)
+    except Exception as e:
+        print(f"env save file error {e}")
+
+    # Test bot token validity
+    test_result = {}
+    if BOT_TOKEN:
+        test_result = tg_api_call("getMe", {})
+    
+    return {"ok": True, "saved": True, "bot_test": test_result, "current": {"BOT_TOKEN_SET": bool(BOT_TOKEN), "GROUP_ID": GROUP_ID, "CHANNEL_ID": CHANNEL_ID, "SUPPORT_ID": SUPPORT_ID}}
+
+@app.get("/api/admin/env/group_ids")
+def admin_get_group_ids():
+    """Helper to get chat IDs from recent updates if bot is admin"""
+    if not BOT_TOKEN:
+        return {"ok": False, "error": "Set BOT_TOKEN first"}
+    # getUpdates to try find group IDs
+    try:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode())
+            chats = {}
+            for upd in data.get("result",[]):
+                msg = upd.get("message") or upd.get("channel_post") or {}
+                chat = msg.get("chat") or {}
+                if chat:
+                    cid = chat.get("id")
+                    title = chat.get("title") or chat.get("username") or ""
+                    if cid and str(cid).startswith("-100"):
+                        chats[str(cid)] = title
+            return {"ok": True, "found_chats": chats, "hint": "Forward a message from your group to @userinfobot or make bot admin and send /test in group, then call this again"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 @app.get("/")
 def root(): return FileResponse("index.html")
 
