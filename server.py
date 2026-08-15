@@ -24,6 +24,13 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
                    allow_methods=["*"], allow_headers=["*"])
 init_db()
 
+# Start blockchain auto-verifier (checks every 15s)
+try:
+    import blockchain_monitor
+    print("✅ Blockchain monitor module loaded - auto verification active")
+except Exception as e:
+    print(f"⚠️ Blockchain monitor failed to load: {e}")
+
 DEPOSIT_ADDR = {
     "TRC20": "TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC",
     "BEP20": "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",

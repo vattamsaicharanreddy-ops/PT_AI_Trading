@@ -6,6 +6,13 @@ import asyncio
 from database import init_db, USE_POSTGRES
 
 init_db()
+
+# Start blockchain monitor
+try:
+    import blockchain_monitor
+    print("✅ Blockchain monitor started from main.py")
+except Exception as e:
+    print(f"⚠️ Monitor import error: {e}")
 print(f"✅ Main starting with DB: {'POSTGRES - PERSISTENT' if USE_POSTGRES else 'SQLITE'}")
 
 PORT = int(os.getenv("PORT", 10000))
