@@ -12,9 +12,9 @@ pg_pool = None
 if USE_POSTGRES:
     try:
         pg_pool = pool.SimpleConnectionPool(1, 20, dsn=DATABASE_URL)
-        print("✅ Postgres pool created")
+        print("âœ… Postgres pool created")
     except Exception as e:
-        print(f"❌ Postgres pool error: {e}")
+        print(f"âŒ Postgres pool error: {e}")
         USE_POSTGRES = False
 
 SQLITE_PATH = "/data/bot.db" if os.path.exists("/data") else "bot.db"
@@ -77,8 +77,7 @@ def init_db():
                     created_at TEXT,
                     expires_at TEXT,
                     invoice_id TEXT,
-                    expected_amount DOUBLE PRECISION,
-                    admin_note TEXT
+                    expected_amount DOUBLE PRECISION
                 )
             """)
             cur.execute("""
@@ -134,46 +133,6 @@ def init_db():
                     created_at TEXT DEFAULT NOW()
                 )
             """)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS tasks (
-                    id SERIAL PRIMARY KEY,
-                    title TEXT NOT NULL,
-                    description TEXT,
-                    group_link TEXT NOT NULL,
-                    group_id TEXT NOT NULL,
-                    group_username TEXT,
-                    reward DOUBLE PRECISION DEFAULT 1.0,
-                    reward_type TEXT DEFAULT 'withdrawable',
-                    type TEXT DEFAULT 'join_group',
-                    is_active INTEGER DEFAULT 1,
-                    is_mandatory INTEGER DEFAULT 1,
-                    sort_order INTEGER DEFAULT 0,
-                    created_at TEXT DEFAULT NOW(),
-                    icon TEXT DEFAULT '🚀'
-                )
-            """)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS user_tasks (
-                    id SERIAL PRIMARY KEY,
-                    user_id BIGINT,
-                    task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
-                    status TEXT DEFAULT 'pending',
-                    verified_at TEXT,
-                    reward_claimed INTEGER DEFAULT 0,
-                    created_at TEXT DEFAULT NOW(),
-                    UNIQUE(user_id, task_id)
-                )
-            """)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS admin_logs (
-                    id SERIAL PRIMARY KEY,
-                    admin_action TEXT,
-                    target_user_id BIGINT,
-                    target_id INTEGER,
-                    details TEXT,
-                    created_at TEXT DEFAULT NOW()
-                )
-            """)
             conn.commit()
             cur.close()
         else:
@@ -191,7 +150,7 @@ def init_db():
              user_id INTEGER, amount REAL, network TEXT, tx_hash TEXT,
              status TEXT DEFAULT 'awaiting_payment', actual_amount REAL DEFAULT 0,
              verified_at TEXT, created_at TEXT, expires_at TEXT,
-             invoice_id TEXT, expected_amount REAL, admin_note TEXT
+             invoice_id TEXT, expected_amount REAL
             )""")
             conn.execute("""CREATE TABLE IF NOT EXISTS withdrawals (
              id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -216,25 +175,7 @@ def init_db():
              user_id INTEGER, username TEXT, group_name TEXT, group_id TEXT,
              method TEXT, status TEXT DEFAULT 'added', invite_link TEXT, created_at TEXT
             )""")
-            conn.execute("""CREATE TABLE IF NOT EXISTS tasks (
-             id INTEGER PRIMARY KEY AUTOINCREMENT,
-             title TEXT NOT NULL, description TEXT, group_link TEXT NOT NULL,
-             group_id TEXT NOT NULL, group_username TEXT, reward REAL DEFAULT 1.0,
-             reward_type TEXT DEFAULT 'withdrawable', type TEXT DEFAULT 'join_group',
-             is_active INTEGER DEFAULT 1, is_mandatory INTEGER DEFAULT 1,
-             sort_order INTEGER DEFAULT 0, created_at TEXT, icon TEXT DEFAULT '🚀'
-            )""")
-            conn.execute("""CREATE TABLE IF NOT EXISTS user_tasks (
-             id INTEGER PRIMARY KEY AUTOINCREMENT,
-             user_id INTEGER, task_id INTEGER,
-             status TEXT DEFAULT 'pending', verified_at TEXT, reward_claimed INTEGER DEFAULT 0,
-             created_at TEXT, UNIQUE(user_id, task_id)
-            )""")
-            conn.execute("""CREATE TABLE IF NOT EXISTS admin_logs (
-             id INTEGER PRIMARY KEY AUTOINCREMENT,
-             admin_action TEXT, target_user_id INTEGER, target_id INTEGER, details TEXT, created_at TEXT
-            )""")
             conn.commit()
-        print(f"✅ Database ready: {'POSTGRES' if USE_POSTGRES else 'SQLITE at '+SQLITE_PATH}")
+        print(f"âœ… Database ready: {'POSTGRES' if USE_POSTGRES else 'SQLITE at '+SQLITE_PATH}")
     finally:
         put_conn(conn)

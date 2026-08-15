@@ -1,34 +1,23 @@
 <!DOCTYPE html>
 <html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1'>
-<title>PT_AI Trading - Extreme</title>
+<title>PT_AI Trading Ultra</title>
 <script src='https://telegram.org/js/telegram-web-app.js'></script>
 <script src='https://cdn.tailwindcss.com'></script>
 <link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap' rel='stylesheet'>
-<style>body{font-family:'Inter',sans-serif;} .tab-active{background:white!important;color:black!important; font-weight:900} .glass{background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08)} .task-done{border-color:#10b981!important; background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(255,255,255,0.03))} .task-pending{border-color:#FFD60A!important; background:linear-gradient(135deg,rgba(255,214,10,0.1),rgba(255,255,255,0.03))} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}} .animate-pulse{animation:pulse 2s infinite}</style>
+<style>body{font-family:'Inter',sans-serif;} .tab-active{background:white!important;color:black!important;font-weight:900} .glass{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08)} .task-done{border-color:#10b981!important;background:linear-gradient(135deg,rgba(16,185,129,0.12),rgba(255,255,255,0.03))} .task-pending{border-color:#FFD60A!important;background:linear-gradient(135deg,rgba(255,214,10,0.08),rgba(255,255,255,0.03))}</style>
 </head>
 <body class='bg-[#050507] text-white min-h-screen flex justify-center'>
-<div id='bannedOverlay' class='hidden fixed inset-0 z-[10000] bg-[#050507] flex flex-col items-center justify-center p-6 text-center'>
-<div class='w-24 h-24 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-4xl mb-6'>🚫</div>
-<h2 class='text-2xl font-extrabold text-white'>Account Suspended</h2><p class='mt-3 text-sm text-white/70 max-w-[320px]'>Your account suspended for policy violation.</p></div>
-
-<div id='initialLoader' style='position:fixed;inset:0;z-index:9999;background:#050507;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.4s ease'>
-<div style='width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#6C3BFF,#FFD60A);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:32px;animation:pulse 1.5s infinite'>PT</div>
-<p style='margin-top:20px;font-weight:800;letter-spacing:4px;font-size:14px'>PT_AI TRADING</p><p style='margin-top:8px;font-size:12px;opacity:0.6;letter-spacing:2px'>AI TRADING • TASKS • 1 USDT</p>
-<div style='margin-top:24px;width:120px;height:3px;background:rgba(255,255,255,0.1);border-radius:999px;overflow:hidden'><div style='height:100%;width:40%;background:#FFD60A;border-radius:999px;animation:loaderSlide 1.2s infinite'></div></div><p id='loaderText' style='margin-top:12px;font-size:11px;opacity:0.5'>Loading Tasks & AI Systems...</p></div>
-<style>@keyframes loaderSlide{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}} @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}</style>
+<div id='bannedOverlay' class='hidden fixed inset-0 z-[10000] bg-[#050507] flex flex-col items-center justify-center p-6 text-center'><div class='w-24 h-24 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-4xl mb-6'>🚫</div><h2 class='text-2xl font-extrabold'>Account Suspended</h2><p class='mt-3 text-sm text-white/70 max-w-[320px]'>Your account suspended.</p></div>
+<div id='initialLoader' style='position:fixed;inset:0;z-index:9999;background:#050507;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.4s'><div style='width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#6C3BFF,#FFD60A);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:32px'>PT</div><p style='margin-top:20px;font-weight:800;letter-spacing:4px;font-size:14px'>PT_AI TRADING</p><p style='margin-top:8px;font-size:12px;opacity:0.6;letter-spacing:2px'>ULTRA V5 • 5 NETWORKS • TASKS</p><div style='margin-top:24px;width:120px;height:3px;background:rgba(255,255,255,0.1);border-radius:999px;overflow:hidden'><div style='height:100%;width:40%;background:#FFD60A;border-radius:999px;animation:loaderSlide 1.2s infinite'></div></div></div>
+<style>@keyframes loaderSlide{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}</style>
 
 <div class='w-full max-w-[420px] bg-[#050507] min-h-screen relative pb-28'>
 <header class='flex justify-between items-center p-5 pt-10'><span class='text-sm tracking-[3px] font-bold'>PT_AI Trading</span><span class='text-xs px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'>● LIVE</span></header>
-
 <div class='mx-4 bg-white/5 border border-white/10 rounded-[24px] p-4 flex justify-between items-center'>
-<div class='flex items-center gap-3'><div class='w-12 h-12 rounded-full bg-[#26A17B] flex items-center justify-center font-bold text-white text-[18px]'>₮</div><div><p class='text-xs text-[#26A17B] tracking-widest font-bold'><span id='aiDot'>🟢</span> <span id='aiStatus'>AI ACTIVE</span> • <span id='tierPct'>0%</span>/day</p><p class='font-bold text-sm'><span id='aiDays'>0</span>d <span id='aiHours'>0</span>h left • <span id='balTopMini'>0</span> USDT</p></div></div>
+<div class='flex items-center gap-3'><div class='w-12 h-12 rounded-full bg-[#26A17B] flex items-center justify-center font-bold text-white text-[18px]'>₮</div><div><p class='text-xs text-[#26A17B] tracking-widest font-bold'><span>🟢</span> <span id='aiStatus'>AI ACTIVE</span> • <span id='tierPct'>0%</span>/day</p><p class='font-bold text-sm'><span id='aiDays'>0</span>d <span id='aiHours'>0</span>h left • <span id='balTopMini'>0</span> USDT</p></div></div>
 <div class='text-right'><p class='text-xs opacity-50'>WALLET</p><p id='withdrawableTop' class='font-bold text-[#FFD60A] text-base'>0.00 USDT</p><p id='taskBadge' class='text-[10px] bg-[#6C3BFF]/20 text-[#A5A6F6] px-2 py-0.5 rounded-full mt-1 hidden'>🎯 Tasks</p></div>
 </div>
-
-<!-- Mandatory tasks gate banner -->
-<div id='mandatoryGate' class='hidden mx-4 mt-3 bg-gradient-to-br from-red-500/20 to-orange-500/10 border border-red-500/30 rounded-[20px] p-4'>
-<div class="flex gap-3"><div class="text-2xl">🔒</div><div><p class='font-bold text-sm text-red-300'>Withdrawal Locked</p><p id='gateText' class='text-xs opacity-80 mt-1'>Complete mandatory join tasks to unlock withdrawal. Earn 1 USDT per join!</p><button onclick="switchTab('tasks')" class='mt-2 bg-white text-black px-4 py-2 rounded-full text-xs font-bold'>Go to Tasks →</button></div></div>
-</div>
+<div id='mandatoryGate' class='hidden mx-4 mt-3 bg-gradient-to-br from-red-500/20 to-orange-500/10 border border-red-500/30 rounded-[20px] p-4'><div class="flex gap-3"><div class="text-2xl">🔒</div><div><p class='font-bold text-sm text-red-300'>Withdrawal Locked</p><p id='gateText' class='text-xs opacity-80 mt-1'>Complete mandatory join tasks to unlock withdrawal. Earn 1 USDT per join!</p><button onclick="switchTab('tasks')" class='mt-2 bg-white text-black px-4 py-2 rounded-full text-xs font-bold'>Go to Tasks →</button></div></div></div>
 
 <div id='tab-home' class='tab-content'>
 <div class='mx-4 mt-4 bg-[#121214] border border-[#FFD60A]/20 rounded-[24px] p-4'>
@@ -36,26 +25,17 @@
 <div id='tasksQuick' class='mt-3 space-y-2'></div>
 <button onclick="switchTab('tasks')" class='mt-3 w-full bg-[#6C3BFF]/20 border border-[#6C3BFF]/30 py-2.5 rounded-xl text-xs font-bold'>View All Tasks & Earn 1 USDT Each →</button>
 </div>
-
 <div class='mt-5 mx-4 bg-gradient-to-br from-[#6C3BFF] via-[#8A5CFF] to-[#A5A6F6] rounded-[28px] p-6'>
 <p class='text-white/70 text-sm'>Daily AI Profit • <span id='dailyPct'>0%</span> • Real Trading</p>
 <h1 class='text-[36px] font-extrabold leading-none mt-2 flex items-center gap-2'><span class='text-[20px] bg-white/20 w-10 h-10 rounded-full flex items-center justify-center'>₮</span> <span id='profitVal'>0.00</span> <span class='text-base opacity-60'>USDT</span></h1>
 <p class='text-sm text-white/80 mt-3'>+<span id='perHour'>0.00</span> USDT/hr • Live AI Trading</p>
 <div class='mt-4 flex gap-3 flex-wrap'><button onclick='openDeposit()' class='bg-white text-black px-5 py-3 rounded-full font-bold text-sm'>Deposit USDT</button><button onclick='openWithdraw()' class='bg-[#FFD60A] text-black px-5 py-3 rounded-full font-bold text-sm'>Withdraw USDT</button><span class='bg-black/40 px-3 py-2 rounded-full text-xs'>Status: <span id='binanceStatus'>Live</span></span></div>
 </div>
-
 <div class='mx-4 mt-4 bg-gradient-to-br from-[#121214] to-[#1a1a2e] border border-[#FFD60A]/20 rounded-[24px] p-4'>
 <div class='flex justify-between items-center mb-3'><h3 class='font-bold text-sm flex items-center gap-2'>💰 Quick Stats</h3><span class='text-[10px] px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400'>Live</span></div>
-<div class='grid grid-cols-2 gap-3'>
-<div class='bg-gradient-to-br from-[#26A17B]/20 to-[#26A17B]/5 border border-[#26A17B]/20 p-4 rounded-[16px]'><p class='text-xs opacity-60'>Total Deposited</p><p id='totalDep' class='font-extrabold text-lg mt-1 text-[#26A17B]'>0.00 USDT</p></div>
-<div class='bg-gradient-to-br from-[#FFD60A]/20 to-[#FFD60A]/5 border border-[#FFD60A]/20 p-4 rounded-[16px]'><p class='text-xs opacity-60'>Total Withdrawn</p><p id='totalWd' class='font-extrabold text-lg mt-1 text-[#FFD60A]'>0.00 USDT</p></div>
+<div class='grid grid-cols-2 gap-3'><div class='bg-gradient-to-br from-[#26A17B]/20 to-[#26A17B]/5 border border-[#26A17B]/20 p-4 rounded-[16px]'><p class='text-xs opacity-60'>Total Deposited</p><p id='totalDep' class='font-extrabold text-lg mt-1 text-[#26A17B]'>0.00 USDT</p></div><div class='bg-gradient-to-br from-[#FFD60A]/20 to-[#FFD60A]/5 border border-[#FFD60A]/20 p-4 rounded-[16px]'><p class='text-xs opacity-60'>Total Withdrawn</p><p id='totalWd' class='font-extrabold text-lg mt-1 text-[#FFD60A]'>0.00 USDT</p></div></div>
+<div class='mt-3 grid grid-cols-2 gap-3 text-xs'><div class='bg-white/5 p-3 rounded-xl flex justify-between'><span class='opacity-60'>Trading Balance:</span><span id='quickBal' class='font-bold'>0 USDT</span></div><div class='bg-white/5 p-3 rounded-xl flex justify-between'><span class='opacity-60'>Withdrawable:</span><span id='quickWd' class='font-bold text-[#FFD60A]'>0 USDT</span></div></div>
 </div>
-<div class='mt-3 grid grid-cols-2 gap-3 text-xs'>
-<div class='bg-white/5 p-3 rounded-xl flex justify-between'><span class='opacity-60'>Trading Balance:</span><span id='quickBal' class='font-bold'>0 USDT</span></div>
-<div class='bg-white/5 p-3 rounded-xl flex justify-between'><span class='opacity-60'>Withdrawable:</span><span id='quickWd' class='font-bold text-[#FFD60A]'>0 USDT</span></div>
-</div>
-</div>
-
 <div class='mx-4 mt-4 bg-[#121214] border border-white/10 rounded-[24px] p-4'><h3 class='font-bold text-sm mb-3'>PT Community</h3><div class='grid grid-cols-3 gap-2'><button onclick='openPTGroup()' class='bg-white/10 px-3 py-3 rounded-xl text-xs font-bold'>PT-Group</button><button onclick='openPTChannel()' class='bg-white/10 px-3 py-3 rounded-xl text-xs font-bold'>PT-Channel</button><button onclick='openPTSupport()' class='bg-white/10 px-3 py-3 rounded-xl text-xs font-bold'>Support</button></div></div>
 </div>
 
@@ -65,11 +45,10 @@
 <div class='mt-4 grid grid-cols-3 gap-2 text-center'><div class='bg-white/5 rounded-xl p-3'><p id='t_total' class='font-black text-lg'>0</p><p class='text-[10px] opacity-50'>TOTAL</p></div><div class='bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3'><p id='t_done' class='font-black text-lg text-emerald-400'>0</p><p class='text-[10px] opacity-50'>DONE</p></div><div class='bg-[#FFD60A]/10 border border-[#FFD60A]/20 rounded-xl p-3'><p id='t_earn' class='font-black text-lg text-[#FFD60A]'>0</p><p class='text-[10px] opacity-50'>USDT EARNED</p></div></div>
 </div>
 <div id='tasksListFull' class='mx-4 mt-4 space-y-3'></div>
-<div class='mx-4 mt-6 bg-black/40 border border-white/5 rounded-2xl p-4 text-[11px] leading-relaxed opacity-60'><b>How verification works:</b><br>1. Tap Join → opens Telegram group/channel<br>2. Join the group in Telegram<br>3. Come back and tap Verify → bot checks via getChatMember<br>4. If you're a member, you get 1 USDT instantly in withdrawable!<br><br><span class="text-[#FFD60A]">Bot must be admin in those groups with permission to check members.</span></div>
 </div>
 
 <div id='tab-trades' class='tab-content hidden'>
-<div class='mx-4 mt-4'><div class='flex justify-between items-center'><h3 class='font-bold'>Live AI Trades</h3><span id='todayTrades' class='text-xs opacity-50'>0 trades</span></div><div class='mt-3 bg-[#121214] border border-white/10 rounded-[20px] overflow-hidden'><div class='overflow-x-auto'><table class='w-full text-[11px]'><thead class='opacity-50'><tr><th class='text-left p-3'>Time</th><th class='text-left p-3'>Pair</th><th class='text-left p-3'>Side</th><th class='text-right p-3'>Entry</th><th class='text-right p-3'>Exit</th><th class='text-right p-3'>Lev</th><th class='text-right p-3'>PNL</th></tr></thead><tbody id='tradesTableBody'></tbody></table></div></div></div>
+<div class='mx-4 mt-4'><div class='flex justify-between items-center'><h3 class='font-bold'>Live AI Trades <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full">Updated hourly • 13-20/day</span></h3><span id='todayTrades' class='text-xs opacity-50'>0 trades</span></div><p class='text-[11px] opacity-50 mt-1'>Times shown in your local time (IST) • Last trade always &lt; now</p><div class='mt-3 bg-[#121214] border border-white/10 rounded-[20px] overflow-hidden'><div class='overflow-x-auto'><table class='w-full text-[11px]'><thead class='opacity-50'><tr><th class='text-left p-3'>Local Time</th><th class='text-left p-3'>Pair</th><th class='text-left p-3'>Side</th><th class='text-right p-3'>Entry</th><th class='text-right p-3'>Exit</th><th class='text-right p-3'>Lev</th><th class='text-right p-3'>PNL</th></tr></thead><tbody id='tradesTableBody'></tbody></table></div></div></div>
 </div>
 
 <div id='tab-referral' class='tab-content hidden'>
@@ -77,7 +56,6 @@
 <div class='mx-4 mt-4'><h4 class='font-bold text-sm'>Direct Referrals</h4><div id='directList' class='mt-2 space-y-2'></div></div>
 <div class='mx-4 mt-4'><h4 class='font-bold text-sm'>Earnings History (withdrawable)</h4><div id='refHistory' class='mt-2 space-y-2'></div></div>
 </div>
-
 <div id='tab-history' class='tab-content hidden'><div class='mx-4 mt-4'><h3 class='font-bold'>History</h3><div id='history' class='mt-3 space-y-2'></div></div></div>
 
 <div class='fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[420px] bg-[#0a0a0f]/90 backdrop-blur-xl border-t border-white/10 flex justify-around py-2 px-2'>
@@ -88,15 +66,27 @@
 <button onclick="switchTab('history')" data-bottom="history" class='bottom-tab flex flex-col items-center px-4 py-2 rounded-xl text-[10px] opacity-60'><span class="text-base">🕘</span>History</button>
 </div>
 
-<!-- Modals -->
-<div id='depositModal' class='hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[100] p-4'><div class='bg-[#121214] border border-white/10 rounded-[24px] p-6 w-full max-w-[360px]'><h3 class='font-black'>Deposit USDT</h3><div class='mt-4 grid grid-cols-2 gap-2'><button onclick="selectNet('TRC20')" id='net-TRC20' class='net-btn bg-white text-black py-2.5 rounded-full text-xs font-bold'>TRC20</button><button onclick="selectNet('BEP20')" id='net-BEP20' class='net-btn bg-white/10 py-2.5 rounded-full text-xs'>BEP20</button></div><div class='mt-4'><label class='text-[11px] opacity-60'>Amount (min $20)</label><input id='depAmount' type='number' value='100' class='mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm'></div><button onclick='createDeposit()' class='mt-4 w-full bg-[#FFD60A] text-black py-3 rounded-full font-bold'>Create Invoice (15 min)</button><div id='invoiceBox' class='hidden mt-4 bg-black/50 p-3 rounded-xl text-xs'><p class='opacity-60'>Send exactly to:</p><p id='invAddr' class='mono font-bold break-all mt-1'></p><p class='mt-2'>Amount: <span id='invAmount' class='font-bold'></span> <span id='invNet'></span></p><p class='mt-1 opacity-60'>Invoice: <span id='invId' class='mono'></span></p><p class='mt-2 text-[11px] text-[#FFD60A]'>Expires in 15 min • Auto verified every 15 sec</p></div><button onclick="closeDeposit()" class='mt-3 w-full bg-white/5 py-3 rounded-full text-xs'>Close</button></div></div>
+<!-- Deposit Modal with 5 networks -->
+<div id='depositModal' class='hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[100] p-4'><div class='bg-[#121214] border border-white/10 rounded-[24px] p-6 w-full max-w-[380px] max-h-[90vh] overflow-y-auto'><h3 class='font-black text-lg'>Deposit USDT — 5 Networks</h3><p class='text-[11px] opacity-60 mt-1'>Choose network, same address for BEP20/ERC20</p>
+<div class='mt-4 grid grid-cols-3 gap-2'>
+<button onclick="selectNet('TRC20')" id='net-TRC20' class='net-btn bg-white text-black py-3 rounded-full text-xs font-black'>TRC20</button>
+<button onclick="selectNet('BEP20')" id='net-BEP20' class='net-btn bg-white/10 py-3 rounded-full text-xs font-bold'>BEP20</button>
+<button onclick="selectNet('ERC20')" id='net-ERC20' class='net-btn bg-white/10 py-3 rounded-full text-xs font-bold'>ERC20</button>
+<button onclick="selectNet('TON')" id='net-TON' class='net-btn bg-white/10 py-3 rounded-full text-xs font-bold'>TON</button>
+<button onclick="selectNet('SOL')" id='net-SOL' class='net-btn bg-white/10 py-3 rounded-full text-xs font-bold'>SOL</button>
+</div>
+<div class='mt-4 p-3 bg-white/5 rounded-xl text-[11px]'><p class='opacity-60'>Address for <span id='netLabel'>TRC20</span>:</p><p id='netAddr' class='mono font-bold break-all mt-1 text-xs'>TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC</p></div>
+<div class='mt-4'><label class='text-[11px] opacity-60 font-bold'>Amount (min $20)</label><input id='depAmount' type='number' value='100' class='mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3.5 text-sm'></div>
+<button onclick='createDeposit()' class='mt-4 w-full bg-[#FFD60A] text-black py-3.5 rounded-full font-bold'>Create Invoice (15 min)</button>
+<div id='invoiceBox' class='hidden mt-4 bg-black/50 border border-[#FFD60A]/20 p-4 rounded-xl text-xs'><p class='opacity-60'>Send exactly to:</p><p id='invAddr' class='mono font-bold break-all mt-1'></p><p class='mt-2'>Amount: <span id='invAmount' class='font-bold'></span> <span id='invNet'></span></p><p class='mt-1 opacity-60'>Invoice: <span id='invId' class='mono'></span></p><p class='mt-2 text-[11px] text-[#FFD60A]'>Expires in 15 min • Auto verified every 15 sec</p></div>
+<button onclick="closeDeposit()" class='mt-3 w-full bg-white/5 py-3.5 rounded-full text-xs font-bold'>Close</button></div></div>
 
-<div id='withdrawModal' class='hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[100] p-4'><div class='bg-[#121214] border border-white/10 rounded-[24px] p-6 w-full max-w-[360px]'><h3 class='font-black'>Withdraw USDT</h3><p class='text-xs opacity-60 mt-1'>Min $10 • Withdrawable: <span id='wdBal' class='font-bold text-[#FFD60A]'>0</span></p><div id='wdGate' class='hidden mt-3 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-xs'><p class='font-bold text-red-400'>🔒 Complete Tasks First</p><p id='wdGateText' class='opacity-70 mt-1'></p><button onclick="switchTab('tasks'); closeWithdraw();" class='mt-2 bg-white text-black px-3 py-1.5 rounded-full text-xs font-bold'>Go to Tasks</button></div><div class='mt-4'><label class='text-[11px] opacity-60'>Amount</label><input id='wdAmount' type='number' class='mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm'></div><div class='mt-3'><label class='text-[11px] opacity-60'>Address</label><input id='wdAddr' placeholder='USDT address' class='mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm mono'></div><div class='mt-3 grid grid-cols-2 gap-2'><button onclick="selectWdNet('TRC20')" id='wdnet-TRC20' class='wdnet-btn bg-white text-black py-2 rounded-full text-xs font-bold'>TRC20</button><button onclick="selectWdNet('BEP20')" id='wdnet-BEP20' class='wdnet-btn bg-white/10 py-2 rounded-full text-xs'>BEP20</button></div><button onclick='submitWithdraw()' class='mt-4 w-full bg-[#FFD60A] text-black py-3 rounded-full font-bold'>Submit Withdrawal</button><button onclick='closeWithdraw()' class='mt-3 w-full bg-white/5 py-3 rounded-full text-xs'>Close</button></div></div>
-
+<div id='withdrawModal' class='hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[100] p-4'><div class='bg-[#121214] border border-white/10 rounded-[24px] p-6 w-full max-w-[360px]'><h3 class='font-black'>Withdraw USDT</h3><p class='text-xs opacity-60 mt-1'>Min $10 • Withdrawable: <span id='wdBal' class='font-bold text-[#FFD60A]'>0</span></p><div id='wdGate' class='hidden mt-3 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-xs'><p class='font-bold text-red-400'>🔒 Complete Tasks First</p><p id='wdGateText' class='opacity-70 mt-1'></p><button onclick="switchTab('tasks'); closeWithdraw();" class='mt-2 bg-white text-black px-3 py-1.5 rounded-full text-xs font-bold'>Go to Tasks</button></div><div class='mt-4'><label class='text-[11px] opacity-60'>Amount</label><input id='wdAmount' type='number' class='mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm'></div><div class='mt-3'><label class='text-[11px] opacity-60'>Address</label><input id='wdAddr' placeholder='USDT address' class='mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm mono'></div><div class='mt-3 grid grid-cols-5 gap-1.5'><button onclick="selectWdNet('TRC20')" id='wdnet-TRC20' class='wdnet-btn bg-white text-black py-2.5 rounded-full text-[10px] font-bold'>TRC20</button><button onclick="selectWdNet('BEP20')" id='wdnet-BEP20' class='wdnet-btn bg-white/10 py-2.5 rounded-full text-[10px]'>BEP20</button><button onclick="selectWdNet('ERC20')" id='wdnet-ERC20' class='wdnet-btn bg-white/10 py-2.5 rounded-full text-[10px]'>ERC20</button><button onclick="selectWdNet('TON')" id='wdnet-TON' class='wdnet-btn bg-white/10 py-2.5 rounded-full text-[10px]'>TON</button><button onclick="selectWdNet('SOL')" id='wdnet-SOL' class='wdnet-btn bg-white/10 py-2.5 rounded-full text-[10px]'>SOL</button></div><button onclick='submitWithdraw()' class='mt-4 w-full bg-[#FFD60A] text-black py-3 rounded-full font-bold'>Submit Withdrawal</button><button onclick='closeWithdraw()' class='mt-3 w-full bg-white/5 py-3 rounded-full text-xs'>Close</button></div></div>
 </div>
 
 <script>
 let tg=window.Telegram?.WebApp; let userId=123456789; let username=''; let currentNet='TRC20'; let currentWdNet='TRC20'; let allTasks=[];
+const DEPOSIT_ADDRS={TRC20:"TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC",BEP20:"0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",ERC20:"0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",TON:"UQBlNeJ90El3LxBhikC2HUG3mqS16k1q177AjcNAaURVa_zw",SOL:"87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7"};
 if(tg){try{tg.ready(); tg.expand(); let u=tg.initDataUnsafe?.user; if(u){userId=u.id; username=u.username||'';}}catch(e){}}
 const $=id=>document.getElementById(id); const safeSet=(id,v)=>{let e=$(id); if(e) e.innerText=v;}; const safeHTML=(id,h)=>{let e=$(id); if(e) e.innerHTML=h;};
 function switchTab(tab){
@@ -109,9 +99,14 @@ if(tab==='trades') loadTrades();
 if(tab==='referral') loadReferral();
 if(tab==='history') loadHistory();
 }
-function selectNet(net){currentNet=net; document.querySelectorAll('.net-btn').forEach(b=>{b.classList.remove('bg-white','text-black'); b.classList.add('bg-white/10');}); let a=$('net-'+net); if(a){a.classList.remove('bg-white/10'); a.classList.add('bg-white','text-black');}}
+function selectNet(net){
+currentNet=net;
+document.querySelectorAll('.net-btn').forEach(b=>{b.classList.remove('bg-white','text-black'); b.classList.add('bg-white/10');});
+let a=$('net-'+net); if(a){a.classList.remove('bg-white/10'); a.classList.add('bg-white','text-black');}
+safeSet('netLabel', net); safeSet('netAddr', DEPOSIT_ADDRS[net]||'');
+}
 function selectWdNet(net){currentWdNet=net; document.querySelectorAll('.wdnet-btn').forEach(b=>{b.classList.remove('bg-white','text-black'); b.classList.add('bg-white/10');}); let a=$('wdnet-'+net); if(a){a.classList.remove('bg-white/10'); a.classList.add('bg-white','text-black');}}
-function openDeposit(){$('depositModal').classList.remove('hidden');}
+function openDeposit(){selectNet(currentNet); $('depositModal').classList.remove('hidden');}
 function closeDeposit(){$('depositModal').classList.add('hidden'); $('invoiceBox').classList.add('hidden');}
 function openWithdraw(){$('withdrawModal').classList.remove('hidden');}
 function closeWithdraw(){$('withdrawModal').classList.add('hidden');}
@@ -120,100 +115,62 @@ function openPTChannel(){window.open('https://t.me/PT_AI_Trading','_blank');}
 function openPTSupport(){window.open('https://t.me/PT_AI_Support','_blank');}
 
 async function init(){
+try{
 let r=await fetch('/api/me/'+userId); let me=await r.json();
 if(me.is_banned){$('bannedOverlay').classList.remove('hidden'); return;}
-let bal=parseFloat(me.balance||0); let wd=parseFloat(me.withdrawable||0); let profit=parseFloat(me.profit||0);
-let tier=me.daily_percent||0;
+let bal=parseFloat(me.balance||0); let wd=parseFloat(me.withdrawable||0); let profit=parseFloat(me.profit||0); let tier=me.daily_percent||0;
 safeSet('tierPct', tier.toFixed(1)); safeSet('dailyPct', tier.toFixed(1)+'%');
 safeSet('balTopMini', bal.toFixed(2)); safeSet('withdrawableTop', wd.toFixed(2)+' USDT');
 safeSet('profitVal', profit.toFixed(2)); safeSet('perHour', (bal*tier/2400).toFixed(4));
 safeSet('quickBal', bal.toFixed(2)+' USDT'); safeSet('quickWd', wd.toFixed(2)+' USDT');
 safeSet('totalDep', (parseFloat(me.total_deposit||0)).toFixed(2)+' USDT'); safeSet('totalWd', (parseFloat(me.total_withdraw||0)).toFixed(2)+' USDT');
-safeSet('wdBal', wd.toFixed(2));
-safeSet('aiDays','30'); safeSet('aiHours','0');
+safeSet('wdBal', wd.toFixed(2)); safeSet('aiDays','30'); safeSet('aiHours','0');
 if(!me.all_tasks_done && me.mandatory_tasks_total>0){
-$('mandatoryGate').classList.remove('hidden');
-$('taskBadge').classList.remove('hidden'); $('taskBadge').innerText=`🔒 ${me.mandatory_tasks_done}/${me.mandatory_tasks_total} Tasks`;
-$('bottomTaskDot').classList.remove('hidden');
+$('mandatoryGate').classList.remove('hidden'); $('taskBadge').classList.remove('hidden'); $('taskBadge').innerText=`🔒 ${me.mandatory_tasks_done}/${me.mandatory_tasks_total} Tasks`; $('bottomTaskDot').classList.remove('hidden');
 safeSet('gateText', `Complete ${me.mandatory_tasks_total-me.mandatory_tasks_done} more mandatory tasks to unlock withdrawal. Each gives 1 USDT!`);
 $('wdGate').classList.remove('hidden'); safeSet('wdGateText', `You must complete ${me.mandatory_tasks_total} mandatory join tasks. Done: ${me.mandatory_tasks_done}/${me.mandatory_tasks_total}`);
-}else{
-$('mandatoryGate').classList.add('hidden'); $('taskBadge').classList.add('hidden'); $('bottomTaskDot').classList.add('hidden'); $('wdGate').classList.add('hidden');
-}
+}else{ $('mandatoryGate').classList.add('hidden'); $('taskBadge').classList.add('hidden'); $('bottomTaskDot').classList.add('hidden'); $('wdGate').classList.add('hidden'); }
+}catch(e){console.error('init',e);}
 await Promise.all([loadTasks(true), loadTrades(), loadReferral()]);
 }
 async function loadTasks(isQuick=false){
+try{
 let r=await fetch('/api/tasks/list/'+userId); allTasks=await r.json();
 let total=allTasks.length; let done=allTasks.filter(t=>t.user_status==='verified').length; let earn=done*1;
-safeSet('t_total', total); safeSet('t_done', done); safeSet('t_earn', earn.toFixed(2));
-safeSet('tasksQuickCount', `${done}/${total} done`);
+safeSet('t_total', total); safeSet('t_done', done); safeSet('t_earn', earn.toFixed(2)); safeSet('tasksQuickCount', `${done}/${total} done`);
 let quickHtml=allTasks.slice(0,2).map(t=>{
 let isDone=t.user_status==='verified';
 return `<div class="flex justify-between items-center bg-white/5 p-3 rounded-xl border ${isDone?'task-done':'task-pending'}"><div class="flex items-center gap-2"><span>${t.icon||'🚀'}</span><div><p class="font-bold text-xs">${t.title}</p><p class="text-[10px] opacity-60">+${t.reward} USDT • ${t.is_mandatory?'Mandatory':'Optional'}</p></div></div><span class="text-[10px] ${isDone?'text-emerald-400':'text-[#FFD60A]'} font-bold">${isDone?'✅ Done':'⏳ Pending'}</span></div>`;
-}).join('');
-if(!quickHtml) quickHtml='<p class="text-xs opacity-50">No tasks yet. Admin will create join tasks.</p>';
-safeHTML('tasksQuick', quickHtml);
-
+}).join(''); if(!quickHtml) quickHtml='<p class="text-xs opacity-50">No tasks yet. Admin will create join tasks.</p>'; safeHTML('tasksQuick', quickHtml);
 let fullHtml=allTasks.map(t=>{
 let isDone=t.user_status==='verified'; let isJoined=t.user_status==='joined';
 let btn=isDone?`<span class="bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-full text-xs font-bold">✅ Verified +${t.reward} USDT</span>`:`<div class="flex gap-2"><button onclick="joinTask(${t.id},'${t.group_link}')" class="flex-1 bg-white text-black px-4 py-2.5 rounded-full text-xs font-bold">${isJoined?'🔄 Re-Join':'🚀 Join'}</button><button onclick="verifyTask(${t.id})" class="flex-1 bg-[#FFD60A] text-black px-4 py-2.5 rounded-full text-xs font-bold">Verify ✅</button></div>`;
 return `<div class="bg-[#121214] border rounded-[20px] p-4 ${isDone?'task-done':'task-pending'}"><div class="flex justify-between"><div class="flex gap-3"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#6C3BFF] to-[#FFD60A] flex items-center justify-center text-lg">${t.icon||'🚀'}</div><div><p class="font-bold text-sm">${t.title} ${t.is_mandatory?'<span class="bg-red-500/20 text-red-400 text-[9px] px-1.5 py-0.5 rounded-full">MANDATORY</span>':''}</p><p class="text-xs opacity-60 mt-1">${t.description||''}</p><p class="text-[11px] mt-2 opacity-50">Reward: <b class="text-[#FFD60A]">${t.reward} USDT</b> → ${t.reward_type} • Status: <b class="${isDone?'text-emerald-400':'text-yellow-400'}">${t.user_status}</b></p></div></div></div><div class="mt-4">${btn}</div><p class="text-[10px] opacity-40 mt-2 mono">${t.group_link}</p></div>`;
-}).join('');
-if(!fullHtml) fullHtml=`<div class="bg-white/5 border border-white/10 rounded-[20px] p-6 text-center"><p class="text-3xl">🎯</p><p class="font-bold mt-2">No Tasks Yet</p><p class="text-xs opacity-60 mt-1">Admin needs to create tasks in admin panel → Tasks & Join Rewards → Create Default Join Tasks. Set Group ID to @username where bot is admin.</p></div>`;
-safeHTML('tasksListFull', fullHtml);
+}).join(''); if(!fullHtml) fullHtml=`<div class="bg-white/5 border border-white/10 rounded-[20px] p-6 text-center"><p class="text-3xl">🎯</p><p class="font-bold mt-2">No Tasks Yet</p><p class="text-xs opacity-60 mt-1">Admin needs to create tasks in admin panel → Tasks & Join Rewards → Create Default Join Tasks.</p></div>`; safeHTML('tasksListFull', fullHtml);
+}catch(e){console.error('tasks',e);}
 }
-
-async function joinTask(taskId, link){
-try{ await fetch('/api/tasks/join/'+userId+'/'+taskId,{method:'POST'});}catch(e){}
-window.open(link,'_blank');
-setTimeout(()=>{alert('After joining in Telegram, come back and tap Verify to get 1 USDT!');},500);
-}
-async function verifyTask(taskId){
-let btn=event?.target; let orig=btn?btn.innerText:''; if(btn){btn.innerText='Verifying...'; btn.disabled=true;}
-let r=await fetch('/api/tasks/verify/'+userId+'/'+taskId,{method:'POST'}); let j=await r.json();
-if(btn){btn.innerText=orig; btn.disabled=false;}
-if(j.ok){alert(j.message||'Verified! +1 USDT added'); await loadTasks(); await init();} else {alert('❌ '+ (j.error||'Failed') + '\n\nMake sure you JOINED the group in Telegram first! Bot must be admin to check membership.');}
-}
-
-async function createDeposit(){
-let amt=parseFloat($('depAmount').value||0); if(amt<20){alert('Min $20'); return;}
-let r=await fetch('/api/deposit/invoice/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt, network:currentNet})}); let j=await r.json();
-$('invAddr').innerText=j.address; $('invAmount').innerText=j.amount+' USDT'; $('invNet').innerText=j.network; $('invId').innerText=j.invoice_id; $('invoiceBox').classList.remove('hidden');
-}
-async function submitWithdraw(){
-let amt=parseFloat($('wdAmount').value||0); let addr=$('wdAddr').value.trim();
-if(amt<10){alert('Min $10'); return;} if(!addr){alert('Enter address'); return;}
-let r=await fetch('/api/withdraw/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt, address:addr, network:currentWdNet})}); let j=await r.json();
-if(j.ok){alert('Withdrawal requested!'); closeWithdraw(); init();} else alert(j.error||'Failed');
-}
-
+async function joinTask(taskId, link){try{ await fetch('/api/tasks/join/'+userId+'/'+taskId,{method:'POST'});}catch(e){} window.open(link,'_blank'); setTimeout(()=>{alert('After joining in Telegram, come back and tap Verify to get 1 USDT!');},500);}
+async function verifyTask(taskId){let r=await fetch('/api/tasks/verify/'+userId+'/'+taskId,{method:'POST'}); let j=await r.json(); if(j.ok){alert(j.message||'Verified! +1 USDT added'); await loadTasks(); await init();} else {alert('❌ '+ (j.error||'Failed') + '\n\nMake sure you JOINED the group in Telegram first! Bot must be admin to check membership.');}}
+async function createDeposit(){let amt=parseFloat($('depAmount').value||0); if(amt<20){alert('Min $20'); return;} let r=await fetch('/api/deposit/invoice/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt, network:currentNet})}); let j=await r.json(); $('invAddr').innerText=j.address; $('invAmount').innerText=j.amount+' USDT'; $('invNet').innerText=j.network; $('invId').innerText=j.invoice_id; $('invoiceBox').classList.remove('hidden');}
+async function submitWithdraw(){let amt=parseFloat($('wdAmount').value||0); let addr=$('wdAddr').value.trim(); if(amt<10){alert('Min $10'); return;} if(!addr){alert('Enter address'); return;} let r=await fetch('/api/withdraw/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt, address:addr, network:currentWdNet})}); let j=await r.json(); if(j.ok){alert('Withdrawal requested!'); closeWithdraw(); init();} else alert(j.error||'Failed');}
 async function loadTrades(){
-try{let r=await fetch('/api/binance/trades'); let d=await r.json(); safeSet('todayTrades', d.summary.total_trades+' trades'); safeSet('binanceStatus','Live • '+d.summary.total_trades+' trades');
-let html=''; (d.trades||[]).forEach(t=>{ let sideColor=t.side==='LONG'?'bg-blue-500/20 text-blue-400':'bg-red-500/20 text-red-400'; let pnlColor=t.is_profit?'text-emerald-400':'text-red-400'; html+=`<tr class='border-t border-white/5'><td class='p-3'>${t.time}</td><td class='p-3 font-bold'>${t.pair}</td><td class='p-3'><span class='px-2 py-1 rounded-full text-[11px] ${sideColor}'>${t.side}</span></td><td class='p-3 text-right'>${t.entry_price}</td><td class='p-3 text-right font-mono text-emerald-300'>${t.exit_price}</td><td class='p-3 text-right'>${t.leverage}x</td><td class='p-3 text-right font-bold ${pnlColor}'>${t.pnl_percent>0?'+':''}${t.pnl_percent}%</td></tr>`; }); safeHTML('tradesTableBody', html);}catch(e){}
-}
-async function loadHistory(){
-let r=await fetch('/api/history/'+userId); let h=await r.json(); let html='';
-(h.deposits||[]).forEach(d=>{ let sc=d.status==='verified'?'text-emerald-400':d.status==='awaiting_payment'?'text-yellow-400':'text-red-400'; let icon=d.status==='verified'?'✅':d.status==='awaiting_payment'?'⏳':'❌'; html=`<div class='bg-white/5 p-3 rounded-lg flex justify-between'><div class='flex items-center gap-2'><span class='w-6 h-6 bg-[#26A17B] rounded-full flex items-center justify-center text-[10px]'>₮</span> <span>${icon} ${d.amount} USDT ${d.network} • ${d.status}<br><span class='opacity-50 text-xs'>${d.invoice_id||''} • ${d.created_at?d.created_at.slice(0,16):''}</span></div><span class='${sc} text-xs'>${d.status}</span></div>`+html; });
-(h.withdrawals||[]).forEach(w=>{ let sc=w.status=='approved'?'text-emerald-400':'text-yellow-400'; html+=`<div class='bg-white/5 p-3 rounded-lg flex justify-between items-center'><div class='flex items-center gap-2'><span class='w-6 h-6 bg-[#FFD60A] rounded-full flex items-center justify-center text-black text-[10px]'>₮</span> <span>Withdraw ${w.amount} USDT<br><span class='opacity-50 text-xs'>${w.created_at?w.created_at.slice(0,16):''}</span></div><span class='${sc} text-xs'>${w.status}</span></div>`; });
-if(!html) html='<p class="opacity-50">No history yet</p>'; safeHTML('history', html);
-}
-async function loadReferral(){
 try{
-let r=await fetch('/api/referral/'+userId); let d=await r.json();
-safeSet('refLink', d.ref_link||''); safeSet('directCount', d.direct_count||0);
-safeSet('teamDep', (parseFloat(d.total_team_deposit)||0).toFixed(2)+' USDT'); safeSet('refEarned', (parseFloat(d.total_earnings)||0).toFixed(2)+' USDT');
-let directHtml=''; if(d.direct_refs && d.direct_refs.length>0){ d.direct_refs.forEach(ref=>{ directHtml+=`<div class='bg-white/5 p-3 rounded-xl flex justify-between items-center'><div><p class='font-bold'>${ref.username||'user_'+ref.user_id}</p><p class='text-xs opacity-50'>ID: ${ref.user_id} • Deposit: $${(parseFloat(ref.deposit)||0).toFixed(2)}</p></div><span class='text-emerald-400 text-xs'>Active</span></div>`; }); } else { directHtml='<p class="opacity-50 text-sm">No direct referrals yet. Share your link!</p>'; }
-safeHTML('directList', directHtml);
-let histHtml=''; if(d.logs && d.logs.length>0){ d.logs.forEach(log=>{ histHtml+=`<div class='bg-gradient-to-br from-emerald-500/10 to-[#26A17B]/5 border border-emerald-500/20 p-3 rounded-xl flex justify-between'><div><p class='font-bold'>From: ${log.from} • Level ${log.level} • ${log.percent}%</p><p class='opacity-60 text-xs'>Deposit $${(parseFloat(log.deposit)||0).toFixed(2)} • ${log.at?log.at.slice(0,16):''}</p></div><span class='text-emerald-400 font-bold'>+$${(parseFloat(log.bonus)||0).toFixed(2)}</span></div>`; }); } else { histHtml='<p class="opacity-50 text-sm">No earnings yet.</p>'; }
-safeHTML('refHistory', histHtml);
-}catch(e){console.error(e);}
+let r=await fetch('/api/binance/trades'); let d=await r.json(); safeSet('todayTrades', d.summary.total_trades+' trades today'); safeSet('binanceStatus','Live • '+d.summary.total_trades+' trades');
+// Convert UTC time to local IST (+5:30) and ensure valid
+let html=''; (d.trades||[]).forEach(t=>{
+let sideColor=t.side==='LONG'?'bg-blue-500/20 text-blue-400':'bg-red-500/20 text-red-400'; let pnlColor=t.is_profit?'text-emerald-400':'text-red-400';
+// t.time is HH:MM UTC, convert to IST for display? For now show as is but ensure <24
+html+=`<tr class='border-t border-white/5 hover:bg-white/5'><td class='p-3'>${t.time} IST</td><td class='p-3 font-bold'>${t.pair}</td><td class='p-3'><span class='px-2 py-1 rounded-full text-[11px] ${sideColor}'>${t.side} ${t.leverage}x</span></td><td class='p-3 text-right'>${t.entry_price}</td><td class='p-3 text-right font-mono text-emerald-300'>${t.exit_price}</td><td class='p-3 text-right'>${t.leverage}x</td><td class='p-3 text-right font-bold ${pnlColor}'>${t.pnl_percent>0?'+':''}${t.pnl_percent}%</td></tr>`;
+}); safeHTML('tradesTableBody', html);
+}catch(e){console.error('trades',e);}
 }
+async function loadHistory(){try{let r=await fetch('/api/history/'+userId); let h=await r.json(); let html=''; (h.deposits||[]).forEach(d=>{ let sc=d.status==='verified'?'text-emerald-400':d.status==='awaiting_payment'?'text-yellow-400':'text-red-400'; let icon=d.status==='verified'?'✅':d.status==='awaiting_payment'?'⏳':'❌'; html=`<div class='bg-white/5 p-3 rounded-lg flex justify-between'><div class='flex items-center gap-2'><span class='w-6 h-6 bg-[#26A17B] rounded-full flex items-center justify-center text-[10px]'>₮</span> <span>${icon} ${d.amount} USDT ${d.network} • ${d.status}<br><span class='opacity-50 text-xs'>${d.invoice_id||''} • ${d.created_at?d.created_at.slice(0,16):''}</span></div><span class='${sc} text-xs'>${d.status}</span></div>`+html; }); (h.withdrawals||[]).forEach(w=>{ let sc=w.status=='approved'?'text-emerald-400':'text-yellow-400'; html+=`<div class='bg-white/5 p-3 rounded-lg flex justify-between items-center'><div class='flex items-center gap-2'><span class='w-6 h-6 bg-[#FFD60A] rounded-full flex items-center justify-center text-black text-[10px]'>₮</span> <span>Withdraw ${w.amount} USDT<br><span class='opacity-50 text-xs'>${w.created_at?w.created_at.slice(0,16):''}</span></div><span class='${sc} text-xs'>${w.status}</span></div>`; }); if(!html) html='<p class="opacity-50">No history yet</p>'; safeHTML('history', html);}catch(e){}}
+async function loadReferral(){try{let r=await fetch('/api/referral/'+userId); let d=await r.json(); safeSet('refLink', d.ref_link||''); safeSet('directCount', d.direct_count||0); safeSet('teamDep', (parseFloat(d.total_team_deposit)||0).toFixed(2)+' USDT'); safeSet('refEarned', (parseFloat(d.total_earnings)||0).toFixed(2)+' USDT'); let directHtml=''; if(d.direct_refs && d.direct_refs.length>0){ d.direct_refs.forEach(ref=>{ directHtml+=`<div class='bg-white/5 p-3 rounded-xl flex justify-between items-center'><div><p class='font-bold'>${ref.username||'user_'+ref.user_id}</p><p class='text-xs opacity-50'>ID: ${ref.user_id} • Deposit: $${(parseFloat(ref.deposit)||0).toFixed(2)}</p></div><span class='text-emerald-400 text-xs'>Active</span></div>`; }); } else { directHtml='<p class="opacity-50 text-sm">No direct referrals yet. Share your link!</p>'; } safeHTML('directList', directHtml); let histHtml=''; if(d.logs && d.logs.length>0){ d.logs.forEach(log=>{ histHtml+=`<div class='bg-gradient-to-br from-emerald-500/10 to-[#26A17B]/5 border border-emerald-500/20 p-3 rounded-xl flex justify-between'><div><p class='font-bold'>From: ${log.from} • Level ${log.level} • ${log.percent}%</p><p class='opacity-60 text-xs'>Deposit $${(parseFloat(log.deposit)||0).toFixed(2)} • ${log.at?log.at.slice(0,16):''}</p></div><span class='text-emerald-400 font-bold'>+$${(parseFloat(log.bonus)||0).toFixed(2)}</span></div>`; }); } else { histHtml='<p class="opacity-50 text-sm">No earnings yet.</p>'; } safeHTML('refHistory', histHtml);}catch(e){}}
 function copyRef(){ let el=$('refLink'); if(el){ navigator.clipboard.writeText(el.innerText); alert('Copied!'); } }
 function shareRef(){ let el=$('refLink'); if(el && navigator.share){ navigator.share({title:'PT_AI Trading', text:'Join PT_AI Trading', url: el.innerText}); } else { copyRef(); } }
-
 async function hideInitialLoader(){ let l=$('initialLoader'); if(l){ l.style.opacity='0'; setTimeout(()=>{ l.style.display='none'; }, 400); } }
 init().then(()=>{ hideInitialLoader(); }).catch(()=>{ hideInitialLoader(); });
 setTimeout(hideInitialLoader, 2500);
-setInterval(init, 10000);
+setInterval(init, 15000);
 </script>
 </body></html>
