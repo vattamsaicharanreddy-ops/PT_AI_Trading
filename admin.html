@@ -1,129 +1,442 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PT_AI — Command Center PRO FINAL</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PT_AI — COMMAND CENTER EXTREME PRO</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<style>*{font-family:'Inter',sans-serif} .mono{font-family:'JetBrains Mono',monospace}</style>
+<style>
+*{font-family:'Inter',sans-serif}
+.mono{font-family:'JetBrains Mono',monospace}
+.glass{backdrop-filter:blur(20px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1)}
+.nav-active{background:white!important; color:black!important; font-weight:900; box-shadow:0 0 30px rgba(255,255,255,0.3)}
+.card{border-radius:24px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(135deg,#121214 0%,#0f0f12 100%)}
+.btn-primary{background:linear-gradient(135deg,#FFD60A,#FFA500); color:black; font-weight:900}
+.btn-emerald{background:linear-gradient(135deg,#10b981,#059669); color:white}
+.btn-red{background:linear-gradient(135deg,#ef4444,#dc2626); color:white}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1); border-radius:10px}
+</style>
 </head>
-<body class="bg-[#050507] text-white min-h-screen">
+<body class="bg-[#050507] text-white min-h-screen overflow-hidden">
 <div class="flex h-screen">
-<aside class="w-[280px] bg-[#0a0a0f] border-r border-white/10 flex flex-col">
-  <div class="p-6 border-b border-white/10"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6C3BFF] to-[#FFD60A] flex items-center justify-center font-black">PT</div><div><p class="font-black">PT_AI</p><p class="text-[10px] tracking-[3px] opacity-50">COMMAND CENTER PRO</p></div></div></div>
-  <nav class="flex-1 p-4 space-y-1">
-    <button data-tab="dashboard" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl bg-white text-black font-bold text-sm">📊 Dashboard</button>
-    <button data-tab="users" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 text-sm opacity-70">👥 Users <span id="navUsers" class="ml-auto bg-white/10 px-2 py-0.5 rounded-full text-xs">0</span></button>
-    <button data-tab="groups" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl bg-[#FFD60A]/20 text-[#FFD60A] font-bold text-sm border border-[#FFD60A]/30">🚀 Groups & Direct Add ⚡ NEW</button>
-    <button data-tab="deposits" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 text-sm opacity-70">💳 Deposits</button>
-    <button data-tab="withdrawals" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 text-sm opacity-70">💸 Withdrawals</button>
-    <button data-tab="referrals" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 text-sm opacity-70">🌐 Referrals</button>
-    <button data-tab="broadcast" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 text-sm opacity-70">📢 Broadcast</button>
-    <button data-tab="settings" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 text-sm opacity-70">⚙️ Settings - Addresses & Bot</button>
-  </nav>
-  <div class="p-4 border-t border-white/10"><div class="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-3"><p class="text-xs font-bold text-emerald-400">✅ FINAL FIXED VERSION</p><p class="text-[11px] opacity-70 mt-1">TRC20: TAFHf1pxsX...<br>BEP20: 0xDD190484...</p><p class="text-[10px] opacity-50 mt-2">Invoices + Group Add + Bot Conflict Fix</p></div></div>
+<aside class="w-[300px] bg-[#0a0a0f] border-r border-white/10 flex flex-col">
+<div class="p-6 border-b border-white/10">
+<div class="flex items-center gap-3"><div class="w-11 h-11 rounded-[14px] bg-gradient-to-br from-[#6C3BFF] to-[#FFD60A] flex items-center justify-center font-black text-lg shadow-lg">PT</div>
+<div><p class="font-black tracking-wide">PT_AI EXTREME</p><p class="text-[10px] tracking-[4px] opacity-50">COMMAND CENTER V4</p></div></div>
+<div class="mt-4 grid grid-cols-2 gap-2"><div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2 text-center"><p class="text-[10px] opacity-60">TOTAL VOL</p><p id="navVol" class="font-black text-xs">$0</p></div><div class="bg-[#FFD60A]/10 border border-[#FFD60A]/20 rounded-xl p-2 text-center"><p class="text-[10px] opacity-60">ONLINE</p><p class="font-black text-xs text-[#FFD60A]">● LIVE</p></div></div>
+</div>
+<nav class="flex-1 p-4 space-y-1.5 overflow-y-auto">
+<button data-tab="dashboard" class="nav-btn w-full text-left px-4 py-3 rounded-xl bg-white text-black font-black text-[13px]">📊 Dashboard Extreme</button>
+<button data-tab="users" class="nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 text-[13px] opacity-80 flex justify-between"><span>👥 Users Control</span><span id="navUsers" class="bg-white/10 px-2 py-0.5 rounded-full text-xs">0</span></button>
+<button data-tab="deposits" class="nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 text-[13px] opacity-80 flex justify-between"><span>💳 Deposits Extreme</span><span id="navDeposits" class="bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full text-xs">0</span></button>
+<button data-tab="withdrawals" class="nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 text-[13px] opacity-80 flex justify-between"><span>💸 Withdrawals</span><span id="navWd" class="bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full text-xs">0</span></button>
+<button data-tab="tasks" class="nav-btn w-full text-left px-4 py-3 rounded-xl bg-gradient-to-r from-[#6C3BFF]/20 to-[#FFD60A]/20 border border-[#6C3BFF]/30 text-[13px] font-bold">🎯 Tasks & Join Rewards ⭐ NEW</button>
+<button data-tab="groups" class="nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 text-[13px] opacity-80">🚀 Groups Manager</button>
+<button data-tab="referrals" class="nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 text-[13px] opacity-80">🌐 Referrals & Logs</button>
+<button data-tab="extreme" class="nav-btn w-full text-left px-4 py-3 rounded-xl bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30 text-[13px] font-bold">🔥 Extreme Tools</button>
+<button data-tab="broadcast" class="nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 text-[13px] opacity-80">📢 Broadcast</button>
+<button data-tab="settings" class="nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 text-[13px] opacity-80">⚙️ Settings</button>
+</nav>
+<div class="p-4 border-t border-white/10"><div class="bg-gradient-to-br from-[#6C3BFF]/20 to-[#121214] border border-[#6C3BFF]/20 rounded-2xl p-3"><p class="text-xs font-bold text-[#A5A6F6]">✅ EXTREME V4 ACTIVE</p><p class="text-[11px] opacity-70 mt-2">TRC20: TAFH...9tAC<br>BEP20: 0xDD19...7Cfd</p><p class="text-[10px] opacity-40 mt-2">Deposit: Approve/Reject/Expire<br>Users: Add/Less/Set Funds<br>Tasks: 1 USDT Join Reward</p></div></div>
 </aside>
-<main class="flex-1 overflow-y-auto">
-  <header class="h-[64px] border-b border-white/10 flex items-center px-8 justify-between"><h1 id="pageTitle" class="font-black text-lg">Dashboard</h1><button onclick="loadAll()" class="bg-white/10 px-3 py-1.5 rounded-full text-xs">↻ Refresh</button></header>
-  <div class="p-8 space-y-6" id="content">
-    <section data-section="dashboard" class="space-y-6">
-      <div class="grid grid-cols-3 lg:grid-cols-6 gap-4">
-        <div class="bg-white/5 border border-white/10 rounded-2xl p-4"><p class="text-[11px] opacity-50">USERS</p><p id="stat_users" class="text-xl font-black mt-1">0</p></div>
-        <div class="bg-[#FFD60A]/10 border border-[#FFD60A]/20 rounded-2xl p-4"><p class="text-[11px] text-[#FFD60A]">TOTAL BAL</p><p id="stat_bal" class="text-xl font-black mt-1">$0</p></div>
-        <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4"><p class="text-[11px] text-emerald-400">VERIFIED DEPOSITS</p><p id="total_dep" class="text-xl font-black mt-1">$0</p></div>
-        <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4"><p class="text-[11px] text-yellow-400">AWAITING</p><p id="pend_dep" class="text-xl font-black mt-1">0</p></div>
-        <div class="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4"><p class="text-[11px] text-orange-400">PEND WD</p><p id="pend_wd" class="text-xl font-black mt-1">0</p></div>
-        <div class="bg-[#6C3BFF]/10 border border-[#6C3BFF]/20 rounded-2xl p-4"><p class="text-[11px] text-[#A5A6F6]">REF PAID</p><p id="ref_paid" class="text-xl font-black mt-1">$0</p></div>
-      </div>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 bg-[#121214] border border-white/10 rounded-[24px] p-6"><h3 class="font-bold">Revenue Chart</h3><canvas id="revChart" height="120"></canvas></div>
-        <div class="bg-[#121214] border border-emerald-500/20 rounded-[24px] p-6"><h3 class="font-bold text-sm">🛡️ Invoice Security FIXED</h3><p class="text-xs opacity-70 mt-3">Your real addresses now used:<br><br><b>TRC20:</b><br><span class="mono text-[10px] bg-white/5 p-1 rounded">TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC</span><br><br><b>BEP20/ERC20:</b><br><span class="mono text-[10px] bg-white/5 p-1 rounded">0xDD190484827BB976acEB975C94d5c58fc8c87Cfd</span><br><br>Frontend + Backend synced ✅<br>Invoice routes fixed ✅<br>Group direct add fixed ✅</p></div>
-      </div>
-    </section>
-    <section data-section="groups" class="hidden space-y-6">
-      <div class="bg-gradient-to-br from-[#6C3BFF]/20 to-[#121214] border border-[#6C3BFF]/20 rounded-[28px] p-6">
-        <h2 class="text-xl font-black">🚀 Group Manager — Direct Member Add (FIXED)</h2>
-        <p class="text-xs opacity-60 mt-2">Fixed counter bug + BOT_TOKEN check + auto invite + DM. If user never started bot, bot creates 1-time invite link.</p>
-        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div><label class="text-[11px] opacity-60">Target Group</label><select id="addGroupSelect" class="mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><option value="group">PT_AI_Trading_Group (Main)</option><option value="channel">PT_AI_Trading (Channel)</option><option value="support">PT_AI_Support</option><option value="all">All Groups</option></select></div>
-          <div><label class="text-[11px] opacity-60">Method</label><select id="addMethod" class="mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><option value="direct">Direct Add + Invite Fallback (Recommended)</option></select></div>
-        </div>
-        <div class="mt-4"><label class="text-[11px] opacity-60">Telegram User IDs (comma/space/newline separated) - Example: 8942668092</label><textarea id="bulkIds" placeholder="Paste IDs here: 8942668092" class="mt-1 w-full h-[120px] bg-white/5 border border-white/10 rounded-xl p-3 text-sm mono"></textarea></div>
-        <div class="mt-4 flex gap-2"><button onclick="addMembers()" class="flex-1 bg-[#FFD60A] text-black py-3 rounded-full font-bold">⚡ Add Members Now - Fixed Counter</button><button onclick="generateInvites()" class="bg-white/10 px-5 py-3 rounded-full text-sm">Generate Invite Link</button></div>
-        <div id="addLog" class="mt-4 hidden bg-black/60 border border-white/10 rounded-xl p-3 text-xs mono max-h-[300px] overflow-y-auto"></div>
-      </div>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div class="bg-[#121214] border border-white/10 rounded-[24px] p-5"><h3 class="font-bold text-sm">Quick Add Single</h3><div class="mt-3 space-y-3"><input id="singleId" placeholder="Telegram ID e.g. 8942668092" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm mono"><input id="singleName" placeholder="Username optional" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><input id="singleBal" type="number" placeholder="Balance" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><button onclick="addSingle()" class="w-full bg-white text-black py-2.5 rounded-full font-bold text-sm">Add + Create Account</button></div></div>
-        <div class="bg-[#121214] border border-white/10 rounded-[24px] p-5"><h3 class="font-bold text-sm">How Direct Add Works (Fixed)</h3><ul class="mt-2 space-y-2 text-xs opacity-80 list-disc pl-4"><li>BOT_TOKEN must be set in Settings</li><li>Bot must be Admin in group</li><li>If user /started bot → unbanChatMember adds directly</li><li>If new user → creates 1-time invite + DMs (if possible)</li><li>Counter fixed: now shows real added/failed</li></ul></div>
-        <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-[24px] p-5"><h3 class="font-bold text-sm text-emerald-400">✅ This is PRO version</h3><p class="text-xs opacity-70 mt-2">If you see old admin with 6 boxes only, you are on old file. Deploy this file.</p><p class="text-xs mono mt-3 bg-black/50 p-2 rounded">Version: PRO_FINAL_2025_TAFH</p></div>
-      </div>
-      <div class="bg-white/5 border border-white/10 rounded-[24px] p-5"><div class="flex justify-between"><h3 class="font-bold text-sm">Group Members Log - Last 200</h3><button onclick="loadGroupMembers()" class="bg-white/10 px-3 py-1 rounded-full text-xs">Refresh</button></div><div class="mt-3 overflow-x-auto"><table class="w-full text-xs"><thead class="opacity-50"><tr><th>ID</th><th>User</th><th>Group</th><th>Method</th><th>Status</th><th>Time</th></tr></thead><tbody id="groupMembers"></tbody></table></div></div>
-    </section>
-    <section data-section="users" class="hidden"><div class="bg-[#121214] border border-white/10 rounded-[24px] p-5"><div class="flex justify-between"><h3 class="font-bold">All Users - Real Telegram IDs</h3><div class="flex gap-2"><input id="userSearch" placeholder="Filter" class="bg-white/5 border border-white/10 rounded-full px-3 py-1.5 text-xs"><button onclick="openCreateUser()" class="bg-[#FFD60A] text-black px-4 py-1.5 rounded-full text-xs font-bold">+ Create User</button></div></div><div class="mt-4 overflow-x-auto"><table class="w-full text-xs"><thead class="opacity-50"><tr><th class="p-2 text-left">Telegram ID</th><th>Username</th><th class="p-2">Balance</th><th class="p-2">Wallet</th><th>Status</th><th>Actions</th></tr></thead><tbody id="users"></tbody></table></div></div></section>
-    <section data-section="deposits" class="hidden"><div class="bg-white/5 rounded-2xl p-5"><h3 class="font-bold mb-3">Deposits - Invoice System</h3><table class="w-full text-xs"><thead><tr><th>ID</th><th>User</th><th>Amt</th><th>Expected</th><th>Invoice</th><th>Status</th><th>Action</th></tr></thead><tbody id="deps"></tbody></table></div></section>
-    <section data-section="withdrawals" class="hidden"><div class="bg-white/5 rounded-2xl p-5"><h3 class="font-bold mb-3">Withdrawals</h3><table class="w-full text-xs"><thead><tr><th>ID</th><th>User</th><th>Amt</th><th>Status</th><th>Action</th></tr></thead><tbody id="wds"></tbody></table></div></section>
-    <section data-section="referrals" class="hidden"><div class="bg-white/5 rounded-2xl p-5"><h3 class="font-bold mb-3">Referrals</h3><table class="w-full text-xs"><thead><tr><th>From</th><th>To</th><th>Lvl</th><th>Bonus</th></tr></thead><tbody id="refs"></tbody></table></div></section>
-    <section data-section="broadcast" class="hidden"><div class="bg-[#121214] border border-white/10 rounded-[24px] p-6"><h3 class="font-bold">📢 Broadcast</h3><textarea id="broadcastMsg" placeholder="Message to all users" class="mt-3 w-full h-[120px] bg-white/5 border border-white/10 rounded-xl p-3 text-sm"></textarea><button onclick="sendBroadcast()" class="mt-3 bg-[#FFD60A] text-black px-6 py-2 rounded-full font-bold text-sm">Send</button></div></section>
-    <section data-section="settings" class="hidden space-y-6">
-      <div class="bg-[#121214] border border-white/10 rounded-[24px] p-6">
-        <h3 class="font-bold text-lg">⚙️ Settings — Your Real Addresses</h3>
-        <p class="text-xs opacity-60 mt-2">Correct addresses: TRC20 TAFH... and BEP20 0xDD19... synced everywhere.</p>
-        <div id="envStatus" class="mt-4 grid grid-cols-2 gap-3 text-xs"></div>
-        <div class="mt-6 grid grid-cols-2 gap-4">
-          <div><label class="text-[11px] opacity-60">BOT_TOKEN</label><input id="env_bot_token" placeholder="123456:AAH..." class="mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm mono"></div>
-          <div><label class="text-[11px] opacity-60">GROUP_ID (-100... or @username)</label><input id="env_group_id" placeholder="-100... or @PT_AI_Trading_Group" class="mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm mono"></div>
-          <div><label class="text-[11px] opacity-60">CHANNEL_ID</label><input id="env_channel_id" placeholder="-100... or @PT_AI_Trading" class="mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm mono"></div>
-          <div class="flex items-end"><button onclick="saveEnv()" class="w-full bg-[#FFD60A] text-black py-3 rounded-full font-bold text-sm">💾 Save & Test Bot</button></div>
-        </div>
-        <div class="mt-6 bg-black/40 border border-white/10 rounded-xl p-4">
-          <h4 class="font-bold text-xs">Your Correct Deposit Addresses (FINAL):</h4>
-          <div class="mt-2 space-y-2 text-[11px] mono">
-            <div class="bg-white/5 p-2 rounded">TRC20: TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC</div>
-            <div class="bg-white/5 p-2 rounded">BEP20/ERC20: 0xDD190484827BB976acEB975C94d5c58fc8c87Cfd</div>
-          </div>
-          <div class="mt-3 flex gap-2"><button onclick="detectGroups()" class="bg-white/10 px-4 py-2 rounded-full text-xs">🔍 Detect Group IDs</button><button onclick="testBot()" class="bg-white/10 px-4 py-2 rounded-full text-xs">🤖 Test Bot</button></div>
-          <div id="envLog" class="mt-3 hidden bg-black/60 border border-white/10 rounded-xl p-3 text-[11px] mono max-h-[200px] overflow-y-auto"></div>
-        </div>
-      </div>
-    </section>
-  </div>
+
+<main class="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_20%_20%,rgba(108,59,255,0.15),transparent_50%),radial-gradient(circle_at_80%_80%,rgba(255,214,10,0.12),transparent_50%)]">
+<header class="h-[72px] border-b border-white/10 flex items-center px-8 justify-between sticky top-0 backdrop-blur-xl bg-[#050507]/80 z-20">
+<h1 id="pageTitle" class="font-black text-xl tracking-tight">Dashboard Extreme</h1>
+<div class="flex gap-2"><button onclick="loadAll()" class="glass px-4 py-2 rounded-full text-xs font-bold hover:bg-white/10">↻ Refresh</button><button onclick="exportData()" class="btn-primary px-4 py-2 rounded-full text-xs">⬇ Export CSV</button></div>
+</header>
+<div class="p-8 space-y-8" id="content">
+
+<!-- DASHBOARD -->
+<section data-section="dashboard" class="space-y-6">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="card p-5"><p class="text-[11px] tracking-[2px] opacity-50">TOTAL USERS</p><p id="stat_users" class="text-3xl font-black mt-2">0</p><p id="stat_users_sub" class="text-xs opacity-60 mt-1">active users</p></div>
+<div class="card p-5 border-[#FFD60A]/20 bg-gradient-to-br from-[#FFD60A]/10 to-[#121214]"><p class="text-[11px] tracking-[2px] text-[#FFD60A]">TOTAL BALANCE</p><p id="stat_bal" class="text-3xl font-black mt-2">$0</p><p class="text-xs opacity-60 mt-1">trading + wallet</p></div>
+<div class="card p-5 border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 to-[#121214]"><p class="text-[11px] tracking-[2px] text-emerald-400">VERIFIED DEPOSITS</p><p id="total_dep" class="text-3xl font-black mt-2">$0</p><p id="total_dep_cnt" class="text-xs opacity-60 mt-1">0 verified</p></div>
+<div class="card p-5 border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-[#121214]"><p class="text-[11px] tracking-[2px] text-orange-400">PENDING ACTIONS</p><p id="pend_all" class="text-3xl font-black mt-2">0</p><p class="text-xs opacity-60 mt-1">dep + wd</p></div>
+</div>
+<div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+<div class="glass rounded-2xl p-4"><p class="text-[10px] opacity-50">AWAITING DEP</p><p id="pend_dep" class="text-xl font-black text-yellow-400">0</p></div>
+<div class="glass rounded-2xl p-4"><p class="text-[10px] opacity-50">EXPIRED</p><p id="stat_expired" class="text-xl font-black text-red-400">0</p></div>
+<div class="glass rounded-2xl p-4"><p class="text-[10px] opacity-50">PEND WD</p><p id="pend_wd" class="text-xl font-black text-orange-400">0</p></div>
+<div class="glass rounded-2xl p-4"><p class="text-[10px] opacity-50">REF PAID</p><p id="ref_paid" class="text-xl font-black text-[#A5A6F6]">$0</p></div>
+<div class="glass rounded-2xl p-4"><p class="text-[10px] opacity-50">TASKS DONE</p><p id="stat_tasks" class="text-xl font-black text-[#6C3BFF]">0</p></div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 card p-6"><h3 class="font-bold flex justify-between">Revenue Chart <span class="text-xs opacity-50">Live</span></h3><canvas id="revChart" height="130"></canvas></div>
+<div class="card p-6 border-emerald-500/20"><h3 class="font-bold text-sm">🛡️ System Health</h3>
+<div class="mt-4 space-y-3 text-xs">
+<div class="flex justify-between bg-white/5 p-3 rounded-xl"><span>Blockchain Monitor</span><span class="text-emerald-400">● Active (15s)</span></div>
+<div class="flex justify-between bg-white/5 p-3 rounded-xl"><span>TRC20 Address</span><span class="mono text-[10px]">TAFH...9tAC ✅</span></div>
+<div class="flex justify-between bg-white/5 p-3 rounded-xl"><span>BEP20 Address</span><span class="mono text-[10px]">0xDD19...7Cfd ✅</span></div>
+<div class="flex justify-between bg-white/5 p-3 rounded-xl"><span>Tasks Reward</span><span class="text-[#FFD60A] font-bold">1 USDT / join</span></div>
+<div class="bg-[#FFD60A]/10 border border-[#FFD60A]/20 p-3 rounded-xl mt-2"><p class="font-bold text-[#FFD60A] text-[11px]">NEW FEATURES V4:</p><p class="opacity-70 mt-1 leading-relaxed">• Deposit: Approve / Reject / Expire / Edit Amount / Delete<br>• Users: Add / Deduct / Set Balance & Withdrawable / Reset Profit / Ban / Delete / Clear Tasks<br>• Tasks: Create join tasks → user gets 1 USDT withdrawable<br>• Mandatory gate: can't withdraw until tasks done</p></div>
+</div></div>
+</div>
+<div class="card p-6"><h3 class="font-bold">Recent Admin Logs</h3><div class="overflow-x-auto mt-4"><table class="w-full text-xs"><thead class="opacity-50"><tr><th class="text-left p-2">Action</th><th class="text-left p-2">User</th><th class="text-left p-2">Details</th><th class="text-left p-2">Time</th></tr></thead><tbody id="logs"></tbody></table></div></div>
+</section>
+
+<!-- USERS -->
+<section data-section="users" class="hidden space-y-6">
+<div class="card p-6">
+<div class="flex flex-wrap gap-3 justify-between">
+<h2 class="text-xl font-black">👥 Extreme User Control</h2>
+<div class="flex gap-2">
+<input id="userSearch" oninput="filterUsers()" placeholder="Search ID / username" class="bg-white/5 border border-white/10 rounded-full px-4 py-2 text-xs w-[200px]">
+<select id="userFilter" onchange="filterUsers()" class="bg-white/5 border border-white/10 rounded-full px-3 py-2 text-xs"><option value="all">All</option><option value="banned">Banned</option><option value="whale">Balance > $500</option><option value="no_task">Tasks not done</option></select>
+<button onclick="bulkActionPrompt()" class="btn-primary px-4 py-2 rounded-full text-xs">Bulk Action</button>
+</div>
+</div>
+<div class="mt-6 overflow-x-auto">
+<table class="w-full text-[12px]"><thead class="opacity-50 text-[11px] tracking-widest"><tr><th class="text-left p-3">ID</th><th class="text-left p-3">User</th><th class="text-left p-3">Balance</th><th class="text-left p-3">Withdrawable</th><th class="text-left p-3">Dep / Wd</th><th class="text-left p-3">Tasks</th><th class="text-left p-3">Status</th><th class="text-left p-3">Actions</th></tr></thead><tbody id="users"></tbody></table>
+</div>
+</div>
+</section>
+
+<!-- DEPOSITS EXTREME -->
+<section data-section="deposits" class="hidden space-y-6">
+<div class="card p-6">
+<div class="flex justify-between items-center"><h2 class="text-xl font-black">💳 Deposits — Approve / Reject / Expire / Edit / Delete</h2>
+<div class="flex gap-2"><select id="depFilter" onchange="filterDeposits()" class="bg-white/5 border border-white/10 rounded-full px-3 py-2 text-xs"><option value="all">All</option><option value="awaiting_payment">Awaiting</option><option value="verified">Verified</option><option value="rejected">Rejected</option><option value="expired">Expired</option></select>
+<button onclick="loadAll()" class="glass px-3 py-2 rounded-full text-xs">Refresh</button></div>
+</div>
+<div class="overflow-x-auto mt-6">
+<table class="w-full text-[12px]"><thead class="opacity-50 text-[11px]"><tr><th class="text-left p-3">ID / Invoice</th><th class="text-left p-3">User</th><th class="text-left p-3">Amount / Expected</th><th class="text-left p-3">Network</th><th class="text-left p-3">Status</th><th class="text-left p-3">Created</th><th class="text-left p-3">Actions</th></tr></thead><tbody id="deposits"></tbody></table>
+</div>
+</div>
+</section>
+
+<!-- WITHDRAWALS -->
+<section data-section="withdrawals" class="hidden space-y-6">
+<div class="card p-6">
+<h2 class="text-xl font-black">💸 Withdrawals — Approve / Reject / Expire</h2>
+<div class="overflow-x-auto mt-6"><table class="w-full text-[12px]"><thead class="opacity-50 text-[11px]"><tr><th class="text-left p-3">ID</th><th class="text-left p-3">User</th><th class="text-left p-3">Amount</th><th class="text-left p-3">Address</th><th class="text-left p-3">Network</th><th class="text-left p-3">Status</th><th class="text-left p-3">Date</th><th class="text-left p-3">Actions</th></tr></thead><tbody id="withdrawals"></tbody></table></div>
+</div>
+</section>
+
+<!-- TASKS -->
+<section data-section="tasks" class="hidden space-y-6">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 card p-6">
+<h2 class="text-xl font-black">🎯 Tasks & Join-to-Earn — 1 USDT per Join</h2>
+<p class="text-xs opacity-60 mt-2">Create mandatory tasks. User must join group → bot verifies via getChatMember → instant 1 USDT to withdrawable. Blocks withdrawal until done.</p>
+<div class="overflow-x-auto mt-6"><table class="w-full text-[12px]"><thead class="opacity-50"><tr><th class="text-left p-3">ID</th><th class="text-left p-3">Title / Group</th><th class="text-left p-3">Link</th><th class="text-left p-3">Reward</th><th class="text-left p-3">Mandatory</th><th class="text-left p-3">Active</th><th class="text-left p-3">Actions</th></tr></thead><tbody id="tasksList"></tbody></table></div>
+</div>
+<div class="card p-6 bg-gradient-to-br from-[#6C3BFF]/10 to-[#121214] border-[#6C3BFF]/20">
+<h3 class="font-black">➕ Create Task</h3>
+<div class="mt-4 space-y-3">
+<input id="t_title" placeholder="Title: Join Main Group" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs">
+<input id="t_desc" placeholder="Description: Join and earn 1 USDT" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs">
+<input id="t_link" placeholder="Group Link: https://t.me/PT_AI_Trading_Group" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs">
+<input id="t_group_id" placeholder="Group ID: @PT_AI_Trading_Group or -100xxxxxxxxxx" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs">
+<input id="t_username" placeholder="Username: PT_AI_Trading_Group (optional)" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs">
+<div class="grid grid-cols-2 gap-2">
+<input id="t_reward" type="number" value="1" step="0.1" placeholder="Reward 1" class="bg-white/5 border border-white/10 rounded-xl p-3 text-xs">
+<select id="t_reward_type" class="bg-white/5 border border-white/10 rounded-xl p-3 text-xs"><option value="withdrawable">Withdrawable</option><option value="balance">Trading Balance</option></select>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<label class="flex items-center gap-2 bg-white/5 p-3 rounded-xl text-xs"><input id="t_mandatory" type="checkbox" checked> Mandatory (blocks withdraw)</label>
+<label class="flex items-center gap-2 bg-white/5 p-3 rounded-xl text-xs"><input id="t_active" type="checkbox" checked> Active</label>
+</div>
+<input id="t_icon" placeholder="Icon: 🚀" value="🚀" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs">
+<button onclick="createTask()" class="w-full btn-primary py-3 rounded-full text-sm mt-2">Create Task + 1 USDT Reward</button>
+<div class="bg-[#FFD60A]/10 border border-[#FFD60A]/20 rounded-xl p-3 text-[11px] leading-relaxed mt-2"><b class="text-[#FFD60A]">How it works:</b><br>1. Set Group ID = @username or -100... (bot must be admin)<br>2. User taps Join → app records<br>3. User taps Verify → server calls getChatMember → if member, credits 1 USDT instantly to withdrawable<br>4. If mandatory, withdraw blocked until all tasks verified</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- GROUPS -->
+<section data-section="groups" class="hidden space-y-6">
+<div class="card p-6">
+<h2 class="text-xl font-black">🚀 Group Manager</h2>
+<div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+<div><label class="text-[11px] opacity-60">Target Group</label><select id="addGroupSelect" class="mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><option value="group">PT_AI_Trading_Group (Main)</option><option value="channel">PT_AI_Trading (Channel)</option><option value="support">PT_AI_Support</option><option value="all">All Groups</option></select></div>
+<div><label class="text-[11px] opacity-60">Method</label><select id="addMethod" class="mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><option value="direct">Direct Add + Invite Fallback</option></select></div>
+</div>
+<div class="mt-4"><label class="text-[11px] opacity-60">Telegram User IDs (comma/space/newline separated)</label><textarea id="bulkIds" placeholder="Paste IDs here: 8942668092" class="mt-1 w-full h-[120px] bg-white/5 border border-white/10 rounded-xl p-3 text-sm mono"></textarea></div>
+<div class="mt-4 flex gap-2"><button onclick="addMembers()" class="flex-1 btn-primary py-3 rounded-full font-bold">⚡ Add Members Now</button><button onclick="generateInvites()" class="glass px-5 py-3 rounded-full text-sm">Generate Invite Link</button></div>
+<div id="addLog" class="hidden mt-4 bg-black/50 border border-white/10 rounded-xl p-3 text-xs mono"></div>
+<div class="mt-6 flex gap-2"><input id="singleId" placeholder="Single Telegram ID" class="bg-white/5 border border-white/10 rounded-xl p-3 text-sm mono flex-1"><button onclick="addSingle()" class="glass px-4 py-3 rounded-xl text-sm">Add Single</button></div>
+</div>
+<div class="card p-6"><h3 class="font-bold">Recent Group Adds</h3><div class="overflow-x-auto mt-4"><table class="w-full text-xs"><thead class="opacity-50"><tr><th class="p-2 text-left">ID</th><th class="p-2 text-left">User</th><th class="p-2 text-left">Group</th><th class="p-2 text-left">Method</th><th class="p-2 text-left">Status</th><th class="p-2 text-left">Time</th></tr></thead><tbody id="groupMembers"></tbody></table></div></div>
+</section>
+
+<!-- REFERRALS -->
+<section data-section="referrals" class="hidden space-y-6">
+<div class="card p-6"><h2 class="text-xl font-black">🌐 Referral Logs</h2><div class="overflow-x-auto mt-4"><table class="w-full text-xs"><thead class="opacity-50"><tr><th class="p-2 text-left">From</th><th class="p-2 text-left">To</th><th class="p-2 text-left">Level</th><th class="p-2 text-left">Deposit</th><th class="p-2 text-left">Bonus</th></tr></thead><tbody id="refs"></tbody></table></div></div>
+</section>
+
+<!-- EXTREME TOOLS -->
+<section data-section="extreme" class="hidden space-y-6">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="card p-6 border-red-500/20"><h3 class="font-black text-red-400">🔥 Extreme Fund Tools</h3>
+<div class="mt-4 space-y-3">
+<div class="grid grid-cols-3 gap-2"><input id="ex_user" placeholder="User ID" class="bg-white/5 border border-white/10 rounded-xl p-3 text-xs col-span-1"><input id="ex_amount" type="number" placeholder="Amount" class="bg-white/5 border border-white/10 rounded-xl p-3 text-xs col-span-1"><select id="ex_field" class="bg-white/5 border border-white/10 rounded-xl p-3 text-xs"><option value="balance">Balance</option><option value="withdrawable">Withdrawable</option><option value="profit">Profit</option></select></div>
+<div class="grid grid-cols-3 gap-2"><button onclick="extremeAction('add_balance')" class="btn-emerald py-2.5 rounded-full text-xs font-bold">+ Add Bal</button><button onclick="extremeAction('deduct_balance')" class="btn-red py-2.5 rounded-full text-xs font-bold">- Less Bal</button><button onclick="extremeAction('set_balance')" class="bg-white/10 py-2.5 rounded-full text-xs font-bold">Set Bal</button></div>
+<div class="grid grid-cols-3 gap-2"><button onclick="extremeAction('add_withdrawable')" class="btn-emerald py-2.5 rounded-full text-xs font-bold">+ Add WD</button><button onclick="extremeAction('deduct_withdrawable')" class="btn-red py-2.5 rounded-full text-xs font-bold">- Less WD</button><button onclick="extremeAction('set_withdrawable')" class="bg-white/10 py-2.5 rounded-full text-xs font-bold">Set WD</button></div>
+<div class="grid grid-cols-2 gap-2"><button onclick="extremeAction('reset_profit')" class="bg-white/5 py-2.5 rounded-full text-xs">Reset Profit</button><button onclick="extremeAction('clear_tasks')" class="bg-white/5 py-2.5 rounded-full text-xs">Clear Tasks (retry)</button></div>
+</div>
+</div>
+<div class="card p-6 border-[#FFD60A]/20"><h3 class="font-black text-[#FFD60A]">⚡ System Actions</h3>
+<div class="mt-4 grid grid-cols-2 gap-2">
+<button onclick="purgeExpired()" class="glass py-3 rounded-xl text-xs font-bold">Purge Expired Deposits</button>
+<button onclick="approveAllPending()" class="btn-primary py-3 rounded-xl text-xs font-bold">Approve All Pending Deposits</button>
+<button onclick="broadcastBonus()" class="glass py-3 rounded-xl text-xs font-bold">Broadcast 1 USDT Bonus</button>
+<button onclick="createDefaultTasks()" class="bg-[#6C3BFF]/20 border border-[#6C3BFF]/30 py-3 rounded-xl text-xs font-bold">Create Default Join Tasks</button>
+</div>
+<div class="mt-4 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-[11px]"><b class="text-red-400">Danger Zone:</b><br>• Deduct = instantly less funds from user<br>• Set = override to exact value<br>• All actions logged in admin_logs</div>
+</div>
+</div>
+</section>
+
+<!-- BROADCAST -->
+<section data-section="broadcast" class="hidden space-y-6">
+<div class="card p-6"><h2 class="text-xl font-black">📢 Broadcast</h2><textarea id="broadcastMsg" placeholder="Message to all users..." class="mt-4 w-full h-[140px] bg-white/5 border border-white/10 rounded-xl p-3 text-sm"></textarea><button onclick="sendBroadcast()" class="mt-3 btn-primary px-6 py-3 rounded-full text-sm font-bold">Send to All</button></div>
+</section>
+
+<!-- SETTINGS -->
+<section data-section="settings" class="hidden space-y-6">
+<div class="card p-6"><h2 class="text-xl font-black">⚙️ Settings</h2>
+<div id="envStatus" class="mt-4 grid grid-cols-2 gap-3 text-xs"></div>
+<div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3"><input id="env_bot_token" placeholder="BOT_TOKEN" class="bg-white/5 border border-white/10 rounded-xl p-3 text-xs"><input id="env_group_id" placeholder="GROUP_ID -100..." class="bg-white/5 border border-white/10 rounded-xl p-3 text-xs"><input id="env_channel_id" placeholder="CHANNEL_ID @..." class="bg-white/5 border border-white/10 rounded-xl p-3 text-xs"></div>
+<div class="mt-3 flex gap-2"><button onclick="saveEnv()" class="btn-primary px-4 py-2 rounded-full text-xs">Save</button><button onclick="detectGroups()" class="glass px-4 py-2 rounded-full text-xs">Detect Groups</button><button onclick="testBot()" class="glass px-4 py-2 rounded-full text-xs">Test Bot</button></div>
+<pre id="envLog" class="hidden mt-4 bg-black/50 p-3 rounded-xl text-[11px] overflow-auto"></pre>
+</div>
+</section>
+
+</div>
 </main>
 </div>
-<div id="actionModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"><div class="bg-[#1a1a1f] rounded-2xl p-6 w-full max-w-md border border-white/10"><h3 class="font-bold mb-3" id="modalTitle">Action</h3><p id="modalUser" class="text-xs opacity-60 mb-3"></p><div id="modalContent"></div><div class="flex gap-2 mt-4"><button onclick="closeModal()" class="flex-1 bg-white/10 py-2 rounded-full text-sm">Cancel</button><button id="modalConfirm" class="flex-1 bg-[#FFD60A] text-black py-2 rounded-full font-bold text-sm">Confirm</button></div></div></div>
-<div id="createUserModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"><div class="bg-[#1a1a1f] rounded-2xl p-6 w-full max-w-md border border-white/10"><h3 class="font-bold">Create User</h3><div class="mt-4 space-y-3"><input id="cu_id" placeholder="Telegram ID" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><input id="cu_name" placeholder="Username" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><input id="cu_bal" type="number" placeholder="Balance" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"></div><div class="flex gap-2 mt-4"><button onclick="closeCreate()" class="flex-1 bg-white/10 py-2 rounded-full">Cancel</button><button onclick="confirmCreate()" class="flex-1 bg-[#FFD60A] text-black py-2 rounded-full font-bold">Create</button></div></div></div>
+
+<!-- MODALS -->
+<div id="actionModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[999]">
+<div class="card p-6 w-[90%] max-w-[420px] border-[#FFD60A]/20"><h3 id="modalTitle" class="font-black">Action</h3><p id="modalUser" class="text-xs opacity-60 mt-1"></p><div id="modalContent" class="mt-4"></div><div class="mt-6 flex gap-2"><button onclick="closeModal()" class="flex-1 glass py-3 rounded-full text-sm">Cancel</button><button onclick="confirmAction()" class="flex-1 btn-primary py-3 rounded-full text-sm font-bold">Confirm</button></div></div>
+</div>
+
+<div id="createUserModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[999]">
+<div class="card p-6 w-[90%] max-w-[420px]"><h3 class="font-black">Create User + Add to Groups</h3><div class="mt-4 space-y-3"><input id="cu_id" placeholder="User ID" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><input id="cu_name" placeholder="Username" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><input id="cu_bal" type="number" placeholder="Balance" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"></div><div class="mt-6 flex gap-2"><button onclick="closeCreate()" class="flex-1 glass py-3 rounded-full text-sm">Cancel</button><button onclick="confirmCreate()" class="flex-1 btn-primary py-3 rounded-full text-sm font-bold">Create</button></div></div>
+</div>
+
 <script>
-const navBtns=document.querySelectorAll('.nav-btn'); const sections=document.querySelectorAll('[data-section]');
-navBtns.forEach(b=>b.addEventListener('click',()=>{const tab=b.dataset.tab; navBtns.forEach(x=>{x.classList.remove('bg-white','text-black'); x.classList.add('opacity-70')}); b.classList.add('bg-white','text-black'); b.classList.remove('opacity-70'); sections.forEach(s=>s.classList.toggle('hidden',s.dataset.section!==tab)); document.getElementById('pageTitle').innerText=b.innerText; if(tab==='settings') loadEnvStatus();}));
-async function fetchJson(u,opts){let r=await fetch(u,opts); if(!r.ok) throw new Error(r.status); return r.json();}
+let selectedUser=null,currentAction=null,allUsers=[],allDeposits=[];
+async function fetchJson(url){let r=await fetch(url); if(!r.ok) throw new Error(url+' '+r.status); return r.json();}
+document.querySelectorAll('.nav-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('nav-active','bg-white','text-black')); btn.classList.add('nav-active'); let tab=btn.dataset.tab; document.querySelectorAll('[data-section]').forEach(s=>s.classList.add('hidden')); document.querySelector(`[data-section="${tab}"]`).classList.remove('hidden'); document.getElementById('pageTitle').innerText=btn.innerText.trim();});});
+
 async function loadAll(){
-try{let s=await fetchJson('/api/admin/stats'); document.getElementById('stat_users').innerText=s.total_users; document.getElementById('navUsers').innerText=s.total_users; document.getElementById('stat_bal').innerText='$'+Number(s.total_balance).toFixed(2); document.getElementById('total_dep').innerText='$'+Number(s.total_deposits||0).toFixed(2); document.getElementById('pend_dep').innerText=s.pending_deposits||0; document.getElementById('pend_wd').innerText=s.pending_withdrawals; document.getElementById('ref_paid').innerText='$'+Number(s.total_ref_paid).toFixed(2);}catch(e){}
-try{let deps=await fetchJson('/api/admin/deposits'); document.getElementById('deps').innerHTML=deps.map(d=>`<tr class='border-t border-white/5'><td class='p-2'>${d.id}</td><td class='p-2'>${d.user_id}</td><td class='p-2'>$${d.amount}</td><td class='p-2 text-[#FFD60A]'>$${d.expected||d.expected_amount}</td><td class='p-2 mono text-[9px]'>${d.invoice_id||''}</td><td class='p-2 ${d.status==='verified'?'text-emerald-400':d.status==='awaiting_payment'?'text-yellow-400':'text-red-400'}'>${d.status}</td><td class='p-2'>${d.status==='awaiting_payment'?`<button onclick="actDep(${d.id},'approve')" class='bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-[10px]'>Force</button>`:''}</td></tr>`).join('');}catch(e){}
-try{let wds=await fetchJson('/api/admin/withdrawals'); document.getElementById('wds').innerHTML=wds.map(w=>`<tr class='border-t border-white/5'><td class='p-2'>${w.id}</td><td class='p-2'>${w.user_id}</td><td class='p-2'>$${w.amount}</td><td class='p-2 ${w.status=='pending'?'text-yellow-400':'text-emerald-400'}'>${w.status}</td><td class='p-2'>${w.status=='pending'?`<button onclick="actWd(${w.id},'approve')" class='bg-emerald-500/20 px-2 py-1 rounded text-[10px]'>Pay</button>`:''}</td></tr>`).join('');}catch(e){}
-try{let refs=await fetchJson('/api/admin/referrals'); document.getElementById('refs').innerHTML=refs.map(r=>`<tr class='border-t border-white/5'><td class='p-2'>${r.from_user}</td><td class='p-2'>${r.to_user}</td><td class='p-2'>L${r.level}</td><td class='p-2 text-[#FFD60A]'>$${Number(r.bonus).toFixed(2)}</td></tr>`).join('');}catch(e){}
-try{let users=await fetchJson('/api/admin/users'); let q=document.getElementById('userSearch')?.value?.toLowerCase()||''; let filtered=q?users.filter(u=>String(u.user_id).includes(q)):users; document.getElementById('users').innerHTML=filtered.map(u=>`<tr class='border-t border-white/5 ${u.is_banned?'bg-red-500/10':''}'><td class='p-2 mono font-bold'>${u.user_id}</td><td class='p-2'>${u.username||''}</td><td class='p-2'>$${Number(u.balance).toFixed(2)}</td><td class='p-2 text-[#FFD60A]'>$${Number(u.withdrawable).toFixed(2)}</td><td class='p-2'>${u.is_banned?'<span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-[10px]">BANNED</span>':'ACTIVE'}</td><td class='p-2'><div class='flex gap-1'><button onclick='openAction(${u.user_id},"add_balance")' class='bg-emerald-500/20 px-2 py-1 rounded text-[10px]'>+BAL</button><button onclick='addSingleToGroup(${u.user_id})' class='bg-[#6C3BFF]/20 px-2 py-1 rounded text-[10px]'>+Group</button></div></td></tr>`).join('');}catch(e){}
+try{
+let stats=await fetchJson('/api/admin/stats');
+document.getElementById('stat_users').innerText=stats.total_users;
+document.getElementById('stat_bal').innerText='$'+Number(stats.total_balance).toFixed(2);
+document.getElementById('total_dep').innerText='$'+Number(stats.total_verified_deposits).toFixed(2);
+document.getElementById('total_dep_cnt').innerText=stats.verified_deposits+' verified';
+document.getElementById('pend_dep').innerText=stats.pending_deposits;
+document.getElementById('stat_expired').innerText=stats.expired_deposits;
+document.getElementById('pend_wd').innerText=stats.pending_withdrawals;
+document.getElementById('pend_all').innerText=Number(stats.pending_deposits)+Number(stats.pending_withdrawals);
+document.getElementById('ref_paid').innerText='$'+Number(stats.total_ref_paid).toFixed(2);
+document.getElementById('stat_tasks').innerText=stats.completed_tasks+'/'+stats.active_tasks;
+document.getElementById('navUsers').innerText=stats.total_users;
+document.getElementById('navDeposits').innerText=stats.pending_deposits;
+document.getElementById('navWd').innerText=stats.pending_withdrawals;
+document.getElementById('navVol').innerText='$'+Number(stats.total_deposits_all).toFixed(0);
+}catch(e){console.error(e);}
+
+try{
+let deposits=await fetchJson('/api/admin/deposits'); allDeposits=deposits;
+let filter=document.getElementById('depFilter')?.value||'all';
+let filtered=filter==='all'?deposits:deposits.filter(d=>d.status===filter);
+document.getElementById('deposits').innerHTML=filtered.map(d=>{
+let sc=d.status==='verified'?'text-emerald-400':d.status==='awaiting_payment'?'text-yellow-400':d.status==='rejected'?'text-red-400':'text-orange-400';
+let actions=d.status==='awaiting_payment'?`
+<div class="flex flex-wrap gap-1">
+<button onclick="actDep(${d.id},'approve')" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 px-2.5 py-1 rounded-full text-[10px] font-bold">✅ Approve</button>
+<button onclick="actDep(${d.id},'reject')" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-2.5 py-1 rounded-full text-[10px]">❌ Reject</button>
+<button onclick="actDep(${d.id},'expire')" class="bg-orange-500/20 text-orange-400 px-2.5 py-1 rounded-full text-[10px]">⏰ Expire</button>
+<button onclick="editDepAmount(${d.id},${d.expected})" class="bg-white/10 px-2.5 py-1 rounded-full text-[10px]">✏️ Edit</button>
+</div>`:d.status!=='verified'?`<button onclick="actDep(${d.id},'delete')" class="bg-red-500/10 px-2 py-1 rounded text-[10px]">Delete</button>`:`<span class="opacity-50 text-[10px]">${d.tx_hash?d.tx_hash.slice(0,12):''}</span>`;
+return `<tr class="border-t border-white/5 hover:bg-white/[0.03]"><td class="p-3"><p class="mono font-bold">${d.id}</p><p class="mono text-[10px] opacity-50">${d.invoice_id||''}</p></td><td class="p-3 mono font-bold">${d.user_id}</td><td class="p-3"><p class="font-bold">$${Number(d.amount).toFixed(2)}</p><p class="text-[10px] opacity-60">exp $${Number(d.expected||d.amount).toFixed(2)} / actual $${Number(d.actual_amount||0).toFixed(2)}</p></td><td class="p-3"><span class="bg-white/10 px-2 py-1 rounded-full text-[10px]">${d.network}</span></td><td class="p-3"><span class="${sc} bg-white/5 px-2 py-1 rounded-full text-[10px] font-bold">${d.status}</span></td><td class="p-3 opacity-60 text-[10px]">${(d.created_at||'').slice(0,19)}</td><td class="p-3">${actions}</td></tr>`;
+}).join('');
+}catch(e){}
+
+try{
+let wds=await fetchJson('/api/admin/withdrawals');
+document.getElementById('withdrawals').innerHTML=wds.map(w=>{
+let sc=w.status==='approved'?'text-emerald-400':w.status==='pending'?'text-yellow-400':'text-red-400';
+let actions=w.status==='pending'?`<div class="flex gap-1"><button onclick="actWd(${w.id},'approve')" class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full text-[10px] font-bold">Approve</button><button onclick="actWd(${w.id},'reject')" class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-[10px]">Reject</button><button onclick="actWd(${w.id},'expire')" class="bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full text-[10px]">Expire</button></div>`:w.status==='pending'?``:`<button onclick="actWd(${w.id},'delete')" class="bg-red-500/10 px-2 py-1 rounded text-[10px]">Delete</button>`;
+return `<tr class="border-t border-white/5"><td class="p-3 mono">${w.id}</td><td class="p-3 mono font-bold">${w.user_id}</td><td class="p-3 font-bold">$${Number(w.amount).toFixed(2)}</td><td class="p-3 mono text-[10px]">${(w.address||'').slice(0,18)}...</td><td class="p-3"><span class="bg-white/10 px-2 py-1 rounded-full text-[10px]">${w.network}</span></td><td class="p-3"><span class="${sc} font-bold text-[11px]">${w.status}</span></td><td class="p-3 opacity-50 text-[10px]">${(w.created_at||'').slice(0,16)}</td><td class="p-3">${actions}</td></tr>`;
+}).join('');
+}catch(e){}
+
+try{
+let refs=await fetchJson('/api/admin/referrals');
+document.getElementById('refs').innerHTML=refs.map(r=>`<tr class="border-t border-white/5"><td class="p-2">${r.from_user}</td><td class="p-2">${r.to_user}</td><td class="p-2">L${r.level}</td><td class="p-2">$${Number(r.deposit).toFixed(2)}</td><td class="p-2 text-[#FFD60A]">$${Number(r.bonus).toFixed(2)} (${r.percent}%)</td></tr>`).join('');
+}catch(e){}
+
+try{
+let users=await fetchJson('/api/admin/users'); allUsers=users;
+renderUsers(users);
+}catch(e){}
+
+try{
+let tasks=await fetchJson('/api/admin/tasks');
+document.getElementById('tasksList').innerHTML=tasks.map(t=>`<tr class="border-t border-white/5"><td class="p-3 mono">${t.id}</td><td class="p-3"><p class="font-bold">${t.icon} ${t.title}</p><p class="text-[10px] opacity-50 mono">${t.group_id}</p><p class="text-[10px] opacity-60">${t.description||''}</p></td><td class="p-3"><a href="${t.group_link}" target="_blank" class="text-[#6C3BFF] underline text-[11px]">${t.group_link.slice(0,30)}...</a></td><td class="p-3 font-bold text-[#FFD60A]">$${Number(t.reward).toFixed(2)}<br><span class="text-[10px] opacity-50">${t.reward_type}</span></td><td class="p-3"><span class="px-2 py-1 rounded-full text-[10px] ${t.is_mandatory?'bg-red-500/20 text-red-400':'bg-white/10'}">${t.is_mandatory?'Mandatory':'Optional'}</span></td><td class="p-3"><span class="px-2 py-1 rounded-full text-[10px] ${t.is_active?'bg-emerald-500/20 text-emerald-400':'bg-white/10'}">${t.is_active?'Active':'Disabled'}</span></td><td class="p-3"><div class="flex flex-wrap gap-1"><button onclick="toggleTask(${t.id},'toggle_active')" class="bg-white/10 px-2 py-1 rounded text-[10px]">Toggle Active</button><button onclick="toggleTask(${t.id},'toggle_mandatory')" class="bg-white/10 px-2 py-1 rounded text-[10px]">Toggle Mand</button><button onclick="toggleTask(${t.id},'delete')" class="bg-red-500/20 text-red-400 px-2 py-1 rounded text-[10px]">Delete</button></div></td></tr>`).join('');
+}catch(e){}
+
+try{
+let logs=await fetchJson('/api/admin/logs');
+document.getElementById('logs').innerHTML=logs.slice(0,20).map(l=>`<tr class="border-t border-white/5"><td class="p-2 font-bold">${l.admin_action}</td><td class="p-2 mono">${l.target_user_id||l.target_id||'-'}</td><td class="p-2 text-[11px] opacity-70">${l.details||''}</td><td class="p-2 opacity-50 text-[10px]">${(l.created_at||'').slice(0,19)}</td></tr>`).join('');
+}catch(e){}
 loadGroupMembers();
 }
-async function actWd(id,action){await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action})}); loadAll();}
-async function actDep(id,action){await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action})}); loadAll();}
-function openAction(userId, action){selectedUser=userId; currentAction=action; document.getElementById('modalUser').innerText='User ID: '+userId; document.getElementById('actionModal').classList.remove('hidden'); let title='',content=''; if(action==='add_balance'){title='Add Balance'; content=`<input id='actionAmount' type='number' placeholder='Amount' class='w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm'>`;} else{title=action; content=`<p>${action} ${userId}?</p>`;} document.getElementById('modalTitle').innerText=title; document.getElementById('modalContent').innerHTML=content;}
+
+function renderUsers(users){
+let q=document.getElementById('userSearch')?.value?.toLowerCase()||'';
+let f=document.getElementById('userFilter')?.value||'all';
+let filtered=users;
+if(q) filtered=filtered.filter(u=>String(u.user_id).includes(q) || (u.username||'').toLowerCase().includes(q));
+if(f==='banned') filtered=filtered.filter(u=>u.is_banned);
+if(f==='whale') filtered=filtered.filter(u=>Number(u.balance)>500);
+if(f==='no_task') filtered=filtered.filter(u=>true); // placeholder
+document.getElementById('users').innerHTML=filtered.slice(0,200).map(u=>`<tr class="border-t border-white/5 ${u.is_banned?'bg-red-500/10':''} hover:bg-white/[0.03]">
+<td class="p-3 mono font-bold">${u.user_id}</td><td class="p-3"><p class="font-bold">${u.username||''}</p><p class="text-[10px] opacity-50">ref:${u.referred_by||'-'}</p></td>
+<td class="p-3 font-bold">$${Number(u.balance).toFixed(2)}<br><span class="text-[10px] opacity-50">profit $${Number(u.profit||0).toFixed(2)}</span></td>
+<td class="p-3 text-[#FFD60A] font-bold">$${Number(u.withdrawable).toFixed(2)}</td>
+<td class="p-3 text-[11px]"><span class="text-emerald-400">dep $${Number(u.total_deposit||0).toFixed(0)}</span><br><span class="text-orange-400">wd $${Number(u.total_withdraw||0).toFixed(0)}</span></td>
+<td class="p-3 text-[11px] opacity-60">-</td>
+<td class="p-3">${u.is_banned?'<span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-[10px]">BANNED</span>':'<span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full text-[10px]">ACTIVE</span>'}</td>
+<td class="p-3"><div class="flex flex-wrap gap-1"><button onclick='openAction(${u.user_id},"add_balance")' class="bg-emerald-500/20 px-2 py-1 rounded text-[10px] font-bold">+Bal</button><button onclick='openAction(${u.user_id},"deduct_balance")' class="bg-red-500/20 px-2 py-1 rounded text-[10px]">-Bal</button><button onclick='openAction(${u.user_id},"add_withdrawable")' class="bg-[#FFD60A]/20 px-2 py-1 rounded text-[10px] font-bold">+WD</button><button onclick='openAction(${u.user_id},"deduct_withdrawable")' class="bg-orange-500/20 px-2 py-1 rounded text-[10px]">-WD</button><button onclick='openAction(${u.user_id},"ban")' class="bg-red-500/10 px-2 py-1 rounded text-[10px]">${u.is_banned?'Unban':'Ban'}</button><button onclick='openAction(${u.user_id},"delete")' class="bg-black border border-red-500/30 px-2 py-1 rounded text-[10px] text-red-400">Del</button></div></td></tr>`).join('');
+}
+
+function filterUsers(){ renderUsers(allUsers); }
+function filterDeposits(){ loadAll(); }
+
+async function actWd(id,action){
+let note=prompt(`Note for ${action} (optional):`)||'';
+await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action,note})});
+loadAll();
+}
+async function actDep(id,action){
+let note='';
+if(action==='reject' || action==='expire'){ note=prompt(`Reason for ${action}:`)||''; }
+if(action==='delete' && !confirm('Delete deposit '+id+'?')) return;
+await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action,note})});
+loadAll();
+}
+async function editDepAmount(id,current){
+let amt=prompt('New expected amount:', current);
+if(!amt) return;
+await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action:'edit_amount',amount:parseFloat(amt)})});
+loadAll();
+}
+
+let selectedUser=null,currentAction=null;
+function openAction(userId,action){
+selectedUser=userId; currentAction=action;
+document.getElementById('modalUser').innerText='User ID: '+userId;
+document.getElementById('actionModal').classList.remove('hidden');
+let title=action.replace('_',' ').toUpperCase();
+let content='';
+if(action.includes('balance') || action.includes('withdrawable') || action==='set_balance' || action==='set_withdrawable'){
+content=`<input id='actionAmount' type='number' step='0.01' placeholder='Amount USDT' class='w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm'><input id='actionNote' placeholder='Note (optional)' class='w-full mt-2 bg-white/5 border border-white/10 rounded-xl p-3 text-sm'>`;
+}else if(action==='delete'){
+content=`<p class="text-sm">Delete user ${userId}? This will remove all deposits, withdrawals, tasks. <b class="text-red-400">Irreversible!</b></p>`;
+}else{
+content=`<p>Confirm ${action} for ${userId}?</p>`;
+}
+document.getElementById('modalTitle').innerText=title;
+document.getElementById('modalContent').innerHTML=content;
+}
 function closeModal(){document.getElementById('actionModal').classList.add('hidden');}
-async function confirmAction(){let amount=parseFloat(document.getElementById('actionAmount')?.value||0); let res=await fetch('/api/admin/user/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:selectedUser, action:currentAction, amount:amount})}); let j=await res.json(); if(j.ok){closeModal(); loadAll();}}
+async function confirmAction(){
+let amount=parseFloat(document.getElementById('actionAmount')?.value||0);
+let note=document.getElementById('actionNote')?.value||'';
+let act=currentAction;
+if(act==='ban'){ act=document.querySelector(`tr:has(td:contains(${selectedUser}))`) ? 'ban' : 'ban'; let isBanned=allUsers.find(u=>u.user_id==selectedUser)?.is_banned; act=isBanned?'unban':'ban'; }
+if((act==='add_balance'||act==='deduct_balance'||act==='add_withdrawable'||act==='deduct_withdrawable') && amount<=0){alert('Enter amount >0'); return;}
+let res=await fetch('/api/admin/user/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:selectedUser, action:currentAction, amount:amount, note:note, field:currentAction})});
+let j=await res.json(); if(j.ok){closeModal(); loadAll();} else alert(j.error||'Failed');
+}
+
 function openCreateUser(){document.getElementById('createUserModal').classList.remove('hidden');}
 function closeCreate(){document.getElementById('createUserModal').classList.add('hidden');}
 async function confirmCreate(){let uid=document.getElementById('cu_id').value; let uname=document.getElementById('cu_name').value; let bal=parseFloat(document.getElementById('cu_bal').value||0); let res=await fetch('/api/admin/user/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:parseInt(uid), username:uname, balance:bal, add_to_groups:true})}); let j=await res.json(); if(j.ok){closeCreate(); loadAll();}}
-async function addMembers(){let ids=document.getElementById('bulkIds').value.trim(); let grp=document.getElementById('addGroupSelect').value; if(!ids){alert('Paste IDs'); return;} let list=ids.split(/[\s,;\n]+/).filter(Boolean); let log=document.getElementById('addLog'); log.classList.remove('hidden'); log.innerHTML='⏳ Adding '+list.length+' members...<br>'; let res=await fetch('/api/admin/group/bulk_add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_ids:list, group:grp, method:'direct'})}); let j=await res.json(); log.innerHTML+='<br>'+(j.logs||[]).join('<br>')+'<br><br>✅ Done: '+(j.added||0)+' added, '+(j.failed||0)+' failed'; loadGroupMembers();}
+
+async function addMembers(){let ids=document.getElementById('bulkIds').value.trim(); let grp=document.getElementById('addGroupSelect').value; if(!ids){alert('Paste IDs'); return;} let list=ids.split(/[\s,;\n]+/).filter(Boolean); let log=document.getElementById('addLog'); log.classList.remove('hidden'); log.innerHTML='⏳ Adding '+list.length+' members...<br>'; let res=await fetch('/api/admin/group/bulk_add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_ids:list, group:grp, method:'direct'})}); let j=await res.json(); log.innerHTML+='<br>'+(j.logs||[]).join('<br>')+'<br><br>✅ Done: '+(j.added||0)+' added'; loadGroupMembers();}
 async function addSingle(){let id=document.getElementById('singleId').value.trim(); if(!id){alert('Enter ID'); return;} document.getElementById('bulkIds').value=id; addMembers();}
 function addSingleToGroup(uid){document.getElementById('singleId').value=uid; document.querySelector('[data-tab="groups"]').click(); document.getElementById('bulkIds').value=uid;}
-async function generateInvites(){let grp=document.getElementById('addGroupSelect').value; let res=await fetch('/api/admin/group/invite',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({group:grp})}); let j=await res.json(); if(j.ok){prompt('Invite Link:', j.invite_link);} else alert('Failed: need bot admin + GROUP_ID');}
+async function generateInvites(){let grp=document.getElementById('addGroupSelect').value; let res=await fetch('/api/admin/group/invite',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({group:grp})}); let j=await res.json(); if(j.ok){prompt('Invite Link:', j.invite_link);} else alert('Failed');}
 async function loadGroupMembers(){try{let m=await fetchJson('/api/admin/group/members'); document.getElementById('groupMembers').innerHTML=m.map(x=>`<tr class='border-t border-white/5'><td class='p-2'>${x.id}</td><td class='p-2 mono'>${x.user_id}</td><td class='p-2'>${x.group_name}</td><td class='p-2'>${x.method}</td><td class='p-2 ${x.status==='added'?'text-emerald-400':'text-yellow-400'}'>${x.status}</td><td class='p-2 opacity-50 text-[10px]'>${(x.created_at||'').slice(0,19)}</td></tr>`).join('');}catch{}}
-async function sendBroadcast(){let msg=document.getElementById('broadcastMsg').value; let r=await fetch('/api/admin/broadcast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})}); let j=await r.json(); alert('Sent '+j.sent);}
-async function loadEnvStatus(){try{let s=await fetchJson('/api/admin/env/status'); document.getElementById('envStatus').innerHTML=`<div class="bg-white/5 p-3 rounded-xl"><p class="opacity-50">BOT_TOKEN</p><p class="font-bold ${s.has_bot_token?'text-emerald-400':'text-red-400'}">${s.BOT_TOKEN}</p></div><div class="bg-white/5 p-3 rounded-xl"><p class="opacity-50">GROUP_ID</p><p class="mono">${s.GROUP_ID} - Resolved: ${s.group_id_resolved}</p></div>`;}catch(e){}}
+async function sendBroadcast(){let msg=document.getElementById('broadcastMsg').value; if(!msg){alert('Enter message'); return;} let r=await fetch('/api/admin/broadcast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})}); let j=await r.json(); alert('Sent to '+j.sent+' users');}
+async function loadEnvStatus(){try{let s=await fetchJson('/api/admin/env/status'); document.getElementById('envStatus').innerHTML=`<div class="bg-white/5 p-3 rounded-xl"><p class="opacity-50">BOT_TOKEN</p><p class="font-bold ${s.has_bot_token?'text-emerald-400':'text-red-400'}">${s.BOT_TOKEN}</p></div><div class="bg-white/5 p-3 rounded-xl"><p class="opacity-50">GROUP_ID</p><p class="mono">${s.GROUP_ID}</p></div>`;}catch{}}
 async function saveEnv(){let body={bot_token:document.getElementById('env_bot_token').value, group_id:document.getElementById('env_group_id').value, channel_id:document.getElementById('env_channel_id').value}; let r=await fetch('/api/admin/env/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()); let log=document.getElementById('envLog'); log.classList.remove('hidden'); log.innerHTML=JSON.stringify(r,null,2); loadEnvStatus();}
 async function detectGroups(){let log=document.getElementById('envLog'); log.classList.remove('hidden'); log.innerHTML='Detecting...'; let r=await fetchJson('/api/admin/env/group_ids'); log.innerHTML=JSON.stringify(r,null,2);}
 async function testBot(){let r=await fetch('/api/admin/env/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).then(r=>r.json()); let log=document.getElementById('envLog'); log.classList.remove('hidden'); log.innerHTML=JSON.stringify(r.bot_test,null,2);}
-loadAll(); setInterval(loadAll,8000);
+
+async function createTask(){
+let payload={title:document.getElementById('t_title').value, description:document.getElementById('t_desc').value, group_link:document.getElementById('t_link').value, group_id:document.getElementById('t_group_id').value, group_username:document.getElementById('t_username').value, reward:parseFloat(document.getElementById('t_reward').value||1), reward_type:document.getElementById('t_reward_type').value, is_mandatory:document.getElementById('t_mandatory').checked?1:0, is_active:document.getElementById('t_active').checked?1:0, icon:document.getElementById('t_icon').value||'🚀'};
+if(!payload.title || !payload.group_link || !payload.group_id){alert('Title, Group Link and Group ID required'); return;}
+let r=await fetch('/api/admin/tasks/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); let j=await r.json(); if(j.ok){alert('Task created!'); loadAll();} else alert('Failed');
+}
+async function toggleTask(id,action){
+if(action==='delete' && !confirm('Delete task '+id+'?')) return;
+await fetch('/api/admin/tasks/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action})}); loadAll();
+}
+async function extremeAction(action){
+let uid=parseInt(document.getElementById('ex_user').value); let amt=parseFloat(document.getElementById('ex_amount').value||0);
+if(!uid){alert('Enter User ID'); return;}
+if(action.includes('balance') && !action.includes('reset') && !action.includes('clear') && amt===0){ if(!confirm('Amount 0?')) return; }
+let field=document.getElementById('ex_field').value;
+if(action==='add_balance'||action==='deduct_balance'||action==='set_balance'){ action=action; } // keep
+let res=await fetch('/api/admin/user/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid, action:action, amount:amt, field:field})});
+let j=await res.json(); if(j.ok){alert('Done: '+action); loadAll();} else alert(j.error||'Failed');
+}
+async function approveAllPending(){
+if(!confirm('Approve ALL pending deposits? This will credit all users!')) return;
+let deps=await fetchJson('/api/admin/deposits'); let pend=deps.filter(d=>d.status==='awaiting_payment');
+for(let d of pend){ await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.id,action:'approve'})}); }
+alert('Approved '+pend.length); loadAll();
+}
+async function purgeExpired(){
+if(!confirm('Purge expired deposits (delete)?')) return;
+let deps=await fetchJson('/api/admin/deposits'); let exp=deps.filter(d=>d.status==='expired');
+for(let d of exp){ await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.id,action:'delete'})}); }
+alert('Purged '+exp.length); loadAll();
+}
+async function broadcastBonus(){
+let amt=prompt('Bonus amount to give to ALL users (withdrawable)?','1');
+if(!amt) return; amt=parseFloat(amt); if(amt<=0) return;
+if(!confirm(`Give $${amt} to ALL ${allUsers.length} users?`)) return;
+let res=await fetch('/api/admin/bulk_action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'add_withdrawable', user_ids: allUsers.map(u=>u.user_id), amount:amt})});
+let j=await res.json(); alert('Given to '+j.count+' users'); loadAll();
+}
+async function createDefaultTasks(){
+let defaults=[
+{title:"Join Main Trading Group", description:"Join PT_AI Trading Group and earn 1 USDT instantly", group_link:"https://t.me/PT_AI_Trading_Group", group_id:"@PT_AI_Trading_Group", group_username:"PT_AI_Trading_Group", reward:1, reward_type:"withdrawable", is_mandatory:1, is_active:1, icon:"🚀"},
+{title:"Join Trading Channel", description:"Join our official channel for signals", group_link:"https://t.me/PT_AI_Trading", group_id:"@PT_AI_Trading", group_username:"PT_AI_Trading", reward:1, reward_type:"withdrawable", is_mandatory:1, is_active:1, icon:"📢"},
+{title:"Join Support Group", description:"Join support and earn bonus", group_link:"https://t.me/PT_AI_Support", group_id:"@PT_AI_Support", group_username:"PT_AI_Support", reward:1, reward_type:"withdrawable", is_mandatory:0, is_active:1, icon:"💬"}
+];
+for(let t of defaults){ await fetch('/api/admin/tasks/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(t)}); }
+alert('Default tasks created! Now edit Group IDs to real @username or -100 IDs. Bot must be admin in those groups.'); loadAll();
+}
+function exportData(){
+let csv="user_id,username,balance,withdrawable,total_deposit,total_withdraw,is_banned\n"+allUsers.map(u=>`${u.user_id},${u.username||''},${u.balance},${u.withdrawable},${u.total_deposit},${u.total_withdraw},${u.is_banned}`).join("\n");
+let blob=new Blob([csv],{type:'text/csv'}); let url=URL.createObjectURL(blob); let a=document.createElement('a'); a.href=url; a.download='users_'+Date.now()+'.csv'; a.click();
+}
+function bulkActionPrompt(){
+let ids=prompt('Enter user IDs comma separated for bulk action:'); if(!ids) return;
+let list=ids.split(/[\s,]+/).filter(Boolean).map(x=>parseInt(x));
+let action=prompt('Action: add_balance / add_withdrawable / ban / unban'); if(!action) return;
+let amount=0; if(action.includes('add')) amount=parseFloat(prompt('Amount:')||'0');
+fetch('/api/admin/bulk_action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action, user_ids:list, amount})}).then(r=>r.json()).then(j=>{alert('Done '+j.count); loadAll();});
+}
+
+// chart
+let ctx=document.getElementById('revChart')?.getContext('2d');
+if(ctx){ new Chart(ctx,{type:'line', data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], datasets:[{label:'Revenue', data:[120,450,380,720,560,900,1100], borderColor:'#FFD60A', backgroundColor:'rgba(255,214,10,0.1)', tension:0.4, fill:true}]}, options:{plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}, y:{grid:{color:'rgba(255,255,255,0.05)'}}}}}); }
+
+loadAll(); setInterval(loadAll,10000);
 </script>
 </body>
 </html>

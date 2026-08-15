@@ -34,7 +34,6 @@ def put_conn(conn):
         conn.close()
 
 def get_cursor(conn):
-    """Return mapping rows on both supported database engines."""
     return conn.cursor(cursor_factory=RealDictCursor) if USE_POSTGRES else conn.cursor()
 
 def init_db():
@@ -78,7 +77,8 @@ def init_db():
                     created_at TEXT,
                     expires_at TEXT,
                     invoice_id TEXT,
-                    expected_amount DOUBLE PRECISION
+                    expected_amount DOUBLE PRECISION,
+                    admin_note TEXT
                 )
             """)
             cur.execute("""
@@ -121,6 +121,59 @@ def init_db():
                     posted_at TEXT
                 )
             """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS group_members (
+                    id SERIAL PRIMARY KEY,
+                    user_id BIGINT,
+                    username TEXT,
+                    group_name TEXT,
+                    group_id TEXT,
+                    method TEXT,
+                    status TEXT DEFAULT 'added',
+                    invite_link TEXT,
+                    created_at TEXT DEFAULT NOW()
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS tasks (
+                    id SERIAL PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    group_link TEXT NOT NULL,
+                    group_id TEXT NOT NULL,
+                    group_username TEXT,
+                    reward DOUBLE PRECISION DEFAULT 1.0,
+                    reward_type TEXT DEFAULT 'withdrawable',
+                    type TEXT DEFAULT 'join_group',
+                    is_active INTEGER DEFAULT 1,
+                    is_mandatory INTEGER DEFAULT 1,
+                    sort_order INTEGER DEFAULT 0,
+                    created_at TEXT DEFAULT NOW(),
+                    icon TEXT DEFAULT '🚀'
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS user_tasks (
+                    id SERIAL PRIMARY KEY,
+                    user_id BIGINT,
+                    task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+                    status TEXT DEFAULT 'pending',
+                    verified_at TEXT,
+                    reward_claimed INTEGER DEFAULT 0,
+                    created_at TEXT DEFAULT NOW(),
+                    UNIQUE(user_id, task_id)
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS admin_logs (
+                    id SERIAL PRIMARY KEY,
+                    admin_action TEXT,
+                    target_user_id BIGINT,
+                    target_id INTEGER,
+                    details TEXT,
+                    created_at TEXT DEFAULT NOW()
+                )
+            """)
             conn.commit()
             cur.close()
         else:
@@ -138,7 +191,7 @@ def init_db():
              user_id INTEGER, amount REAL, network TEXT, tx_hash TEXT,
              status TEXT DEFAULT 'awaiting_payment', actual_amount REAL DEFAULT 0,
              verified_at TEXT, created_at TEXT, expires_at TEXT,
-             invoice_id TEXT, expected_amount REAL
+             invoice_id TEXT, expected_amount REAL, admin_note TEXT
             )""")
             conn.execute("""CREATE TABLE IF NOT EXISTS withdrawals (
              id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -158,43 +211,29 @@ def init_db():
              id INTEGER PRIMARY KEY AUTOINCREMENT,
              withdrawal_id INTEGER, tx_hash TEXT, posted_at TEXT
             )""")
-            conn.commit()
-        # Keep existing installations compatible when a previous release created
-        # an older version of one of these tables.
-        migrations = {
-            "users": [
-                ("username", "TEXT"), ("referral_earnings", "DOUBLE PRECISION DEFAULT 0"),
-                ("created_at", "TEXT"), ("last_withdraw_date", "TEXT"), ("is_banned", "INTEGER DEFAULT 0"),
-            ],
-            "deposits": [
-                ("actual_amount", "DOUBLE PRECISION DEFAULT 0"), ("verified_at", "TEXT"),
-                ("expires_at", "TEXT"), ("invoice_id", "TEXT"), ("expected_amount", "DOUBLE PRECISION"),
-            ],
-            "withdrawals": [("auto_approved", "INTEGER DEFAULT 0"), ("tx_hash", "TEXT"), ("admin_note", "TEXT")],
-            "referral_logs": [("bonus_percent", "DOUBLE PRECISION")],
-        }
-        if USE_POSTGRES:
-            cur = conn.cursor()
-            for table, columns in migrations.items():
-                for name, definition in columns:
-                    cur.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {name} {definition}")
-            # migrate_db.py intentionally mirrors SQLite primary keys.  SQLite
-            # AUTOINCREMENT becomes a plain BIGINT primary key there, so attach
-            # a sequence/default after migration before any new invoice,
-            # withdrawal, referral log, or announcement is inserted.
-            for table in ("deposits", "withdrawals", "referral_logs", "withdrawal_announcements"):
-                sequence = f"{table}_id_seq"
-                cur.execute(f"CREATE SEQUENCE IF NOT EXISTS {sequence}")
-                cur.execute(f"ALTER TABLE {table} ALTER COLUMN id SET DEFAULT nextval('{sequence}'::regclass)")
-                cur.execute(f"SELECT setval('{sequence}', COALESCE((SELECT MAX(id) FROM {table}), 0) + 1, false)")
-            conn.commit()
-            cur.close()
-        else:
-            for table, columns in migrations.items():
-                existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
-                for name, definition in columns:
-                    if name not in existing:
-                        conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {definition.replace('DOUBLE PRECISION', 'REAL')}")
+            conn.execute("""CREATE TABLE IF NOT EXISTS group_members (
+             id INTEGER PRIMARY KEY AUTOINCREMENT,
+             user_id INTEGER, username TEXT, group_name TEXT, group_id TEXT,
+             method TEXT, status TEXT DEFAULT 'added', invite_link TEXT, created_at TEXT
+            )""")
+            conn.execute("""CREATE TABLE IF NOT EXISTS tasks (
+             id INTEGER PRIMARY KEY AUTOINCREMENT,
+             title TEXT NOT NULL, description TEXT, group_link TEXT NOT NULL,
+             group_id TEXT NOT NULL, group_username TEXT, reward REAL DEFAULT 1.0,
+             reward_type TEXT DEFAULT 'withdrawable', type TEXT DEFAULT 'join_group',
+             is_active INTEGER DEFAULT 1, is_mandatory INTEGER DEFAULT 1,
+             sort_order INTEGER DEFAULT 0, created_at TEXT, icon TEXT DEFAULT '🚀'
+            )""")
+            conn.execute("""CREATE TABLE IF NOT EXISTS user_tasks (
+             id INTEGER PRIMARY KEY AUTOINCREMENT,
+             user_id INTEGER, task_id INTEGER,
+             status TEXT DEFAULT 'pending', verified_at TEXT, reward_claimed INTEGER DEFAULT 0,
+             created_at TEXT, UNIQUE(user_id, task_id)
+            )""")
+            conn.execute("""CREATE TABLE IF NOT EXISTS admin_logs (
+             id INTEGER PRIMARY KEY AUTOINCREMENT,
+             admin_action TEXT, target_user_id INTEGER, target_id INTEGER, details TEXT, created_at TEXT
+            )""")
             conn.commit()
         print(f"✅ Database ready: {'POSTGRES' if USE_POSTGRES else 'SQLITE at '+SQLITE_PATH}")
     finally:
