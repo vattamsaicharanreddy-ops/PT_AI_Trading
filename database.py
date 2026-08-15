@@ -178,6 +178,15 @@ def init_db():
             for table, columns in migrations.items():
                 for name, definition in columns:
                     cur.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {name} {definition}")
+            # migrate_db.py intentionally mirrors SQLite primary keys.  SQLite
+            # AUTOINCREMENT becomes a plain BIGINT primary key there, so attach
+            # a sequence/default after migration before any new invoice,
+            # withdrawal, referral log, or announcement is inserted.
+            for table in ("deposits", "withdrawals", "referral_logs", "withdrawal_announcements"):
+                sequence = f"{table}_id_seq"
+                cur.execute(f"CREATE SEQUENCE IF NOT EXISTS {sequence}")
+                cur.execute(f"ALTER TABLE {table} ALTER COLUMN id SET DEFAULT nextval('{sequence}'::regclass)")
+                cur.execute(f"SELECT setval('{sequence}', COALESCE((SELECT MAX(id) FROM {table}), 0) + 1, false)")
             conn.commit()
             cur.close()
         else:
