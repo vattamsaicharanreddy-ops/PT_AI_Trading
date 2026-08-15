@@ -1,104 +1,129 @@
-<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>PT_AI Admin - Invoice System</title><script src='https://cdn.tailwindcss.com'></script></head><body class='bg-[#0a0a0f] text-white p-4 min-h-screen'>
-<h1 class='text-2xl font-bold'>PT_AI Trading - Admin Invoice System</h1>
-<p class='text-xs opacity-50'>Invoice Deposit • Timer 15 min • Auto Detection via Blockchain • No TX Hash Manual Entry • Min 20 USDT</p>
-<div class='grid grid-cols-2 md:grid-cols-6 gap-4 mt-6 mb-6'>
-<div class='bg-white/5 p-4 rounded-2xl'><p class='text-xs opacity-50'>USERS</p><p id='stat_users' class='text-xl font-bold'>0</p></div>
-<div class='bg-white/5 p-4 rounded-2xl'><p class='text-xs opacity-50'>TOTAL BAL</p><p id='stat_bal' class='text-xl font-bold text-[#FFD60A]'>$0</p></div>
-<div class='bg-white/5 p-4 rounded-2xl'><p class='text-xs opacity-50'>VERIFIED DEPOSITS</p><p id='total_dep' class='text-xl font-bold text-emerald-400'>$0</p></div>
-<div class='bg-yellow-500/10 p-4 rounded-2xl'><p class='text-xs text-yellow-400'>AWAITING PAYMENT</p><p id='pend_dep' class='text-xl font-bold text-yellow-400'>0</p></div>
-<div class='bg-yellow-500/10 p-4 rounded-2xl'><p class='text-xs text-yellow-400'>PEND WD</p><p id='pend_wd' class='text-xl font-bold text-yellow-400'>0</p></div>
-<div class='bg-emerald-500/10 p-4 rounded-2xl'><p class='text-xs text-emerald-400'>TOTAL REF PAID</p><p id='ref_paid' class='text-xl font-bold text-emerald-400'>$0</p></div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PT_AI — Command Center PRO FINAL</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>*{font-family:'Inter',sans-serif} .mono{font-family:'JetBrains Mono',monospace}</style>
+</head>
+<body class="bg-[#050507] text-white min-h-screen">
+<div class="flex h-screen">
+<aside class="w-[280px] bg-[#0a0a0f] border-r border-white/10 flex flex-col">
+  <div class="p-6 border-b border-white/10"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6C3BFF] to-[#FFD60A] flex items-center justify-center font-black">PT</div><div><p class="font-black">PT_AI</p><p class="text-[10px] tracking-[3px] opacity-50">COMMAND CENTER PRO</p></div></div></div>
+  <nav class="flex-1 p-4 space-y-1">
+    <button data-tab="dashboard" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl bg-white text-black font-bold text-sm">📊 Dashboard</button>
+    <button data-tab="users" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 text-sm opacity-70">👥 Users <span id="navUsers" class="ml-auto bg-white/10 px-2 py-0.5 rounded-full text-xs">0</span></button>
+    <button data-tab="groups" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl bg-[#FFD60A]/20 text-[#FFD60A] font-bold text-sm border border-[#FFD60A]/30">🚀 Groups & Direct Add ⚡ NEW</button>
+    <button data-tab="deposits" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 text-sm opacity-70">💳 Deposits</button>
+    <button data-tab="withdrawals" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 text-sm opacity-70">💸 Withdrawals</button>
+    <button data-tab="referrals" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 text-sm opacity-70">🌐 Referrals</button>
+    <button data-tab="broadcast" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 text-sm opacity-70">📢 Broadcast</button>
+    <button data-tab="settings" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 text-sm opacity-70">⚙️ Settings - Addresses & Bot</button>
+  </nav>
+  <div class="p-4 border-t border-white/10"><div class="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-3"><p class="text-xs font-bold text-emerald-400">✅ FINAL FIXED VERSION</p><p class="text-[11px] opacity-70 mt-1">TRC20: TAFHf1pxsX...<br>BEP20: 0xDD190484...</p><p class="text-[10px] opacity-50 mt-2">Invoices + Group Add + Bot Conflict Fix</p></div></div>
+</aside>
+<main class="flex-1 overflow-y-auto">
+  <header class="h-[64px] border-b border-white/10 flex items-center px-8 justify-between"><h1 id="pageTitle" class="font-black text-lg">Dashboard</h1><button onclick="loadAll()" class="bg-white/10 px-3 py-1.5 rounded-full text-xs">↻ Refresh</button></header>
+  <div class="p-8 space-y-6" id="content">
+    <section data-section="dashboard" class="space-y-6">
+      <div class="grid grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-4"><p class="text-[11px] opacity-50">USERS</p><p id="stat_users" class="text-xl font-black mt-1">0</p></div>
+        <div class="bg-[#FFD60A]/10 border border-[#FFD60A]/20 rounded-2xl p-4"><p class="text-[11px] text-[#FFD60A]">TOTAL BAL</p><p id="stat_bal" class="text-xl font-black mt-1">$0</p></div>
+        <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4"><p class="text-[11px] text-emerald-400">VERIFIED DEPOSITS</p><p id="total_dep" class="text-xl font-black mt-1">$0</p></div>
+        <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4"><p class="text-[11px] text-yellow-400">AWAITING</p><p id="pend_dep" class="text-xl font-black mt-1">0</p></div>
+        <div class="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4"><p class="text-[11px] text-orange-400">PEND WD</p><p id="pend_wd" class="text-xl font-black mt-1">0</p></div>
+        <div class="bg-[#6C3BFF]/10 border border-[#6C3BFF]/20 rounded-2xl p-4"><p class="text-[11px] text-[#A5A6F6]">REF PAID</p><p id="ref_paid" class="text-xl font-black mt-1">$0</p></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-[#121214] border border-white/10 rounded-[24px] p-6"><h3 class="font-bold">Revenue Chart</h3><canvas id="revChart" height="120"></canvas></div>
+        <div class="bg-[#121214] border border-emerald-500/20 rounded-[24px] p-6"><h3 class="font-bold text-sm">🛡️ Invoice Security FIXED</h3><p class="text-xs opacity-70 mt-3">Your real addresses now used:<br><br><b>TRC20:</b><br><span class="mono text-[10px] bg-white/5 p-1 rounded">TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC</span><br><br><b>BEP20/ERC20:</b><br><span class="mono text-[10px] bg-white/5 p-1 rounded">0xDD190484827BB976acEB975C94d5c58fc8c87Cfd</span><br><br>Frontend + Backend synced ✅<br>Invoice routes fixed ✅<br>Group direct add fixed ✅</p></div>
+      </div>
+    </section>
+    <section data-section="groups" class="hidden space-y-6">
+      <div class="bg-gradient-to-br from-[#6C3BFF]/20 to-[#121214] border border-[#6C3BFF]/20 rounded-[28px] p-6">
+        <h2 class="text-xl font-black">🚀 Group Manager — Direct Member Add (FIXED)</h2>
+        <p class="text-xs opacity-60 mt-2">Fixed counter bug + BOT_TOKEN check + auto invite + DM. If user never started bot, bot creates 1-time invite link.</p>
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div><label class="text-[11px] opacity-60">Target Group</label><select id="addGroupSelect" class="mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><option value="group">PT_AI_Trading_Group (Main)</option><option value="channel">PT_AI_Trading (Channel)</option><option value="support">PT_AI_Support</option><option value="all">All Groups</option></select></div>
+          <div><label class="text-[11px] opacity-60">Method</label><select id="addMethod" class="mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><option value="direct">Direct Add + Invite Fallback (Recommended)</option></select></div>
+        </div>
+        <div class="mt-4"><label class="text-[11px] opacity-60">Telegram User IDs (comma/space/newline separated) - Example: 8942668092</label><textarea id="bulkIds" placeholder="Paste IDs here: 8942668092" class="mt-1 w-full h-[120px] bg-white/5 border border-white/10 rounded-xl p-3 text-sm mono"></textarea></div>
+        <div class="mt-4 flex gap-2"><button onclick="addMembers()" class="flex-1 bg-[#FFD60A] text-black py-3 rounded-full font-bold">⚡ Add Members Now - Fixed Counter</button><button onclick="generateInvites()" class="bg-white/10 px-5 py-3 rounded-full text-sm">Generate Invite Link</button></div>
+        <div id="addLog" class="mt-4 hidden bg-black/60 border border-white/10 rounded-xl p-3 text-xs mono max-h-[300px] overflow-y-auto"></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="bg-[#121214] border border-white/10 rounded-[24px] p-5"><h3 class="font-bold text-sm">Quick Add Single</h3><div class="mt-3 space-y-3"><input id="singleId" placeholder="Telegram ID e.g. 8942668092" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm mono"><input id="singleName" placeholder="Username optional" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><input id="singleBal" type="number" placeholder="Balance" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><button onclick="addSingle()" class="w-full bg-white text-black py-2.5 rounded-full font-bold text-sm">Add + Create Account</button></div></div>
+        <div class="bg-[#121214] border border-white/10 rounded-[24px] p-5"><h3 class="font-bold text-sm">How Direct Add Works (Fixed)</h3><ul class="mt-2 space-y-2 text-xs opacity-80 list-disc pl-4"><li>BOT_TOKEN must be set in Settings</li><li>Bot must be Admin in group</li><li>If user /started bot → unbanChatMember adds directly</li><li>If new user → creates 1-time invite + DMs (if possible)</li><li>Counter fixed: now shows real added/failed</li></ul></div>
+        <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-[24px] p-5"><h3 class="font-bold text-sm text-emerald-400">✅ This is PRO version</h3><p class="text-xs opacity-70 mt-2">If you see old admin with 6 boxes only, you are on old file. Deploy this file.</p><p class="text-xs mono mt-3 bg-black/50 p-2 rounded">Version: PRO_FINAL_2025_TAFH</p></div>
+      </div>
+      <div class="bg-white/5 border border-white/10 rounded-[24px] p-5"><div class="flex justify-between"><h3 class="font-bold text-sm">Group Members Log - Last 200</h3><button onclick="loadGroupMembers()" class="bg-white/10 px-3 py-1 rounded-full text-xs">Refresh</button></div><div class="mt-3 overflow-x-auto"><table class="w-full text-xs"><thead class="opacity-50"><tr><th>ID</th><th>User</th><th>Group</th><th>Method</th><th>Status</th><th>Time</th></tr></thead><tbody id="groupMembers"></tbody></table></div></div>
+    </section>
+    <section data-section="users" class="hidden"><div class="bg-[#121214] border border-white/10 rounded-[24px] p-5"><div class="flex justify-between"><h3 class="font-bold">All Users - Real Telegram IDs</h3><div class="flex gap-2"><input id="userSearch" placeholder="Filter" class="bg-white/5 border border-white/10 rounded-full px-3 py-1.5 text-xs"><button onclick="openCreateUser()" class="bg-[#FFD60A] text-black px-4 py-1.5 rounded-full text-xs font-bold">+ Create User</button></div></div><div class="mt-4 overflow-x-auto"><table class="w-full text-xs"><thead class="opacity-50"><tr><th class="p-2 text-left">Telegram ID</th><th>Username</th><th class="p-2">Balance</th><th class="p-2">Wallet</th><th>Status</th><th>Actions</th></tr></thead><tbody id="users"></tbody></table></div></div></section>
+    <section data-section="deposits" class="hidden"><div class="bg-white/5 rounded-2xl p-5"><h3 class="font-bold mb-3">Deposits - Invoice System</h3><table class="w-full text-xs"><thead><tr><th>ID</th><th>User</th><th>Amt</th><th>Expected</th><th>Invoice</th><th>Status</th><th>Action</th></tr></thead><tbody id="deps"></tbody></table></div></section>
+    <section data-section="withdrawals" class="hidden"><div class="bg-white/5 rounded-2xl p-5"><h3 class="font-bold mb-3">Withdrawals</h3><table class="w-full text-xs"><thead><tr><th>ID</th><th>User</th><th>Amt</th><th>Status</th><th>Action</th></tr></thead><tbody id="wds"></tbody></table></div></section>
+    <section data-section="referrals" class="hidden"><div class="bg-white/5 rounded-2xl p-5"><h3 class="font-bold mb-3">Referrals</h3><table class="w-full text-xs"><thead><tr><th>From</th><th>To</th><th>Lvl</th><th>Bonus</th></tr></thead><tbody id="refs"></tbody></table></div></section>
+    <section data-section="broadcast" class="hidden"><div class="bg-[#121214] border border-white/10 rounded-[24px] p-6"><h3 class="font-bold">📢 Broadcast</h3><textarea id="broadcastMsg" placeholder="Message to all users" class="mt-3 w-full h-[120px] bg-white/5 border border-white/10 rounded-xl p-3 text-sm"></textarea><button onclick="sendBroadcast()" class="mt-3 bg-[#FFD60A] text-black px-6 py-2 rounded-full font-bold text-sm">Send</button></div></section>
+    <section data-section="settings" class="hidden space-y-6">
+      <div class="bg-[#121214] border border-white/10 rounded-[24px] p-6">
+        <h3 class="font-bold text-lg">⚙️ Settings — Your Real Addresses</h3>
+        <p class="text-xs opacity-60 mt-2">Correct addresses: TRC20 TAFH... and BEP20 0xDD19... synced everywhere.</p>
+        <div id="envStatus" class="mt-4 grid grid-cols-2 gap-3 text-xs"></div>
+        <div class="mt-6 grid grid-cols-2 gap-4">
+          <div><label class="text-[11px] opacity-60">BOT_TOKEN</label><input id="env_bot_token" placeholder="123456:AAH..." class="mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm mono"></div>
+          <div><label class="text-[11px] opacity-60">GROUP_ID (-100... or @username)</label><input id="env_group_id" placeholder="-100... or @PT_AI_Trading_Group" class="mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm mono"></div>
+          <div><label class="text-[11px] opacity-60">CHANNEL_ID</label><input id="env_channel_id" placeholder="-100... or @PT_AI_Trading" class="mt-1 w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm mono"></div>
+          <div class="flex items-end"><button onclick="saveEnv()" class="w-full bg-[#FFD60A] text-black py-3 rounded-full font-bold text-sm">💾 Save & Test Bot</button></div>
+        </div>
+        <div class="mt-6 bg-black/40 border border-white/10 rounded-xl p-4">
+          <h4 class="font-bold text-xs">Your Correct Deposit Addresses (FINAL):</h4>
+          <div class="mt-2 space-y-2 text-[11px] mono">
+            <div class="bg-white/5 p-2 rounded">TRC20: TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC</div>
+            <div class="bg-white/5 p-2 rounded">BEP20/ERC20: 0xDD190484827BB976acEB975C94d5c58fc8c87Cfd</div>
+          </div>
+          <div class="mt-3 flex gap-2"><button onclick="detectGroups()" class="bg-white/10 px-4 py-2 rounded-full text-xs">🔍 Detect Group IDs</button><button onclick="testBot()" class="bg-white/10 px-4 py-2 rounded-full text-xs">🤖 Test Bot</button></div>
+          <div id="envLog" class="mt-3 hidden bg-black/60 border border-white/10 rounded-xl p-3 text-[11px] mono max-h-[200px] overflow-y-auto"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
 </div>
-
-<div class='bg-[#121214] border border-emerald-500/20 rounded-2xl p-4 mb-6'>
-<h2 class='font-bold text-sm mb-2'>🔍 How Invoice System Prevents Fake TX Hash Exploit</h2>
-<div class='grid grid-cols-1 md:grid-cols-3 gap-3 text-xs'>
-<div class='bg-white/5 p-3 rounded-xl'><p class='font-bold text-emerald-400'>OLD (Vulnerable)</p><p class='opacity-70 mt-1'>User enters any TX hash from blockchain explorer (even if sent to someone else). System checks if TX exists, not if to YOUR address → Fake balance added ❌</p></div>
-<div class='bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20'><p class='font-bold text-emerald-400'>NEW (Secure)</p><p class='opacity-70 mt-1'>User creates invoice with timer 15 min. Must send EXACT amount to YOUR deposit address. System monitors blockchain for transactions TO YOUR ADDRESS only. No TX hash input needed → Secure ✅</p></div>
-<div class='bg-white/5 p-3 rounded-xl'><p class='font-bold text-[#FFD60A]'>Flow</p><p class='opacity-70 mt-1'>1. User enters amount 20+<br>2. Invoice created with ID + timer<br>3. User sends USDT to your address<br>4. Background monitors Tronscan every 15s for TXs to your address<br>5. If amount matches + time window → auto credits<br>6. TX hash marked as used → cannot be reused</p></div>
-</div>
-</div>
-
-<div class='grid grid-cols-1 md:grid-cols-3 gap-6'>
-<div class='bg-white/5 rounded-2xl p-4 overflow-x-auto'><h2 class='font-bold mb-3 text-sm'>Deposits - Invoice System (Auto Detected)</h2><table class='w-full text-xs'><thead><tr><th>ID</th><th>User</th><th>Amt</th><th>Expected</th><th>Net</th><th>Invoice</th><th>TX</th><th>Status</th><th>Action</th></tr></thead><tbody id='deps'></tbody></table></div>
-<div class='bg-white/5 rounded-2xl p-4'><h2 class='font-bold mb-3 text-sm'>Withdrawals</h2><table class='w-full text-xs'><thead><tr><th>ID</th><th>User</th><th>Amt</th><th>Status</th><th>Action</th></tr></thead><tbody id='wds'></tbody></table></div>
-<div class='bg-white/5 rounded-2xl p-4'><h2 class='font-bold mb-3 text-sm'>Referral Logs</h2><table class='w-full text-[10px]'><thead><tr><th>From</th><th>To</th><th>Lvl</th><th>Dep</th><th>%</th><th>Bonus</th></tr></thead><tbody id='refs'></tbody></table></div>
-</div>
-<div class='mt-6 bg-white/5 rounded-2xl p-4 overflow-x-auto'>
-<div class='flex justify-between items-center mb-3'><h2 class='font-bold'>All Users - Real Telegram IDs</h2><button onclick='load()' class='bg-white/10 px-3 py-1 rounded-full text-xs'>Refresh</button></div>
-<table class='w-full text-xs'><thead class='text-[11px] opacity-60'><tr><th class='p-2 text-left'>Telegram ID</th><th class='p-2 text-left'>Username</th><th class='p-2 text-right'>Balance</th><th class='p-2 text-right'>Withdrawable</th><th class='p-2 text-right'>Profit</th><th class='p-2'>% Day</th><th class='p-2'>AI End</th><th class='p-2'>Ref By</th><th class='p-2 text-right'>Ref Earn</th><th class='p-2'>Deposits</th><th class='p-2'>Status</th><th class='p-2'>Actions</th></tr></thead><tbody id='users'></tbody></table>
-</div>
-<div id='actionModal' class='hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4'><div class='bg-[#1a1a1f] rounded-2xl p-6 w-full max-w-md border border-white/10'><h3 class='font-bold mb-3' id='modalTitle'>User Action</h3><p class='text-xs opacity-60 mb-3' id='modalUser'>User ID: </p><div id='modalContent'></div><div class='flex gap-2 mt-4'><button onclick='closeModal()' class='flex-1 bg-white/10 py-2 rounded-full text-sm'>Cancel</button><button id='modalConfirm' class='flex-1 bg-[#FFD60A] text-black py-2 rounded-full text-sm font-bold'>Confirm</button></div></div></div>
+<div id="actionModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"><div class="bg-[#1a1a1f] rounded-2xl p-6 w-full max-w-md border border-white/10"><h3 class="font-bold mb-3" id="modalTitle">Action</h3><p id="modalUser" class="text-xs opacity-60 mb-3"></p><div id="modalContent"></div><div class="flex gap-2 mt-4"><button onclick="closeModal()" class="flex-1 bg-white/10 py-2 rounded-full text-sm">Cancel</button><button id="modalConfirm" class="flex-1 bg-[#FFD60A] text-black py-2 rounded-full font-bold text-sm">Confirm</button></div></div></div>
+<div id="createUserModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"><div class="bg-[#1a1a1f] rounded-2xl p-6 w-full max-w-md border border-white/10"><h3 class="font-bold">Create User</h3><div class="mt-4 space-y-3"><input id="cu_id" placeholder="Telegram ID" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><input id="cu_name" placeholder="Username" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"><input id="cu_bal" type="number" placeholder="Balance" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm"></div><div class="flex gap-2 mt-4"><button onclick="closeCreate()" class="flex-1 bg-white/10 py-2 rounded-full">Cancel</button><button onclick="confirmCreate()" class="flex-1 bg-[#FFD60A] text-black py-2 rounded-full font-bold">Create</button></div></div></div>
 <script>
-let selectedUser=null,currentAction=null;
-async function load(){
- try{
- let s=await fetch('/api/admin/stats').then(r=>r.json());
- document.getElementById('stat_users').innerText=s.total_users;
- document.getElementById('stat_bal').innerText='$'+Number(s.total_balance).toFixed(2);
- document.getElementById('total_dep').innerText='$'+Number(s.total_deposits||0).toFixed(2);
- document.getElementById('pend_dep').innerText=s.pending_deposits||0;
- document.getElementById('pend_wd').innerText=s.pending_withdrawals;
- document.getElementById('ref_paid').innerText='$'+Number(s.total_ref_paid).toFixed(2);
- }catch(e){}
- try{
- let deps=await fetch('/api/admin/deposits').then(r=>r.json());
- document.getElementById('deps').innerHTML=deps.map(d=>{
-   let statusColor=d.status==='verified'?'text-emerald-400':d.status==='awaiting_payment'?'text-yellow-400':d.status==='expired'?'text-red-400':'text-red-400';
-   let statusIcon=d.status==='verified'?'✅':d.status==='awaiting_payment'?'⏳':d.status==='expired'?'⌛':'❌';
-   let timeLeft='';
-   if(d.status==='awaiting_payment' && d.expires_at){
-     try{
-       let exp=new Date(d.expires_at);
-       let now=new Date();
-       let diff=Math.floor((exp-now)/1000);
-       if(diff>0) timeLeft=`${Math.floor(diff/60)}m${diff%60}s left`;
-       else timeLeft='Expired';
-     }catch(e){}
-   }
-   return `<tr class='border-t border-white/5'><td class='p-1'>${d.id}</td><td class='p-1'>${d.user_id}</td><td class='p-1'>$${d.amount}</td><td class='p-1 text-[#FFD60A]'>$${d.expected}</td><td class='p-1'>${d.network}</td><td class='p-1 font-mono text-[9px]'>${d.invoice_id||''}<br><span class='opacity-50'>${timeLeft}</span></td><td class='p-1 text-[8px] font-mono'>${d.tx_hash?d.tx_hash.substring(0,10)+'...':''}</td><td class='p-1 ${statusColor}'>${statusIcon} ${d.status}</td><td class='p-1'>${d.status==='awaiting_payment'?`<button onclick="actDep(${d.id},'approve')" class='bg-emerald-500/20 text-emerald-400 px-1 py-1 rounded text-[9px] mr-1'>Force Verify</button><button onclick="actDep(${d.id},'reject')" class='bg-red-500/20 text-red-400 px-1 py-1 rounded text-[9px]'>Expire</button>`:''}</td></tr>`;
- }).join('');
- }catch(e){ document.getElementById('deps').innerHTML='<tr><td colspan="9" class="p-2 text-red-400">Failed: '+e.message+'</td></tr>'; }
- try{
- let wds=await fetch('/api/admin/withdrawals').then(r=>r.json());
- document.getElementById('wds').innerHTML=wds.map(w=>`<tr class='border-t border-white/5'><td class='p-1'>${w.id}</td><td class='p-1'>${w.user_id}</td><td class='p-1'>$${w.amount}</td><td class='p-1 ${w.status=='pending'?'text-yellow-400':'text-green-400'}'>${w.status}</td><td class='p-1'>${w.status=='pending'?`<button onclick="actWd(${w.id},'approve')" class='bg-green-500/20 text-green-400 px-2 py-1 rounded mr-1 text-[10px]'>Pay</button><button onclick="actWd(${w.id},'reject')" class='bg-red-500/20 text-red-400 px-2 py-1 rounded text-[10px]'>Refund</button>`:''}</td></tr>`).join('');
- }catch(e){}
- try{
- let refs=await fetch('/api/admin/referrals').then(r=>r.json());
- document.getElementById('refs').innerHTML=refs.map(r=>`<tr class='border-t border-white/5'><td class='p-1'>${r.from_user}</td><td class='p-1 text-[#FFD60A]'>${r.to_user}</td><td class='p-1'>L${r.level}</td><td class='p-1'>$${r.deposit}</td><td class='p-1 text-emerald-400'>${r.percent||0}%</td><td class='p-1 text-[#FFD60A] font-bold'>$${Number(r.bonus).toFixed(2)}</td></tr>`).join('');
- }catch(e){}
- try{
- let users=await fetch('/api/admin/users').then(r=>r.json());
- document.getElementById('users').innerHTML=users.map(u=>`
-  <tr class='border-t border-white/5 ${u.is_banned?'bg-red-500/10':''}'>
-   <td class='p-2 font-mono font-bold'>${u.user_id}</td>
-   <td class='p-2'>${u.username||'user_'+u.user_id}</td>
-   <td class='p-2 text-right'>$${Number(u.balance).toFixed(2)}</td>
-   <td class='p-2 text-right text-[#FFD60A] font-bold'>$${Number(u.withdrawable).toFixed(2)}</td>
-   <td class='p-2 text-right'>$${Number(u.profit).toFixed(2)}</td>
-   <td class='p-2'>${(u.daily_percent||0).toFixed(1)}%</td>
-   <td class='p-2 text-[9px]'>${u.ai_end?u.ai_end.slice(0,10):'No AI'}</td>
-   <td class='p-2'>${u.referred_by||'-'}</td>
-   <td class='p-2 text-right text-emerald-400 font-bold'>$${Number(u.ref_earn||0).toFixed(2)}</td>
-   <td class='p-2 text-right'>$${Number(u.total_deposit||0).toFixed(2)}</td>
-   <td class='p-2'>${u.is_banned?'<span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-[10px]">BANNED</span>':'<span class="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-[10px]">ACTIVE</span>'}</td>
-   <td class='p-2'><div class='flex gap-1 flex-wrap'><button onclick='openAction(${u.user_id},"add_withdrawable")' class='bg-[#FFD60A]/20 text-[#FFD60A] px-2 py-1 rounded text-[10px]'>+WD</button><button onclick='openAction(${u.user_id},"add_balance")' class='bg-[#26A17B]/20 text-[#26A17B] px-2 py-1 rounded text-[10px]'>+BAL</button><button onclick='openAction(${u.user_id},"ban")' class='bg-red-500/20 text-red-400 px-2 py-1 rounded text-[10px]'>${u.is_banned?'Unban':'Ban'}</button></div></td>
-  </tr>`).join('');
- }catch(e){ document.getElementById('users').innerHTML='<tr><td colspan="12" class="p-4 text-center text-red-400">Failed: '+e.message+'</td></tr>'; }
+const navBtns=document.querySelectorAll('.nav-btn'); const sections=document.querySelectorAll('[data-section]');
+navBtns.forEach(b=>b.addEventListener('click',()=>{const tab=b.dataset.tab; navBtns.forEach(x=>{x.classList.remove('bg-white','text-black'); x.classList.add('opacity-70')}); b.classList.add('bg-white','text-black'); b.classList.remove('opacity-70'); sections.forEach(s=>s.classList.toggle('hidden',s.dataset.section!==tab)); document.getElementById('pageTitle').innerText=b.innerText; if(tab==='settings') loadEnvStatus();}));
+async function fetchJson(u,opts){let r=await fetch(u,opts); if(!r.ok) throw new Error(r.status); return r.json();}
+async function loadAll(){
+try{let s=await fetchJson('/api/admin/stats'); document.getElementById('stat_users').innerText=s.total_users; document.getElementById('navUsers').innerText=s.total_users; document.getElementById('stat_bal').innerText='$'+Number(s.total_balance).toFixed(2); document.getElementById('total_dep').innerText='$'+Number(s.total_deposits||0).toFixed(2); document.getElementById('pend_dep').innerText=s.pending_deposits||0; document.getElementById('pend_wd').innerText=s.pending_withdrawals; document.getElementById('ref_paid').innerText='$'+Number(s.total_ref_paid).toFixed(2);}catch(e){}
+try{let deps=await fetchJson('/api/admin/deposits'); document.getElementById('deps').innerHTML=deps.map(d=>`<tr class='border-t border-white/5'><td class='p-2'>${d.id}</td><td class='p-2'>${d.user_id}</td><td class='p-2'>$${d.amount}</td><td class='p-2 text-[#FFD60A]'>$${d.expected||d.expected_amount}</td><td class='p-2 mono text-[9px]'>${d.invoice_id||''}</td><td class='p-2 ${d.status==='verified'?'text-emerald-400':d.status==='awaiting_payment'?'text-yellow-400':'text-red-400'}'>${d.status}</td><td class='p-2'>${d.status==='awaiting_payment'?`<button onclick="actDep(${d.id},'approve')" class='bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-[10px]'>Force</button>`:''}</td></tr>`).join('');}catch(e){}
+try{let wds=await fetchJson('/api/admin/withdrawals'); document.getElementById('wds').innerHTML=wds.map(w=>`<tr class='border-t border-white/5'><td class='p-2'>${w.id}</td><td class='p-2'>${w.user_id}</td><td class='p-2'>$${w.amount}</td><td class='p-2 ${w.status=='pending'?'text-yellow-400':'text-emerald-400'}'>${w.status}</td><td class='p-2'>${w.status=='pending'?`<button onclick="actWd(${w.id},'approve')" class='bg-emerald-500/20 px-2 py-1 rounded text-[10px]'>Pay</button>`:''}</td></tr>`).join('');}catch(e){}
+try{let refs=await fetchJson('/api/admin/referrals'); document.getElementById('refs').innerHTML=refs.map(r=>`<tr class='border-t border-white/5'><td class='p-2'>${r.from_user}</td><td class='p-2'>${r.to_user}</td><td class='p-2'>L${r.level}</td><td class='p-2 text-[#FFD60A]'>$${Number(r.bonus).toFixed(2)}</td></tr>`).join('');}catch(e){}
+try{let users=await fetchJson('/api/admin/users'); let q=document.getElementById('userSearch')?.value?.toLowerCase()||''; let filtered=q?users.filter(u=>String(u.user_id).includes(q)):users; document.getElementById('users').innerHTML=filtered.map(u=>`<tr class='border-t border-white/5 ${u.is_banned?'bg-red-500/10':''}'><td class='p-2 mono font-bold'>${u.user_id}</td><td class='p-2'>${u.username||''}</td><td class='p-2'>$${Number(u.balance).toFixed(2)}</td><td class='p-2 text-[#FFD60A]'>$${Number(u.withdrawable).toFixed(2)}</td><td class='p-2'>${u.is_banned?'<span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-[10px]">BANNED</span>':'ACTIVE'}</td><td class='p-2'><div class='flex gap-1'><button onclick='openAction(${u.user_id},"add_balance")' class='bg-emerald-500/20 px-2 py-1 rounded text-[10px]'>+BAL</button><button onclick='addSingleToGroup(${u.user_id})' class='bg-[#6C3BFF]/20 px-2 py-1 rounded text-[10px]'>+Group</button></div></td></tr>`).join('');}catch(e){}
+loadGroupMembers();
 }
-async function actWd(id,action){await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action})}); load();}
-async function actDep(id,action){await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action})}); load();}
-function openAction(userId, action){
- selectedUser=userId; currentAction=action;
- document.getElementById('modalUser').innerText='User ID: '+userId;
- document.getElementById('actionModal').classList.remove('hidden');
- let title='',content='';
- if(action==='add_withdrawable'){title='Add to Withdrawable'; content=`<input id='actionAmount' type='number' placeholder='Amount USDT' class='w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm'>`;}
- else if(action==='add_balance'){title='Add to Trading Balance'; content=`<input id='actionAmount' type='number' placeholder='Amount USDT' class='w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm'>`;}
- else if(action==='ban'){fetch('/api/admin/users').then(r=>r.json()).then(users=>{let u=users.find(x=>x.user_id==userId); if(u&&u.is_banned){title='Unban User'; content=`<p>Unban ${userId}?</p>`; currentAction='unban';} else {title='Ban User'; content=`<p>Ban ${userId}?</p>`;} document.getElementById('modalTitle').innerText=title; document.getElementById('modalContent').innerHTML=content;}); document.getElementById('modalTitle').innerText='Ban/Unban'; document.getElementById('modalContent').innerHTML='<p>Loading...</p>'; return;}
- document.getElementById('modalTitle').innerText=title; document.getElementById('modalContent').innerHTML=content; document.getElementById('modalConfirm').onclick=confirmAction;
-}
-function closeModal(){document.getElementById('actionModal').classList.add('hidden'); selectedUser=null; currentAction=null;}
-async function confirmAction(){let amount=parseFloat(document.getElementById('actionAmount')?.value||0); if((currentAction.includes('add'))&&(!amount||amount<=0)){alert('Enter valid amount'); return;} let res=await fetch('/api/admin/user/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:selectedUser, action:currentAction, amount:amount})}); let j=await res.json(); if(j.ok){alert('Done'); closeModal(); load();} else alert('Failed');}
-load(); setInterval(load,5000);
-</script></body></html>
+async function actWd(id,action){await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action})}); loadAll();}
+async function actDep(id,action){await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action})}); loadAll();}
+function openAction(userId, action){selectedUser=userId; currentAction=action; document.getElementById('modalUser').innerText='User ID: '+userId; document.getElementById('actionModal').classList.remove('hidden'); let title='',content=''; if(action==='add_balance'){title='Add Balance'; content=`<input id='actionAmount' type='number' placeholder='Amount' class='w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm'>`;} else{title=action; content=`<p>${action} ${userId}?</p>`;} document.getElementById('modalTitle').innerText=title; document.getElementById('modalContent').innerHTML=content;}
+function closeModal(){document.getElementById('actionModal').classList.add('hidden');}
+async function confirmAction(){let amount=parseFloat(document.getElementById('actionAmount')?.value||0); let res=await fetch('/api/admin/user/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:selectedUser, action:currentAction, amount:amount})}); let j=await res.json(); if(j.ok){closeModal(); loadAll();}}
+function openCreateUser(){document.getElementById('createUserModal').classList.remove('hidden');}
+function closeCreate(){document.getElementById('createUserModal').classList.add('hidden');}
+async function confirmCreate(){let uid=document.getElementById('cu_id').value; let uname=document.getElementById('cu_name').value; let bal=parseFloat(document.getElementById('cu_bal').value||0); let res=await fetch('/api/admin/user/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:parseInt(uid), username:uname, balance:bal, add_to_groups:true})}); let j=await res.json(); if(j.ok){closeCreate(); loadAll();}}
+async function addMembers(){let ids=document.getElementById('bulkIds').value.trim(); let grp=document.getElementById('addGroupSelect').value; if(!ids){alert('Paste IDs'); return;} let list=ids.split(/[\s,;\n]+/).filter(Boolean); let log=document.getElementById('addLog'); log.classList.remove('hidden'); log.innerHTML='⏳ Adding '+list.length+' members...<br>'; let res=await fetch('/api/admin/group/bulk_add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_ids:list, group:grp, method:'direct'})}); let j=await res.json(); log.innerHTML+='<br>'+(j.logs||[]).join('<br>')+'<br><br>✅ Done: '+(j.added||0)+' added, '+(j.failed||0)+' failed'; loadGroupMembers();}
+async function addSingle(){let id=document.getElementById('singleId').value.trim(); if(!id){alert('Enter ID'); return;} document.getElementById('bulkIds').value=id; addMembers();}
+function addSingleToGroup(uid){document.getElementById('singleId').value=uid; document.querySelector('[data-tab="groups"]').click(); document.getElementById('bulkIds').value=uid;}
+async function generateInvites(){let grp=document.getElementById('addGroupSelect').value; let res=await fetch('/api/admin/group/invite',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({group:grp})}); let j=await res.json(); if(j.ok){prompt('Invite Link:', j.invite_link);} else alert('Failed: need bot admin + GROUP_ID');}
+async function loadGroupMembers(){try{let m=await fetchJson('/api/admin/group/members'); document.getElementById('groupMembers').innerHTML=m.map(x=>`<tr class='border-t border-white/5'><td class='p-2'>${x.id}</td><td class='p-2 mono'>${x.user_id}</td><td class='p-2'>${x.group_name}</td><td class='p-2'>${x.method}</td><td class='p-2 ${x.status==='added'?'text-emerald-400':'text-yellow-400'}'>${x.status}</td><td class='p-2 opacity-50 text-[10px]'>${(x.created_at||'').slice(0,19)}</td></tr>`).join('');}catch{}}
+async function sendBroadcast(){let msg=document.getElementById('broadcastMsg').value; let r=await fetch('/api/admin/broadcast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})}); let j=await r.json(); alert('Sent '+j.sent);}
+async function loadEnvStatus(){try{let s=await fetchJson('/api/admin/env/status'); document.getElementById('envStatus').innerHTML=`<div class="bg-white/5 p-3 rounded-xl"><p class="opacity-50">BOT_TOKEN</p><p class="font-bold ${s.has_bot_token?'text-emerald-400':'text-red-400'}">${s.BOT_TOKEN}</p></div><div class="bg-white/5 p-3 rounded-xl"><p class="opacity-50">GROUP_ID</p><p class="mono">${s.GROUP_ID} - Resolved: ${s.group_id_resolved}</p></div>`;}catch(e){}}
+async function saveEnv(){let body={bot_token:document.getElementById('env_bot_token').value, group_id:document.getElementById('env_group_id').value, channel_id:document.getElementById('env_channel_id').value}; let r=await fetch('/api/admin/env/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()); let log=document.getElementById('envLog'); log.classList.remove('hidden'); log.innerHTML=JSON.stringify(r,null,2); loadEnvStatus();}
+async function detectGroups(){let log=document.getElementById('envLog'); log.classList.remove('hidden'); log.innerHTML='Detecting...'; let r=await fetchJson('/api/admin/env/group_ids'); log.innerHTML=JSON.stringify(r,null,2);}
+async function testBot(){let r=await fetch('/api/admin/env/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).then(r=>r.json()); let log=document.getElementById('envLog'); log.classList.remove('hidden'); log.innerHTML=JSON.stringify(r.bot_test,null,2);}
+loadAll(); setInterval(loadAll,8000);
+</script>
+</body>
+</html>
