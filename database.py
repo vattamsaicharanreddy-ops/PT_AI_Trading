@@ -12,9 +12,9 @@ pg_pool = None
 if USE_POSTGRES:
     try:
         pg_pool = pool.SimpleConnectionPool(1, 20, dsn=DATABASE_URL)
-        print("âœ… Postgres pool created")
+        print("✅ Postgres pool created")
     except Exception as e:
-        print(f"âŒ Postgres pool error: {e}")
+        print(f"❌ Postgres pool error: {e}")
         USE_POSTGRES = False
 
 SQLITE_PATH = "/data/bot.db" if os.path.exists("/data") else "bot.db"
@@ -176,6 +176,6 @@ def init_db():
              method TEXT, status TEXT DEFAULT 'added', invite_link TEXT, created_at TEXT
             )""")
             conn.commit()
-        print(f"âœ… Database ready: {'POSTGRES' if USE_POSTGRES else 'SQLITE at '+SQLITE_PATH}")
+        print(f"✅ Database ready: {'POSTGRES' if USE_POSTGRES else 'SQLITE at '+SQLITE_PATH}")
     finally:
         put_conn(conn)
