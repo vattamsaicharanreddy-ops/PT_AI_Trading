@@ -20,8 +20,56 @@ body{background:#06060a}
 table thead th{font-size:10px;letter-spacing:1.5px;opacity:0.5;font-weight:700}
 ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:10px}
 </style>
+
+<script>
+// V6 SECURED - Admin auth
+const ADMIN_SECRET_KEY = 'pt_admin_secret';
+function getAdminSecret(){ return localStorage.getItem(ADMIN_SECRET_KEY) || ''; }
+function setAdminSecret(s){ localStorage.setItem(ADMIN_SECRET_KEY, s); }
+function adminHeaders(){ 
+  return {'Content-Type':'application/json','X-Admin-Secret': getAdminSecret()}; 
+}
+async function fetchJson(url, opts={}){
+  opts.headers = {...(opts.headers||{}), ...adminHeaders()};
+  if(opts.body && typeof opts.body !== 'string' && !(opts.body instanceof FormData)) opts.body = JSON.stringify(opts.body);
+  const r = await fetch(url, opts);
+  if(r.status===401){ 
+    document.getElementById('authOverlay')?.classList.remove('hidden');
+    throw new Error('401 Unauthorized - check ADMIN_SECRET'); 
+  }
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+function checkAuth(){
+  if(!getAdminSecret()){
+    document.getElementById('authOverlay').classList.remove('hidden');
+  }
+}
+function loginAdmin(){
+  const v=document.getElementById('adminSecretInput').value.trim();
+  if(!v){ alert('Enter ADMIN_SECRET'); return; }
+  setAdminSecret(v);
+  document.getElementById('authOverlay').classList.add('hidden');
+  loadAll();
+}
+function logoutAdmin(){
+  localStorage.removeItem(ADMIN_SECRET_KEY);
+  location.reload();
+}
+</script>
 </head>
 <body class="text-white min-h-screen flex">
+<div id="authOverlay" class="hidden fixed inset-0 z-[99999] bg-[#06060a]/95 backdrop-blur-xl flex items-center justify-center p-6">
+  <div class="w-full max-w-[380px] bg-[#121214] border border-white/10 rounded-[24px] p-8 text-center">
+    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black text-xl mx-auto">PT</div>
+    <h2 class="font-black text-xl mt-5">Admin Login V6</h2>
+    <p class="text-xs opacity-60 mt-2">Enter ADMIN_SECRET set in Render env</p>
+    <input id="adminSecretInput" type="password" placeholder="ADMIN_SECRET" class="w-full mt-6 bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#FFD60A]/50">
+    <button onclick="loginAdmin()" class="w-full mt-4 btn-gold py-3 rounded-xl text-sm">Unlock Command Center</button>
+    <p class="text-[10px] opacity-40 mt-3">Stored only in your browser localStorage</p>
+  </div>
+</div>
+
 <aside class="w-[310px] shrink-0 bg-[#08080c] border-r border-white/[0.07] flex flex-col h-screen sticky top-0">
 <div class="p-7 border-b border-white/[0.06]">
 <div class="flex items-center gap-3.5"><div class="w-12 h-12 rounded-[14px] bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black text-[18px] shadow-[0_0_30px_rgba(124,77,255,0.5)]">PT</div><div><p class="font-black tracking-[0.5px] text-[15px]">PT_AI ULTRA</p><p class="text-[10px] tracking-[3.5px] opacity-40 font-bold">COMMAND V5 • LIVE</p></div></div>
@@ -353,6 +401,36 @@ let ctx=document.getElementById('revChart')?.getContext('2d');
 if(ctx){ new Chart(ctx,{type:'line', data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], datasets:[{label:'Revenue', data:[120,450,380,720,560,900,1100], borderColor:'#FFD60A', backgroundColor:'rgba(255,214,10,0.12)', tension:0.4, fill:true, borderWidth:2}]}, options:{plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}, ticks:{color:'rgba(255,255,255,0.4)'}}, y:{grid:{color:'rgba(255,255,255,0.06)'}, ticks:{color:'rgba(255,255,255,0.4)'}}}}}); }
 
 loadAll(); setInterval(loadAll,10000);
+</script>
+
+<script>
+// Patch existing functions to use secure fetch
+const _origFetch = window.fetch;
+window.secureFetch = (url, opts={}) => {
+  if(url.includes('/api/admin/')){
+    opts.headers = {...(opts.headers||{}), ...adminHeaders()};
+  }
+  return _origFetch(url, opts);
+};
+// Override loadAll to check auth first
+const _origLoadAll = window.loadAll;
+window.loadAll = async function(){
+  checkAuth();
+  if(!getAdminSecret()) return;
+  return _origLoadAll();
+};
+// Add logout button dynamically
+document.addEventListener('DOMContentLoaded', ()=>{
+  checkAuth();
+  const header = document.querySelector('header');
+  if(header){
+    const btn = document.createElement('button');
+    btn.textContent='🔒 Logout';
+    btn.className='glass px-4 py-2 rounded-full text-xs opacity-60 hover:opacity-100';
+    btn.onclick=logoutAdmin;
+    header.querySelector('div.flex.gap-2.5')?.prepend(btn);
+  }
+});
 </script>
 </body>
 </html>

@@ -1,43 +1,65 @@
 
+import os, hashlib, hmac, json, random, string, urllib.parse, urllib.request
 from datetime import datetime, timedelta
-import hashlib, json, os, random, string, urllib.request, urllib.parse
-from fastapi import FastAPI, Query, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
 from typing import Optional, List
+
+from fastapi import FastAPI, Query, Request, HTTPException, Depends, Header
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel, Field
 
 from database import USE_POSTGRES, get_conn, get_cursor, init_db, put_conn
 
-app = FastAPI(title="PT_AI Trading ULTRA V5 - FINAL FIX")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+# --- CONFIG ---
+WEBAPP_URL = os.getenv("WEBAPP_URL", "https://pt-ai-trading.onrender.com")
+BOT_USERNAME = os.getenv("BOT_USERNAME", "YourBot")
+ADMIN_SECRET = os.getenv("ADMIN_SECRET", "")  # REQUIRED for admin
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+
+# Deposit addresses from env
+DEPOSIT_ADDR = {
+    "TRC20": os.getenv("DEPOSIT_ADDR_TRC20", "TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC"),
+    "BEP20": os.getenv("DEPOSIT_ADDR_BEP20", "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd"),
+    "ERC20": os.getenv("DEPOSIT_ADDR_ERC20", "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd"),
+    "TON": os.getenv("DEPOSIT_ADDR_TON", "UQBlNeJ90El3LxBhikC2HUG3mqS16k1q177AjcNAaURVa_zw"),
+    "SOL": os.getenv("DEPOSIT_ADDR_SOL", "87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7"),
+}
+
+TIERS = [(15000, 14.9), (6000, 13.6), (2500, 11.8), (1200, 10.9), (500, 9.6), (120, 8.9), (20, 7.6), (0, 0.0)]
+REF_BONUS = {1: 7, **{level: 1 for level in range(2, 11)}}
+SYMBOLS = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","AVAXUSDT","LINKUSDT","LTCUSDT","ADAUSDT","PEPEUSDT","SHIBUSDT","MATICUSDT","DOTUSDT","ARBUSDT"]
+BASE_PRICES = {"BTCUSDT":67200,"ETHUSDT":3400,"SOLUSDT":178,"BNBUSDT":610,"XRPUSDT":.62,"DOGEUSDT":.16,"AVAXUSDT":42,"LINKUSDT":18.5,"LTCUSDT":84,"ADAUSDT":.48,"PEPEUSDT":.000009,"SHIBUSDT":.000027,"MATICUSDT":.89,"DOTUSDT":7.2,"ARBUSDT":1.12}
+
+app = FastAPI(title="PT_AI Trading ULTRA V6 - SECURED")
+# Secure CORS
+allowed_origins = [WEBAPP_URL, "https://web.telegram.org", "https://t.me"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.onrender\.com",
+    allow_credentials=True,
+    allow_methods=["GET","POST","OPTIONS"],
+    allow_headers=["*"],
+)
+
 init_db()
 
+# Try load monitor but don't crash
 try:
     import blockchain_monitor
     print("✅ Blockchain monitor loaded")
 except Exception as e:
     print(f"⚠️ Monitor load fail: {e}")
 
-DEPOSIT_ADDR = {
-    "TRC20": "TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC",
-    "BEP20": "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",
-    "ERC20": "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",
-    "TON": "UQBlNeJ90El3LxBhikC2HUG3mqS16k1q177AjcNAaURVa_zw",
-    "SOL": "87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7",
-}
-TIERS = [(15000, 14.9), (6000, 13.6), (2500, 11.8), (1200, 10.9), (500, 9.6), (120, 8.9), (20, 7.6), (0, 0.0)]
-REF_BONUS = {1: 7, **{level: 1 for level in range(2, 11)}}
-SYMBOLS = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","AVAXUSDT","LINKUSDT","LTCUSDT","ADAUSDT","PEPEUSDT","SHIBUSDT","MATICUSDT","DOTUSDT","ARBUSDT"]
-BASE_PRICES = {"BTCUSDT":67200,"ETHUSDT":3400,"SOLUSDT":178,"BNBUSDT":610,"XRPUSDT":.62,"DOGEUSDT":.16,"AVAXUSDT":42,"LINKUSDT":18.5,"LTCUSDT":84,"ADAUSDT":.48,"PEPEUSDT":.000009,"SHIBUSDT":.000027,"MATICUSDT":.89,"DOTUSDT":7.2,"ARBUSDT":1.12}
-
+# --- MODELS ---
 class InvoiceRequest(BaseModel):
-    amount: float = Field(gt=0)
-    network: str
+    amount: float = Field(gt=0, le=100000)
+    network: str = Field(min_length=3, max_length=10)
 
 class WithdrawalRequest(BaseModel):
-    amount: float = Field(gt=0)
-    address: str = Field(min_length=10)
+    amount: float = Field(gt=0, le=100000)
+    address: str = Field(min_length=10, max_length=200)
     network: str
 
 class AdminAction(BaseModel):
@@ -64,28 +86,61 @@ class TaskCreate(BaseModel):
     is_active: int = 1
     is_mandatory: int = 1
     icon: str = "🚀"
+    sort_order: int = 0
 
-class GroupBulkAdd(BaseModel):
-    user_ids: List[str]
-    group: str
-    method: str = "direct"
+class BulkAction(BaseModel):
+    user_ids: List[int]
+    action: str
+    amount: float = 0
 
+# --- HELPERS ---
 def ph(): return "%s" if USE_POSTGRES else "?"
 def cursor(conn): return get_cursor(conn)
 def val(row,key,default=None):
     if row is None: return default
-    try: return row[key] if row[key] is not None else default
-    except: return default
+    try:
+        v = row[key] if isinstance(row, dict) else row[key]
+        return v if v is not None else default
+    except: 
+        try:
+            return row.get(key, default) if isinstance(row, dict) else default
+        except: return default
+
 def rows_as_dicts(rows): return [dict(r) for r in rows]
 def get_tier(balance):
     for idx,(minimum,pct) in enumerate(TIERS):
         if balance>=minimum: return idx,minimum,pct
     return len(TIERS)-1,0,0
-def invoice_id(): return "".join(random.choices(string.ascii_uppercase+string.digits,k=8))
+def invoice_id(): return "".join(random.choices(string.ascii_uppercase+string.digits,k=10))
 
+# --- SECURITY ---
+def verify_admin(x_admin_secret: str = Header(None)):
+    if not ADMIN_SECRET:
+        raise HTTPException(500, "ADMIN_SECRET not configured")
+    if x_admin_secret != ADMIN_SECRET:
+        raise HTTPException(401, "Unauthorized admin")
+    return True
+
+def validate_init_data(init_data: str) -> dict:
+    """Validate Telegram WebApp initData (optional but recommended)"""
+    if not BOT_TOKEN or not init_data:
+        return {}
+    try:
+        # Telegram validation algo
+        data_check_string = "\n".join([f"{k}={v}" for k,v in sorted([p.split('=') for p in init_data.split('&') if '=' in p and p.split('=')[0]!='hash'], key=lambda x: x[0])])
+        secret_key = hmac.new(b"WebAppData", BOT_TOKEN.encode(), hashlib.sha256).digest()
+        calc_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+        parsed = dict(urllib.parse.parse_qsl(init_data))
+        if calc_hash == parsed.get('hash'):
+            return parsed
+    except Exception as e:
+        print(f"initData validation error: {e}")
+    return {}
+
+# --- USER LOGIC ---
 def ensure_user(user_id:int, username:str="", referred_by=None):
-    user_id=int(user_id or 123456789)
-    if user_id<1: user_id=123456789
+    user_id=int(user_id or 0)
+    if user_id<1: raise HTTPException(400, "Invalid user_id")
     conn=get_conn()
     try:
         cur=cursor(conn)
@@ -108,6 +163,64 @@ def ensure_user(user_id:int, username:str="", referred_by=None):
         return cur.fetchone()
     finally: put_conn(conn)
 
+def process_invoice_payment(invoice_id_str: str, tx_hash: str, actual_amount: float):
+    """Called by monitor and manual approve - atomic"""
+    conn=get_conn()
+    try:
+        cur=cursor(conn)
+        # Check duplicate tx
+        cur.execute(f"SELECT tx_hash FROM used_tx_hashes WHERE tx_hash={ph()}",(tx_hash,))
+        if cur.fetchone():
+            return False, "tx already used"
+        cur.execute(f"SELECT * FROM deposits WHERE invoice_id={ph()} FOR UPDATE" if USE_POSTGRES else f"SELECT * FROM deposits WHERE invoice_id={ph()}",(invoice_id_str,))
+        dep=cur.fetchone()
+        if not dep: return False, "invoice not found"
+        if val(dep,"status")=="verified": return False, "already verified"
+        now=datetime.utcnow().isoformat()
+        amt=float(actual_amount)
+        expected=float(val(dep,"expected_amount",0) or val(dep,"amount",0) or amt)
+        # tolerance
+        if amt < expected*0.95:
+            return False, f"amount too low {amt} < {expected}"
+        cur.execute(f"UPDATE deposits SET status='verified', actual_amount={ph()}, tx_hash={ph()}, verified_at={ph()} WHERE invoice_id={ph()}",(amt, tx_hash, now, invoice_id_str))
+        cur.execute(f"INSERT INTO used_tx_hashes (tx_hash, used_at) VALUES ({ph()},{ph()})",(tx_hash, now))
+        user_id=val(dep,"user_id")
+        cur.execute(f"SELECT * FROM users WHERE user_id={ph()} FOR UPDATE" if USE_POSTGRES else f"SELECT * FROM users WHERE user_id={ph()}",(user_id,))
+        user=cur.fetchone()
+        if user:
+            new_bal=float(val(user,"balance",0) or 0)+amt
+            new_total=float(val(user,"total_deposit",0) or 0)+amt
+            tier_idx,_,_=get_tier(new_bal)
+            ai_end=(datetime.utcnow()+timedelta(days=30)).isoformat()
+            cur.execute(f"UPDATE users SET balance={ph()}, total_deposit={ph()}, current_tier={ph()}, ai_start={ph()}, ai_end={ph()} WHERE user_id={ph()}",(new_bal,new_total,tier_idx,now,ai_end,user_id))
+            # Referral bonus
+            try:
+                referred_by=val(user,"referred_by")
+                level=1
+                current_ref=referred_by
+                while current_ref and level<=10:
+                    cur.execute(f"SELECT * FROM users WHERE user_id={ph()}",(current_ref,))
+                    ref_user=cur.fetchone()
+                    if not ref_user: break
+                    bonus_pct=REF_BONUS.get(level,1)
+                    bonus=amt*bonus_pct/100
+                    cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()}, referral_earnings=COALESCE(referral_earnings,0)+{ph()} WHERE user_id={ph()}",(bonus,bonus,current_ref))
+                    cur.execute(f"INSERT INTO referral_logs (from_user,to_user,level,deposit_amount,bonus_amount,bonus_percent,created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()})",(user_id,current_ref,level,amt,bonus,bonus_pct,now))
+                    cur.execute(f"SELECT referred_by FROM users WHERE user_id={ph()}",(current_ref,))
+                    nxt=cur.fetchone()
+                    current_ref=val(nxt,"referred_by") if nxt else None
+                    level+=1
+            except Exception as e:
+                print(f"Referral error: {e}")
+        conn.commit()
+        return True, "verified"
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        try: conn.rollback()
+        except: pass
+        return False, str(e)
+    finally: put_conn(conn)
+
 def recalc_profit(user_id:int):
     conn=get_conn()
     try:
@@ -119,13 +232,11 @@ def recalc_profit(user_id:int):
         balance=float(val(user,"balance",0) or 0)
         tier_index,_,daily_percent=get_tier(balance)
         ai_end_str=val(user,"ai_end")
-        ai_start_str=val(user,"ai_start")
         current_tier=val(user,"current_tier",len(TIERS)-1)
         end_dt=None
         try:
             end_dt=datetime.fromisoformat(ai_end_str) if ai_end_str else None
         except: end_dt=None
-        # Expiry check
         if end_dt and now>=end_dt and balance>0:
             expired_amount=balance
             cur.execute(f"UPDATE users SET balance=0, profit=0, ai_start=NULL, ai_end=NULL, current_tier={ph()}, profit_per_hour=0 WHERE user_id={ph()}",(len(TIERS)-1,user_id))
@@ -139,7 +250,6 @@ def recalc_profit(user_id:int):
             tier_index,_,daily_percent=get_tier(0)
             end_dt=None
             ai_end_str=None
-        # Start timer
         if balance>=20 and not ai_end_str:
             ai_start=now.isoformat()
             ai_end=(now+timedelta(days=30)).isoformat()
@@ -147,7 +257,6 @@ def recalc_profit(user_id:int):
             ai_end_str=ai_end
             try: end_dt=datetime.fromisoformat(ai_end)
             except: end_dt=now+timedelta(days=30)
-        # Tier change reset
         elif current_tier!=tier_index and balance>=20:
             ai_start=now.isoformat()
             ai_end=(now+timedelta(days=30)).isoformat()
@@ -155,9 +264,6 @@ def recalc_profit(user_id:int):
             ai_end_str=ai_end
             try: end_dt=datetime.fromisoformat(ai_end)
             except: end_dt=now+timedelta(days=30)
-            try:
-                cur.execute(f"INSERT INTO admin_logs (admin_action,target_user_id,details) VALUES ('tier_change_reset',{ph()},{ph()})",(user_id,f"Tier {current_tier}->{tier_index}, timer reset to 30d"))
-            except: pass
         elif current_tier!=tier_index:
             cur.execute(f"UPDATE users SET current_tier={ph()} WHERE user_id={ph()}",(tier_index,user_id))
         profit=float(val(user,"profit",0) or 0)
@@ -177,9 +283,15 @@ def recalc_profit(user_id:int):
         except: due=True
         if due and profit>.01 and active:
             cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()}, profit=0, last_auto_claim={ph()} WHERE user_id={ph()}",(profit,now.isoformat(),user_id))
+            profit=0
         conn.commit()
         cur.execute(f"SELECT * FROM users WHERE user_id={ph()}",(user_id,))
-        return cur.fetchone()
+        updated=cur.fetchone()
+        # add calculated fields for response
+        d=dict(updated)
+        d["calculated_profit"]=profit
+        d["calculated_per_hour"]=per_hour
+        return updated
     finally: put_conn(conn)
 
 def check_telegram_membership(bot_token, chat_id, user_id):
@@ -194,17 +306,20 @@ def check_telegram_membership(bot_token, chat_id, user_id):
     except Exception as e:
         return False, {"error": str(e)}
 
-# WEBHOOK
-@app.post("/webhook/{token}")
-async def webhook_handler(token: str, request: Request):
-    BOT_TOKEN_ENV = os.getenv("BOT_TOKEN","")
-    if token != BOT_TOKEN_ENV:
-        return {"ok": False, "error": "Invalid token"}
+# --- WEBHOOK (SECURED) ---
+@app.post("/webhook")
+async def webhook_handler(request: Request):
+    if WEBHOOK_SECRET:
+        secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
+        if secret != WEBHOOK_SECRET:
+            raise HTTPException(401, "Invalid secret token")
     try:
         data = await request.json()
         from telegram import Update
         from telegram.ext import Application, CommandHandler, CallbackQueryHandler
-        from bot import BOT_TOKEN, start, callback_handler
+        from bot import start, callback_handler
+        if not BOT_TOKEN:
+            return {"ok": False, "error": "BOT_TOKEN missing"}
         application = Application.builder().token(BOT_TOKEN).build()
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CallbackQueryHandler(callback_handler))
@@ -217,16 +332,32 @@ async def webhook_handler(token: str, request: Request):
         import traceback; traceback.print_exc()
         return {"ok": False, "error": str(e)}
 
-@app.get("/webhook/{token}")
-def webhook_get(token: str):
-    return {"ok": True, "message": "Webhook active"}
+# Backward compat with old token-in-url webhook, but still check
+@app.post("/webhook/{token}")
+async def webhook_handler_legacy(token: str, request: Request):
+    if BOT_TOKEN and token != BOT_TOKEN:
+        # If WEBHOOK_SECRET is set, we allow legacy but check secret header too
+        if WEBHOOK_SECRET:
+            secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
+            if secret != WEBHOOK_SECRET:
+                raise HTTPException(401, "Invalid token")
+        else:
+            raise HTTPException(401, "Invalid token")
+    return await webhook_handler(request)
 
-# CORE API
+@app.get("/webhook")
+def webhook_get():
+    return {"ok": True, "message": "Webhook active - use POST"}
+
+# --- CORE API (with rate limit simple) ---
 @app.get("/api/me/{user_id}")
 def api_me(user_id:int, username: Optional[str] = Query(None), referred_by: Optional[str] = Query(None)):
+    if user_id<=0: raise HTTPException(400, "Invalid user")
     u=ensure_user(user_id, username or "", referred_by)
     u=recalc_profit(user_id)
+    if not u: raise HTTPException(404, "User not found")
     d=dict(u)
+    if d.get("is_banned"): raise HTTPException(403, "Banned")
     tier_idx,_,pct=get_tier(float(d.get("balance",0)))
     conn=get_conn()
     try:
@@ -253,8 +384,9 @@ def deposit_addresses():
     return DEPOSIT_ADDR
 
 @app.post("/api/deposit/invoice/{user_id}")
-@app.post("/api/deposit/create_invoice/{user_id}")
 def create_invoice(user_id:int, req:InvoiceRequest):
+    if req.amount < 20: raise HTTPException(400, "Min $20")
+    if req.network not in DEPOSIT_ADDR: req.network="TRC20"
     ensure_user(user_id)
     conn=get_conn()
     try:
@@ -262,7 +394,6 @@ def create_invoice(user_id:int, req:InvoiceRequest):
         inv=invoice_id()
         now=datetime.utcnow()
         exp=now+timedelta(minutes=15)
-        if req.network not in DEPOSIT_ADDR: req.network="TRC20"
         cur.execute(f"INSERT INTO deposits (user_id,amount,network,status,created_at,expires_at,invoice_id,expected_amount) VALUES ({ph()},{ph()},{ph()},'awaiting_payment',{ph()},{ph()},{ph()},{ph()})",(user_id,req.amount,req.network,now.isoformat(),exp.isoformat(),inv,req.amount))
         conn.commit()
         addr=DEPOSIT_ADDR.get(req.network, DEPOSIT_ADDR["TRC20"])
@@ -274,15 +405,21 @@ def invoice_status(invoice_id:str):
     conn=get_conn()
     try:
         cur=cursor(conn); cur.execute(f"SELECT * FROM deposits WHERE invoice_id={ph()}",(invoice_id,)); d=cur.fetchone()
-        if not d: return {"error":"not found"}
+        if not d: raise HTTPException(404, "not found")
         return dict(d)
     finally: put_conn(conn)
 
 @app.post("/api/withdraw/{user_id}")
-@app.post("/api/withdraw/request/{user_id}")
 def withdraw(user_id:int, req:WithdrawalRequest):
+    if req.amount < 10: raise HTTPException(400, "Min $10")
+    if req.network not in DEPOSIT_ADDR: raise HTTPException(400, "Invalid network")
+    # basic address validation
+    if req.network=="TRC20" and not req.address.startswith("T"): raise HTTPException(400, "Invalid TRC20 address")
+    if req.network in ["BEP20","ERC20"] and not req.address.startswith("0x"): raise HTTPException(400, "Invalid EVM address")
     u=ensure_user(user_id); u=recalc_profit(user_id)
-    if float(val(u,"withdrawable",0) or 0) < req.amount: return {"ok":False,"error":"Insufficient withdrawable balance"}
+    if not u: raise HTTPException(404)
+    if float(val(u,"withdrawable",0) or 0) < req.amount: return JSONResponse({"ok":False,"error":"Insufficient withdrawable balance"}, status_code=400)
+    if val(u,"is_banned"): raise HTTPException(403, "Banned")
     conn=get_conn()
     try:
         cur=cursor(conn)
@@ -292,7 +429,7 @@ def withdraw(user_id:int, req:WithdrawalRequest):
             cur.execute(f"SELECT COUNT(*) as cnt FROM user_tasks WHERE user_id={ph()} AND status='verified'",(user_id,))
             done=val(cur.fetchone(),"cnt",0) or 0
             if done<mand:
-                return {"ok":False,"error":f"Complete {mand} mandatory join tasks first! Go to Tasks tab"}
+                return JSONResponse({"ok":False,"error":f"Complete {mand} mandatory join tasks first! Go to Tasks tab"}, status_code=403)
         cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)-{ph()} WHERE user_id={ph()}",(req.amount,user_id))
         cur.execute(f"INSERT INTO withdrawals (user_id,amount,address,network,status,created_at) VALUES ({ph()},{ph()},{ph()},{ph()},'pending',{ph()})",(user_id,req.amount,req.address,req.network,datetime.utcnow().isoformat()))
         conn.commit()
@@ -314,7 +451,7 @@ def referral(user_id:int):
     conn=get_conn()
     try:
         cur=cursor(conn)
-        bot_name=os.getenv("BOT_USERNAME","PT_Minebot")
+        bot_name=BOT_USERNAME
         cur.execute(f"SELECT user_id,username,balance,total_deposit FROM users WHERE referred_by={ph()} ORDER BY created_at DESC",(user_id,)); direct=rows_as_dicts(cur.fetchall())
         cur.execute(f"SELECT SUM(bonus_amount) as total FROM referral_logs WHERE to_user={ph()}",(user_id,)); tot=cur.fetchone()
         try:
@@ -348,13 +485,12 @@ def tasks_verify(user_id:int, task_id:int):
         cur=cursor(conn)
         cur.execute(f"SELECT * FROM tasks WHERE id={ph()}",(task_id,))
         task=cur.fetchone()
-        if not task: return {"ok":False,"error":"Task not found"}
-        bot_token=os.getenv("BOT_TOKEN","")
-        if not bot_token: return {"ok":False,"error":"BOT_TOKEN not set in server env"}
+        if not task: raise HTTPException(404, "Task not found")
+        if not BOT_TOKEN: raise HTTPException(500, "BOT_TOKEN not set")
         chat_id=val(task,"group_id")
-        is_member, details = check_telegram_membership(bot_token, chat_id, user_id)
+        is_member, details = check_telegram_membership(BOT_TOKEN, chat_id, user_id)
         if not is_member:
-            return {"ok":False,"error":"Not joined yet. Please JOIN the group/channel first, then click Verify","details":details}
+            return JSONResponse({"ok":False,"error":"Not joined yet. JOIN first, then Verify","details":details}, status_code=400)
         cur.execute(f"SELECT * FROM user_tasks WHERE user_id={ph()} AND task_id={ph()}",(user_id,task_id))
         existing=cur.fetchone()
         now=datetime.utcnow().isoformat()
@@ -373,10 +509,11 @@ def tasks_verify(user_id:int, task_id:int):
                 cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()} WHERE user_id={ph()}",(reward,user_id))
             cur.execute(f"UPDATE user_tasks SET reward_claimed=1 WHERE user_id={ph()} AND task_id={ph()}",(user_id,task_id))
         conn.commit()
-        return {"ok":True,"reward":reward,"message":f"✅ Verified! +{reward} USDT added to withdrawable balance"}
+        return {"ok":True,"reward":reward,"message":f"✅ Verified! +{reward} USDT added"}
+    except HTTPException: raise
     except Exception as e:
         import traceback; traceback.print_exc()
-        return {"ok":False,"error":str(e)}
+        return JSONResponse({"ok":False,"error":str(e)}, status_code=500)
     finally: put_conn(conn)
 
 @app.post("/api/tasks/join/{user_id}/{task_id}")
@@ -385,7 +522,7 @@ def tasks_join_click(user_id:int, task_id:int):
     try:
         cur=cursor(conn)
         cur.execute(f"SELECT * FROM tasks WHERE id={ph()}",(task_id,))
-        if not cur.fetchone(): return {"ok":False}
+        if not cur.fetchone(): raise HTTPException(404)
         try:
             if USE_POSTGRES:
                 cur.execute(f"INSERT INTO user_tasks (user_id,task_id,status) VALUES ({ph()},{ph()},'joined') ON CONFLICT (user_id,task_id) DO NOTHING",(user_id,task_id))
@@ -399,7 +536,7 @@ def tasks_join_click(user_id:int, task_id:int):
 @app.get("/api/binance/trades")
 def binance_trades():
     import random, hashlib
-    from datetime import datetime, timedelta, timezone
+    from datetime import timezone
     utc_now = datetime.now(timezone.utc)
     ist_now = utc_now + timedelta(hours=5, minutes=30)
     today_str = ist_now.date().isoformat()
@@ -427,60 +564,23 @@ def binance_trades():
             is_win = rng.random() < 0.78
         else:
             is_win = rng.random() < 0.45
-        if is_win:
-            pnl = round(rng.uniform(1.2, 6.8), 2)
-        else:
-            pnl = round(rng.uniform(-2.5, -0.3), 2)
+        pnl = round(rng.uniform(1.2, 6.8),2) if is_win else round(rng.uniform(-2.5, -0.3),2)
         exitp = entry * (1 + pnl/100) if side == "LONG" else entry * (1 - pnl/100)
-        amount = round(rng.uniform(300, 1800), 2)
-        trades_all.append({
-            "id": i+1,
-            "pair": sym.replace("USDT", "/USDT"),
-            "symbol": sym,
-            "side": side,
-            "leverage": rng.choice([5, 10, 15, 20]),
-            "usdt_amount": amount,
-            "entry_price": round(entry, 6 if entry < 1 else 2),
-            "exit_price": round(exitp, 6 if exitp < 1 else 2),
-            "pnl_percent": pnl,
-            "pnl_usdt": round(amount * pnl / 100, 2),
-            "is_profit": pnl > 0,
-            "time": time_str,
-            "minutes": trade_minutes,
-            "status": "CLOSED",
-            "date": today_str
-        })
-    current_minutes = ist_now.hour * 60 + ist_now.minute
-    visible_trades = [t for t in trades_all if t["minutes"] <= current_minutes]
-    for t in visible_trades: t.pop("minutes", None)
-    for t in trades_all: t.pop("minutes", None)
+        amount = round(rng.uniform(300, 1800),2)
+        trades_all.append({"id":i+1,"pair":sym.replace("USDT","/USDT"),"symbol":sym,"side":side,"leverage":rng.choice([5,10,15,20]),"usdt_amount":amount,"entry_price":round(entry,6 if entry<1 else 2),"exit_price":round(exitp,6 if exitp<1 else 2),"pnl_percent":pnl,"pnl_usdt":round(amount*pnl/100,2),"is_profit":pnl>0,"time":time_str,"minutes":trade_minutes,"status":"CLOSED","date":today_str})
+    current_minutes = ist_now.hour*60+ist_now.minute
+    visible_trades = [t for t in trades_all if t["minutes"]<=current_minutes]
+    for t in visible_trades: t.pop("minutes",None)
+    for t in trades_all: t.pop("minutes",None)
     total_pnl = sum(t["pnl_percent"] for t in visible_trades)
     total_usdt = sum(t["pnl_usdt"] for t in visible_trades)
     profit_count = sum(1 for t in visible_trades if t["is_profit"])
     expected_total = len(trades_all)
-    prices = BASE_PRICES.copy()
-    return {
-        "trades": visible_trades,
-        "all_trades_count": expected_total,
-        "summary": {
-            "total_trades": len(visible_trades),
-            "expected_total": expected_total,
-            "profit_trades": profit_count,
-            "loss_trades": len(visible_trades) - profit_count,
-            "total_pnl_percent": round(total_pnl, 2),
-            "total_pnl_usdt": round(total_usdt, 2),
-            "funds_in_market": round(sum(t["usdt_amount"] for t in visible_trades), 2),
-            "date": today_str,
-            "current_ist": ist_now.strftime("%H:%M IST"),
-            "win_rate": round((profit_count / len(visible_trades) * 100) if visible_trades else 0, 1),
-            "next_trade_in": f"{trades_all[len(visible_trades)]['time'] if len(visible_trades) < len(trades_all) else 'Tomorrow 00:30'} IST" if len(visible_trades) < len(trades_all) else "All trades done for today"
-        },
-        "prices_source": "deterministic_daily",
-        "live_prices": prices
-    }
+    return {"trades":visible_trades,"all_trades_count":expected_total,"summary":{"total_trades":len(visible_trades),"expected_total":expected_total,"profit_trades":profit_count,"loss_trades":len(visible_trades)-profit_count,"total_pnl_percent":round(total_pnl,2),"total_pnl_usdt":round(total_usdt,2),"funds_in_market":round(sum(t["usdt_amount"] for t in visible_trades),2),"date":today_str,"current_ist":ist_now.strftime("%H:%M IST"),"win_rate":round((profit_count/len(visible_trades)*100) if visible_trades else 0,1),"next_trade_in":f"{trades_all[len(visible_trades)]['time'] if len(visible_trades)<len(trades_all) else 'Tomorrow 00:30'} IST" if len(visible_trades)<len(trades_all) else "All trades done for today"},"prices_source":"deterministic_daily","live_prices":BASE_PRICES.copy()}
 
+# --- ADMIN (PROTECTED) ---
 @app.get("/api/admin/stats")
-def admin_stats():
+def admin_stats(_=Depends(verify_admin)):
     conn=get_conn()
     try:
         cur=cursor(conn)
@@ -506,52 +606,52 @@ def admin_stats():
     finally: put_conn(conn)
 
 @app.get("/api/admin/deposits")
-def admin_deposits():
+def admin_deposits(_=Depends(verify_admin)):
     conn=get_conn()
     try:
         cur=cursor(conn); cur.execute("SELECT * FROM deposits ORDER BY id DESC LIMIT 500"); return [{**x,"expected":x.get("expected_amount",x.get("amount",0))} for x in rows_as_dicts(cur.fetchall())]
     finally: put_conn(conn)
 
 @app.get("/api/admin/withdrawals")
-def admin_withdrawals():
+def admin_withdrawals(_=Depends(verify_admin)):
     conn=get_conn()
     try:
         cur=cursor(conn); cur.execute("SELECT * FROM withdrawals ORDER BY id DESC LIMIT 500"); return rows_as_dicts(cur.fetchall())
     finally: put_conn(conn)
 
 @app.get("/api/admin/referrals")
-def admin_referrals():
+def admin_referrals(_=Depends(verify_admin)):
     conn=get_conn()
     try:
         cur=cursor(conn); cur.execute("SELECT * FROM referral_logs ORDER BY id DESC LIMIT 500"); return [{"from_user":x["from_user"],"to_user":x["to_user"],"level":x["level"],"deposit":x["deposit_amount"],"bonus":x["bonus_amount"],"percent":x["bonus_percent"]} for x in rows_as_dicts(cur.fetchall())]
     finally: put_conn(conn)
 
 @app.get("/api/admin/users")
-def admin_users():
+def admin_users(_=Depends(verify_admin)):
     conn=get_conn()
     try:
-        cur=cursor(conn); cur.execute("SELECT * FROM users ORDER BY created_at DESC"); return [{**x,"ref_earn":x.get("referral_earnings",0)} for x in rows_as_dicts(cur.fetchall())]
+        cur=cursor(conn); cur.execute("SELECT * FROM users ORDER BY created_at DESC LIMIT 1000"); return [{**x,"ref_earn":x.get("referral_earnings",0)} for x in rows_as_dicts(cur.fetchall())]
     finally: put_conn(conn)
 
 @app.get("/api/admin/tasks")
-def admin_tasks_list():
+def admin_tasks_list(_=Depends(verify_admin)):
     conn=get_conn()
     try:
         cur=cursor(conn); cur.execute("SELECT * FROM tasks ORDER BY sort_order ASC, id DESC"); return rows_as_dicts(cur.fetchall())
     finally: put_conn(conn)
 
 @app.post("/api/admin/tasks/create")
-def admin_tasks_create(t: TaskCreate):
+def admin_tasks_create(t: TaskCreate, _=Depends(verify_admin)):
     conn=get_conn()
     try:
         cur=cursor(conn)
-        cur.execute(f"INSERT INTO tasks (title,description,group_link,group_id,group_username,reward,reward_type,is_active,is_mandatory,icon,created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()})",(t.title,t.description,t.group_link,t.group_id,t.group_username,t.reward,t.reward_type,t.is_active,t.is_mandatory,t.icon,datetime.utcnow().isoformat()))
+        cur.execute(f"INSERT INTO tasks (title,description,group_link,group_id,group_username,reward,reward_type,is_active,is_mandatory,icon,sort_order,created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()})",(t.title,t.description,t.group_link,t.group_id,t.group_username,t.reward,t.reward_type,t.is_active,t.is_mandatory,t.icon,t.sort_order,datetime.utcnow().isoformat()))
         conn.commit()
         return {"ok":True}
     finally: put_conn(conn)
 
 @app.post("/api/admin/tasks/action")
-def admin_tasks_action(a: IdAction):
+def admin_tasks_action(a: IdAction, _=Depends(verify_admin)):
     conn=get_conn()
     try:
         cur=cursor(conn)
@@ -566,7 +666,7 @@ def admin_tasks_action(a: IdAction):
     finally: put_conn(conn)
 
 @app.post("/api/admin/deposit/action")
-def admin_deposit_action(action: IdAction):
+def admin_deposit_action(action: IdAction, _=Depends(verify_admin)):
     conn=get_conn()
     try:
         cur=cursor(conn)
@@ -574,21 +674,11 @@ def admin_deposit_action(action: IdAction):
         dep=cur.fetchone()
         if not dep: return {"ok":False,"error":"Deposit not found"}
         if action.action=="approve":
-            from database import get_conn as gc
-            # manual approve
             now=datetime.utcnow().isoformat()
             amt=float(val(dep,"expected_amount",0) or val(dep,"amount",0))
-            cur.execute(f"UPDATE deposits SET status='verified', actual_amount={ph()}, verified_at={ph()} WHERE id={ph()}",(amt,now,action.id))
-            cur.execute(f"SELECT * FROM users WHERE user_id={ph()}",(val(dep,"user_id"),))
-            user=cur.fetchone()
-            if user:
-                new_bal=float(val(user,"balance",0) or 0)+amt
-                new_total=float(val(user,"total_deposit",0) or 0)+amt
-                tier_idx,_,_=get_tier(new_bal)
-                ai_end=(datetime.utcnow()+timedelta(days=30)).isoformat()
-                cur.execute(f"UPDATE users SET balance={ph()}, total_deposit={ph()}, current_tier={ph()}, ai_start={ph()}, ai_end={ph()} WHERE user_id={ph()}",(new_bal,new_total,tier_idx,now,ai_end,val(dep,"user_id")))
-            conn.commit()
-            return {"ok":True}
+            # use atomic function
+            ok,msg=process_invoice_payment(val(dep,"invoice_id"), f"manual_{action.id}_{now}", amt)
+            return {"ok":ok, "msg":msg}
         elif action.action=="reject":
             cur.execute(f"UPDATE deposits SET status='rejected', admin_note={ph()} WHERE id={ph()}",(action.note or "Rejected", action.id)); conn.commit(); return {"ok":True}
         elif action.action=="delete":
@@ -597,7 +687,7 @@ def admin_deposit_action(action: IdAction):
     finally: put_conn(conn)
 
 @app.post("/api/admin/withdraw/action")
-def admin_withdraw_action(action: IdAction):
+def admin_withdraw_action(action: IdAction, _=Depends(verify_admin)):
     conn=get_conn()
     try:
         cur=cursor(conn)
@@ -619,7 +709,7 @@ def admin_withdraw_action(action: IdAction):
     finally: put_conn(conn)
 
 @app.post("/api/admin/user/action")
-def admin_user_action(action: AdminAction):
+def admin_user_action(action: AdminAction, _=Depends(verify_admin)):
     conn=get_conn()
     try:
         cur=cursor(conn)
@@ -650,8 +740,35 @@ def admin_user_action(action: AdminAction):
             cur.execute(f"UPDATE users SET ai_start={ph()}, ai_end={ph()} WHERE user_id={ph()}",(now.isoformat(),ai_end,action.user_id))
         elif act=="delete":
             cur.execute(f"DELETE FROM users WHERE user_id={ph()}",(action.user_id,))
+        else:
+            return {"ok":False,"error":"unknown action"}
         conn.commit()
         return {"ok":True}
+    finally: put_conn(conn)
+
+@app.post("/api/admin/bulk_action")
+def admin_bulk_action(data: BulkAction, _=Depends(verify_admin)):
+    conn=get_conn()
+    try:
+        cur=cursor(conn)
+        count=0
+        for uid in data.user_ids:
+            try:
+                if data.action=="add_withdrawable":
+                    cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()} WHERE user_id={ph()}",(data.amount, uid))
+                    count+=1
+                elif data.action=="add_balance":
+                    cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()} WHERE user_id={ph()}",(data.amount, uid))
+                    count+=1
+                elif data.action=="ban":
+                    cur.execute(f"UPDATE users SET is_banned=1 WHERE user_id={ph()}",(uid,))
+                    count+=1
+                elif data.action=="unban":
+                    cur.execute(f"UPDATE users SET is_banned=0 WHERE user_id={ph()}",(uid,))
+                    count+=1
+            except: pass
+        conn.commit()
+        return {"ok":True,"count":count}
     finally: put_conn(conn)
 
 @app.get("/")
@@ -664,10 +781,10 @@ def admin_page():
 
 @app.get("/health")
 def health():
-    return {"ok":True,"db":"POSTGRES" if USE_POSTGRES else "SQLITE","mode":"WEBHOOK","timer":"D:H:M:S live","expiry":"auto balance zero","tier_reset":"on tier change"}
+    return {"ok":True,"db":"POSTGRES" if USE_POSTGRES else "SQLITE","mode":"WEBHOOK","monitor":"active" if os.getenv("DISABLE_MONITOR")!="1" else "disabled","version":"V6_SECURED"}
 
 @app.get("/api/admin/logs")
-def admin_logs():
+def admin_logs(_=Depends(verify_admin)):
     conn=get_conn()
     try:
         cur=cursor(conn); cur.execute("SELECT * FROM admin_logs ORDER BY id DESC LIMIT 100"); return rows_as_dicts(cur.fetchall())

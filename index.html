@@ -5,6 +5,44 @@
 <script src='https://cdn.tailwindcss.com'></script>
 <link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap' rel='stylesheet'>
 <style>body{font-family:'Inter',sans-serif;} .tab-active{background:white!important;color:black!important;font-weight:900} .glass{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08)} .task-done{border-color:#10b981!important;background:linear-gradient(135deg,rgba(16,185,129,0.12),rgba(255,255,255,0.03))} .task-pending{border-color:#FFD60A!important;background:linear-gradient(135deg,rgba(255,214,10,0.08),rgba(255,255,255,0.03))}</style>
+
+<script>
+// V6 SECURED - Telegram initData + secure fetch
+let _tgInitData = '';
+try{
+  _tgInitData = window.Telegram?.WebApp?.initData || '';
+  window.Telegram?.WebApp?.ready();
+  window.Telegram?.WebApp?.expand();
+}catch(e){}
+function getUserId(){
+  // Try to get from Telegram WebApp
+  try{
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if(tgUser?.id) return tgUser.id;
+  }catch(e){}
+  return window.userId || 0;
+}
+async function secureFetch(url, opts={}){
+  opts.headers = opts.headers || {};
+  // Add initData for backend validation (optional)
+  if(_tgInitData) opts.headers['X-Telegram-InitData'] = _tgInitData;
+  const r = await fetch(url, opts);
+  if(!r.ok){
+    const txt = await r.text();
+    console.error('API error', url, r.status, txt);
+    throw new Error(txt);
+  }
+  return r;
+}
+// Patch existing fetch usages to secureFetch for /api/*
+const _origFetchIdx = window.fetch;
+window.fetch = function(url, opts){
+  if(typeof url === 'string' && url.includes('/api/')){
+    return secureFetch(url, opts);
+  }
+  return _origFetchIdx(url, opts);
+};
+</script>
 </head>
 <body class='bg-[#050507] text-white min-h-screen flex justify-center'>
 <div id='bannedOverlay' class='hidden fixed inset-0 z-[10000] bg-[#050507] flex flex-col items-center justify-center p-6 text-center'><div class='w-24 h-24 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-4xl mb-6'>🚫</div><h2 class='text-2xl font-extrabold'>Account Suspended</h2><p class='mt-3 text-sm text-white/70 max-w-[320px]'>Your account suspended.</p></div>
@@ -116,7 +154,7 @@ function openPTSupport(){window.open('https://t.me/PT_AI_Support','_blank');}
 
 async function init(){
 try{
-let r=await fetch('/api/me/'+userId); let me=await r.json();
+let r=await secureFetch('/api/me/'+userId); let me=await r.json();
 if(me.is_banned){$('bannedOverlay').classList.remove('hidden'); return;}
 let bal=parseFloat(me.balance||0); let wd=parseFloat(me.withdrawable||0); let profit=parseFloat(me.profit||0); let tier=me.daily_percent||0;
 safeSet('tierPct', tier.toFixed(1)); safeSet('dailyPct', tier.toFixed(1)+'%');
