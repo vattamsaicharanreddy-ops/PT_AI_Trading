@@ -13,7 +13,6 @@ PORT = int(os.getenv("PORT", 10000))
 def run_api():
     import uvicorn
     print(f"🌐 Starting API on 0.0.0.0:{PORT}")
-    # FIXED: Add log level and prevent reload
     uvicorn.run("server:app", host="0.0.0.0", port=PORT, log_level="info")
 
 def keep_alive_ping():
@@ -28,32 +27,7 @@ def keep_alive_ping():
         except: pass
         time.sleep(240)
 
-async def delete_webhook_and_start():
-    from telegram import Bot
-    from bot import BOT_TOKEN
-    bot = Bot(token=BOT_TOKEN)
-    try:
-        # Delete any webhook that might be causing conflict
-        await bot.delete_webhook(drop_pending_updates=True)
-        print("✅ Webhook deleted, pending updates dropped")
-    except Exception as e:
-        print(f"Webhook delete: {e}")
-    try:
-        # Delete any existing getUpdates session
-        await bot.log_out()
-        print("✅ Previous sessions logged out")
-    except: pass
-    try:
-        await bot.close()
-    except: pass
-
 if __name__ == "__main__":
-    # First, clear any existing webhook/conflict
-    try:
-        asyncio.run(delete_webhook_and_start())
-    except Exception as e:
-        print(f"Pre-cleanup: {e}")
-
     t = threading.Thread(target=run_api, daemon=True)
     t.start()
     time.sleep(3)
@@ -63,7 +37,14 @@ if __name__ == "__main__":
     kp.start()
     print("✅ Keep-alive ping started")
 
+    # FIX: Create new event loop for main thread (fixes RuntimeError)
     try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    except: pass
+
+    try:
+        from telegram import Bot
         from telegram.ext import Application, CommandHandler, CallbackQueryHandler
         from bot import BOT_TOKEN, WEBAPP_URL, BOT_USERNAME, start, callback_handler
 
@@ -71,25 +52,33 @@ if __name__ == "__main__":
         print(f"🌐 WEBAPP_URL: {WEBAPP_URL}")
         print(f"🤖 BOT_USERNAME: @{BOT_USERNAME}")
 
-        # FIXED: Add conflict prevention
-        telegram_app = (
-            Application.builder()
-            .token(BOT_TOKEN)
-            .build()
-        )
+        # Clear webhook synchronously using new loop
+        async def clear_conflict():
+            try:
+                b = Bot(token=BOT_TOKEN)
+                await b.delete_webhook(drop_pending_updates=True)
+                print("✅ Webhook deleted")
+                await b.close()
+            except Exception as e:
+                print(f"Clear webhook: {e}")
 
+        try:
+            loop.run_until_complete(clear_conflict())
+        except Exception as e:
+            print(f"Pre-clean error: {e}")
+
+        telegram_app = Application.builder().token(BOT_TOKEN).build()
         telegram_app.add_handler(CommandHandler("start", start))
         telegram_app.add_handler(CallbackQueryHandler(callback_handler))
 
         print("✅ Telegram bot handlers registered")
         print("🚀 Bot starting polling with drop_pending_updates=True...")
 
-        # FIXED: drop_pending_updates and stop_signals to prevent conflict
+        # This now works because we have event loop
         telegram_app.run_polling(
             drop_pending_updates=True,
             allowed_updates=["message", "callback_query"],
-            close_loop=False,
-            stop_signals=None
+            close_loop=False
         )
 
     except Exception as e:
