@@ -41,7 +41,10 @@ if __name__=="__main__":
             print(f"✅ Webhook set to {WEBHOOK_URL}: {result}")
             me = await bot.get_me()
             print(f"✅ Bot verified: @{me.username} - WEBHOOK MODE")
-            await bot.close()
+            try:
+                await bot.close()
+            except Exception as e:
+                print(f"Close warning (ignore if flood): {e}")
         except Exception as e:
             print(f"❌ Webhook setup error: {e}")
             import traceback; traceback.print_exc()
