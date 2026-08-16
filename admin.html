@@ -1,102 +1,80 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>KineTex — PT_AI Admin</title>
+<title>PT_AI — KineTex Command Full</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 *{font-family:'Inter',sans-serif}.mono{font-family:'JetBrains Mono',monospace}
 body{background:#060A06;color:#E8FFE8}
-.kine-bg{background:radial-gradient(140% 80% at 0% 0%,#00FF8822 0%,transparent 60%),radial-gradient(100% 60% at 100% 20%,#00FF8815 0%,transparent 50%),#060A06}
-.card-kine{background:linear-gradient(145deg,rgba(20,35,20,0.9),rgba(10,18,10,0.9));border:1px solid rgba(0,255,136,0.12);border-top:1px solid rgba(0,255,136,0.20);box-shadow:0 1px 0 rgba(0,255,136,0.12) inset,0 12px 32px rgba(0,0,0,0.5);backdrop-filter:blur(16px)}
-.card-kine-glow{background:linear-gradient(145deg,rgba(0,255,136,0.10),rgba(0,255,136,0.03));border:1px solid rgba(0,255,136,0.20);box-shadow:0 0 24px rgba(0,255,136,0.12)}
+.kine-bg{background:radial-gradient(140% 80% at 0% 0%,#00FF8820 0%,transparent 60%),#060A06}
+.card-kine{background:linear-gradient(145deg,rgba(20,35,20,0.9),rgba(10,18,10,0.9));border:1px solid rgba(0,255,136,0.12);border-top:1px solid rgba(0,255,136,0.20);box-shadow:0 1px 0 rgba(0,255,136,0.12) inset,0 10px 28px rgba(0,0,0,0.5);backdrop-filter:blur(16px)}
+.card-kine-gold{background:linear-gradient(145deg,rgba(0,255,136,0.15),rgba(0,255,136,0.05));border:1px solid rgba(0,255,136,0.25)}
 .btn-kine{background:linear-gradient(180deg,#00FF88 0%,#00CC6A 100%);color:#00210F;border-top:1px solid rgba(255,255,255,0.5);box-shadow:0 1px 0 rgba(255,255,255,0.6) inset,0 -2px 0 rgba(0,0,0,0.15) inset,0 8px 20px rgba(0,255,136,0.3);font-weight:900}
 .nav-active{background:#00FF88!important;color:#00210F!important;box-shadow:0 0 20px rgba(0,255,136,0.4)!important;font-weight:900}
 .pill-kine{background:rgba(0,255,136,0.12);border:1px solid rgba(0,255,136,0.20);color:#00FF88}
-.chart-green{stroke:#00FF88;stroke-width:2.5;fill:none;filter:drop-shadow(0 0 8px rgba(0,255,136,0.6))}
 </style>
 </head>
 <body class="min-h-screen flex kine-bg">
 <div id="authOverlay" class="fixed inset-0 z-[999] bg-[#060A06]/95 backdrop-blur-xl flex items-center justify-center p-6">
-<div class="w-full max-w-[360px] bg-[#0E1A0E] border border-[#00FF88]/20 rounded-[24px] p-8 text-center shadow-[0_0_40px_rgba(0,255,136,0.15)]"><div class="w-14 h-14 rounded-xl bg-gradient-to-br from-[#00FF88] to-[#00CC6A] mx-auto flex items-center justify-center font-black text-[#00210F] text-xl">K</div><h2 class="font-black text-xl mt-4">KineTex Command</h2><p class="text-xs opacity-60 mt-1">PT_AI Admin • Neon Green</p><input id="adminSecretInput" type="password" placeholder="ADMIN_SECRET" class="w-full mt-6 bg-black/40 border border-[#00FF88]/20 rounded-xl px-4 py-3 text-sm outline-none"><button onclick="loginAdmin()" class="w-full mt-4 btn-kine py-3 rounded-xl">Unlock →</button></div>
+<div class="w-full max-w-[360px] bg-[#0E1A0E] border border-[#00FF88]/20 rounded-[24px] p-8 text-center"><div class="w-14 h-14 rounded-xl bg-gradient-to-br from-[#00FF88] to-[#00CC6A] mx-auto flex items-center justify-center font-black text-[#00210F] text-xl">PT</div><h2 class="font-black text-xl mt-4">KineTex Command V8 Full</h2><p class="text-xs opacity-60 mt-1">All features • PT_AI Trading</p><input id="adminSecretInput" type="password" placeholder="ADMIN_SECRET" class="w-full mt-6 bg-black/40 border border-[#00FF88]/20 rounded-xl px-4 py-3 text-sm outline-none"><button onclick="loginAdmin()" class="w-full mt-4 btn-kine py-3 rounded-xl">Unlock →</button></div>
 </div>
 
 <aside class="w-[300px] shrink-0 bg-[#080F08]/90 backdrop-blur-xl border-r border-[#00FF88]/10 flex flex-col h-screen sticky top-0">
-<div class="p-6 border-b border-[#00FF88]/10"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-lg bg-white flex items-center justify-center font-black text-black text-[14px]">◧</div><div><p class="font-black text-[14px]">KineTex</p><p class="text-[10px] opacity-40 tracking-widest">PT_AI ULTRA</p></div></div></div>
-<nav class="flex-1 p-3 space-y-2">
-<button onclick="showTab('dashboard')" data-tab="dashboard" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-xl text-[13px] font-bold flex items-center gap-3"><span class="w-8 h-8 rounded-full bg-[#00FF88]/20 flex items-center justify-center">◧</span> Dashboard</button>
-<button onclick="showTab('users')" data-tab="users" class="nav-btn w-full text-left px-4 py-3 rounded-xl text-[13px] opacity-70 hover:bg-white/5 flex items-center gap-3"><span class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">👥</span> Users <span id="navUsers" class="ml-auto bg-white/10 px-2 py-0.5 rounded-full text-[10px]">0</span></button>
-<button onclick="showTab('deposits')" data-tab="deposits" class="nav-btn w-full text-left px-4 py-3 rounded-xl text-[13px] opacity-70 hover:bg-white/5 flex items-center gap-3"><span class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">💳</span> Deposits <span id="navDep" class="ml-auto bg-[#00FF88]/20 text-[#00FF88] px-2 py-0.5 rounded-full text-[10px]">0</span></button>
-<button onclick="showTab('withdrawals')" data-tab="withdrawals" class="nav-btn w-full text-left px-4 py-3 rounded-xl text-[13px] opacity-70 hover:bg-white/5 flex items-center gap-3"><span class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">💸</span> Withdrawals <span id="navWd" class="ml-auto bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full text-[10px]">0</span></button>
-<button onclick="showTab('tasks')" data-tab="tasks" class="nav-btn w-full text-left px-4 py-3 rounded-xl text-[13px] opacity-70 hover:bg-white/5 flex items-center gap-3"><span class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">🎯</span> Tasks</button>
-<button onclick="showTab('debug')" data-tab="debug" class="nav-btn w-full text-left px-4 py-3 rounded-xl text-[13px] bg-red-500/10 text-red-300">🔧 Debug</button>
-</nav>
-<div class="p-4 border-t border-[#00FF88]/10">
-<div class="card-kine rounded-xl p-3 flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-[#00FF88] flex items-center justify-center text-black font-black text-[12px]">A</div><div><p class="font-bold text-[12px]">Admin</p><p class="text-[10px] opacity-50">Super • Online</p></div></div>
+<div class="p-6 border-b border-[#00FF88]/10"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-[#00FF88] flex items-center justify-center font-black text-[#00210F]">PT</div><div><p class="font-black text-[14px]">PT_AI ULTRA</p><p class="text-[10px] opacity-50 tracking-[3px]">KINETEX • V8 FULL</p></div></div>
+<div class="mt-5 grid grid-cols-2 gap-2.5"><div class="rounded-2xl bg-[#00FF88]/10 border border-[#00FF88]/20 p-3 text-center"><p class="text-[9px] opacity-50 tracking-widest">USERS</p><p id="navUsers" class="font-black text-[13px] mt-1">0</p></div><div class="rounded-2xl bg-[#00FF88]/10 border border-[#00FF88]/20 p-3 text-center"><p class="text-[9px] opacity-50 tracking-widest">STATUS</p><p class="font-black text-[13px] mt-1 text-[#00FF88]">● LIVE</p></div></div>
 </div>
+<nav class="flex-1 p-3 space-y-1.5 overflow-y-auto">
+<button onclick="showTab('dashboard')" data-tab="dashboard" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-xl text-[13px] font-bold">📊 Dashboard</button>
+<button onclick="showTab('users')" data-tab="users" class="nav-btn w-full text-left px-4 py-3 rounded-xl text-[13px] opacity-70 hover:bg-white/5 flex justify-between"><span>👥 Users</span><span id="navUsers2" class="bg-white/10 px-2.5 py-1 rounded-full text-[11px] font-bold">0</span></button>
+<button onclick="showTab('deposits')" data-tab="deposits" class="nav-btn w-full text-left px-4 py-3 rounded-xl text-[13px] opacity-70 hover:bg-white/5 flex justify-between"><span>💳 Deposits</span><span id="navDeposits" class="bg-[#00FF88]/20 text-[#00FF88] px-2.5 py-1 rounded-full text-[11px] font-bold">0</span></button>
+<button onclick="showTab('withdrawals')" data-tab="withdrawals" class="nav-btn w-full text-left px-4 py-3 rounded-xl text-[13px] opacity-70 hover:bg-white/5 flex justify-between"><span>💸 Withdrawals</span><span id="navWd" class="bg-orange-500/20 text-orange-300 px-2.5 py-1 rounded-full text-[11px] font-bold">0</span></button>
+<button onclick="showTab('tasks')" data-tab="tasks" class="nav-btn w-full text-left px-4 py-3 rounded-xl text-[13px] opacity-70 hover:bg-white/5">🎯 Tasks</button>
+<button onclick="showTab('debug')" data-tab="debug" class="nav-btn w-full text-left px-4 py-3 rounded-xl text-[13px] bg-red-500/10 border border-red-500/20 text-red-300">🔧 Debug & Migration</button>
+</nav>
+<div class="p-4 border-t border-[#00FF88]/10"><button onclick="logoutAdmin()" class="w-full bg-white/5 py-2.5 rounded-xl text-xs">🔒 Logout</button></div>
 </aside>
 
 <main class="flex-1 min-h-screen">
 <header class="h-[68px] border-b border-[#00FF88]/10 bg-[#080F08]/80 backdrop-blur-xl flex items-center px-8 justify-between sticky top-0 z-20">
-<div class="flex items-center gap-4"><h1 id="pageTitle" class="font-black text-[18px]">Top Market Coins</h1><span class="pill-kine px-2.5 py-1 rounded-full text-[10px] font-bold">24h ▼</span></div>
-<div class="flex items-center gap-3"><button class="w-9 h-9 rounded-full bg-white/5 border border-[#00FF88]/10 flex items-center justify-center">◷</button><button class="w-9 h-9 rounded-full bg-white/5 border border-[#00FF88]/10 flex items-center justify-center">📅</button><button onclick="loadAll()" class="btn-kine px-4 py-2 rounded-full text-xs">↻ Refresh</button></div>
+<div><h1 id="pageTitle" class="font-black text-[18px]">Dashboard</h1><p class="text-[11px] opacity-50">KineTex Theme • All features • Auto refresh 15s</p></div>
+<div class="flex gap-2.5"><button onclick="loadAll()" class="bg-white/5 border border-[#00FF88]/15 px-5 py-2.5 rounded-full text-xs font-bold">↻ Refresh</button><button onclick="restoreTasks()" class="btn-kine px-5 py-2.5 rounded-full text-xs">Restore Tasks</button><button onclick="exportData()" class="bg-white text-black px-5 py-2.5 rounded-full text-xs font-black">Export CSV</button></div>
 </header>
 
-<div class="p-6">
-<!-- Top Market Coins like KineTex -->
+<div class="p-7 space-y-8">
 <section id="sec-dashboard" class="space-y-6">
+<!-- All your original stats -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="card-kine p-5 rounded-[18px]"><p class="text-[10px] opacity-50 tracking-widest">TOTAL USERS</p><p id="statUsers" class="font-black text-2xl mt-2">0</p><p class="text-[11px] opacity-40 mt-1">Registered</p></div>
+<div class="card-kine p-5 rounded-[18px]"><p class="text-[10px] opacity-50 tracking-widest">TOTAL BALANCE</p><p id="statBal" class="font-black text-2xl mt-2">$0</p><p class="text-[11px] opacity-40 mt-1">TVL</p></div>
+<div class="card-kine p-5 rounded-[18px] border-amber-500/20"><p class="text-[10px] opacity-50 tracking-widest">PENDING DEPOSITS</p><p id="statPendDep" class="font-black text-2xl mt-2 text-amber-300">0</p><button onclick="approveAllPending()" class="mt-2 text-[11px] bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full border border-amber-500/20">Approve all →</button></div>
+<div class="card-kine p-5 rounded-[18px] border-orange-500/20"><p class="text-[10px] opacity-50 tracking-widest">PENDING WD</p><p id="statPendWd" class="font-black text-2xl mt-2 text-orange-300">0</p></div>
+</div>
+
 <div class="grid grid-cols-3 gap-4">
-<div class="card-kine rounded-[18px] p-4"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-[#F7931A] flex items-center justify-center text-white font-black text-[12px]">₿</div><p class="text-[11px] opacity-60">Bitcoin (BTC)</p></div><p class="font-black text-[20px] mt-3">$74,750</p><p class="text-[11px] text-red-400 mt-1">▼ -2.8%</p></div>
-<div class="card-kine rounded-[18px] p-4"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-[#627EEA] flex items-center justify-center text-white font-black text-[12px]">♦</div><p class="text-[11px] opacity-60">Ethereum (ETH)</p></div><p id="statBal" class="font-black text-[20px] mt-3">$2,180</p><p class="text-[11px] text-red-400 mt-1">▼ -3.9%</p></div>
-<div class="card-kine rounded-[18px] p-4"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-[#26A17B] flex items-center justify-center text-white font-black text-[12px]">₮</div><p class="text-[11px] opacity-60">Tether (USDT)</p></div><p class="font-black text-[20px] mt-3">$1,00</p><p class="text-[11px] text-emerald-400 mt-1">▲ +0.6%</p></div>
+<div class="card-kine rounded-[18px] p-4"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-[#F7931A] flex items-center justify-center text-white font-black text-[12px]">₿</div><p class="text-[11px] opacity-60">Bitcoin (BTC)</p></div><p class="font-black text-[18px] mt-3">$74,750</p><p class="text-[11px] text-red-400 mt-1">▼ -2.8%</p></div>
+<div class="card-kine rounded-[18px] p-4"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-[#627EEA] flex items-center justify-center text-white font-black text-[12px]">♦</div><p class="text-[11px] opacity-60">Ethereum (ETH)</p></div><p class="font-black text-[18px] mt-3">$2,180</p><p class="text-[11px] text-red-400 mt-1">▼ -3.9%</p></div>
+<div class="card-kine rounded-[18px] p-4"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-[#26A17B] flex items-center justify-center text-white font-black text-[12px]">₮</div><p class="text-[11px] opacity-60">Tether (USDT)</p></div><p class="font-black text-[18px] mt-3">$1.00</p><p class="text-[11px] text-emerald-400 mt-1">▲ +0.6%</p></div>
 </div>
 
-<div class="grid grid-cols-[1.8fr_1fr] gap-6">
-<!-- Chart -->
-<div class="card-kine rounded-[20px] p-5">
-<div class="flex justify-between items-center"><p class="font-bold text-[14px]">Ethereum <span class="opacity-50">ETH ▼</span></p><div class="flex gap-1"><button class="px-3 py-1 rounded-full bg-white/5 text-[10px]">1D</button><button class="px-3 py-1 rounded-full bg-[#00FF88] text-black text-[10px] font-black">1W</button><button class="px-3 py-1 rounded-full bg-white/5 text-[10px]">1M</button><button class="px-3 py-1 rounded-full bg-white/5 text-[10px]">6M</button></div></div>
-<div class="mt-6 relative h-[220px]">
-<svg class="w-full h-full" viewBox="0 0 600 200"><path class="chart-green" d="M0,120 Q80,110 120,90 T200,100 T280,140 T360,90 T440,70 T520,110 T600,30" /></svg>
-<div class="absolute top-[60px] left-[60%] bg-[#0E1A0E] border border-[#00FF88]/30 px-2.5 py-1 rounded-full text-[11px] font-bold text-[#00FF88] flex items-center gap-1"><span>▲</span> +17,21%</div>
-</div>
-<div class="mt-2 flex justify-between text-[10px] opacity-40"><span>Mon 12</span><span>Tue 13</span><span>Wed 14</span><span>Thu 15</span><span>Fri 16</span><span>Sat 17</span><span>Sun 18</span></div>
-</div>
-
-<!-- Right panel - 1.2938 ETH like image -->
-<div class="space-y-4">
-<div class="card-kine rounded-[20px] p-5 text-center relative overflow-hidden">
-<div class="absolute -top-10 left-1/2 -translate-x-1/2 w-[200px] h-[200px] bg-[#00FF88]/20 blur-[30px] rounded-full"></div>
-<div class="relative">
-<div class="w-[80px] h-[80px] mx-auto rounded-full bg-gradient-to-br from-[#1A2A1A] to-[#0A1A0A] border border-[#00FF88]/20 flex items-center justify-center text-[40px] shadow-[0_0_30px_rgba(0,255,136,0.2)]">🎭</div>
-<p class="font-black text-[32px] mt-4">1.2938 <span class="opacity-40">ETH</span></p>
-<p class="text-[12px] text-[#00FF88] mt-1">▲ $3,451.40 (3.2%)</p>
-<div class="mt-5 grid grid-cols-3 gap-2">
-<button class="h-[36px] rounded-full bg-white/5 border border-[#00FF88]/10 text-[11px] flex items-center justify-center gap-1">↙ Receive</button>
-<button class="h-[36px] w-[36px] mx-auto rounded-full bg-[#00FF88] text-black font-black flex items-center justify-center">+</button>
-<button class="h-[36px] rounded-full bg-white/5 border border-[#00FF88]/10 text-[11px] flex items-center justify-center gap-1">↗ Send</button>
-</div>
-</div>
-</div>
-<div class="card-kine rounded-[20px] p-4">
-<p class="font-bold text-[13px]">My Assets</p>
-<div class="mt-4 grid grid-cols-2 gap-3">
-<div class="bg-black/30 rounded-[14px] p-3 border border-[#00FF88]/10"><div class="flex justify-between"><div class="w-7 h-7 rounded-full bg-[#F7931A] flex items-center justify-center text-[11px] font-black">₿</div><span class="pill-kine px-2 py-0.5 rounded-full text-[10px]">+3.7</span></div><svg class="w-full h-[20px] mt-2"><path class="chart-green" d="M0,15 Q20,10 40,12 T80,8" /></svg><p class="text-[10px] opacity-40 mt-2">Last 7 Days</p><p class="font-black text-[13px] mt-1">0.02667492 BTC</p><p class="text-[10px] text-emerald-400">▲ $1,800.48 (0.6%)</p></div>
-<div class="bg-black/30 rounded-[14px] p-3 border border-[#00FF88]/10"><div class="flex justify-between"><div class="w-7 h-7 rounded-full bg-[#26A17B] flex items-center justify-center text-[11px] font-black">₮</div><span class="text-[9px] opacity-40">Last 7 Days</span></div><p class="font-black text-[14px] mt-4">0.38472 USDT</p><p class="text-[10px] text-red-400">▼ $1,021.27 (0.4%)</p><div class="mt-3"><p class="text-[10px] opacity-40">My Assets</p></div></div>
-</div>
-</div>
-</div>
-</div>
-
-<div class="grid grid-cols-2 gap-4">
-<div class="card-kine rounded-[20px] p-5"><div class="flex justify-between"><p class="font-bold text-[13px]">Recent Transactions</p><button class="text-[11px] opacity-50">See All</button></div><div id="dashDeposits" class="mt-4 space-y-2"></div></div>
-<div class="card-kine rounded-[20px] p-5"><div class="flex justify-between"><p class="font-bold text-[13px]">Market Overview</p><button class="text-[11px] opacity-50">See All</button></div><div id="dashWd" class="mt-4 space-y-3 text-[12px]"><div class="flex justify-between items-center bg-black/20 p-3 rounded-xl"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded-full bg-[#627EEA] flex items-center justify-center text-[10px]">♦</div><div><p class="font-bold">Ethereum</p><p class="text-[10px] opacity-50">ETH</p></div></div><p class="font-bold">$2,180.45</p></div></div></div>
+<div class="grid grid-cols-2 gap-5">
+<div class="card-kine p-6 rounded-[18px]"><h3 class="font-bold text-[13px]">Recent Deposits • Auto monitor</h3><div id="dashDeposits" class="mt-4 space-y-2 text-xs"></div></div>
+<div class="card-kine p-6 rounded-[18px]"><h3 class="font-bold text-[13px]">Recent Withdrawals</h3><div id="dashWd" class="mt-4 space-y-2 text-xs"></div></div>
 </div>
 </section>
 
-<section id="sec-users" class="hidden"><div class="flex gap-2 mb-4"><input id="userSearch" placeholder="Search" class="bg-[#0E1A0E] border border-[#00FF88]/15 rounded-full px-4 py-2 text-xs w-[260px]"><button onclick="loadAll()" class="btn-kine px-4 py-2 rounded-full text-xs">Search</button></div><div class="card-kine rounded-[18px] overflow-hidden"><table class="w-full text-xs"><thead class="text-[10px] opacity-40 uppercase"><tr><th class="text-left p-3">ID</th><th>User</th><th class="text-right p-3">Balance</th><th class="text-right p-3">Withdrawable</th><th>Deposit</th><th>Action</th></tr></thead><tbody id="usersTable"></tbody></table></div></section>
-<section id="sec-deposits" class="hidden"><div class="card-kine rounded-[18px] overflow-hidden"><table class="w-full text-xs"><thead class="text-[10px] opacity-40"><tr><th>ID</th><th>User</th><th>Amount</th><th>Network</th><th>Status</th><th>Invoice</th><th>Action</th></tr></thead><tbody id="depositsTable"></tbody></table></div></section>
-<section id="sec-withdrawals" class="hidden"><div class="card-kine rounded-[18px] overflow-hidden"><table class="w-full text-xs"><thead class="text-[10px] opacity-40"><tr><th>ID</th><th>User</th><th>Amount</th><th>Address</th><th>Network</th><th>Status</th><th>Action</th></tr></thead><tbody id="wdTable"></tbody></table></div></section>
-<section id="sec-tasks" class="hidden"><div class="flex gap-2 mb-4"><input id="t_title" placeholder="Title" class="bg-[#0E1A0E] border border-[#00FF88]/15 rounded-full px-4 py-2 text-xs"><input id="t_link" placeholder="https://t.me/..." class="bg-[#0E1A0E] border border-[#00FF88]/15 rounded-full px-4 py-2 text-xs w-[220px]"><input id="t_group_id" placeholder="@group" class="bg-[#0E1A0E] border border-[#00FF88]/15 rounded-full px-4 py-2 text-xs"><button onclick="createTask()" class="btn-kine px-4 py-2 rounded-full text-xs">+ Create</button></div><div class="card-kine rounded-[18px] overflow-hidden"><table class="w-full text-xs"><thead class="text-[10px] opacity-40"><tr><th>ID</th><th>Title</th><th>Link</th><th>Status</th><th>Action</th></tr></thead><tbody id="tasksTable"></tbody></table></div></section>
-<section id="sec-debug" class="hidden"><div class="card-kine rounded-[18px] p-5"><h3 class="font-bold">DB Status</h3><button onclick="loadDebug()" class="mt-3 btn-kine px-4 py-2 rounded-full text-xs">Load DB Status</button><pre id="debugDb" class="mt-3 bg-black/40 p-3 rounded-xl text-[11px] mono overflow-auto"></pre><pre id="dbUrlPrefix" class="mt-2 bg-black/40 p-3 rounded-xl text-[11px] mono"></pre></div></section>
+<section id="sec-users" class="hidden">
+<div class="flex gap-2 mb-4"><input id="userSearch" placeholder="Search user_id or username" class="bg-[#0E1A0E] border border-[#00FF88]/15 rounded-full px-4 py-2 text-xs w-[260px]"><button onclick="loadAll()" class="bg-[#00FF88]/20 text-[#00FF88] border border-[#00FF88]/30 px-4 py-2 rounded-full text-xs font-bold">Search</button><button onclick="bulkActionPrompt()" class="bg-white/5 px-4 py-2 rounded-full text-xs">Bulk Action</button></div>
+<div class="card-kine rounded-[18px] overflow-hidden"><table class="w-full text-xs"><thead class="text-[10px] opacity-40 uppercase"><tr><th class="text-left p-3">ID</th><th class="text-left p-3">User</th><th class="text-right p-3">Balance</th><th class="text-right p-3">Withdrawable</th><th class="text-right p-3">Deposit</th><th class="text-right p-3">Actions</th></tr></thead><tbody id="usersTable"></tbody></table></div>
+</section>
+
+<section id="sec-deposits" class="hidden"><div class="card-kine rounded-[18px] overflow-hidden"><table class="w-full text-xs"><thead class="text-[10px] opacity-40 uppercase"><tr><th class="text-left p-3">ID</th><th>User</th><th>Amount</th><th>Network</th><th>Status</th><th>Invoice</th><th>Action</th></tr></thead><tbody id="depositsTable"></tbody></table></div></section>
+<section id="sec-withdrawals" class="hidden"><div class="card-kine rounded-[18px] overflow-hidden"><table class="w-full text-xs"><thead class="text-[10px] opacity-40 uppercase"><tr><th>ID</th><th>User</th><th>Amount</th><th>Address</th><th>Network</th><th>Status</th><th>Action</th></tr></thead><tbody id="wdTable"></tbody></table></div></section>
+<section id="sec-tasks" class="hidden"><div class="flex gap-2 mb-4"><input id="t_title" placeholder="Title" class="bg-[#0E1A0E] border border-[#00FF88]/15 rounded-full px-4 py-2 text-xs"><input id="t_link" placeholder="https://t.me/..." class="bg-[#0E1A0E] border border-[#00FF88]/15 rounded-full px-4 py-2 text-xs w-[220px]"><input id="t_group_id" placeholder="@group or -100..." class="bg-[#0E1A0E] border border-[#00FF88]/15 rounded-full px-4 py-2 text-xs"><button onclick="createTask()" class="btn-kine px-4 py-2 rounded-full text-xs">+ Create</button><button onclick="restoreTasks()" class="bg-white/5 border border-[#00FF88]/15 px-4 py-2 rounded-full text-xs">Restore defaults</button></div><div class="card-kine rounded-[18px] overflow-hidden"><table class="w-full text-xs"><thead class="text-[10px] opacity-40 uppercase"><tr><th>ID</th><th>Title</th><th>Link</th><th>Status</th><th>Action</th></tr></thead><tbody id="tasksTable"></tbody></table></div></section>
+
+<section id="sec-debug" class="hidden space-y-4">
+<div class="card-kine p-5 rounded-[18px]"><h3 class="font-bold">DB Status • Migration</h3><button onclick="loadDebug()" class="mt-3 btn-kine px-4 py-2 rounded-full text-xs">Load DB Status</button><pre id="debugDb" class="mt-3 bg-black/40 p-3 rounded-xl text-[11px] mono overflow-auto"></pre><pre id="dbUrlPrefix" class="mt-2 bg-black/40 p-3 rounded-xl text-[11px] mono"></pre></div>
+<div class="card-kine p-5 rounded-[18px]"><h3 class="font-bold">Extreme Tools</h3><div class="mt-3 flex gap-2"><input id="ex_user" placeholder="User ID" class="bg-[#0E1A0E] border border-[#00FF88]/15 rounded-full px-4 py-2 text-xs"><input id="ex_amount" placeholder="Amount" class="bg-[#0E1A0E] border border-[#00FF88]/15 rounded-full px-4 py-2 text-xs"><button onclick="extremeAction('add_balance')" class="bg-white/10 px-3 py-2 rounded-full text-xs">+Bal</button><button onclick="extremeAction('add_withdrawable')" class="bg-[#00FF88]/20 text-[#00FF88] px-3 py-2 rounded-full text-xs">+Wd</button><button onclick="extremeAction('ban')" class="bg-red-500/20 text-red-300 px-3 py-2 rounded-full text-xs">Ban</button></div><pre id="restoreLog" class="mt-3 text-[11px]"></pre></div>
+</section>
 </div>
 </main>
 <script>
@@ -105,33 +83,43 @@ function adminHeaders(){ return {'Content-Type':'application/json','X-Admin-Secr
 async function apiFetch(url,opts={}){ opts.headers={...(opts.headers||{}), ...adminHeaders()}; if(opts.body && typeof opts.body!=='string') opts.body=JSON.stringify(opts.body); let r=await fetch(url,opts); if(r.status===401){ document.getElementById('authOverlay').classList.remove('hidden'); throw new Error('401'); } return r.json(); }
 function loginAdmin(){ const v=document.getElementById('adminSecretInput').value.trim(); if(!v) return alert('Enter secret'); setSecret(v); document.getElementById('authOverlay').classList.add('hidden'); loadAll(); }
 function logoutAdmin(){ localStorage.removeItem(KEY); location.reload(); }
-function showTab(name){ document.querySelectorAll('section[id^="sec-"]').forEach(s=>s.classList.add('hidden')); document.getElementById('sec-'+name).classList.remove('hidden'); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('nav-active')); document.querySelector(`[data-tab="${name}"]`)?.classList.add('nav-active'); document.getElementById('pageTitle').innerText=name==='dashboard'?'Top Market Coins':name.charAt(0).toUpperCase()+name.slice(1); }
-let allUsers=[], allDeposits=[];
+function showTab(name){ document.querySelectorAll('section[id^="sec-"]').forEach(s=>s.classList.add('hidden')); document.getElementById('sec-'+name).classList.remove('hidden'); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('nav-active')); document.querySelector(`[data-tab="${name}"]`)?.classList.add('nav-active'); document.getElementById('pageTitle').innerText=name==='dashboard'?'Dashboard • Top Market Coins':name.charAt(0).toUpperCase()+name.slice(1); }
+let allUsers=[], allDeposits=[], allWd=[];
 async function loadAll(){ if(!getSecret()){ document.getElementById('authOverlay').classList.remove('hidden'); return; } try{
  let stats=await apiFetch('/api/admin/stats');
- document.getElementById('statBal').innerText='$'+(stats.total_balance||0).toFixed(0);
- document.getElementById('navUsers').innerText=stats.total_users; document.getElementById('navDep').innerText=stats.pending_deposits; document.getElementById('navWd').innerText=stats.pending_withdrawals;
+ document.getElementById('statUsers').innerText=stats.total_users; document.getElementById('statBal').innerText='$'+(stats.total_balance||0).toFixed(2); document.getElementById('statPendDep').innerText=stats.pending_deposits; document.getElementById('statPendWd').innerText=stats.pending_withdrawals;
+ document.getElementById('navUsers').innerText=stats.total_users; document.getElementById('navUsers2').innerText=stats.total_users; document.getElementById('navDeposits').innerText=stats.pending_deposits; document.getElementById('navWd').innerText=stats.pending_withdrawals;
  let deposits=await apiFetch('/api/admin/deposits'); allDeposits=deposits;
- let depHtml=''; deposits.slice(0,5).forEach(d=>{ depHtml+=`<div class="flex justify-between items-center bg-black/20 p-3 rounded-xl"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-[#F7931A] flex items-center justify-center text-[10px]">₿</div><div><p class="font-bold text-[12px]">${d.amount} USDT</p><p class="text-[10px] opacity-50">${d.network} • Swap</p></div></div><div class="text-right"><p class="font-bold text-[12px]">$${d.amount}</p><p class="text-[10px] opacity-40">${d.status}</p></div></div>`; });
- document.getElementById('dashDeposits').innerHTML=depHtml||'<p class="opacity-50 text-xs">No deposits</p>';
- let wds=await apiFetch('/api/admin/withdrawals');
- let wdHtml=''; wds.slice(0,3).forEach(w=>{ wdHtml+=`<div class="flex justify-between items-center bg-black/20 p-3 rounded-xl"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-[#627EEA] flex items-center justify-center text-[10px]">♦</div><div><p class="font-bold">Ethereum</p><p class="text-[10px] opacity-50">ETH</p></div></div><p class="font-bold">$2,180.45</p></div>`; });
- if(document.getElementById('dashWd').children.length===0) document.getElementById('dashWd').innerHTML=wdHtml;
+ let depHtml=''; deposits.slice(0,10).forEach(d=>{ depHtml+=`<div class="flex justify-between bg-white/5 p-2 rounded-lg"><span>${d.user_id} $${d.amount} ${d.network}</span><span class="opacity-60 ${d.status==='verified'?'text-[#00FF88]':'text-amber-300'}">${d.status}</span></div>`; });
+ document.getElementById('dashDeposits').innerHTML=depHtml||'No deposits';
+ let wds=await apiFetch('/api/admin/withdrawals'); allWd=wds;
+ let wdHtml=''; wds.slice(0,10).forEach(w=>{ wdHtml+=`<div class="flex justify-between bg-white/5 p-2 rounded-lg"><span>${w.user_id} $${w.amount}</span><span class="opacity-60">${w.status}</span></div>`; });
+ document.getElementById('dashWd').innerHTML=wdHtml||'No withdrawals';
  let users=await apiFetch('/api/admin/users'); allUsers=users;
- let uHtml=''; users.slice(0,100).forEach(u=>{ uHtml+=`<tr class="border-t border-[#00FF88]/10"><td class="p-3 mono">${u.user_id}</td><td class="p-3">${u.username||''}</td><td class="p-3 text-right font-bold">${(u.balance||0).toFixed(2)}</td><td class="p-3 text-right text-[#00FF88]">${(u.withdrawable||0).toFixed(2)}</td><td class="p-3 text-right">${(u.total_deposit||0).toFixed(2)}</td><td class="p-3 text-right"><button onclick="addBal(${u.user_id})" class="bg-white/10 px-2.5 py-1 rounded-full text-[10px]">+Bal</button></td></tr>`; });
+ const search=document.getElementById('userSearch')?.value.toLowerCase()||''; let filtered=users; if(search) filtered=users.filter(u=> (u.user_id+'').includes(search) || (u.username||'').toLowerCase().includes(search));
+ let uHtml=''; filtered.slice(0,200).forEach(u=>{ uHtml+=`<tr class="border-t border-[#00FF88]/10 hover:bg-[#00FF88]/5"><td class="p-3 mono">${u.user_id}</td><td class="p-3">${u.username||''}</td><td class="p-3 text-right">${(u.balance||0).toFixed(2)}</td><td class="p-3 text-right text-[#00FF88] font-bold">${(u.withdrawable||0).toFixed(2)}</td><td class="p-3 text-right">${(u.total_deposit||0).toFixed(2)}</td><td class="p-3 text-right"><button onclick="addBal(${u.user_id})" class="bg-white/10 px-2.5 py-1 rounded-full text-[10px]">+Bal</button> <button onclick="banUser(${u.user_id})" class="bg-red-500/20 text-red-300 px-2 py-1 rounded-full text-[10px] ml-1">Ban</button></td></tr>`; });
  document.getElementById('usersTable').innerHTML=uHtml;
- let dHtml=''; deposits.forEach(d=>{ dHtml+=`<tr class="border-t border-[#00FF88]/10"><td class="p-3 mono">${d.id}</td><td class="p-3">${d.user_id}</td><td class="p-3 font-bold">$${d.amount}</td><td class="p-3"><span class="px-2 py-1 rounded-full bg-white/10 text-[10px]">${d.network}</span></td><td class="p-3"><span class="px-2 py-1 rounded-full ${d.status==='verified'?'bg-[#00FF88]/20 text-[#00FF88]':'bg-amber-500/20 text-amber-300'} text-[10px]">${d.status}</span></td><td class="p-3 mono text-[10px]">${(d.invoice_id||'').slice(0,10)}</td><td class="p-3"><button onclick="approveDep(${d.id})" class="btn-kine px-2.5 py-1 rounded-full text-[10px]">Approve</button></td></tr>`; });
+ let dHtml=''; deposits.forEach(d=>{ dHtml+=`<tr class="border-t border-[#00FF88]/10"><td class="p-3 mono">${d.id}</td><td class="p-3">${d.user_id}</td><td class="p-3 font-bold">$${d.amount}</td><td class="p-3"><span class="px-2 py-1 rounded-full bg-white/10 text-[10px]">${d.network}</span></td><td class="p-3"><span class="px-2 py-1 rounded-full ${d.status==='verified'?'bg-[#00FF88]/20 text-[#00FF88]':'bg-amber-500/20 text-amber-300'} text-[10px]">${d.status}</span></td><td class="p-3 mono text-[10px]">${(d.invoice_id||'').slice(0,12)}</td><td class="p-3"><button onclick="approveDep(${d.id})" class="btn-kine px-2.5 py-1 rounded-full text-[10px]">Approve</button> <button onclick="rejectDep(${d.id})" class="bg-white/10 px-2 py-1 rounded-full text-[10px] ml-1">Reject</button></td></tr>`; });
  document.getElementById('depositsTable').innerHTML=dHtml;
- let wHtml=''; wds.forEach(w=>{ wHtml+=`<tr class="border-t border-[#00FF88]/10"><td class="p-3 mono">${w.id}</td><td class="p-3">${w.user_id}</td><td class="p-3 font-bold">$${w.amount}</td><td class="p-3 mono text-[10px]">${(w.address||'').slice(0,18)}...</td><td class="p-3">${w.network}</td><td class="p-3">${w.status}</td><td class="p-3"><button onclick="approveWd(${w.id})" class="btn-kine px-2.5 py-1 rounded-full text-[10px]">Approve</button></td></tr>`; });
+ let wHtml=''; wds.forEach(w=>{ wHtml+=`<tr class="border-t border-[#00FF88]/10"><td class="p-3 mono">${w.id}</td><td class="p-3">${w.user_id}</td><td class="p-3 font-bold">$${w.amount}</td><td class="p-3 mono text-[10px]">${(w.address||'').slice(0,20)}...</td><td class="p-3">${w.network}</td><td class="p-3">${w.status}</td><td class="p-3"><button onclick="approveWd(${w.id})" class="btn-kine px-2.5 py-1 rounded-full text-[10px]">Approve</button> <button onclick="rejectWd(${w.id})" class="bg-white/10 px-2 py-1 rounded-full text-[10px] ml-1">Reject</button></td></tr>`; });
  document.getElementById('wdTable').innerHTML=wHtml;
- let tasks=await apiFetch('/api/admin/tasks'); let tHtml=''; tasks.forEach(t=>{ tHtml+=`<tr class="border-t border-[#00FF88]/10"><td class="p-3 mono">${t.id}</td><td class="p-3 font-bold">${t.title}</td><td class="p-3 mono text-[10px]">${(t.group_link||'').slice(0,30)}</td><td class="p-3">${t.is_active?'✅':''} ${t.is_mandatory?'🔒':''}</td><td class="p-3"><button onclick="delTask(${t.id})" class="bg-red-500/20 text-red-300 px-2 py-1 rounded-full text-[10px]">Del</button></td></tr>`; }); document.getElementById('tasksTable').innerHTML=tHtml;
+ let tasks=await apiFetch('/api/admin/tasks'); let tHtml=''; tasks.forEach(t=>{ tHtml+=`<tr class="border-t border-[#00FF88]/10"><td class="p-3 mono">${t.id}</td><td class="p-3 font-bold">${t.title}</td><td class="p-3 mono text-[10px]">${(t.group_link||'').slice(0,30)}</td><td class="p-3">${t.is_active?'✅':''} ${t.is_mandatory?'🔒':''}</td><td class="p-3"><button onclick="delTask(${t.id})" class="bg-red-500/20 text-red-300 px-2 py-1 rounded-full text-[10px]">Delete</button></td></tr>`; });
+ document.getElementById('tasksTable').innerHTML=tHtml;
  }catch(e){ console.error(e); } }
-async function approveDep(id){ if(!confirm('Approve '+id+'?')) return; await apiFetch('/api/admin/deposit/action',{method:'POST',body:JSON.stringify({id,action:'approve'})}); loadAll(); }
-async function approveWd(id){ if(!confirm('Approve WD '+id+'?')) return; await apiFetch('/api/admin/withdraw/action',{method:'POST',body:JSON.stringify({id,action:'approve'})}); loadAll(); }
-async function delTask(id){ if(!confirm('Delete '+id)) return; await apiFetch('/api/admin/tasks/action',{method:'POST',body:JSON.stringify({id,action:'delete'})}); loadAll(); }
-async function createTask(){ let p={title:document.getElementById('t_title').value, description:'', group_link:document.getElementById('t_link').value, group_id:document.getElementById('t_group_id').value, group_username:'', reward:1, reward_type:'withdrawable', is_active:1, is_mandatory:1, icon:'🚀', sort_order:0}; if(!p.title||!p.group_link||!p.group_id) return alert('Fill all'); await apiFetch('/api/admin/tasks/create',{method:'POST',body:JSON.stringify(p)}); loadAll(); }
-async function addBal(uid){ let amt=prompt('Amount:','10'); if(!amt) return; await apiFetch('/api/admin/user/action',{method:'POST',body:JSON.stringify({user_id:uid,action:'add_balance',amount:parseFloat(amt)})}); loadAll(); }
-async function loadDebug(){ let d=await apiFetch('/api/debug/db'); document.getElementById('debugDb').innerText=JSON.stringify(d,null,2); }
+async function approveDep(id){ if(!confirm('Approve deposit '+id+'?')) return; await apiFetch('/api/admin/deposit/action',{method:'POST',body:JSON.stringify({id,action:'approve'})}); loadAll(); }
+async function rejectDep(id){ await apiFetch('/api/admin/deposit/action',{method:'POST',body:JSON.stringify({id,action:'reject'})}); loadAll(); }
+async function approveWd(id){ if(!confirm('Approve WD '+id+'? Have you sent funds?')) return; await apiFetch('/api/admin/withdraw/action',{method:'POST',body:JSON.stringify({id,action:'approve'})}); loadAll(); }
+async function rejectWd(id){ await apiFetch('/api/admin/withdraw/action',{method:'POST',body:JSON.stringify({id,action:'reject'})}); loadAll(); }
+async function delTask(id){ if(!confirm('Delete task '+id+'?')) return; await apiFetch('/api/admin/tasks/action',{method:'POST',body:JSON.stringify({id,action:'delete'})}); loadAll(); }
+async function createTask(){ let payload={title:document.getElementById('t_title').value, description:'', group_link:document.getElementById('t_link').value, group_id:document.getElementById('t_group_id').value, group_username:'', reward:1, reward_type:'withdrawable', is_active:1, is_mandatory:1, icon:'🚀', sort_order:0}; if(!payload.title||!payload.group_link||!payload.group_id) return alert('Fill title, link, group_id'); await apiFetch('/api/admin/tasks/create',{method:'POST',body:JSON.stringify(payload)}); alert('Created'); loadAll(); }
+async function approveAllPending(){ if(!confirm('Approve ALL pending?')) return; let deps=allDeposits.filter(d=>d.status==='awaiting_payment'); for(let d of deps){ await apiFetch('/api/admin/deposit/action',{method:'POST',body:JSON.stringify({id:d.id,action:'approve'})}); } alert('Done '+deps.length); loadAll(); }
+async function addBal(uid){ let amt=prompt('Amount to add to balance:','10'); if(!amt) return; await apiFetch('/api/admin/user/action',{method:'POST',body:JSON.stringify({user_id:uid,action:'add_balance',amount:parseFloat(amt)})}); loadAll(); }
+async function banUser(uid){ if(!confirm('Ban '+uid+'?')) return; await apiFetch('/api/admin/user/action',{method:'POST',body:JSON.stringify({user_id:uid,action:'ban'})}); loadAll(); }
+async function extremeAction(action){ let uid=parseInt(document.getElementById('ex_user').value); let amt=parseFloat(document.getElementById('ex_amount').value||0); if(!uid) return alert('Enter User ID'); await apiFetch('/api/admin/user/action',{method:'POST',body:JSON.stringify({user_id:uid,action:action,amount:amt})}); alert('Done'); loadAll(); }
+async function loadDebug(){ let d=await apiFetch('/api/debug/db'); document.getElementById('debugDb').innerText=JSON.stringify(d,null,2); try{ let env=await apiFetch('/api/debug/env'); document.getElementById('dbUrlPrefix').innerText=JSON.stringify(env.deposit_addrs,null,2); }catch(e){} }
+async function restoreTasks(){ let r=await apiFetch('/api/admin/tasks/restore_defaults',{method:'POST'}); document.getElementById('restoreLog').innerText=JSON.stringify(r,null,2); loadAll(); }
+function exportData(){ let csv="user_id,username,balance,withdrawable,total_deposit,total_withdraw,is_banned\n"+allUsers.map(u=>`${u.user_id},${u.username||''},${u.balance},${u.withdrawable},${u.total_deposit},${u.total_withdraw},${u.is_banned}`).join("\n"); let blob=new Blob([csv],{type:'text/csv'}); let url=URL.createObjectURL(blob); let a=document.createElement('a'); a.href=url; a.download='users_'+Date.now()+'.csv'; a.click(); }
+function bulkActionPrompt(){ let ids=prompt('Enter user IDs comma separated:'); if(!ids) return; let list=ids.split(/[\s,]+/).filter(Boolean).map(x=>parseInt(x)); let action=prompt('Action: add_balance / add_withdrawable / ban / unban'); if(!action) return; let amount=0; if(action.includes('add')) amount=parseFloat(prompt('Amount:')||'0'); apiFetch('/api/admin/bulk_action',{method:'POST',body:JSON.stringify({action, user_ids:list, amount})}).then(r=>{alert('Done '+r.count); loadAll();}); }
 window.addEventListener('DOMContentLoaded', ()=>{ if(getSecret()){ apiFetch('/api/admin/stats').then(()=>{ document.getElementById('authOverlay').classList.add('hidden'); loadAll(); }).catch(()=>{ document.getElementById('authOverlay').classList.remove('hidden'); }); } setInterval(loadAll,15000); });
 </script>
 </body></html>
