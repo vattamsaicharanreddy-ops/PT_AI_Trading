@@ -82,7 +82,7 @@ REF_BONUS = {1: 7, **{level: 1 for level in range(2, 11)}}
 SYMBOLS = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","AVAXUSDT","LINKUSDT","LTCUSDT","ADAUSDT","PEPEUSDT","SHIBUSDT","MATICUSDT","DOTUSDT","ARBUSDT"]
 BASE_PRICES = {"BTCUSDT":67200,"ETHUSDT":3400,"SOLUSDT":178,"BNBUSDT":610,"XRPUSDT":.62,"DOGEUSDT":.16,"AVAXUSDT":42,"LINKUSDT":18.5,"LTCUSDT":84,"ADAUSDT":.48,"PEPEUSDT":.000009,"SHIBUSDT":.000027,"MATICUSDT":.89,"DOTUSDT":7.2,"ARBUSDT":1.12}
 
-app = FastAPI(title="PT_AI Trading ULTRA V6 - SECURED")
+app = FastAPI(title="PT_AI Trading ULTRA V7.1 - TESTING")
 # EMERGENCY CORS - allow all to fix invoice/tasks not working
 app.add_middleware(
     CORSMiddleware,
@@ -846,7 +846,7 @@ def admin_page():
 
 @app.get("/health")
 def health():
-    return {"ok":True,"db":"POSTGRES" if USE_POSTGRES else "SQLITE","mode":"WEBHOOK","monitor":"active" if os.getenv("DISABLE_MONITOR")!="1" else "disabled","version":"V6_SECURED"}
+    return {"ok":True,"db":"POSTGRES" if USE_POSTGRES else "SQLITE","mode":"WEBHOOK","monitor":"active" if os.getenv("DISABLE_MONITOR")!="1" else "disabled","version":"V7.1_TESTING"}
 
 
 @app.get("/api/debug/db")
