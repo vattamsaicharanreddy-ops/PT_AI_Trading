@@ -67,8 +67,22 @@ body{background:#061414;color:#E8FFFE}
 <!-- Your original Quick Tasks -->
 <div class="mt-5 card-teal rounded-[20px] p-4"><div class="flex justify-between items-center"><h3 class="font-black text-[13px]">🎯 Tasks Quick • <span id="tasksQuickCount">0/0</span></h3><button onclick="switchTab('tasks')" class="text-[11px] opacity-60 bg-white/5 px-2.5 py-1 rounded-full">View all →</button></div><div id="tasksQuick" class="mt-3 space-y-2"></div></div>
 
-<!-- Your original Live AI Trades Today - FULL TABLE -->
-<div class="mt-4 card-teal rounded-[20px] overflow-hidden"><div class="p-4 flex justify-between items-center border-b border-[#00E5CC]/10"><h3 class="font-black text-[13px]">📈 Live AI Trades Today</h3><span id="todayTrades" class="text-[11px] opacity-60 bg-[#00E5CC]/10 px-2.5 py-1 rounded-full border border-[#00E5CC]/15">Loading...</span></div><div class="overflow-x-auto"><table class="w-full text-[11px]"><thead class="text-[9px] opacity-40 uppercase tracking-widest"><tr><th class="text-left p-3">Time</th><th class="text-left p-3">Pair</th><th class="text-left p-3">Side</th><th class="text-right p-3">Entry</th><th class="text-right p-3">Exit</th><th class="text-right p-3">Lev</th><th class="text-right p-3">PnL</th></tr></thead><tbody id="tradesTableBody"></tbody></table></div></div>
+
+<!-- TRADES TAB - SEPARATE -->
+<div id="tab-trades" class="tab-content hidden px-4 pt-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl card-teal flex items-center justify-center text-lg">📈</div><div><h2 class="font-black text-[16px]">Live AI Trades</h2><p class="text-[11px] opacity-60" id="binanceStatus">Live • Loading...</p></div></div>
+<span id="todayTrades" class="text-[10px] px-2.5 py-1 rounded-full bg-[#00E5CC]/10 border border-[#00E5CC]/20 font-bold">Loading...</span>
+</div>
+<div class="mt-4 card-teal rounded-[20px] overflow-hidden">
+<div class="overflow-x-auto"><table class="w-full text-[11px]"><thead class="text-[9px] opacity-40 uppercase tracking-widest"><tr><th class="text-left p-3">Time IST</th><th>Pair</th><th>Side</th><th class="text-right p-2">Entry</th><th class="text-right p-2">Exit</th><th class="text-right p-2">Lev</th><th class="text-right p-3">PnL</th></tr></thead><tbody id="tradesTableBody"></tbody></table></div>
+</div>
+<div class="mt-3 card-teal rounded-xl p-3 text-[11px] opacity-70">
+<p class="font-bold text-[12px] text-[#00E5CC]">ℹ️ How trades work:</p>
+<p class="mt-1">• 16 trades per day, every ~45 min from 00:05 IST</p>
+<p>• Win rate 50-70% • Live updates • IST timezone</p>
+<p>• Entry/Exit are simulated Binance futures prices</p>
+</div>
 </div>
 
 <!-- TASKS TAB - Full original -->
@@ -101,64 +115,75 @@ body{background:#061414;color:#E8FFFE}
 <div id="refHistory" class="mt-3 space-y-2"></div>
 </div>
 
-<nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] h-[88px] bg-[#061414]/95 backdrop-blur-2xl border-t border-[#00E5CC]/15 flex items-center justify-around px-2 z-40">
-<button onclick="switchTab('home')" data-tab="home" class="nav-btn tab-active flex flex-col items-center gap-1 px-5 py-2.5 rounded-2xl text-[10px] font-black"><span class="text-[16px]">🏠</span>Home</button>
-<button onclick="switchTab('tasks')" data-tab="tasks" class="nav-btn opacity-60 flex flex-col items-center gap-1 px-5 py-2.5 rounded-2xl text-[10px] font-bold"><span class="text-[16px]">🎯</span>Tasks</button>
-<button onclick="switchTab('wallet')" data-tab="wallet" class="nav-btn opacity-60 flex flex-col items-center gap-1 px-5 py-2.5 rounded-2xl text-[10px] font-bold"><span class="text-[16px]">💼</span>Wallet</button>
-<button onclick="switchTab('ref')" data-tab="ref" class="nav-btn opacity-60 flex flex-col items-center gap-1 px-5 py-2.5 rounded-2xl text-[10px] font-bold"><span class="text-[16px]">👥</span>Invite</button>
+<nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] h-[88px] bg-[#061414]/95 backdrop-blur-2xl border-t border-[#00E5CC]/15 flex items-center justify-around px-1 z-40">
+<button onclick="switchTab('home')" data-tab="home" class="nav-btn tab-active flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl text-[9px] font-black"><span class="text-[16px]">🏠</span>Home</button>
+<button onclick="switchTab('trades')" data-tab="trades" class="nav-btn opacity-60 flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl text-[9px] font-bold"><span class="text-[16px]">📈</span>Trades</button>
+<button onclick="switchTab('tasks')" data-tab="tasks" class="nav-btn opacity-60 flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl text-[9px] font-bold"><span class="text-[16px]">🎯</span>Tasks</button>
+<button onclick="switchTab('wallet')" data-tab="wallet" class="nav-btn opacity-60 flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl text-[9px] font-bold"><span class="text-[16px]">💼</span>Wallet</button>
+<button onclick="switchTab('ref')" data-tab="ref" class="nav-btn opacity-60 flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl text-[9px] font-bold"><span class="text-[16px]">👥</span>Invite</button>
 </nav>
 
 <!-- Deposit Modal FULL with QR + Copy + Steps -->
-<div id="depositModal" class="hidden fixed inset-0 z-[100] bg-black/70 backdrop-blur-xl flex items-end justify-center">
-<div class="w-full max-w-[430px] bg-[#0A1F1F] border-t border-[#00E5CC]/20 rounded-t-[28px] max-h-[94vh] overflow-y-auto">
-<div class="sticky top-0 bg-[#0A1F1F]/90 backdrop-blur-xl p-5 border-b border-[#00E5CC]/10 flex justify-between items-center rounded-t-[28px] z-10">
-<div><p class="font-black text-[16px]">Deposit USDT</p><p class="text-[11px] opacity-60">Choose network • Instant credit</p></div>
-<button onclick="closeDeposit()" class="w-9 h-9 rounded-full bg-[#0F2F2F] border border-[#00E5CC]/15 flex items-center justify-center">✕</button>
+<div id="depositModal" class="hidden fixed inset-0 z-[100] bg-black/70 backdrop-blur-xl flex items-center justify-center p-4">
+<div class="w-full max-w-[400px] bg-[#0A1F1F] border border-[#00E5CC]/20 rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] max-h-[90vh] overflow-hidden flex flex-col">
+<div class="sticky top-0 bg-[#0A1F1F]/95 backdrop-blur-xl p-4 border-b border-[#00E5CC]/10 flex justify-between items-center rounded-t-[24px] z-10">
+<div><p class="font-black text-[15px]">Deposit USDT</p><p class="text-[10px] opacity-60">Choose network • Instant</p></div>
+<button onclick="closeDeposit()" class="w-8 h-8 rounded-full bg-[#0F2F2F] border border-[#00E5CC]/15 flex items-center justify-center text-[12px]">✕</button>
 </div>
-<div class="p-5">
-<div class="flex gap-2"><div class="flex-1 bg-[#061414] border border-[#00E5CC]/15 rounded-2xl px-4 h-[56px] flex items-center gap-3"><span class="text-[13px] font-black text-[#00E5CC]">USDT</span><input id="depAmount" type="number" placeholder="50" class="flex-1 bg-transparent outline-none text-[16px] font-black text-white"></div><button onclick="setDep(20)" class="h-[56px] px-4 rounded-2xl bg-[#0F2F2F] border border-[#00E5CC]/15 text-xs font-bold">$20</button><button onclick="setDep(100)" class="h-[56px] px-4 rounded-2xl bg-[#0F2F2F] border border-[#00E5CC]/15 text-xs font-bold">$100</button><button onclick="setDep(500)" class="h-[56px] px-4 rounded-2xl bg-[#0F2F2F] border border-[#00E5CC]/15 text-xs font-bold">$500</button></div>
-<p class="mt-5 text-[11px] font-black tracking-[2px] opacity-60">NETWORK • LOW FEE RECOMMENDED</p>
-<div class="mt-3 grid grid-cols-2 gap-2.5">
-<button onclick="selectNet('TRC20')" id="net-TRC20" class="net-card active text-left card-teal rounded-[16px] p-3.5 flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-[#26A17B] flex items-center justify-center text-[12px] font-black">T</div><div><p class="font-bold text-[12px]">TRC20 • Tron</p><p class="text-[10px] opacity-60">Fee ~$1 • Best</p></div></button>
-<button onclick="selectNet('BEP20')" id="net-BEP20" class="net-card text-left card-teal rounded-[16px] p-3.5 flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-[#F3BA2F] flex items-center justify-center text-black text-[12px] font-black">B</div><div><p class="font-bold text-[12px]">BEP20 • BSC</p><p class="text-[10px] opacity-60">Fee ~$0.2</p></div></button>
-<button onclick="selectNet('ERC20')" id="net-ERC20" class="net-card text-left card-teal rounded-[16px] p-3.5 flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-[#627EEA] flex items-center justify-center text-[12px] font-black">E</div><div><p class="font-bold text-[12px]">ERC20 • ETH</p><p class="text-[10px] opacity-60">Fee ~$10</p></div></button>
-<button onclick="selectNet('TON')" id="net-TON" class="net-card text-left card-teal rounded-[16px] p-3.5 flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-[#0088CC] flex items-center justify-center text-[12px] font-black">TON</div><div><p class="font-bold text-[12px]">TON</p><p class="text-[10px] opacity-60">Cheap</p></div></button>
+<div class="p-4 overflow-y-auto max-h-[70vh]">
+<div class="flex gap-2"><div class="flex-1 bg-[#061414] border border-[#00E5CC]/15 rounded-xl px-3 h-[44px] flex items-center gap-2"><span class="text-[12px] font-black text-[#00E5CC]">USDT</span><input id="depAmount" type="number" placeholder="50" class="flex-1 bg-transparent outline-none text-[14px] font-black text-white"></div><button onclick="setDep(20)" class="h-[44px] px-3 rounded-xl bg-[#0F2F2F] border border-[#00E5CC]/15 text-[11px] font-bold">$20</button><button onclick="setDep(100)" class="h-[44px] px-3 rounded-xl bg-[#0F2F2F] border border-[#00E5CC]/15 text-[11px] font-bold">$100</button><button onclick="setDep(500)" class="h-[44px] px-3 rounded-xl bg-[#0F2F2F] border border-[#00E5CC]/15 text-[11px] font-bold">$500</button></div>
+<p class="mt-3 text-[10px] font-black tracking-[1.5px] opacity-60">NETWORK • TAP TO SELECT</p>
+<div class="mt-2 grid grid-cols-2 gap-2">
+<button onclick="selectNet('TRC20')" id="net-TRC20" class="net-card active text-left card-teal rounded-[12px] p-2.5 flex items-center gap-2.5"><div class="w-8 h-8 rounded-full bg-[#26A17B] flex items-center justify-center text-[11px] font-black">T</div><div><p class="font-bold text-[11px]">TRC20</p><p class="text-[9px] opacity-60">Tron • Best</p></div></button>
+<button onclick="selectNet('BEP20')" id="net-BEP20" class="net-card text-left card-teal rounded-[12px] p-2.5 flex items-center gap-2.5"><div class="w-8 h-8 rounded-full bg-[#F3BA2F] flex items-center justify-center text-black text-[11px] font-black">B</div><div><p class="font-bold text-[11px]">BEP20</p><p class="text-[9px] opacity-60">BSC • $0.2</p></div></button>
+<button onclick="selectNet('ERC20')" id="net-ERC20" class="net-card text-left card-teal rounded-[12px] p-2.5 flex items-center gap-2.5"><div class="w-8 h-8 rounded-full bg-[#627EEA] flex items-center justify-center text-[11px] font-black">E</div><div><p class="font-bold text-[11px]">ERC20</p><p class="text-[9px] opacity-60">ETH • $10</p></div></button>
+<button onclick="selectNet('TON')" id="net-TON" class="net-card text-left card-teal rounded-[12px] p-2.5 flex items-center gap-2.5"><div class="w-8 h-8 rounded-full bg-[#0088CC] flex items-center justify-center text-[11px] font-black">TON</div><div><p class="font-bold text-[11px]">TON</p><p class="text-[9px] opacity-60">Cheap</p></div></button>
 </div>
-<button onclick="createDeposit()" class="mt-5 w-full h-[54px] rounded-full btn-teal text-[14px]">Continue → Create Invoice</button>
+<button onclick="createDeposit()" class="mt-4 w-full h-[48px] rounded-full btn-teal text-[13px]">Continue → Create Invoice</button>
 
-<div id="invoiceBox" class="hidden mt-6">
-<div class="card-teal rounded-[24px] p-5">
-<div class="flex justify-between items-center"><p class="font-black text-[13px]">💳 Pay Invoice</p><span class="text-[10px] px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/20 font-bold">⏱ 30 min</span></div>
-<div class="progress mt-3"><i></i></div>
-<div class="mt-5 flex gap-4">
-<div id="qrcode" class="w-[122px] h-[122px] bg-white rounded-[16px] p-2 shrink-0"></div>
-<div class="flex-1 min-w-0"><p class="text-[10px] opacity-60 tracking-widest font-black">AMOUNT</p><p id="invAmount" class="font-black text-[20px] mt-1">—</p><p class="text-[10px] opacity-60 tracking-widest font-black mt-3">NETWORK</p><p id="invNet" class="font-bold text-[13px] mt-1">—</p><p class="text-[10px] opacity-60 tracking-widest font-black mt-3">INVOICE ID</p><p id="invId" class="mono text-[11px] mt-1 truncate">—</p></div>
+<div id="invoiceBox" class="hidden mt-4">
+<div class="card-teal rounded-[18px] p-4">
+<div class="flex justify-between items-center"><p class="font-black text-[12px]">💳 Pay Invoice</p><span class="text-[9px] px-2 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/20 font-bold">⏱ 30 min</span></div>
+<div class="progress mt-2"><i></i></div>
+<div class="mt-3 flex gap-3">
+<div id="qrcode" class="w-[100px] h-[100px] bg-white rounded-[12px] p-2 shrink-0"></div>
+<div class="flex-1 min-w-0"><p class="text-[9px] opacity-60 tracking-widest font-black">AMOUNT</p><p id="invAmount" class="font-black text-[16px] mt-1">—</p><p class="text-[9px] opacity-60 tracking-widest font-black mt-2">NETWORK</p><p id="invNet" class="font-bold text-[11px] mt-1">—</p><p class="text-[9px] opacity-60 tracking-widest font-black mt-2">INVOICE ID</p><p id="invId" class="mono text-[10px] mt-1 truncate">—</p></div>
 </div>
-<div class="mt-5 bg-black/30 border border-[#00E5CC]/15 rounded-2xl p-3">
-<p class="text-[10px] opacity-50 tracking-[2px] font-black">📋 DEPOSIT ADDRESS • TAP COPY</p>
-<div class="mt-2 flex gap-2.5"><p id="invAddr" class="flex-1 mono text-[11px] break-all bg-[#061414] p-3 rounded-xl border border-[#00E5CC]/10">—</p><button onclick="copyInvAddr()" class="w-[56px] h-[56px] rounded-xl btn-teal font-black text-[11px]">COPY</button></div>
-<div class="mt-3 grid grid-cols-2 gap-2.5">
-<button onclick="copyInvAddr()" class="h-[44px] rounded-full bg-[#0F2F2F] border border-[#00E5CC]/15 font-bold text-[12px]">📋 Copy Address</button>
-<button onclick="copyInvAmount()" class="h-[44px] rounded-full bg-[#0F2F2F] border border-[#00E5CC]/15 font-bold text-[12px]">💰 Copy Amount</button>
+<div class="mt-3 bg-black/30 border border-[#00E5CC]/15 rounded-xl p-2.5">
+<p class="text-[9px] opacity-50 tracking-[1.5px] font-black">📋 ADDRESS • TAP COPY</p>
+<div class="mt-2 flex gap-2"><p id="invAddr" class="flex-1 mono text-[10px] break-all bg-[#061414] p-2.5 rounded-lg border border-[#00E5CC]/10">—</p><button onclick="copyInvAddr()" class="w-[48px] h-[48px] rounded-lg btn-teal font-black text-[10px]">COPY</button></div>
+<div class="mt-2 grid grid-cols-2 gap-2">
+<button onclick="copyInvAddr()" class="h-[38px] rounded-full bg-[#0F2F2F] border border-[#00E5CC]/15 font-bold text-[11px]">📋 Copy Addr</button>
+<button onclick="copyInvAmount()" class="h-[38px] rounded-full bg-[#0F2F2F] border border-[#00E5CC]/15 font-bold text-[11px]">💰 Copy Amt</button>
 </div>
 </div>
-<div class="mt-4 rounded-2xl p-4" style="background:linear-gradient(145deg,rgba(0,229,204,0.10),rgba(0,229,204,0.03));border:1px solid rgba(0,229,204,0.20)">
-<p class="font-black text-[12px] text-[#00E5CC]">✅ How to pay:</p>
-<ol class="mt-3 space-y-2 text-[11px] leading-relaxed">
-<li class="flex gap-2"><span class="w-6 h-6 rounded-full bg-[#00E5CC]/20 border border-[#00E5CC]/30 flex items-center justify-center text-[10px] font-black shrink-0">1</span><span>Copy address & amount with COPY buttons</span></li>
-<li class="flex gap-2"><span class="w-6 h-6 rounded-full bg-[#00E5CC]/20 border border-[#00E5CC]/30 flex items-center justify-center text-[10px] font-black shrink-0">2</span><span>Open Binance / Trust Wallet / TronLink → Send → Paste</span></li>
-<li class="flex gap-2"><span class="w-6 h-6 rounded-full bg-[#00E5CC]/20 border border-[#00E5CC]/30 flex items-center justify-center text-[10px] font-black shrink-0">3</span><span>Send <b>exact amount</b> on <b id="invNet2">TRC20</b> only. Auto-credited 30s!</span></li>
+<div class="mt-3 rounded-xl p-3" style="background:linear-gradient(145deg,rgba(0,229,204,0.10),rgba(0,229,204,0.03));border:1px solid rgba(0,229,204,0.20)">
+<p class="font-black text-[11px] text-[#00E5CC]">✅ How to pay:</p>
+<ol class="mt-2 space-y-1.5 text-[10px] leading-relaxed">
+<li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-[#00E5CC]/20 border border-[#00E5CC]/30 flex items-center justify-center text-[9px] font-black shrink-0">1</span><span>Copy address & amount</span></li>
+<li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-[#00E5CC]/20 border border-[#00E5CC]/30 flex items-center justify-center text-[9px] font-black shrink-0">2</span><span>Open wallet → Send → Paste</span></li>
+<li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-[#00E5CC]/20 border border-[#00E5CC]/30 flex items-center justify-center text-[9px] font-black shrink-0">3</span><span>Send exact on <b id="invNet2">TRC20</b> only</span></li>
 </ol>
 </div>
-<div class="mt-3 flex gap-2.5"><button onclick="shareInvoice()" class="flex-1 h-[44px] rounded-full bg-white/5 border border-[#00E5CC]/15 font-bold text-[12px]">↗ Share</button><button onclick="closeDeposit()" class="flex-1 h-[44px] rounded-full bg-white text-black font-bold text-[12px]">✓ Done</button></div>
+<div class="mt-3 flex gap-2"><button onclick="shareInvoice()" class="flex-1 h-[38px] rounded-full bg-white/5 border border-[#00E5CC]/15 font-bold text-[11px]">↗ Share</button><button onclick="closeDeposit()" class="flex-1 h-[38px] rounded-full bg-white text-black font-bold text-[11px]">✓ Done</button></div>
 </div>
 </div>
 </div>
 </div>
 </div>
 
-<div id="withdrawModal" class="hidden fixed inset-0 z-[100] bg-black/70 backdrop-blur-xl flex items-end justify-center">
-<div class="w-full max-w-[430px] bg-[#0A1F1F] border-t border-[#00E5CC]/20 rounded-t-[28px]"><div class="p-5 flex justify-between items-center border-b border-[#00E5CC]/10"><div><p class="font-black">Withdraw USDT</p><p class="text-[11px] opacity-60">Min $1 • Withdrawable only</p></div><button onclick="closeWithdraw()" class="w-9 h-9 rounded-full bg-[#0F2F2F] border border-[#00E5CC]/15">✕</button></div><div class="p-5"><p class="text-[11px] tracking-[2px] opacity-60 font-black">SELECT NETWORK</p><div class="mt-3 grid grid-cols-3 gap-2.5"><button onclick="selectWdNet('TRC20')" id="wdnet-TRC20" class="net-card active h-[52px] rounded-xl card-teal font-black text-[12px]">TRC20</button><button onclick="selectWdNet('BEP20')" id="wdnet-BEP20" class="net-card h-[52px] rounded-xl card-teal font-black text-[12px]">BEP20</button><button onclick="selectWdNet('ERC20')" id="wdnet-ERC20" class="net-card h-[52px] rounded-xl card-teal font-black text-[12px]">ERC20</button></div><div class="mt-4 bg-[#061414] border border-[#00E5CC]/15 rounded-2xl px-4 h-[56px] flex items-center gap-3"><input id="wdAmount" type="number" placeholder="Amount" class="flex-1 bg-transparent outline-none font-black text-[15px] text-white"><span class="opacity-60 text-xs font-bold">USDT</span></div><div class="mt-3 bg-[#061414] border border-[#00E5CC]/15 rounded-2xl px-4 h-[56px] flex items-center gap-3"><input id="wdAddr" placeholder="Paste your wallet address" class="flex-1 bg-transparent outline-none text-[13px] mono text-white"></div><p class="mt-3 text-[11px] opacity-60">Available: <span id="wdAvail" class="text-[#00E5CC] font-black">0</span> USDT</p><button onclick="submitWithdraw()" class="mt-5 w-full h-[54px] rounded-full btn-teal text-[14px]">Withdraw Now →</button></div></div>
+<div id="withdrawModal" class="hidden fixed inset-0 z-[100] bg-black/70 backdrop-blur-xl flex items-center justify-center p-4">
+<div class="w-full max-w-[400px] bg-[#0A1F1F] border border-[#00E5CC]/20 rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] overflow-hidden">
+<div class="p-4 flex justify-between items-center border-b border-[#00E5CC]/10"><div><p class="font-black text-[14px]">Withdraw USDT</p><p class="text-[10px] opacity-60">Min $1 • Withdrawable only</p></div><button onclick="closeWithdraw()" class="w-8 h-8 rounded-full bg-[#0F2F2F] border border-[#00E5CC]/15 flex items-center justify-center text-[12px]">✕</button></div>
+<div class="p-4">
+<p class="text-[10px] tracking-[1.5px] opacity-60 font-black">SELECT NETWORK</p>
+<div class="mt-2 grid grid-cols-3 gap-2"><button onclick="selectWdNet('TRC20')" id="wdnet-TRC20" class="net-card active h-[44px] rounded-xl card-teal font-black text-[11px]">TRC20</button><button onclick="selectWdNet('BEP20')" id="wdnet-BEP20" class="net-card h-[44px] rounded-xl card-teal font-black text-[11px]">BEP20</button><button onclick="selectWdNet('ERC20')" id="wdnet-ERC20" class="net-card h-[44px] rounded-xl card-teal font-black text-[11px]">ERC20</button></div>
+<div class="mt-3 bg-[#061414] border border-[#00E5CC]/15 rounded-xl px-3 h-[44px] flex items-center gap-2"><input id="wdAmount" type="number" placeholder="Amount" class="flex-1 bg-transparent outline-none font-black text-[13px] text-white"><span class="opacity-60 text-[11px] font-bold">USDT</span></div>
+<div class="mt-2 bg-[#061414] border border-[#00E5CC]/15 rounded-xl px-3 h-[44px] flex items-center gap-2"><input id="wdAddr" placeholder="Paste your wallet address" class="flex-1 bg-transparent outline-none text-[11px] mono text-white"></div>
+<p class="mt-2 text-[10px] opacity-60">Available: <span id="wdAvail" class="text-[#00E5CC] font-black">0</span> USDT</p>
+<button onclick="submitWithdraw()" class="mt-4 w-full h-[48px] rounded-full btn-teal text-[13px]">Withdraw Now →</button>
+</div>
+</div>
 </div>
 
 <script>
