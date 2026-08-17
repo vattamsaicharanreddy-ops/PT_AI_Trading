@@ -198,6 +198,16 @@ def init_db():
             cur.execute("CREATE INDEX IF NOT EXISTS idx_user_tasks_lookup ON user_tasks(user_id, task_id)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_tasks_active ON tasks(is_active)")
 
+            migrations = [
+                "ALTER TABLE deposits ADD COLUMN IF NOT EXISTS admin_note TEXT",
+                "ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS admin_note TEXT",
+            ]
+            for m in migrations:
+                try:
+                    cur.execute(m)
+                except Exception:
+                    pass
+
             conn.commit()
             cur.close()
         else:
@@ -268,6 +278,15 @@ def init_db():
                 "CREATE INDEX IF NOT EXISTS idx_tasks_active ON tasks(is_active)",
             ]:
                 conn.execute(stmt)
+
+            for stmt in [
+                "ALTER TABLE deposits ADD COLUMN admin_note TEXT",
+                "ALTER TABLE withdrawals ADD COLUMN admin_note TEXT",
+            ]:
+                try:
+                    conn.execute(stmt)
+                except Exception:
+                    pass
 
             conn.commit()
         logger.info(f"Database ready: {'POSTGRES' if USE_POSTGRES else 'SQLITE at ' + SQLITE_PATH}")
