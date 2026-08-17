@@ -23,6 +23,19 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelna
 logger = logging.getLogger("server")
 
 app = FastAPI(title="PT_AI Trading ULTRA V5")
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled error on {request.method} {request.url}: {exc}", exc_info=True)
+    return JSONResponse(status_code=500, content={"ok": False, "error": "Internal server error: " + str(exc)[:200]})
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(status_code=exc.status_code, content={"ok": False, "error": exc.detail})
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
@@ -890,10 +903,12 @@ def admin_deposit_action(action: IdAction, request: Request):
         elif action.action == "reject":
             cur.execute(f"UPDATE deposits SET status='rejected', admin_note={ph()} WHERE id={ph()}", (action.note or "Rejected", action.id))
             conn.commit()
+            logger.info(f"Admin rejected deposit {action.id}")
             return {"ok": True}
         elif action.action == "expire":
             cur.execute(f"UPDATE deposits SET status='expired', admin_note={ph()} WHERE id={ph()}", (action.note or "Expired", action.id))
             conn.commit()
+            logger.info(f"Admin expired deposit {action.id}")
             return {"ok": True}
         elif action.action == "edit_amount":
             amt = action.amount or 0
@@ -906,6 +921,9 @@ def admin_deposit_action(action: IdAction, request: Request):
             return {"ok": True}
         else:
             return {"ok": False, "error": "Unsupported action"}
+    except Exception as e:
+        logger.error(f"Deposit action error: {e}", exc_info=True)
+        return {"ok": False, "error": f"Server error: {str(e)[:200]}"}
     finally:
         safe_close(conn)
 

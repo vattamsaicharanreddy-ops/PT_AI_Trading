@@ -468,7 +468,8 @@ if(note===false)return;
 }
 try{
 let r=await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note:note||''})});
-let j=await r.json();
+let text=await r.text();
+let j;try{j=JSON.parse(text);}catch(x){toast('Server error ('+r.status+'): '+text.slice(0,100),'error');return;}
 if(j.ok){
 toast(action.charAt(0).toUpperCase()+action.slice(1)+' deposit #'+id,'success');
 loadAll();
@@ -476,7 +477,7 @@ loadAll();
 toast(j.error||'Action failed','error');
 }
 }catch(e){
-toast('Request failed: '+e.message,'error');
+toast('Network error: '+e.message,'error');
 }
 }
 
