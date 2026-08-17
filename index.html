@@ -40,10 +40,28 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 .portfolio-tier-marker{position:absolute;top:50%;right:-4px;width:12px;height:12px;border-radius:50%;background:#FFD60A;border:2px solid var(--bg);transform:translateY(-50%);box-shadow:0 0 8px rgba(255,214,10,0.5)}
 @keyframes pulseGlow{0%,100%{box-shadow:0 0 8px rgba(255,214,10,0.3)}50%{box-shadow:0 0 20px rgba(255,214,10,0.6)}}
 .portfolio-active-glow{animation:pulseGlow 2s infinite}
+.ptr-indicator{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:99998;padding:8px 16px;border-radius:0 0 12px 12px;font-size:11px;font-weight:700;color:#fff;background:rgba(16,185,129,0.95);transition:transform 0.3s;pointer-events:none}
+.ptr-spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:ptrSpin 0.6s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px}
+@keyframes ptrSpin{to{transform:rotate(360deg)}}
+.tab-content{animation:tabFadeIn 0.25s ease}
+@keyframes tabFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.confetti-canvas{position:fixed;inset:0;z-index:999999;pointer-events:none}
+.celebration-overlay{position:fixed;inset:0;z-index:99998;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);animation:celebFadeIn 0.4s ease}
+@keyframes celebFadeIn{from{opacity:0}to{opacity:1}}
+.celebration-card{background:var(--surface);border:2px solid #FFD60A;border-radius:24px;padding:32px 24px;text-align:center;max-width:320px;width:90%;animation:celebPop 0.5s cubic-bezier(0.175,0.885,0.32,1.275)}
+@keyframes celebPop{from{transform:scale(0.5);opacity:0}to{transform:scale(1);opacity:1}}
+.celebration-trophy{font-size:56px;animation:trophyBounce 0.8s ease}
+@keyframes trophyBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.empty-state{text-align:center;padding:32px 16px}
+.empty-state svg{margin:0 auto 12px;opacity:0.4}
+.haptic-ripple{position:relative;overflow:hidden}
 </style>
 </head>
 <body class='min-h-screen flex justify-center' data-theme='dark'>
 <div id='bannedOverlay' class='hidden fixed inset-0 z-[10000] flex flex-col items-center justify-center p-6 text-center' style='background:var(--bg)'><div class='w-20 h-20 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-3xl mb-5'>&#128683;</div><h2 class='text-xl font-extrabold'>Account Suspended</h2><p class='mt-2 text-sm max-w-[280px]' style='color:var(--text2)'>Your account has been suspended.</p></div>
+<div id='ptrIndicator' class='ptr-indicator hidden'><span class='ptr-spinner'></span>Refreshing...</div>
+<div id='celebrationOverlay' class='celebration-overlay hidden'></div>
+<div id='tierUpOverlay' class='celebration-overlay hidden'></div>
 <div id='initialLoader' style='position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.4s'><div style='width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#6C3BFF,#FFD60A);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:28px;color:#fff'>PT</div><p style='margin-top:16px;font-weight:800;letter-spacing:4px;font-size:13px'>PT_AI TRADING</p><p style='margin-top:6px;font-size:11px;opacity:0.5;letter-spacing:2px'>ULTRA V5</p><div style='margin-top:20px;width:100px;height:3px;background:var(--border);border-radius:999px;overflow:hidden'><div style='height:100%;width:40%;background:#FFD60A;border-radius:999px;animation:loaderSlide 1.2s infinite'></div></div></div>
 <style>@keyframes loaderSlide{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}</style>
 
@@ -220,7 +238,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 </div>
 
 <script>
-let tg=window.Telegram?.WebApp;let userId=123456789;let username='';let currentNet='TRC20';let currentWdNet='TRC20';let allTasks=[];let aiTimerInterval=null;
+let tg=window.Telegram?.WebApp;let userId=123456789;let username='';let currentNet='TRC20';let currentWdNet='TRC20';let allTasks=[];let aiTimerInterval=null;let init;
 const DEPOSIT_ADDRS={TRC20:"TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC",BEP20:"0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",ERC20:"0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",TON:"UQBlNeJ90El3LxBhikC2HUG3mqS16k1q177AjcNAaURVa_zw",SOL:"87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7"};
 if(tg){try{tg.ready();tg.expand();let u=tg.initDataUnsafe?.user;if(u){userId=u.id;username=u.username||'';}}catch(e){}}
 const $=id=>document.getElementById(id);
@@ -487,40 +505,6 @@ html+=`<div class='p-3 rounded-xl flex items-center gap-3' style='background:var
 el.innerHTML=html;
 }
 
-async function init(){
-let me=await apiFetch('/api/me/'+userId);
-if(!me){console.error('Failed to load user');return;}
-window._lastMe=me;
-if(me.is_banned){$('bannedOverlay').classList.remove('hidden');return;}
-let bal=parseFloat(me.balance||0);let wd=parseFloat(me.withdrawable||0);let profit=parseFloat(me.profit||0);let tier=me.daily_percent||0;
-safeSet('tierPct',tier.toFixed(1));safeSet('dailyPct',tier.toFixed(1)+'%');
-safeSet('balTopMini',bal.toFixed(2));safeSet('withdrawableTop',wd.toFixed(2)+' USDT');
-safeSet('profitVal',profit.toFixed(2));safeSet('perHour',(bal*tier/2400).toFixed(4));
-safeSet('quickBal',bal.toFixed(2)+' USDT');safeSet('quickWd',wd.toFixed(2)+' USDT');
-safeSet('totalDep',(parseFloat(me.total_deposit||0)).toFixed(2)+' USDT');safeSet('totalWd',(parseFloat(me.total_withdraw||0)).toFixed(2)+' USDT');
-safeSet('wdBal',wd.toFixed(2));
-function startAiTimer(endStr){
-if(aiTimerInterval)clearInterval(aiTimerInterval);aiTimerInterval=null;
-function tick(){
-try{
-let timerEl=$('aiTimer');
-if(!endStr){if(timerEl)timerEl.innerText='Deposit $20 to start';safeSet('aiStatus','INACTIVE');return;}
-let end=parseUTC(endStr);let now=new Date();let diff=end-now;
-if(diff<=0){if(timerEl){timerEl.innerText='EXPIRED';timerEl.style.background='rgba(239,68,68,0.2)';timerEl.style.color='#ef4444';}safeSet('aiStatus','EXPIRED');clearInterval(aiTimerInterval);aiTimerInterval=null;return;}
-let days=Math.floor(diff/(1000*60*60*24));let hours=Math.floor((diff%(1000*60*60*24))/(1000*60*60));let mins=Math.floor((diff%(1000*60*60))/(1000*60));let secs=Math.floor((diff%(1000*60))/1000);
-if(timerEl)timerEl.innerText=`${String(days).padStart(2,'0')}d ${String(hours).padStart(2,'0')}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`;
-safeSet('aiStatus','AI ACTIVE');
-}catch(e){console.error('timer',e);}
-}
-tick();if(endStr)aiTimerInterval=setInterval(tick,1000);
-}
-startAiTimer(me.ai_end);
-if(!me.all_tasks_done&&me.mandatory_tasks_total>0){
-$('mandatoryGate').classList.remove('hidden');$('taskBadge').classList.remove('hidden');$('taskBadge').innerText=`${me.mandatory_tasks_done}/${me.mandatory_tasks_total} Tasks`;$('bottomTaskDot').classList.remove('hidden');
-safeSet('gateText',`Complete ${me.mandatory_tasks_total-me.mandatory_tasks_done} more mandatory tasks to unlock withdrawal.`);
-$('wdGate').classList.remove('hidden');safeSet('wdGateText',`Done: ${me.mandatory_tasks_done}/${me.mandatory_tasks_total}`);
-}else{$('mandatoryGate').classList.add('hidden');$('taskBadge').classList.add('hidden');$('bottomTaskDot').classList.add('hidden');$('wdGate').classList.add('hidden');}
-}
 async function loadTasks(isQuick=false){
 let data=await apiFetch('/api/tasks/list/'+userId);
 if(!data)return;
@@ -627,6 +611,222 @@ safeHTML('refHistory',histHtml);
 function copyRef(){let el=$('refLink');if(el){navigator.clipboard.writeText(el.innerText).then(()=>{userToast('Link copied!');}).catch(()=>{userToast('Copy failed','error');});}}
 function shareRef(){let el=$('refLink');if(el&&navigator.share){navigator.share({title:'PT_AI Trading',text:'Join PT_AI Trading',url:el.innerText});}else{copyRef();}}
 async function hideInitialLoader(){let l=$('initialLoader');if(l){l.style.opacity='0';setTimeout(()=>{l.style.display='none';},400);}}
+
+// === HAPTIC FEEDBACK ===
+function haptic(type){
+if(tg&&tg.HapticFeedback){
+try{
+if(type==='success')tg.HapticFeedback.notificationOccurred('success');
+else if(type==='error')tg.HapticFeedback.notificationOccurred('error');
+else if(type==='warning')tg.HapticFeedback.notificationOccurred('warning');
+else tg.HapticFeedback.impactOccurred('medium');
+}catch(e){}
+}
+}
+document.addEventListener('click',function(e){
+let btn=e.target.closest('button,[onclick]');
+if(btn)haptic('light');
+},true);
+
+// === PULL TO REFRESH ===
+(function(){
+let startY=0,pulling=false,indicator=$('ptrIndicator');
+document.addEventListener('touchstart',function(e){
+if(window.scrollY===0&&e.touches.length===1)startY=e.touches[0].clientY;
+},{passive:true});
+document.addEventListener('touchmove',function(e){
+if(startY===0)return;
+let diff=e.touches[0].clientY-startY;
+if(diff>60&&!pulling){
+pulling=true;
+if(indicator){indicator.classList.remove('hidden');indicator.style.transform='translateX(-50%) translateY(0)';}
+}
+},{passive:true});
+document.addEventListener('touchend',function(){
+if(pulling){
+pulling=false;
+haptic('success');
+init().then(()=>{
+if(indicator){indicator.classList.add('hidden');indicator.style.transform='translateX(-50%) translateY(-100%)';}
+userToast('Refreshed!');
+});
+}else{startY=0;}
+},{passive:true});
+})();
+
+// === SMOOTHER TAB TRANSITIONS ===
+let _prevTab='home';
+let origSwitchTab=switchTab;
+switchTab=function(tab){
+if(tab===_prevTab)return;
+document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
+let el=$('tab-'+tab);
+if(el){el.classList.remove('hidden');el.style.animation='none';el.offsetHeight;el.style.animation='';}
+document.querySelectorAll('.bottom-tab').forEach(b=>{b.classList.remove('tab-active');b.style.opacity='0.5';});
+let active=document.querySelector('[data-bottom="'+tab+'"]');
+if(active){active.classList.add('tab-active');active.style.opacity='1';}
+if(tab==='tasks')loadTasks();
+if(tab==='trades')loadTrades();
+if(tab==='referral')loadReferral();
+if(tab==='history')loadHistory();
+if(tab==='portfolio')loadPortfolio();
+_prevTab=tab;
+};
+
+// === CONFETTI ANIMATION ===
+function fireConfetti(){
+let canvas=document.createElement('canvas');
+canvas.className='confetti-canvas';
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+document.body.appendChild(canvas);
+let ctx=canvas.getContext('2d');
+let particles=[];
+let colors=['#FFD60A','#6C3BFF','#10b981','#ef4444','#3b82f6','#f97316','#A5A6F6','#fff'];
+for(let i=0;i<80;i++){
+particles.push({
+x:canvas.width/2+(Math.random()-0.5)*100,
+y:canvas.height/2,
+vx:(Math.random()-0.5)*12,
+vy:Math.random()*-14-4,
+size:Math.random()*6+3,
+color:colors[Math.floor(Math.random()*colors.length)],
+rotation:Math.random()*360,
+rotSpeed:(Math.random()-0.5)*10,
+life:1,
+decay:Math.random()*0.015+0.008,
+shape:Math.random()>0.5?'rect':'circle'
+});
+}
+function animate(){
+ctx.clearRect(0,0,canvas.width,canvas.height);
+let alive=false;
+particles.forEach(p=>{
+if(p.life<=0)return;
+alive=true;
+p.x+=p.vx;
+p.y+=p.vy;
+p.vy+=0.3;
+p.vx*=0.99;
+p.rotation+=p.rotSpeed;
+p.life-=p.decay;
+ctx.save();
+ctx.translate(p.x,p.y);
+ctx.rotate(p.rotation*Math.PI/180);
+ctx.globalAlpha=p.life;
+ctx.fillStyle=p.color;
+if(p.shape==='rect'){ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.6);}
+else{ctx.beginPath();ctx.arc(0,0,p.size/2,0,Math.PI*2);ctx.fill();}
+ctx.restore();
+});
+if(alive)requestAnimationFrame(animate);
+else canvas.remove();
+}
+animate();
+}
+
+// === DEPOSIT VERIFIED CELEBRATION ===
+function showDepositCelebration(amount){
+fireConfetti();
+haptic('success');
+let overlay=$('celebrationOverlay');
+if(!overlay)return;
+overlay.classList.remove('hidden');
+overlay.innerHTML=`<div class='celebration-card'><div class='celebration-trophy'>&#127942;</div><h2 class='font-black text-xl mt-3'>Payment Verified!</h2><p class='text-sm mt-2' style='color:var(--text2)'>Your deposit of</p><p class='font-black text-2xl mt-1' style='color:#10b981'>$${amount} USDT</p><p class='text-sm mt-2' style='color:var(--text2)'>has been credited to your account</p><p class='text-[11px] mt-3' style='color:var(--text3)'>AI earning starts immediately</p><button onclick="closeCelebration()" class='mt-5 px-8 py-3 rounded-full font-bold text-sm' style='background:var(--text);color:var(--bg)'>Start Earning</button></div>`;
+}
+
+function closeCelebration(){
+let o=$('celebrationOverlay');if(o)o.classList.add('hidden');
+}
+
+// === TIER UPGRADE CELEBRATION ===
+let _prevTier=null;
+function checkTierUpgrade(currentTier){
+if(_prevTier===null){_prevTier=currentTier;return;}
+if(currentTier<_prevTier&&currentTier>=0){
+let tier=TIER_DATA[currentTier]||TIER_DATA[7];
+showTierUpgrade(tier);
+}
+_prevTier=currentTier;
+}
+function showTierUpgrade(tier){
+haptic('success');
+fireConfetti();
+let overlay=$('tierUpOverlay');
+if(!overlay)return;
+overlay.classList.remove('hidden');
+overlay.innerHTML=`<div class='celebration-card' style='border-color:${tier.color}'><div class='celebration-trophy'>&#11088;</div><h2 class='font-black text-xl mt-3'>Tier Upgraded!</h2><p class='text-[11px] mt-1' style='color:var(--text2)'>You've been promoted to</p><div class='tier-pill mx-auto mt-3' style='background:${tier.color}22;color:${tier.color};font-size:14px;padding:6px 16px'>${tier.name}</div><p class='font-bold text-lg mt-3' style='color:${tier.color}'>${tier.rate}% daily earnings</p><p class='text-[11px] mt-2' style='color:var(--text3)'>Keep growing to unlock higher tiers!</p><button onclick="closeTierUp()" class='mt-5 px-8 py-3 rounded-full font-bold text-sm' style='background:var(--text);color:var(--bg)'>Awesome!</button></div>`;
+}
+function closeTierUp(){
+let o=$('tierUpOverlay');if(o)o.classList.add('hidden');
+}
+
+// === EMPTY STATE ILLUSTRATIONS ===
+const EMPTY_SVGS={
+tasks:`<svg width='80' height='80' viewBox='0 0 80 80' fill='none'><circle cx='40' cy='40' r='38' stroke='var(--border)' stroke-width='2'/><path d='M28 40l8 8 16-16' stroke='#10b981' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' opacity='0.5'/><circle cx='40' cy='40' r='20' stroke='var(--border)' stroke-width='1.5' stroke-dasharray='4 4'/></svg>`,
+history:`<svg width='80' height='80' viewBox='0 0 80 80' fill='none'><circle cx='40' cy='40' r='38' stroke='var(--border)' stroke-width='2'/><rect x='24' y='28' width='32' height='24' rx='4' stroke='var(--text3)' stroke-width='1.5'/><line x1='24' y1='36' x2='56' y2='36' stroke='var(--text3)' stroke-width='1.5'/><line x1='32' y1='42' x2='48' y2='42' stroke='var(--border)' stroke-width='1.5'/><line x1='32' y1='47' x2='44' y2='47' stroke='var(--border)' stroke-width='1.5'/></svg>`,
+trades:`<svg width='80' height='80' viewBox='0 0 80 80' fill='none'><circle cx='40' cy='40' r='38' stroke='var(--border)' stroke-width='2'/><polyline points='20,50 30,35 42,45 55,25 60,30' stroke='var(--text3)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/><circle cx='55' cy='25' r='3' fill='var(--text3)'/></svg>`,
+referral:`<svg width='80' height='80' viewBox='0 0 80 80' fill='none'><circle cx='40' cy='40' r='38' stroke='var(--border)' stroke-width='2'/><circle cx='40' cy='30' r='8' stroke='var(--text3)' stroke-width='1.5'/><path d='M24 54c0-8.8 7.2-16 16-16s16 7.2 16 16' stroke='var(--text3)' stroke-width='1.5' fill='none'/><circle cx='56' cy='28' r='5' stroke='var(--border)' stroke-width='1'/></svg>`,
+deposits:`<svg width='80' height='80' viewBox='0 0 80 80' fill='none'><circle cx='40' cy='40' r='38' stroke='var(--border)' stroke-width='2'/><text x='40' y='46' text-anchor='middle' fill='var(--text3)' font-size='24' font-weight='bold'>$</text><path d='M40 16v12M34 24l6-6 6 6' stroke='var(--border)' stroke-width='2' stroke-linecap='round'/></svg>`,
+};
+function emptyState(type,title,subtitle){
+return `<div class='empty-state'>${EMPTY_SVGS[type]||''}<p class='font-bold text-sm'>${title}</p><p class='text-[11px] mt-1' style='color:var(--text2)'>${subtitle}</p></div>`;
+}
+
+// Patch task loader to use empty state
+let _origLoadTasks=loadTasks;
+loadTasks=async function(isQuick){
+await _origLoadTasks(isQuick);
+let el=$('tasksListFull');
+if(el&&el.innerHTML.includes('No Tasks Yet')){
+el.innerHTML=emptyState('tasks','No Tasks Yet','Admin needs to create tasks for you to earn rewards.');
+}
+};
+
+// === HOOK INTO INIT FOR TIER CHECK & NOTIFICATIONS ===
+let _lastVerifiedDeposits=0;
+init=async function(){
+let me=await apiFetch('/api/me/'+userId);
+if(!me){console.error('Failed to load user');return;}
+let oldMe=window._lastMe;
+window._lastMe=me;
+if(me.is_banned){$('bannedOverlay').classList.remove('hidden');return;}
+checkTierUpgrade(me.tier||7);
+let depCount=me.verified_deposits_count||0;
+if(_lastVerifiedDeposits>0&&depCount>_lastVerifiedDeposits){
+let lastDepAmt=me.last_deposit_amount||20;
+showDepositCelebration(lastDepAmt);
+}
+_lastVerifiedDeposits=depCount;
+let bal=parseFloat(me.balance||0);let wd=parseFloat(me.withdrawable||0);let profit=parseFloat(me.profit||0);let tier=me.daily_percent||0;
+safeSet('tierPct',tier.toFixed(1));safeSet('dailyPct',tier.toFixed(1)+'%');
+safeSet('balTopMini',bal.toFixed(2));safeSet('withdrawableTop',wd.toFixed(2)+' USDT');
+safeSet('profitVal',profit.toFixed(2));safeSet('perHour',(bal*tier/2400).toFixed(4));
+safeSet('quickBal',bal.toFixed(2)+' USDT');safeSet('quickWd',wd.toFixed(2)+' USDT');
+safeSet('totalDep',(parseFloat(me.total_deposit||0)).toFixed(2)+' USDT');safeSet('totalWd',(parseFloat(me.total_withdraw||0)).toFixed(2)+' USDT');
+safeSet('wdBal',wd.toFixed(2));
+function startAiTimer(endStr){
+if(aiTimerInterval)clearInterval(aiTimerInterval);aiTimerInterval=null;
+function tick(){
+try{
+let timerEl=$('aiTimer');
+if(!endStr){if(timerEl)timerEl.innerText='Deposit $20 to start';safeSet('aiStatus','INACTIVE');return;}
+let end=parseUTC(endStr);let now=new Date();let diff=end-now;
+if(diff<=0){if(timerEl){timerEl.innerText='EXPIRED';timerEl.style.background='rgba(239,68,68,0.2)';timerEl.style.color='#ef4444';}safeSet('aiStatus','EXPIRED');clearInterval(aiTimerInterval);aiTimerInterval=null;return;}
+let days=Math.floor(diff/(1000*60*60*24));let hours=Math.floor((diff%(1000*60*60*24))/(1000*60*60));let mins=Math.floor((diff%(1000*60*60))/(1000*60));let secs=Math.floor((diff%(1000*60))/1000);
+if(timerEl)timerEl.innerText=`${String(days).padStart(2,'0')}d ${String(hours).padStart(2,'0')}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`;
+safeSet('aiStatus','AI ACTIVE');
+}catch(e){console.error('timer',e);}
+}
+tick();if(endStr)aiTimerInterval=setInterval(tick,1000);
+}
+startAiTimer(me.ai_end);
+if(!me.all_tasks_done&&me.mandatory_tasks_total>0){
+$('mandatoryGate').classList.remove('hidden');$('taskBadge').classList.remove('hidden');$('taskBadge').innerText=`${me.mandatory_tasks_done}/${me.mandatory_tasks_total} Tasks`;$('bottomTaskDot').classList.remove('hidden');
+safeSet('gateText',`Complete ${me.mandatory_tasks_total-me.mandatory_tasks_done} more mandatory tasks to unlock withdrawal.`);
+$('wdGate').classList.remove('hidden');safeSet('wdGateText',`Done: ${me.mandatory_tasks_done}/${me.mandatory_tasks_total}`);
+}else{$('mandatoryGate').classList.add('hidden');$('taskBadge').classList.add('hidden');$('bottomTaskDot').classList.add('hidden');$('wdGate').classList.add('hidden');}
+};
 init().then(()=>{hideInitialLoader();}).catch(()=>{hideInitialLoader();});
 setTimeout(hideInitialLoader,2500);
 setInterval(init,15000);

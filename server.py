@@ -429,6 +429,19 @@ def api_me(user_id: int, username: Optional[str] = Query(None), referred_by: Opt
     d["tier"] = tier_idx
     d["daily_percent"] = pct
     d["is_banned"] = bool(d.get("is_banned", 0))
+    conn2 = get_conn()
+    try:
+        cur2 = cursor(conn2)
+        cur2.execute(f"SELECT COUNT(*) as cnt FROM deposits WHERE user_id={ph()} AND status='verified'", (user_id,))
+        d["verified_deposits_count"] = val(cur2.fetchone(), "cnt", 0) or 0
+        cur2.execute(f"SELECT expected_amount FROM deposits WHERE user_id={ph()} AND status='verified' ORDER BY id DESC LIMIT 1", (user_id,))
+        last_dep = cur2.fetchone()
+        d["last_deposit_amount"] = float(val(last_dep, "expected_amount", 0) or 0) if last_dep else 0
+    except Exception:
+        d["verified_deposits_count"] = 0
+        d["last_deposit_amount"] = 0
+    finally:
+        safe_close(conn2)
     return d
 
 
