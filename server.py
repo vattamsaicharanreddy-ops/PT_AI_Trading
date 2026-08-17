@@ -482,6 +482,51 @@ def invoice_status(invoice_id: str):
         safe_close(conn)
 
 
+@app.get("/api/deposit/check_payment/{invoice_id}")
+def check_payment(invoice_id: str):
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"SELECT * FROM deposits WHERE invoice_id={ph()}", (invoice_id,))
+        d = cur.fetchone()
+        if not d:
+            return {"ok": False, "error": "Invoice not found", "status": "not_found"}
+        dep = dict(d)
+        status = dep.get("status", "")
+        if status == "verified":
+            return {"ok": True, "status": "verified", "message": "Payment verified! Balance credited."}
+        if status != "awaiting_payment":
+            return {"ok": False, "status": status, "message": f"Invoice is {status}."}
+        exp_str = dep.get("expires_at")
+        if exp_str:
+            try:
+                if datetime.utcnow() > datetime.fromisoformat(exp_str):
+                    cur.execute(f"UPDATE deposits SET status='expired' WHERE invoice_id={ph()}", (invoice_id,))
+                    conn.commit()
+                    return {"ok": False, "status": "expired", "message": "Invoice expired. Please create a new one."}
+            except Exception:
+                pass
+        from blockchain_monitor import verify_pending_deposits
+        try:
+            verify_pending_deposits()
+        except Exception as e:
+            logger.warning(f"Manual check trigger error: {e}")
+        cur.execute(f"SELECT * FROM deposits WHERE invoice_id={ph()}", (invoice_id,))
+        d2 = cur.fetchone()
+        if d2:
+            new_status = dict(d2).get("status", status)
+            if new_status == "verified":
+                return {"ok": True, "status": "verified", "message": "Payment verified! Balance credited."}
+            elif new_status == "expired":
+                return {"ok": False, "status": "expired", "message": "Invoice expired. Please create a new one."}
+        return {"ok": False, "status": "awaiting_payment", "message": "No payment detected yet. Make sure you sent the exact amount to the correct address."}
+    except Exception as e:
+        logger.error(f"check_payment error: {e}", exc_info=True)
+        return {"ok": False, "status": "error", "message": "Check failed. Try again."}
+    finally:
+        safe_close(conn)
+
+
 @app.post("/api/withdraw/{user_id}")
 @app.post("/api/withdraw/request/{user_id}")
 def withdraw(user_id: int, req: WithdrawalRequest):

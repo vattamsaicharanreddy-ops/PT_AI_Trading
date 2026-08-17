@@ -102,7 +102,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <div class='qr-box' id='qrBox'></div>
 <div class='mt-3'><label class='text-[10px] font-bold' style='color:var(--text3)'>Amount (min $20)</label><input id='depAmount' type='number' value='100' class='mt-1 w-full p-3 text-sm rounded-xl border outline-none' style='background:var(--input);border-color:var(--border)'></div>
 <button onclick='createDeposit()' class='mt-3 w-full py-3 rounded-full font-bold text-sm' style='background:#FFD60A;color:#000'>Create Invoice (15 min)</button>
-<div id='invoiceBox' class='hidden mt-3 p-3 rounded-xl text-[11px]' style='background:var(--border);border:1px solid rgba(255,214,10,0.15)'><p style='color:var(--text2)'>Send exactly to:</p><div class='flex justify-between items-start gap-2'><p id='invAddr' class='mono font-bold break-all mt-0.5 text-[11px] flex-1'></p><span class='copy-btn shrink-0' onclick="copyAddress('invAddr',this)">COPY</span></div><div class='qr-box mt-2' id='invQrBox'></div><p class='mt-1'>Amount: <span id='invAmount' class='font-bold'></span> <span id='invNet'></span></p><p class='mt-0.5' style='color:var(--text3)'>Invoice: <span id='invId' class='mono'></span></p><div id='invTimerBox' class='inv-timer hidden'>Expires in <span id='invCountdown'>15:00</span></div><p class='mt-1.5' style='color:#FFD60A'>Auto verified every 15 sec</p></div>
+<div id='invoiceBox' class='hidden mt-3 p-3 rounded-xl text-[11px]' style='background:var(--border);border:1px solid rgba(255,214,10,0.15)'><p style='color:var(--text2)'>Send exactly to:</p><div class='flex justify-between items-start gap-2'><p id='invAddr' class='mono font-bold break-all mt-0.5 text-[11px] flex-1'></p><span class='copy-btn shrink-0' onclick="copyAddress('invAddr',this)">COPY</span></div><div class='qr-box mt-2' id='invQrBox'></div><p class='mt-1'>Amount: <span id='invAmount' class='font-bold'></span> <span id='invNet'></span></p><p class='mt-0.5' style='color:var(--text3)'>Invoice: <span id='invId' class='mono'></span></p><div id='invTimerBox' class='inv-timer hidden'>Expires in <span id='invCountdown'>15:00</span></div><div id='checkStatus' class='hidden mt-2 p-2.5 rounded-lg text-[11px] font-bold text-center'></div><button id='checkPayBtn' onclick="checkPaymentStatus()" class='mt-2 w-full py-2.5 rounded-full text-[11px] font-bold' style='background:rgba(108,59,255,0.15);border:1px solid rgba(108,59,255,0.2);color:#A5A6F6'>Check Payment Status</button><p class='mt-1.5' style='color:#FFD60A'>Auto verified every 15 sec</p></div>
 <button onclick="closeDeposit()" class='mt-2 w-full py-3 rounded-full text-xs font-bold' style='background:var(--border)'>Close</button></div></div>
 
 <div id='withdrawModal' class='hidden fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100] p-4'><div class='rounded-3xl p-5 w-full max-w-[360px]' style='background:var(--surface);border:1px solid var(--border)'><h3 class='font-black'>Withdraw USDT</h3><p class='text-[11px] mt-0.5' style='color:var(--text2)'>Min $10 | Withdrawable: <span id='wdBal' class='font-bold' style='color:#FFD60A'>0</span></p><div id='wdGate' class='hidden mt-2 p-2.5 rounded-xl text-[11px]' style='background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.15)'><p class='font-bold text-red-400'>Complete Tasks First</p><p id='wdGateText' class='mt-0.5' style='color:var(--text2)'></p><button onclick="switchTab('tasks');closeWithdraw();" class='mt-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold' style='background:var(--text);color:var(--bg)'>Go to Tasks</button></div><div class='mt-3'><label class='text-[10px] font-bold' style='color:var(--text3)'>Amount</label><input id='wdAmount' type='number' class='mt-1 w-full p-2.5 text-sm rounded-xl border outline-none' style='background:var(--input);border-color:var(--border)'></div><div class='mt-2'><label class='text-[10px] font-bold' style='color:var(--text3)'>Address</label><input id='wdAddr' placeholder='USDT address' class='mt-1 w-full p-2.5 text-sm rounded-xl border outline-none mono' style='background:var(--input);border-color:var(--border)'></div><div class='mt-2 grid grid-cols-5 gap-1'><button onclick="selectWdNet('TRC20')" id='wdnet-TRC20' class='wdnet-btn py-2 rounded-full text-[10px] font-bold' style='background:var(--text);color:var(--bg)'>TRC20</button><button onclick="selectWdNet('BEP20')" id='wdnet-BEP20' class='wdnet-btn py-2 rounded-full text-[10px]' style='background:var(--border)'>BEP20</button><button onclick="selectWdNet('ERC20')" id='wdnet-ERC20' class='wdnet-btn py-2 rounded-full text-[10px]' style='background:var(--border)'>ERC20</button><button onclick="selectWdNet('TON')" id='wdnet-TON' class='wdnet-btn py-2 rounded-full text-[10px]' style='background:var(--border)'>TON</button><button onclick="selectWdNet('SOL')" id='wdnet-SOL' class='wdnet-btn py-2 rounded-full text-[10px]' style='background:var(--border)'>SOL</button></div><button onclick='submitWithdraw()' class='mt-3 w-full py-2.5 rounded-full font-bold text-sm' style='background:#FFD60A;color:#000'>Submit Withdrawal</button><button onclick='closeWithdraw()' class='mt-2 w-full py-2.5 rounded-full text-xs font-bold' style='background:var(--border)'>Close</button></div></div>
@@ -189,6 +189,47 @@ display.innerText=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 },1000);
 }
 function stopInvCountdown(){if(invCountdownInterval){clearInterval(invCountdownInterval);invCountdownInterval=null;}}
+async function checkPaymentStatus(){
+let invId=$('invId')?.innerText;
+if(!invId){userToast('No active invoice','error');return;}
+let btn=$('checkPayBtn');
+let statusBox=$('checkStatus');
+btn.disabled=true;btn.innerText='Checking...';btn.style.opacity='0.6';
+statusBox.classList.remove('hidden');
+statusBox.style.background='rgba(108,59,255,0.1)';
+statusBox.style.color='#A5A6F6';
+statusBox.innerText='Scanning blockchain...';
+try{
+let r=await fetch('/api/deposit/check_payment/'+invId);
+let j=await r.json();
+if(j.ok&&j.status==='verified'){
+statusBox.style.background='rgba(16,185,129,0.15)';
+statusBox.style.color='#10b981';
+statusBox.innerText=j.message||'Payment verified!';
+btn.innerText='Verified!';
+stopInvCountdown();
+userToast('Payment verified!');
+setTimeout(()=>{closeDeposit();init();},2000);
+}else if(j.status==='expired'){
+statusBox.style.background='rgba(239,68,68,0.1)';
+statusBox.style.color='#ef4444';
+statusBox.innerText=j.message||'Invoice expired.';
+btn.innerText='Expired';
+stopInvCountdown();
+}else{
+statusBox.style.background='rgba(234,179,8,0.1)';
+statusBox.style.color='#eab308';
+statusBox.innerText=j.message||'No payment detected yet.';
+btn.innerText='Check Payment Status';
+}
+}catch(e){
+statusBox.style.background='rgba(239,68,68,0.1)';
+statusBox.style.color='#ef4444';
+statusBox.innerText='Check failed. Try again.';
+btn.innerText='Check Payment Status';
+}
+btn.disabled=false;btn.style.opacity='1';
+}
 function selectNet(net){
 currentNet=net;
 document.querySelectorAll('.net-btn').forEach(b=>{b.style.background='var(--border)';b.style.color='var(--text)';b.classList.remove('font-black');});
