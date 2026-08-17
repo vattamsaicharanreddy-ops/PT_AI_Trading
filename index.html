@@ -26,6 +26,20 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 .qr-box{margin-top:12px;text-align:center}
 .qr-box img{border-radius:12px;border:1px solid var(--border)}
 .inv-timer{margin-top:8px;padding:6px 12px;border-radius:8px;font-size:10px;font-weight:700;text-align:center;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.15);color:#ef4444}
+.portfolio-ring{position:relative;width:160px;height:160px;margin:0 auto}
+.portfolio-ring svg{transform:rotate(-90deg)}
+.portfolio-ring .ring-bg{fill:none;stroke:var(--border);stroke-width:10}
+.portfolio-ring .ring-fill{fill:none;stroke:url(#ringGrad);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1s ease}
+.portfolio-ring .ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.tier-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:0.5px}
+.portfolio-row{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-radius:14px;margin-top:8px}
+.portfolio-row-label{font-size:12px;color:var(--text2);font-weight:600}
+.portfolio-row-value{font-size:14px;font-weight:900}
+.portfolio-tier-track{position:relative;height:8px;border-radius:999px;background:var(--border);margin-top:12px;overflow:visible}
+.portfolio-tier-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#6C3BFF,#FFD60A);transition:width 1s ease;position:relative}
+.portfolio-tier-marker{position:absolute;top:50%;right:-4px;width:12px;height:12px;border-radius:50%;background:#FFD60A;border:2px solid var(--bg);transform:translateY(-50%);box-shadow:0 0 8px rgba(255,214,10,0.5)}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 8px rgba(255,214,10,0.3)}50%{box-shadow:0 0 20px rgba(255,214,10,0.6)}}
+.portfolio-active-glow{animation:pulseGlow 2s infinite}
 </style>
 </head>
 <body class='min-h-screen flex justify-center' data-theme='dark'>
@@ -82,12 +96,103 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 </div>
 <div id='tab-history' class='tab-content hidden'><div class='mx-4 mt-4'><h3 class='font-bold'>History</h3><div id='history' class='mt-3 space-y-2'></div></div></div>
 
+<div id='tab-portfolio' class='tab-content hidden'>
+<div class='mx-4 mt-4 rounded-3xl p-5 portfolio-active-glow' style='background:linear-gradient(135deg,#6C3BFF,#8A5CFF,#A5A6F6);border:1px solid rgba(108,59,255,0.3)'>
+<div class='portfolio-ring'>
+<svg width='160' height='160' viewBox='0 0 160 160'>
+<defs><linearGradient id='ringGrad' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' stop-color='#FFD60A'/><stop offset='100%' stop-color='#6C3BFF'/></linearGradient></defs>
+<circle class='ring-bg' cx='80' cy='80' r='65'/>
+<circle id='portfolioRingFill' class='ring-fill' cx='80' cy='80' r='65' stroke-dasharray='408.4' stroke-dashoffset='408.4'/>
+</svg>
+<div class='ring-center'>
+<p id='pfTierName' class='font-black text-lg text-white'>Tier 7</p>
+<p id='pfTierRate' class='text-white/60 text-[11px] font-bold'>0.0% / day</p>
+</div>
+</div>
+<div class='text-center mt-3'>
+<div id='pfTierPill' class='tier-pill mx-auto' style='background:rgba(255,214,10,0.2);color:#FFD60A'>NO TIER</div>
+<p class='text-white/50 text-[10px] mt-2 font-bold'>Deposit more to upgrade tier & earn more daily</p>
+</div>
+</div>
+
+<div id='pfTierProgressBox' class='mx-4 mt-3 rounded-2xl p-4' style='background:var(--surface);border:1px solid var(--border)'>
+<div class='flex justify-between items-center'>
+<p class='font-bold text-xs'>Tier Progress</p>
+<p id='pfTierNext' class='text-[10px] font-bold' style='color:var(--text3)'>$20 to next tier</p>
+</div>
+<div class='portfolio-tier-track'>
+<div id='pfTierBar' class='portfolio-tier-fill' style='width:0%'><div class='portfolio-tier-marker'></div></div>
+</div>
+<div class='flex justify-between mt-2'>
+<p id='pfBalSmall' class='text-[10px] font-bold' style='color:#FFD60A'>$0</p>
+<p id='pfNextLabel' class='text-[10px]' style='color:var(--text3)'>$20</p>
+</div>
+</div>
+
+<div class='mx-4 mt-3 rounded-2xl p-4' style='background:var(--surface);border:1px solid var(--border)'>
+<p class='font-bold text-xs mb-2'>Account Overview</p>
+<div class='grid grid-cols-2 gap-2.5'>
+<div class='p-3 rounded-xl' style='background:rgba(38,161,123,0.08);border:1px solid rgba(38,161,123,0.12)'>
+<p class='text-[10px]' style='color:var(--text2)'>Total Deposited</p>
+<p id='pfDeposited' class='font-black text-sm mt-1' style='color:#26A17B'>$0.00</p>
+</div>
+<div class='p-3 rounded-xl' style='background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.12)'>
+<p class='text-[10px]' style='color:var(--text2)'>Total Withdrawn</p>
+<p id='pfWithdrawn' class='font-black text-sm mt-1' style='color:#FFD60A'>$0.00</p>
+</div>
+</div>
+<div class='portfolio-row' style='background:rgba(108,59,255,0.08);border:1px solid rgba(108,59,255,0.12)'>
+<span class='portfolio-row-label'>Balance</span>
+<span id='pfBalance' class='portfolio-row-value' style='color:#A5A6F6'>$0.00</span>
+</div>
+<div class='portfolio-row' style='background:rgba(255,214,10,0.06);border:1px solid rgba(255,214,10,0.1)'>
+<span class='portfolio-row-label'>Withdrawable</span>
+<span id='pfWithdrawable' class='portfolio-row-value' style='color:#FFD60A'>$0.00</span>
+</div>
+</div>
+
+<div class='mx-4 mt-3 rounded-2xl p-4' style='background:var(--surface);border:1px solid var(--border)'>
+<p class='font-bold text-xs mb-2'>Earnings</p>
+<div class='portfolio-row' style='background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.1)'>
+<span class='portfolio-row-label'>Total Profit Earned</span>
+<span id='pfProfit' class='portfolio-row-value' style='color:#10b981'>+$0.00</span>
+</div>
+<div class='portfolio-row' style='background:var(--border)'>
+<span class='portfolio-row-label'>Hourly Earning</span>
+<span id='pfPerHour' class='portfolio-row-value'>+0.00 USDT/hr</span>
+</div>
+<div class='portfolio-row' style='background:rgba(108,59,255,0.06);border:1px solid rgba(108,59,255,0.1)'>
+<span class='portfolio-row-label'>Daily Earning</span>
+<span id='pfPerDay' class='portfolio-row-value' style='color:#A5A6F6'>+0.00 USDT/day</span>
+</div>
+</div>
+
+<div class='mx-4 mt-3 mb-6 rounded-2xl p-4' style='background:var(--surface);border:1px solid var(--border)'>
+<div class='flex justify-between items-center mb-2'>
+<p class='font-bold text-xs'>AI Contract</p>
+<span id='pfAiBadge' class='text-[9px] px-2 py-0.5 rounded-full font-bold' style='background:rgba(16,185,129,0.15);color:#10b981'>ACTIVE</span>
+</div>
+<div id='pfAiTimerBox' class='p-3 rounded-xl text-center' style='background:var(--border)'>
+<p class='text-[10px] mb-1' style='color:var(--text2)'>Time Remaining</p>
+<p id='pfAiTimer' class='font-black text-lg tracking-wider'>--d --h --m --s</p>
+</div>
+<div class='portfolio-row mt-2' style='background:var(--border)'>
+<span class='portfolio-row-label'>AI Started</span>
+<span id='pfAiStart' class='text-[11px] font-bold' style='color:var(--text2)'>-</span>
+</div>
+<div class='portfolio-row' style='background:var(--border)'>
+<span class='portfolio-row-label'>AI Expires</span>
+<span id='pfAiEnd' class='text-[11px] font-bold' style='color:var(--text2)'>-</span>
+</div>
+</div>
+</div>
+
 <div class='fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[420px] flex justify-around py-2 px-2 z-50' style='background:color-mix(in srgb, var(--bg) 90%, transparent);backdrop-filter:blur(16px);border-top:1px solid var(--border)'>
 <button onclick="switchTab('home')" data-bottom="home" class='bottom-tab tab-active flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px]'><span class="text-base">&#127968;</span>Home</button>
 <button onclick="switchTab('tasks')" data-bottom="tasks" class='bottom-tab flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px] relative' style='opacity:0.5'><span class="text-base">&#127919;</span>Tasks<span id='bottomTaskDot' class='hidden absolute top-0.5 right-1.5 w-2 h-2 bg-red-500 rounded-full'></span></button>
+<button onclick="switchTab('portfolio')" data-bottom="portfolio" class='bottom-tab flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px]' style='opacity:0.5'><span class="text-base">&#128176;</span>Portfolio</button>
 <button onclick="switchTab('trades')" data-bottom="trades" class='bottom-tab flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px]' style='opacity:0.5'><span class="text-base">&#128200;</span>Trades</button>
 <button onclick="switchTab('referral')" data-bottom="referral" class='bottom-tab flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px]' style='opacity:0.5'><span class="text-base">&#128101;</span>Referral</button>
-<button onclick="switchTab('history')" data-bottom="history" class='bottom-tab flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px]' style='opacity:0.5'><span class="text-base">&#128336;</span>History</button>
 </div>
 
 <div id='depositModal' class='hidden fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100] p-4'><div class='rounded-3xl p-5 w-full max-w-[380px] max-h-[90vh] overflow-y-auto' style='background:var(--surface);border:1px solid var(--border)'><h3 class='font-black text-lg'>Deposit USDT</h3><p class='text-[10px] mt-0.5' style='color:var(--text2)'>5 networks supported</p>
@@ -141,6 +246,7 @@ if(tab==='tasks')loadTasks();
 if(tab==='trades')loadTrades();
 if(tab==='referral')loadReferral();
 if(tab==='history')loadHistory();
+if(tab==='portfolio')loadPortfolio();
 }
 function userToast(msg,type){
 let t=document.createElement('div');
@@ -258,9 +364,106 @@ return null;
 }
 }
 
+const TIER_DATA=[
+{min:15000,rate:14.9,name:'PLATINUM',color:'#FFD60A',glow:'rgba(255,214,10,0.3)'},
+{min:6000,rate:13.6,name:'DIAMOND',color:'#A5A6F6',glow:'rgba(165,166,246,0.3)'},
+{min:2500,rate:11.8,name:'GOLD',color:'#FFD60A',glow:'rgba(255,214,10,0.3)'},
+{min:1200,rate:10.9,name:'PLATINUM',color:'#C0C0C0',glow:'rgba(192,192,192,0.3)'},
+{min:500,rate:9.6,name:'SILVER',color:'#A5A6F6',glow:'rgba(165,166,246,0.3)'},
+{min:120,rate:8.9,name:'BRONZE',color:'#f97316',glow:'rgba(249,115,22,0.3)'},
+{min:20,rate:7.6,name:'STARTER',color:'#10b981',glow:'rgba(16,185,129,0.3)'},
+{min:0,rate:0.0,name:'FREE',color:'var(--text3)',glow:'transparent'}
+];
+let pfTimerInterval=null;
+
+function loadPortfolio(){
+if(pfTimerInterval){clearInterval(pfTimerInterval);pfTimerInterval=null;}
+let me=window._lastMe;
+if(!me)return;
+let bal=parseFloat(me.balance||0);
+let wd=parseFloat(me.withdrawable||0);
+let profit=parseFloat(me.profit||0);
+let totalDep=parseFloat(me.total_deposit||0);
+let totalWd=parseFloat(me.total_withdraw||0);
+let tierIdx=me.tier||7;
+let pct=me.daily_percent||0;
+let tier=TIER_DATA[tierIdx]||TIER_DATA[7];
+let nextTier=TIER_DATA[Math.max(0,tierIdx-1)]||null;
+safeSet('pfTierName',tier.name);
+safeSet('pfTierRate',pct.toFixed(1)+'% / day');
+let pill=$('pfTierPill');
+if(pill){pill.innerText=tier.name;pill.style.background=tier.color+'22';pill.style.color=tier.color;}
+safeSet('pfDeposited','$'+totalDep.toFixed(2));
+safeSet('pfWithdrawn','$'+totalWd.toFixed(2));
+safeSet('pfBalance','$'+bal.toFixed(2));
+safeSet('pfWithdrawable','$'+wd.toFixed(2));
+safeSet('pfProfit','+$'+profit.toFixed(2));
+let perHr=bal*pct/2400;
+let perDay=bal*pct/100;
+safeSet('pfPerHour','+'+perHr.toFixed(4)+' USDT/hr');
+safeSet('pfPerDay','+'+perDay.toFixed(2)+' USDT/day');
+if(nextTier){
+let needed=nextTier.min-bal;
+if(needed>0){
+safeSet('pfTierNext','$'+needed.toFixed(0)+' to '+nextTier.name);
+let prevMin=tier.min;
+let range=nextTier.min-prevMin;
+let progress=bal-prevMin;
+let pctProgress=Math.min(100,Math.max(2,(progress/range)*100));
+let bar=$('pfTierBar');if(bar)bar.style.width=pctProgress+'%';
+safeSet('pfBalSmall','$'+bal.toFixed(0));
+safeSet('pfNextLabel','$'+nextTier.min);
+}else{
+safeSet('pfTierNext','Max tier reached!');
+let bar=$('pfTierBar');if(bar)bar.style.width='100%';
+safeSet('pfBalSmall','$'+bal.toFixed(0));
+safeSet('pfNextLabel','$'+tier.min);
+}
+}else{
+safeSet('pfTierNext','Highest tier!');
+let bar=$('pfTierBar');if(bar)bar.style.width='100%';
+safeSet('pfBalSmall','$'+bal.toFixed(0));
+safeSet('pfNextLabel','$'+tier.min);
+}
+let circumference=2*Math.PI*65;
+let tierProgress=1-((tierIdx)/7);
+let ringOffset=circumference*(1-tierProgress);
+let ring=$('portfolioRingFill');if(ring)ring.style.strokeDashoffset=ringOffset;
+let aiEnd=me.ai_end;
+let aiStart=me.ai_start;
+let aiBadge=$('pfAiBadge');
+let aiTimerBox=$('pfAiTimerBox');
+let aiTimerEl=$('pfAiTimer');
+function tickPfTimer(){
+let end=new Date(aiEnd);let now=new Date();let diff=end-now;
+if(diff<=0){
+if(aiBadge){aiBadge.innerText='EXPIRED';aiBadge.style.background='rgba(239,68,68,0.15)';aiBadge.style.color='#ef4444';}
+if(aiTimerEl)aiTimerEl.innerText='Contract expired';
+if(pfTimerInterval){clearInterval(pfTimerInterval);pfTimerInterval=null;}
+return;
+}
+let days=Math.floor(diff/(1000*60*60*24));let hours=Math.floor((diff%(1000*60*60*24))/(1000*60*60));let mins=Math.floor((diff%(1000*60*60))/(1000*60));let secs=Math.floor((diff%(1000*60))/1000);
+if(aiTimerEl)aiTimerEl.innerText=String(days).padStart(2,'0')+'d '+String(hours).padStart(2,'0')+'h '+String(mins).padStart(2,'0')+'m '+String(secs).padStart(2,'0')+'s';
+}
+if(!aiEnd){
+if(aiBadge){aiBadge.innerText='INACTIVE';aiBadge.style.background='rgba(239,68,68,0.15)';aiBadge.style.color='#ef4444';}
+if(aiTimerBox)aiTimerBox.style.opacity='0.4';
+if(aiTimerEl)aiTimerEl.innerText='No active contract';
+safeSet('pfAiStart','-');safeSet('pfAiEnd','-');
+}else{
+if(aiBadge){aiBadge.innerText='ACTIVE';aiBadge.style.background='rgba(16,185,129,0.15)';aiBadge.style.color='#10b981';}
+if(aiTimerBox)aiTimerBox.style.opacity='1';
+tickPfTimer();
+pfTimerInterval=setInterval(tickPfTimer,1000);
+if(aiStart)try{safeSet('pfAiStart',new Date(aiStart).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}));}catch(e){safeSet('pfAiStart','-');}
+if(aiEnd)try{safeSet('pfAiEnd',new Date(aiEnd).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}));}catch(e){safeSet('pfAiEnd','-');}
+}
+}
+
 async function init(){
 let me=await apiFetch('/api/me/'+userId);
 if(!me){console.error('Failed to load user');return;}
+window._lastMe=me;
 if(me.is_banned){$('bannedOverlay').classList.remove('hidden');return;}
 let bal=parseFloat(me.balance||0);let wd=parseFloat(me.withdrawable||0);let profit=parseFloat(me.profit||0);let tier=me.daily_percent||0;
 safeSet('tierPct',tier.toFixed(1));safeSet('dailyPct',tier.toFixed(1)+'%');
