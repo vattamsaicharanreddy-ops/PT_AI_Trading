@@ -227,8 +227,8 @@ def recalc_profit(user_id: int):
             end_dt = None
             ai_end_str = None
         if balance >= 20 and not ai_end_str:
-            ai_start = now.isoformat()
-            ai_end = (now + timedelta(days=30)).isoformat()
+            ai_start = now.isoformat() + "Z"
+            ai_end = (now + timedelta(days=30)).isoformat() + "Z"
             cur.execute(
                 f"UPDATE users SET ai_start={ph()}, ai_end={ph()}, current_tier={ph()} WHERE user_id={ph()}",
                 (ai_start, ai_end, tier_index, user_id),
@@ -239,8 +239,8 @@ def recalc_profit(user_id: int):
             except Exception:
                 end_dt = now + timedelta(days=30)
         elif current_tier != tier_index and balance >= 20:
-            ai_start = now.isoformat()
-            ai_end = (now + timedelta(days=30)).isoformat()
+            ai_start = now.isoformat() + "Z"
+            ai_end = (now + timedelta(days=30)).isoformat() + "Z"
             cur.execute(
                 f"UPDATE users SET ai_start={ph()}, ai_end={ph()}, current_tier={ph()} WHERE user_id={ph()}",
                 (ai_start, ai_end, tier_index, user_id),
@@ -333,7 +333,7 @@ def process_invoice_payment(invoice_id_str, tx_hash, actual_amount):
             new_bal = float(val(user, "balance", 0) or 0) + amt
             new_total = float(val(user, "total_deposit", 0) or 0) + amt
             tier_idx, _, _ = get_tier(new_bal)
-            ai_end = (datetime.utcnow() + timedelta(days=30)).isoformat()
+            ai_end = (datetime.utcnow() + timedelta(days=30)).isoformat() + "Z"
             cur.execute(
                 f"UPDATE users SET balance={ph()}, total_deposit={ph()}, current_tier={ph()}, ai_start={ph()}, ai_end={ph()} WHERE user_id={ph()}",
                 (new_bal, new_total, tier_idx, now, ai_end, user_id),
@@ -937,7 +937,7 @@ def admin_deposit_action(action: IdAction, request: Request):
                 new_bal = float(val(user, "balance", 0) or 0) + amt
                 new_total = float(val(user, "total_deposit", 0) or 0) + amt
                 tier_idx, _, _ = get_tier(new_bal)
-                ai_end = (datetime.utcnow() + timedelta(days=30)).isoformat()
+                ai_end = (datetime.utcnow() + timedelta(days=30)).isoformat() + "Z"
                 cur.execute(
                     f"UPDATE users SET balance={ph()}, total_deposit={ph()}, current_tier={ph()}, ai_start={ph()}, ai_end={ph()} WHERE user_id={ph()}",
                     (new_bal, new_total, tier_idx, now, ai_end, val(dep, "user_id")),
@@ -1050,8 +1050,8 @@ def admin_user_action(action: AdminAction, request: Request):
             )
         elif act == "reset_timer":
             now = datetime.utcnow()
-            ai_end = (now + timedelta(days=30)).isoformat()
-            cur.execute(f"UPDATE users SET ai_start={ph()}, ai_end={ph()} WHERE user_id={ph()}", (now.isoformat(), ai_end, action.user_id))
+            ai_end = (now + timedelta(days=30)).isoformat() + "Z"
+            cur.execute(f"UPDATE users SET ai_start={ph()}, ai_end={ph()} WHERE user_id={ph()}", (now.isoformat() + "Z", ai_end, action.user_id))
         elif act == "delete":
             cur.execute(f"DELETE FROM users WHERE user_id={ph()}", (action.user_id,))
         elif act == "clear_tasks":

@@ -517,6 +517,8 @@ let amt=parseFloat($('depAmount').value||0);
 if(amt<20){userToast('Min $20','error');return;}
 let btn=event?.target;
 if(btn){btn.disabled=true;btn.style.opacity='0.6';btn.innerText='Creating...';}
+let checkBox=$('checkStatus');if(checkBox){checkBox.classList.add('hidden');checkBox.innerText='';}
+let checkBtn=$('checkPayBtn');if(checkBtn){checkBtn.innerText='Check Payment Status';checkBtn.disabled=false;checkBtn.style.opacity='1';}
 try{
 let r=await fetch('/api/deposit/invoice/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,network:currentNet})});
 let j=await r.json();
