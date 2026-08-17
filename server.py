@@ -29,6 +29,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Admin-Token"],
 )
 init_db()
 
@@ -1108,6 +1109,11 @@ def health():
         "tier_reset": "on tier change",
         "admin_auth": "enabled" if ADMIN_SECRET else "disabled",
     }
+
+
+@app.get("/api/admin/auth/check")
+def admin_auth_check():
+    return {"auth_required": bool(ADMIN_SECRET), "secret_length": len(ADMIN_SECRET)}
 
 
 try:

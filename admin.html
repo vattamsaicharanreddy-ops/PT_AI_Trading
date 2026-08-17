@@ -29,6 +29,7 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .theme-toggle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--border);background:var(--hover);transition:all 0.2s}
 .theme-toggle:hover{transform:scale(1.1)}
+.hidden{display:none!important}
 </style>
 </head>
 <body class="min-h-screen flex" data-theme="dark">
@@ -38,8 +39,9 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 <div class="w-16 h-16 mx-auto rounded-[18px] bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black text-[22px] shadow-lg mb-6">PT</div>
 <h2 class="font-black text-xl tracking-tight">Admin Access</h2>
 <p class="text-xs mt-2" style="color:var(--text2)">Enter admin secret to continue</p>
-<input id="authInput" type="password" placeholder="Admin Secret" class="mt-6 w-full p-3.5 rounded-xl text-sm border outline-none" style="background:var(--input);border-color:var(--border)" onkeydown="if(event.key==='Enter')doLogin()">
-<button onclick="doLogin()" class="mt-4 w-full btn-gold py-3 rounded-full text-sm font-black">Unlock</button>
+<p id="authHint" class="text-[10px] mt-1 hidden" style="color:var(--emerald)">No secret configured. Any code works.</p>
+<input id="authInput" type="password" placeholder="Admin Secret" class="mt-4 w-full p-3.5 rounded-xl text-sm border outline-none" style="background:var(--input);border-color:var(--border)" onkeydown="if(event.key==='Enter')doLogin()">
+<button onclick="doLogin()" class="mt-3 w-full btn-gold py-3 rounded-full text-sm font-black">Unlock</button>
 <p id="authError" class="text-red-400 text-xs mt-3 hidden">Invalid secret</p>
 </div>
 </div>
@@ -219,16 +221,21 @@ let ADMIN_TOKEN=localStorage.getItem('admin_token')||'';
 let selectedUser=null,currentAction=null,allUsers=[],allDeposits=[];
 let chartInstance=null;
 
-function apiHeaders(){return ADMIN_TOKEN?{'X-Admin-Token':ADMIN_TOKEN}:{};}
+function apiHeaders(){return ADMIN_TOKEN&&ADMIN_TOKEN!=='__no_auth__'?{'X-Admin-Token':ADMIN_TOKEN}:{};}
 
 async function doLogin(){
 let token=document.getElementById('authInput').value.trim();
-if(!token){return;}
+if(!token){document.getElementById('authError').innerText='Enter a code';document.getElementById('authError').classList.remove('hidden');setTimeout(()=>document.getElementById('authError').classList.add('hidden'),2000);return;}
 ADMIN_TOKEN=token;
+try{
 let r=await fetch('/api/admin/stats',{headers:apiHeaders()});
-if(r.status===401){
+if(r.status===401||!r.ok){
+ADMIN_TOKEN='';
+let errMsg='Invalid secret (HTTP '+r.status+')';
+try{let d=await r.json();if(d&&d.detail)errMsg=d.detail;}catch(x){}
+document.getElementById('authError').innerText=errMsg;
 document.getElementById('authError').classList.remove('hidden');
-setTimeout(()=>document.getElementById('authError').classList.add('hidden'),2000);
+setTimeout(()=>document.getElementById('authError').classList.add('hidden'),4000);
 return;
 }
 localStorage.setItem('admin_token',token);
@@ -236,6 +243,12 @@ document.getElementById('authGate').classList.add('hidden');
 document.getElementById('sidebar').classList.remove('hidden');
 document.getElementById('mainContent').classList.remove('hidden');
 loadAll();
+}catch(e){
+ADMIN_TOKEN='';
+document.getElementById('authError').innerText='Cannot reach server: '+e.message;
+document.getElementById('authError').classList.remove('hidden');
+setTimeout(()=>document.getElementById('authError').classList.remove('hidden'),5000);
+}
 }
 
 function doLogout(){
@@ -245,16 +258,18 @@ location.reload();
 }
 
 function checkAuth(){
-if(ADMIN_TOKEN){
+if(!ADMIN_TOKEN)return;
 fetch('/api/admin/stats',{headers:apiHeaders()}).then(r=>{
 if(r.ok){
 document.getElementById('authGate').classList.add('hidden');
 document.getElementById('sidebar').classList.remove('hidden');
 document.getElementById('mainContent').classList.remove('hidden');
 loadAll();
+}else{
+localStorage.removeItem('admin_token');
+ADMIN_TOKEN='';
 }
 }).catch(()=>{});
-}
 }
 
 function toggleTheme(){
@@ -275,7 +290,23 @@ setTimeout(()=>{
 let icon=document.getElementById('themeIcon');
 if(icon) icon.innerHTML=saved==='dark'?'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>':'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>';
 },100);
+fetch('/api/admin/auth/check').then(r=>r.json()).then(d=>{
+if(!d.auth_required){
+document.getElementById('authHint').classList.remove('hidden');
+document.getElementById('authHint').innerText='No secret configured. Any code works.';
+}else{
+document.getElementById('authHint').classList.remove('hidden');
+document.getElementById('authHint').innerText='Secret is set on server. Enter it below.';
+document.getElementById('authHint').style.color='var(--gold)';
+}
+if(ADMIN_TOKEN&&ADMIN_TOKEN!=='__no_auth__'){
 checkAuth();
+}
+}).catch(()=>{
+document.getElementById('authHint').classList.remove('hidden');
+document.getElementById('authHint').innerText='Could not check server. Try entering your secret.';
+document.getElementById('authHint').style.color='var(--red)';
+});
 })();
 
 function showTab(tab){
