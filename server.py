@@ -73,9 +73,6 @@ def _seed_referral_tasks():
     finally:
         safe_close(conn)
 
-
-_seed_referral_tasks()
-
 DEPOSIT_ADDR = {
     "TRC20": os.getenv("ADDR_TRC20", "TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC"),
     "BEP20": os.getenv("ADDR_BEP20", "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd"),
@@ -180,6 +177,9 @@ def get_tier(balance):
         if balance >= minimum:
             return idx, minimum, pct
     return len(TIERS) - 1, 0, 0
+
+
+_seed_referral_tasks()
 
 
 def invoice_id():
@@ -653,33 +653,43 @@ def tasks_list(user_id: int):
         cur = cursor(conn)
         cur.execute(f"SELECT * FROM tasks WHERE is_active=1 ORDER BY sort_order ASC, id ASC")
         tasks = rows_as_dicts(cur.fetchall())
-        cur.execute(f"SELECT task_id,status,reward_claimed FROM user_tasks WHERE user_id={ph()}", (user_id,))
-        ut = {r["task_id"]: r for r in rows_as_dicts(cur.fetchall())}
-        cur.execute(f"SELECT COUNT(*) as cnt FROM users WHERE referred_by={ph()}", (user_id,))
-        ref_count = val(cur.fetchone(), "cnt", 0) or 0
+        ut = {}
+        try:
+            cur.execute(f"SELECT task_id,status,reward_claimed FROM user_tasks WHERE user_id={ph()}", (user_id,))
+            ut = {r["task_id"]: r for r in rows_as_dicts(cur.fetchall())}
+        except Exception:
+            pass
+        ref_count = 0
+        try:
+            cur.execute(f"SELECT COUNT(*) as cnt FROM users WHERE referred_by={ph()}", (user_id,))
+            ref_count = val(cur.fetchone(), "cnt", 0) or 0
+        except Exception:
+            pass
         out = []
         for t in tasks:
-            s = ut.get(t["id"])
-            tt = val(t, "task_type", "join")
+            s = ut.get(t.get("id"))
+            tt = val(t, "task_type", "join") or "join"
             referral_current = 0
             referral_target = 0
             if tt == "referral":
-                cfg = val(t, "task_config", "")
+                cfg = val(t, "task_config", "") or ""
                 try:
-                    import json as _json
-                    cfg_obj = _json.loads(cfg) if cfg else {}
+                    cfg_obj = json.loads(cfg) if cfg else {}
                 except Exception:
                     cfg_obj = {}
                 referral_target = int(cfg_obj.get("ref_count", 0))
                 referral_current = min(ref_count, referral_target) if referral_target > 0 else ref_count
             out.append({
                 **t,
-                "user_status": s["status"] if s else "pending",
-                "reward_claimed": s["reward_claimed"] if s else 0,
+                "user_status": s.get("status", "pending") if s else "pending",
+                "reward_claimed": s.get("reward_claimed", 0) if s else 0,
                 "referral_current": referral_current,
                 "referral_target": referral_target,
             })
         return out
+    except Exception as e:
+        logger.error(f"tasks_list error: {e}", exc_info=True)
+        return []
     finally:
         safe_close(conn)
 

@@ -506,8 +506,9 @@ el.innerHTML=html;
 }
 
 async function loadTasks(isQuick=false){
+try{
 let data=await apiFetch('/api/tasks/list/'+userId);
-if(!data)return;
+if(!data){safeHTML('tasksQuick','<p class="text-[11px]" style="color:var(--text3)">No tasks yet.</p>');safeHTML('tasksListFull',`<div class="rounded-2xl p-5 text-center" style="background:var(--surface);border:1px solid var(--border)"><p class="text-2xl">&#127919;</p><p class="font-bold mt-2">No Tasks Yet</p><p class="text-[11px] mt-1" style="color:var(--text2)">Admin needs to create tasks.</p></div>`);return;}
 allTasks=data;
 let total=allTasks.length;let done=allTasks.filter(t=>t.user_status==='verified').length;
 let earn=0;allTasks.forEach(t=>{if(t.user_status==='verified')earn+=parseFloat(t.reward||1);});
@@ -538,6 +539,7 @@ let mandBadge=t.is_mandatory?'<span class="text-[9px] px-1.5 py-0.5 rounded-full
 let statusLine=isRef?`<p class="text-[10px] mt-1.5" style="color:var(--text3)">${t.reward} USDT | Referral Task | ${refCur}/${refTgt}</p>`:`<p class="text-[10px] mt-1.5" style="color:var(--text3)">${t.reward} USDT | ${t.user_status}</p>`;
 return `<div class="rounded-2xl p-4 border ${isDone?'task-done':'task-pending'}"><div class="flex gap-3"><div class="flex-1"><p class="font-bold text-sm">${t.title} ${mandBadge}${refBadge}</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">${t.description||''}</p>${statusLine}</div></div><div class="mt-3">${btn}</div></div>`;
 }).join('');if(!fullHtml)fullHtml=`<div class="rounded-2xl p-5 text-center" style="background:var(--surface);border:1px solid var(--border)"><p class="text-2xl">&#127919;</p><p class="font-bold mt-2">No Tasks Yet</p><p class="text-[11px] mt-1" style="color:var(--text2)">Admin needs to create tasks.</p></div>`;safeHTML('tasksListFull',fullHtml);
+}catch(e){console.error('loadTasks error:',e);safeHTML('tasksQuick','<p class="text-[11px]" style="color:var(--text3)">No tasks yet.</p>');safeHTML('tasksListFull',`<div class="rounded-2xl p-5 text-center" style="background:var(--surface);border:1px solid var(--border)"><p class="font-bold">No Tasks Yet</p><p class="text-[11px] mt-1" style="color:var(--text2)">Admin needs to create tasks.</p></div>`);}
 }
 async function joinTask(taskId,link){try{await fetch('/api/tasks/join/'+userId+'/'+taskId,{method:'POST'});}catch(e){}if(link)window.open(link,'_blank');}
 async function verifyTask(taskId){let r=await fetch('/api/tasks/verify/'+userId+'/'+taskId,{method:'POST'});let j=await r.json();if(j.ok){userToast(j.message||'Verified! +1 USDT');await loadTasks();await init();}else{userToast(j.error||'Failed to verify','error');}}
