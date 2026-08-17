@@ -185,6 +185,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <span id='pfAiEnd' class='text-[11px] font-bold' style='color:var(--text2)'>-</span>
 </div>
 </div>
+
+<div class='mx-4 mt-3 mb-6 rounded-2xl p-4' style='background:var(--surface);border:1px solid var(--border)'>
+<p class='font-bold text-xs mb-2'>Transaction History</p>
+<div id='pfHistory' class='space-y-2'></div>
+</div>
+
 </div>
 
 <div class='fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[420px] flex justify-around py-2 px-2 z-50' style='background:color-mix(in srgb, var(--bg) 90%, transparent);backdrop-filter:blur(16px);border-top:1px solid var(--border)'>
@@ -459,6 +465,26 @@ pfTimerInterval=setInterval(tickPfTimer,1000);
 if(aiStart)try{safeSet('pfAiStart',parseUTC(aiStart).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}));}catch(e){safeSet('pfAiStart','-');}
 if(aiEnd)try{safeSet('pfAiEnd',parseUTC(aiEnd).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}));}catch(e){safeSet('pfAiEnd','-');}
 }
+loadPfHistory();
+}
+
+async function loadPfHistory(){
+let h=await apiFetch('/api/history/'+userId);
+if(!h)return;
+let el=$('pfHistory');if(!el)return;
+let html='';
+let deps=h.deposits||[];
+let wds=h.withdrawals||[];
+if(!deps.length&&!wds.length){el.innerHTML='<p style="color:var(--text3);font-size:11px;text-align:center;padding:12px 0">No transactions yet</p>';return;}
+deps.forEach(d=>{
+let sc=d.status==='verified'?'#10b981':d.status==='awaiting_payment'?'#eab308':'#ef4444';
+html+=`<div class='p-3 rounded-xl flex items-center gap-3' style='background:var(--border)'><div class='w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0' style='background:#26A17B;color:#fff'>↓</div><div class='flex-1 min-w-0'><p class='font-bold text-[11px]'>Deposit $${Number(d.amount).toFixed(2)} <span class='text-[9px] px-1.5 py-0.5 rounded-full' style='background:var(--surface)'>${d.network||''}</span></p><p class='text-[9px] mt-0.5' style='color:var(--text3)'>${d.created_at?d.created_at.slice(0,16):''}</p></div><span class='text-[10px] font-bold shrink-0' style='color:${sc}'>${d.status}</span></div>`;
+});
+wds.forEach(w=>{
+let sc=w.status==='approved'?'#10b981':w.status==='rejected'?'#ef4444':'#eab308';
+html+=`<div class='p-3 rounded-xl flex items-center gap-3' style='background:var(--border)'><div class='w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0' style='background:#FFD60A;color:#000'>↑</div><div class='flex-1 min-w-0'><p class='font-bold text-[11px]'>Withdraw $${Number(w.amount).toFixed(2)} <span class='text-[9px] px-1.5 py-0.5 rounded-full' style='background:var(--surface)'>${w.network||''}</span></p><p class='text-[9px] mt-0.5' style='color:var(--text3)'>${w.created_at?w.created_at.slice(0,16):''}</p></div><span class='text-[10px] font-bold shrink-0' style='color:${sc}'>${w.status}</span></div>`;
+});
+el.innerHTML=html;
 }
 
 async function init(){
