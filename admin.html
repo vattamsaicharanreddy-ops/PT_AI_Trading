@@ -396,7 +396,8 @@ let wds=await fetchJson('/api/admin/withdrawals');
 document.getElementById('withdrawals').innerHTML=wds.map(w=>{
 let sc=w.status==='approved'?'color:#10b981':w.status==='pending'?'color:#eab308':'color:#ef4444';
 let actions=w.status==='pending'?`<div class="flex gap-1"><button onclick="actWd(${w.id},'approve')" class="px-2.5 py-1 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981">Approve</button><button onclick="actWd(${w.id},'reject')" class="px-2.5 py-1 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Reject</button><button onclick="actWd(${w.id},'expire')" class="px-2.5 py-1 rounded-full text-[10px]" style="background:rgba(249,115,22,0.15);color:#f97316">Expire</button></div>`:`<button onclick="actWd(${w.id},'delete')" class="px-2.5 py-1 rounded-full text-[10px]" style="background:rgba(239,68,68,0.1);color:#ef4444">Delete</button>`;
-return `<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono">${w.id}</td><td class="p-2.5 mono font-bold">${w.user_id}</td><td class="p-2.5 font-bold">$${Number(w.amount).toFixed(2)}</td><td class="p-2.5 mono text-[10px]">${(w.address||'').slice(0,16)}...</td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px]">${w.network}</span></td><td class="p-2.5"><span class="font-bold text-[11px]" style="${sc}">${w.status}</span></td><td class="p-2.5 text-[10px] mono" style="color:var(--text3)">${(w.created_at||'').slice(0,16)}</td><td class="p-2.5">${actions}</td></tr>`;
+let addr=w.address||'';
+return `<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono">${w.id}</td><td class="p-2.5 mono font-bold">${w.user_id}</td><td class="p-2.5 font-bold">$${Number(w.amount).toFixed(2)}</td><td class="p-2.5" title="${addr}"><span class="mono text-[10px] break-all">${addr.length>20?addr.slice(0,10)+'...'+addr.slice(-10):addr}</span><button onclick="copyWdAddr('${addr}',this)" class="ml-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold" style="background:rgba(108,59,255,0.15);color:#A5A6F6">Copy</button></td><td class="p-2.5"><span class="px-2.5 py-1 rounded-full text-[10px] font-black" style="background:${w.network==='TRC20'?'rgba(239,68,68,0.15);color:#ef4444':w.network==='BEP20'?'rgba(250,204,21,0.15);color:#facc15':w.network==='ERC20'?'rgba(96,165,250,0.15);color:#60a5fa':w.network==='TON'?'rgba(16,185,129,0.15);color:#10b981':'rgba(165,166,246,0.15);color:#A5A6F6'}">${w.network}</span></td><td class="p-2.5"><span class="font-bold text-[11px]" style="${sc}">${w.status}</span></td><td class="p-2.5 text-[10px] mono" style="color:var(--text3)">${(w.created_at||'').slice(0,16)}</td><td class="p-2.5">${actions}</td></tr>`;
 }).join('')||`<tr><td colspan="8" class="p-6 text-center" style="color:var(--text3)">No withdrawals</td></tr>`;
 }catch(e){}
 
@@ -439,6 +440,7 @@ document.getElementById('users').innerHTML=filtered.slice(0,300).map(u=>`<tr cla
 
 function filterUsers(){renderUsers(allUsers);}
 
+function copyWdAddr(addr,btn){navigator.clipboard.writeText(addr).then(()=>{btn.innerText='Copied!';setTimeout(()=>{btn.innerText='Copy';},1500);}).catch(()=>{let ta=document.createElement('textarea');ta.value=addr;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.innerText='Copied!';setTimeout(()=>{btn.innerText='Copy';},1500);});}
 async function actWd(id,action){
 let note='';
 if(action==='reject'||action==='expire'){
