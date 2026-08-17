@@ -18,6 +18,10 @@ services:
         sync: false
       - key: WEBAPP_URL
         sync: false
+      - key: ADMIN_SECRET
+        sync: false
+      - key: BOT_USERNAME
+        sync: false
 
 databases:
   - name: pt-ai-db

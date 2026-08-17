@@ -1,224 +1,268 @@
 <!DOCTYPE html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>PT_AI — Teal Ultra</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+<html lang="en"><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1'>
+<title>PT_AI Trading Ultra</title>
+<script src='https://telegram.org/js/telegram-web-app.js'></script>
+<script src='https://cdn.tailwindcss.com'></script>
+<link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap' rel='stylesheet'>
 <style>
-*{font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent}
-.mono{font-family:'JetBrains Mono',monospace}
-body{background:#061414;color:#E8FFFE}
-.teal-bg{background:radial-gradient(120% 80% at 20% -10%,#00E5CC28 0%,transparent 60%),radial-gradient(100% 60% at 100% 0%,#00E5CC12 0%,transparent 50%),#061414}
-.card-teal{background:linear-gradient(145deg,rgba(16,45,45,0.95),rgba(8,26,26,0.95));border:1px solid rgba(0,229,204,0.14);border-top:1px solid rgba(0,229,204,0.22);box-shadow:0 1px 0 rgba(0,229,204,0.15) inset,0 10px 28px rgba(0,0,0,0.5),0 0 0 1px rgba(0,0,0,0.4);backdrop-filter:blur(18px);position:relative}
-.card-teal:before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(115deg,rgba(0,229,204,0.08) 0%,transparent 40%,transparent 70%,rgba(255,255,255,0.04) 100%);pointer-events:none}
-.card-teal-purple{background:linear-gradient(145deg,#0A2A2A,#061A1A);border:1px solid rgba(0,229,204,0.20);border-top:1px solid rgba(0,229,204,0.30);box-shadow:0 1px 0 rgba(0,229,204,0.20) inset,0 16px 36px rgba(0,229,204,0.10),0 8px 20px rgba(0,0,0,0.5)}
-.card-gold{background:linear-gradient(145deg,#00E5CC,#00C9B3);border:1px solid rgba(0,0,0,0.08);border-top:1px solid rgba(255,255,255,0.5);box-shadow:0 1px 0 rgba(255,255,255,0.6) inset,0 -2px 0 rgba(0,0,0,0.12) inset,0 10px 24px rgba(0,229,204,0.25);color:#00201C}
-.btn-teal{background:linear-gradient(180deg,#00E5CC 0%,#00C9B3 100%);color:#00201C;border-top:1px solid rgba(255,255,255,0.6);box-shadow:0 1px 0 rgba(255,255,255,0.7) inset,0 -2px 0 rgba(0,0,0,0.15) inset,0 8px 20px rgba(0,229,204,0.35);font-weight:900}
-.btn-teal-dark{background:linear-gradient(180deg,#102E2E,#0A2222);border:1px solid rgba(0,229,204,0.15);border-top:1px solid rgba(0,229,204,0.25);box-shadow:0 1px 0 rgba(0,229,204,0.15) inset,0 6px 16px rgba(0,0,0,0.4);color:#E8FFFE;font-weight:700}
-.btn-white{background:linear-gradient(180deg,#FFFFFF,#E8FFFE);color:#00201C;border:1px solid rgba(0,0,0,0.06);border-top:1px solid #fff;box-shadow:0 1px 0 #fff inset,0 -2px 0 rgba(0,0,0,0.08) inset,0 8px 16px rgba(0,0,0,0.15);font-weight:900}
-.pill-teal{background:rgba(0,229,204,0.12);border:1px solid rgba(0,229,204,0.20);color:#00E5CC}
-.tab-active{background:#00E5CC!important;color:#00201C!important;box-shadow:0 1px 0 rgba(255,255,255,0.6) inset,0 -2px 0 rgba(0,0,0,0.15) inset,0 8px 20px rgba(0,229,204,0.4)!important;font-weight:900;transform:translateY(-1px)}
-.net-card{transition:all 0.2s}.net-card.active{border-color:#00E5CC!important;background:linear-gradient(145deg,rgba(0,229,204,0.22),rgba(0,229,204,0.08))!important;box-shadow:0 0 0 3px rgba(0,229,204,0.15),0 8px 16px rgba(0,229,204,0.15)!important;transform:translateY(-2px)}
-.progress{height:5px;background:rgba(0,229,204,0.12);border-radius:999px;overflow:hidden}.progress i{display:block;height:100%;background:linear-gradient(90deg,#00E5CC,#00BFA5);width:100%;animation:count 1800s linear forwards}
-@keyframes count{from{width:100%}to{width:0%}}
+:root{--bg:#050507;--surface:#121214;--card:#1a1a25;--text:#ffffff;--text2:rgba(255,255,255,0.6);--text3:rgba(255,255,255,0.35);--border:rgba(255,255,255,0.08);--input:#0a0a0f;--gold:#FFD60A;--purple:#6C3BFF;--accent:#121214}
+[data-theme="light"]{--bg:#f5f5f7;--surface:#ffffff;--card:#ffffff;--text:#1a1a2e;--text2:rgba(26,26,46,0.6);--text3:rgba(26,26,46,0.35);--border:rgba(0,0,0,0.08);--input:#f0f0f5;--accent:#f8f8fa}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+.tab-active{background:var(--text)!important;color:var(--bg)!important;font-weight:900}
+.glass{background:var(--border);border:1px solid var(--border)}
+.task-done{border-color:#10b981!important;background:linear-gradient(135deg,rgba(16,185,129,0.12),rgba(255,255,255,0.03))}
+.task-pending{border-color:#FFD60A!important;background:linear-gradient(135deg,rgba(255,214,10,0.08),rgba(255,255,255,0.03))}
+[data-theme="light"] .task-done{background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(255,255,255,0.5))}
+[data-theme="light"] .task-pending{background:linear-gradient(135deg,rgba(255,214,10,0.06),rgba(255,255,255,0.5))}
+.theme-btn{position:fixed;top:12px;right:12px;z-index:200;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--border);background:var(--surface);box-shadow:0 2px 8px rgba(0,0,0,0.1)}
 </style>
 </head>
-<body class="min-h-screen flex justify-center teal-bg">
-<div class="w-full max-w-[430px] min-h-screen relative bg-[#061414]/80 backdrop-blur-xl border-x border-[#00E5CC]/10 pb-[96px] overflow-hidden">
+<body class='min-h-screen flex justify-center' data-theme='dark'>
+<div id='bannedOverlay' class='hidden fixed inset-0 z-[10000] flex flex-col items-center justify-center p-6 text-center' style='background:var(--bg)'><div class='w-20 h-20 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-3xl mb-5'>&#128683;</div><h2 class='text-xl font-extrabold'>Account Suspended</h2><p class='mt-2 text-sm max-w-[280px]' style='color:var(--text2)'>Your account has been suspended.</p></div>
+<div id='initialLoader' style='position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.4s'><div style='width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#6C3BFF,#FFD60A);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:28px;color:#fff'>PT</div><p style='margin-top:16px;font-weight:800;letter-spacing:4px;font-size:13px'>PT_AI TRADING</p><p style='margin-top:6px;font-size:11px;opacity:0.5;letter-spacing:2px'>ULTRA V5</p><div style='margin-top:20px;width:100px;height:3px;background:var(--border);border-radius:999px;overflow:hidden'><div style='height:100%;width:40%;background:#FFD60A;border-radius:999px;animation:loaderSlide 1.2s infinite'></div></div></div>
+<style>@keyframes loaderSlide{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}</style>
 
-<div class="sticky top-0 z-30 bg-[#061414]/90 backdrop-blur-2xl border-b border-[#00E5CC]/10 px-5 h-[68px] flex items-center justify-between">
-<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[#00E5CC] to-[#00BFA5] flex items-center justify-center font-black text-[#00201C] text-[14px]">PT</div><div><p class="font-black text-[13px]">PT_AI TRADING</p><p class="text-[10px] opacity-60 tracking-[2px] font-bold">ULTRA • LIVE • TEAL</p></div></div>
-<span class="pill-teal px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest">● AI LIVE</span>
-</div>
+<div class='theme-btn' onclick='toggleTheme()' id='themeBtn'></div>
 
-<!-- HOME - ALL YOUR ORIGINAL OPTIONS IN TEAL -->
-<div id="tab-home" class="tab-content px-4 pt-4">
-<div class="card-teal-purple rounded-[28px] p-5 relative overflow-hidden">
-<div class="absolute -right-16 -top-16 w-[180px] h-[180px] rounded-full bg-[#00E5CC]/20 blur-[24px]"></div>
-<div class="relative">
-<div class="flex justify-between items-center"><p class="text-[11px] tracking-[3px] opacity-60 font-black">TOTAL WALLET</p><button onclick="init()" class="bg-white/10 border border-[#00E5CC]/20 px-2.5 py-1 rounded-full text-[10px] font-bold">↻ Sync</button></div>
-<h2 class="mt-3 text-[36px] font-black leading-none"><span class="text-[16px] opacity-60 align-top">$</span><span id="withdrawableTop">0.00</span> <span class="text-[12px] opacity-50">USDT</span></h2>
-<div class="mt-3 flex gap-2">
-<div class="pill-teal rounded-full px-3 py-1.5 text-[11px] flex items-center gap-2 font-bold"><span class="w-2 h-2 rounded-full bg-[#00E5CC] shadow-[0_0_8px_#00E5CC]"></span><span id="tierPct">0%</span> / day</div>
-<div class="bg-white/10 border border-[#00E5CC]/20 rounded-full px-3 py-1.5 text-[11px] font-bold"><span id="balTopMini">0</span> AI Balance</div>
+<div class='w-full max-w-[420px] min-h-screen relative pb-28' style='background:var(--bg)'>
+<header class='flex justify-between items-center p-5 pt-10'><span class='text-sm tracking-[3px] font-bold'>PT_AI Trading</span><span class='text-xs px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'>LIVE</span></header>
+<div class='mx-4 rounded-2xl p-4 flex justify-between items-center' style='background:var(--surface);border:1px solid var(--border)'>
+<div class='flex items-center gap-3'><div class='w-11 h-11 rounded-full bg-[#26A17B] flex items-center justify-center font-bold text-white text-[16px]'>$</div><div><p class='text-xs tracking-widest font-bold' style='color:#26A17B'><span id='aiStatus'>AI ACTIVE</span> <span id='tierPct'>0%</span>/day</p><p class='font-bold text-sm'><span id='balTopMini'>0</span> USDT</p><p id='aiTimer' class='text-[10px] font-mono px-2 py-0.5 rounded-full mt-1 inline-block' style='background:var(--border)'>00d 00h 00m 00s left</p></div></div>
+<div class='text-right'><p class='text-[10px]' style='color:var(--text3)'>WALLET</p><p id='withdrawableTop' class='font-bold text-sm' style='color:#FFD60A'>0.00 USDT</p><p id='taskBadge' class='text-[10px] px-2 py-0.5 rounded-full mt-1 hidden' style='background:rgba(108,59,255,0.15);color:#A5A6F6'>Tasks</p></div>
 </div>
-<div class="mt-4 grid grid-cols-3 gap-2.5">
-<div class="card-teal rounded-2xl p-3"><p class="text-[9px] opacity-50 tracking-[2px] font-bold">DEPOSITED</p><p id="totalDep" class="font-black text-[13px] mt-1.5">0.00</p></div>
-<div class="card-teal rounded-2xl p-3"><p class="text-[9px] opacity-50 tracking-[2px] font-bold">WITHDRAWN</p><p id="totalWd" class="font-black text-[13px] mt-1.5">0.00</p></div>
-<div class="card-gold rounded-2xl p-3"><p class="text-[9px] opacity-70 tracking-[2px] font-bold">PROFIT</p><p id="profitVal" class="font-black text-[13px] mt-1.5">0.00</p></div>
-</div>
-</div>
-</div>
+<div id='mandatoryGate' class='hidden mx-4 mt-3 rounded-2xl p-4' style='background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(249,115,22,0.08));border:1px solid rgba(239,68,68,0.2)'><div class="flex gap-3"><div class="text-xl">&#128274;</div><div><p class='font-bold text-sm text-red-300'>Withdrawal Locked</p><p id='gateText' class='text-xs mt-1' style='color:var(--text2)'>Complete mandatory tasks to unlock.</p><button onclick="switchTab('tasks')" class='mt-2 px-4 py-2 rounded-full text-xs font-bold' style='background:var(--text);color:var(--bg)'>Go to Tasks</button></div></div></div>
 
-<div class="mt-4 grid grid-cols-2 gap-3">
-<button onclick="openDeposit()" class="h-[56px] rounded-[18px] btn-white flex items-center justify-center gap-2 text-[13px]"><span class="w-7 h-7 rounded-full bg-black/10 flex items-center justify-center">↓</span> Deposit</button>
-<button onclick="openWithdraw()" class="h-[56px] rounded-[18px] btn-teal-dark flex items-center justify-center gap-2 text-[13px]"><span class="w-7 h-7 rounded-full bg-[#00E5CC]/20 text-[#00E5CC] flex items-center justify-center">↑</span> Withdraw</button>
+<div id='tab-home' class='tab-content'>
+<div class='mx-4 mt-4 rounded-2xl p-4' style='background:var(--surface);border:1px solid rgba(255,214,10,0.15)'>
+<div class="flex justify-between items-center"><h3 class='font-bold text-sm'>Tasks Quick</h3><span id='tasksQuickCount' class="text-[10px] px-2 py-0.5 rounded-full" style="background:rgba(255,214,10,0.15);color:#FFD60A">0/0 done</span></div>
+<div id='tasksQuick' class='mt-3 space-y-2'></div>
+<button onclick="switchTab('tasks')" class='mt-3 w-full py-2.5 rounded-xl text-xs font-bold' style='background:rgba(108,59,255,0.15);border:1px solid rgba(108,59,255,0.2)'>View All Tasks</button>
 </div>
-
-<div class="mt-4 card-teal rounded-[20px] p-4 flex items-center justify-between">
-<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-[#00E5CC]/20 border border-[#00E5CC]/30 flex items-center justify-center font-black text-[#00E5CC]">₮</div><div><p class="text-[11px] opacity-60 tracking-widest font-black"><span id="aiStatus">AI ACTIVE</span> • <span id="dailyPct">0%</span></p><p class="text-[12px] font-mono font-bold"><span id="aiTimer">00d 00h 00m 00s</span> left</p></div></div>
-<div class="text-right"><p class="text-[10px] opacity-50">+<span id="perHour">0.00</span>/hr</p><p class="text-[10px] opacity-30" id="binanceStatus">Live</p></div>
+<div class='mt-5 mx-4 rounded-3xl p-5' style='background:linear-gradient(135deg,#6C3BFF,#8A5CFF,#A5A6F6)'>
+<p class='text-white/70 text-sm'>Daily AI Profit <span id='dailyPct'>0%</span></p>
+<h1 class='text-[32px] font-extrabold leading-none mt-2 flex items-center gap-2'><span class='text-[18px] bg-white/20 w-9 h-9 rounded-full flex items-center justify-center'>$</span> <span id='profitVal'>0.00</span> <span class='text-sm opacity-60'>USDT</span></h1>
+<p class='text-sm text-white/80 mt-2'>+<span id='perHour'>0.00</span> USDT/hr</p>
+<div class='mt-4 flex gap-2 flex-wrap'><button onclick='openDeposit()' class='bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm'>Deposit</button><button onclick='openWithdraw()' class='px-5 py-2.5 rounded-full font-bold text-sm' style='background:#FFD60A;color:#000'>Withdraw</button></div>
+</div>
+<div class='mx-4 mt-4 rounded-2xl p-4' style='background:var(--surface);border:1px solid rgba(255,214,10,0.15)'>
+<div class='flex justify-between items-center mb-3'><h3 class='font-bold text-sm'>Quick Stats</h3><span class='text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400'>Live</span></div>
+<div class='grid grid-cols-2 gap-2.5'><div class='p-3.5 rounded-2xl' style='background:rgba(38,161,123,0.1);border:1px solid rgba(38,161,123,0.15)'><p class='text-[11px]' style='color:var(--text2)'>Total Deposited</p><p id='totalDep' class='font-extrabold text-base mt-1' style='color:#26A17B'>0.00 USDT</p></div><div class='p-3.5 rounded-2xl' style='background:rgba(255,214,10,0.1);border:1px solid rgba(255,214,10,0.15)'><p class='text-[11px]' style='color:var(--text2)'>Total Withdrawn</p><p id='totalWd' class='font-extrabold text-base mt-1' style='color:#FFD60A'>0.00 USDT</p></div></div>
+<div class='mt-2.5 grid grid-cols-2 gap-2.5 text-[11px]'><div class='p-2.5 rounded-xl flex justify-between' style='background:var(--border)'><span style='color:var(--text2)'>Balance:</span><span id='quickBal' class='font-bold'>0 USDT</span></div><div class='p-2.5 rounded-xl flex justify-between' style='background:var(--border)'><span style='color:var(--text2)'>Withdrawable:</span><span id='quickWd' class='font-bold' style='color:#FFD60A'>0 USDT</span></div></div>
+</div>
+<div class='mx-4 mt-4 rounded-2xl p-4' style='background:var(--surface);border:1px solid var(--border)'><h3 class='font-bold text-sm mb-3'>Community</h3><div class='grid grid-cols-3 gap-2'><button onclick='openPTGroup()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>PT-Group</button><button onclick='openPTChannel()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>PT-Channel</button><button onclick='openPTSupport()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>Support</button></div></div>
 </div>
 
-<div id="mandatoryGate" class="hidden mt-3 rounded-[18px] p-4 flex gap-3 card-teal" style="background:linear-gradient(145deg,rgba(239,68,68,0.12),rgba(239,68,68,0.04));border-color:rgba(239,68,68,0.25)"><div class="text-xl">🔒</div><div><p class="font-bold text-sm text-red-300">Withdrawal locked</p><p id="gateText" class="text-xs opacity-70 mt-1">Complete mandatory tasks</p><button onclick="switchTab('tasks')" class="mt-2 bg-white text-black px-3 py-1.5 rounded-full text-xs font-bold">Fix now →</button></div></div>
-
-<!-- Your original Quick Tasks -->
-<div class="mt-5 card-teal rounded-[20px] p-4"><div class="flex justify-between items-center"><h3 class="font-black text-[13px]">🎯 Tasks Quick • <span id="tasksQuickCount">0/0</span></h3><button onclick="switchTab('tasks')" class="text-[11px] opacity-60 bg-white/5 px-2.5 py-1 rounded-full">View all →</button></div><div id="tasksQuick" class="mt-3 space-y-2"></div></div>
-</div> <!-- CLOSE HOME TAB HERE - FIXES TABS SHOWING BLANK -->
-
-<!-- TRADES TAB - SEPARATE -->
-<div id="tab-trades" class="tab-content hidden px-4 pt-4">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl card-teal flex items-center justify-center text-lg">📈</div><div><h2 class="font-black text-[16px]">Live AI Trades</h2><p class="text-[11px] opacity-60" id="binanceStatus">Live • Loading...</p></div></div>
-<span id="todayTrades" class="text-[10px] px-2.5 py-1 rounded-full bg-[#00E5CC]/10 border border-[#00E5CC]/20 font-bold">Loading...</span>
+<div id='tab-tasks' class='tab-content hidden'>
+<div class='mx-4 mt-4 rounded-3xl p-5' style='background:linear-gradient(135deg,rgba(108,59,255,0.15),var(--surface),rgba(255,214,10,0.06));border:1px solid rgba(108,59,255,0.15)'>
+<h2 class='text-lg font-black'>Join-to-Earn Tasks</h2><p class='text-[11px] mt-1.5 leading-relaxed' style='color:var(--text2)'>Join groups, earn <b style="color:#FFD60A">1 USDT</b> per task. Mandatory tasks block withdrawal.</p>
+<div class='mt-3 grid grid-cols-3 gap-2 text-center'><div class='rounded-xl p-2.5' style='background:var(--border)'><p id='t_total' class='font-black text-lg'>0</p><p class='text-[9px]' style='color:var(--text3)'>TOTAL</p></div><div class='rounded-xl p-2.5' style='background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.15)'><p id='t_done' class='font-black text-lg text-emerald-400'>0</p><p class='text-[9px]' style='color:var(--text3)'>DONE</p></div><div class='rounded-xl p-2.5' style='background:rgba(255,214,10,0.1);border:1px solid rgba(255,214,10,0.15)'><p id='t_earn' class='font-black text-lg' style='color:#FFD60A'>0</p><p class='text-[9px]' style='color:var(--text3)'>USDT EARNED</p></div></div>
 </div>
-<div class="mt-4 card-teal rounded-[20px] overflow-hidden">
-<div class="overflow-x-auto"><table class="w-full text-[11px]"><thead class="text-[9px] opacity-40 uppercase tracking-widest"><tr><th class="text-left p-3">Time IST</th><th>Pair</th><th>Side</th><th class="text-right p-2">Entry</th><th class="text-right p-2">Exit</th><th class="text-right p-2">Lev</th><th class="text-right p-3">PnL</th></tr></thead><tbody id="tradesTableBody"></tbody></table></div>
-</div>
-<div class="mt-3 card-teal rounded-xl p-3 text-[11px] opacity-70">
-<p class="font-bold text-[12px] text-[#00E5CC]">ℹ️ How trades work:</p>
-<p class="mt-1">• 16 trades per day, every ~45 min from 00:05 IST</p>
-<p>• Win rate 50-70% • Live updates • IST timezone</p>
-<p>• Entry/Exit are simulated Binance futures prices</p>
-</div>
+<div id='tasksListFull' class='mx-4 mt-4 space-y-3'></div>
 </div>
 
-<!-- TASKS TAB - Full original -->
-<div id="tab-tasks" class="tab-content hidden px-4 pt-5"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl card-teal flex items-center justify-center">🎯</div><div><h2 class="font-black text-[17px]">Tasks</h2><p class="text-xs opacity-60">Complete to earn 1 USDT each and unlock withdrawal</p></div></div><div id="tasksList" class="mt-5 space-y-3"></div></div>
-
-<!-- WALLET TAB - Full original with Quick Stats + History -->
-<div id="tab-wallet" class="tab-content hidden px-4 pt-5">
-<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl card-teal flex items-center justify-center">💼</div><div><h2 class="font-black text-[17px]">Wallet</h2><p class="text-xs opacity-60">History & balances</p></div></div>
-<div class="mt-5 grid grid-cols-2 gap-3"><div class="card-teal rounded-2xl p-4"><p class="text-[10px] opacity-50 tracking-widest font-bold">TRADING BALANCE</p><p id="quickBal" class="font-black text-xl mt-2">0</p></div><div class="card-gold rounded-2xl p-4"><p class="text-[10px] opacity-70 tracking-widest font-bold">WITHDRAWABLE</p><p id="quickWd" class="font-black text-xl mt-2">0</p></div></div>
-<div class="mt-4 card-teal rounded-[18px] p-4"><div class="flex justify-between items-center mb-3"><h3 class="font-bold text-[13px]">💰 Quick Stats</h3><span class="text-[10px] px-2 py-1 rounded-full bg-[#00E5CC]/15 text-[#00E5CC] border border-[#00E5CC]/20">Live</span></div><div class="grid grid-cols-2 gap-3 text-[11px]"><div class="bg-black/20 border border-[#00E5CC]/10 p-3 rounded-xl flex justify-between"><span class="opacity-60">Trading:</span><span id="quickBal2" class="font-bold">0</span></div><div class="bg-black/20 border border-[#00E5CC]/10 p-3 rounded-xl flex justify-between"><span class="opacity-60">Withdrawable:</span><span id="quickWd2" class="font-bold text-[#00E5CC]">0</span></div></div></div>
-<div id="history" class="mt-4 space-y-2.5"></div>
+<div id='tab-trades' class='tab-content hidden'>
+<div class='mx-4 mt-4'><div class='flex justify-between items-center'><h3 class='font-bold text-sm'>Live AI Trades</h3><span id='todayTrades' class='text-[11px]' style='color:var(--text3)'>0 trades</span></div><p class='text-[10px] mt-0.5' style='color:var(--text3)'>Times in IST</p><div class='mt-3 rounded-2xl overflow-hidden' style='background:var(--surface);border:1px solid var(--border)'><div class='overflow-x-auto'><table class='w-full text-[10px]'><thead><tr style='color:var(--text3)'><th class='text-left p-2.5'>Time</th><th class='text-left p-2.5'>Pair</th><th class='text-left p-2.5'>Side</th><th class='text-right p-2.5'>Entry</th><th class='text-right p-2.5'>Exit</th><th class='text-right p-2.5'>Lev</th><th class='text-right p-2.5'>PNL</th></tr></thead><tbody id='tradesTableBody'></tbody></table></div></div></div>
 </div>
 
-<!-- REF TAB - Full original with direct refs, team, earnings, logs -->
-<div id="tab-ref" class="tab-content hidden px-4 pt-5">
-<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl card-teal flex items-center justify-center">👥</div><div><h2 class="font-black text-[17px]">Invite & Earn</h2><p class="text-xs opacity-60">10 levels • 7% L1 + 1% L2-L10</p></div></div>
-<div class="mt-5 card-teal rounded-[22px] p-5">
-<p class="text-[10px] opacity-50 tracking-[3px] font-black">YOUR REFERRAL LINK</p>
-<div class="mt-3 bg-black/40 border border-[#00E5CC]/15 rounded-xl p-3 flex items-center gap-2"><p id="refLink" class="flex-1 text-[11px] mono truncate opacity-80">—</p><button onclick="copyRef()" class="btn-teal px-4 py-2 rounded-full text-[11px]">Copy</button></div>
-<div class="mt-4 grid grid-cols-3 gap-2.5 text-center">
-<div class="bg-black/30 border border-[#00E5CC]/10 rounded-xl p-3"><p id="directCount" class="font-black text-lg">0</p><p class="text-[9px] opacity-50 tracking-widest font-bold mt-1">DIRECT</p></div>
-<div class="bg-black/30 border border-[#00E5CC]/10 rounded-xl p-3"><p id="teamDep" class="font-black text-lg">0 USDT</p><p class="text-[9px] opacity-50 tracking-widest font-bold mt-1">TEAM VOL</p></div>
-<div class="bg-[#00E5CC]/15 border border-[#00E5CC]/25 rounded-xl p-3"><p id="refEarned" class="font-black text-lg text-[#00E5CC]">0</p><p class="text-[9px] opacity-60 tracking-widest font-bold mt-1">EARNED</p></div>
+<div id='tab-referral' class='tab-content hidden'>
+<div class='mx-4 mt-4 rounded-2xl p-4' style='background:var(--surface);border:1px solid var(--border)'><h3 class='font-bold'>Refer & Earn 7% + 1%</h3><p id='refLink' class='mt-2 p-2.5 rounded-xl text-[11px] break-all mono' style='background:var(--border)'>Loading...</p><div class='mt-2 flex gap-2'><button onclick='copyRef()' class='flex-1 py-2.5 rounded-full font-bold text-xs' style='background:var(--text);color:var(--bg)'>Copy Link</button><button onclick='shareRef()' class='flex-1 py-2.5 rounded-full font-bold text-xs' style='background:#FFD60A;color:#000'>Share</button></div><div class='mt-3 grid grid-cols-3 gap-2 text-center'><div class='p-2.5 rounded-xl' style='background:var(--border)'><p id='directCount' class='font-black'>0</p><p class='text-[9px]' style='color:var(--text3)'>Direct</p></div><div class='p-2.5 rounded-xl' style='background:var(--border)'><p id='teamDep' class='font-black'>0 USDT</p><p class='text-[9px]' style='color:var(--text3)'>Team Dep</p></div><div class='p-2.5 rounded-xl' style='background:rgba(255,214,10,0.1)'><p id='refEarned' class='font-black' style='color:#FFD60A'>0 USDT</p><p class='text-[9px]' style='color:var(--text3)'>Earned</p></div></div></div>
+<div class='mx-4 mt-4'><h4 class='font-bold text-sm'>Direct Referrals</h4><div id='directList' class='mt-2 space-y-2'></div></div>
+<div class='mx-4 mt-4'><h4 class='font-bold text-sm'>Earnings History</h4><div id='refHistory' class='mt-2 space-y-2'></div></div>
 </div>
-<div class="mt-4 flex gap-2"><button onclick="copyRef()" class="flex-1 h-[40px] rounded-full bg-white/5 border border-[#00E5CC]/15 text-[11px] font-bold">📋 Copy Link</button><button onclick="shareRef()" class="flex-1 h-[40px] rounded-full btn-teal text-[11px]">↗ Share</button></div>
-</div>
-<p class="mt-5 text-[12px] font-bold opacity-80">Direct Referrals</p>
-<div id="directList" class="mt-3 space-y-2"></div>
-<p class="mt-5 text-[12px] font-bold opacity-80">Earnings History</p>
-<div id="refHistory" class="mt-3 space-y-2"></div>
+<div id='tab-history' class='tab-content hidden'><div class='mx-4 mt-4'><h3 class='font-bold'>History</h3><div id='history' class='mt-3 space-y-2'></div></div></div>
+
+<div class='fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[420px] flex justify-around py-2 px-2 z-50' style='background:color-mix(in srgb, var(--bg) 90%, transparent);backdrop-filter:blur(16px);border-top:1px solid var(--border)'>
+<button onclick="switchTab('home')" data-bottom="home" class='bottom-tab tab-active flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px]'><span class="text-base">&#127968;</span>Home</button>
+<button onclick="switchTab('tasks')" data-bottom="tasks" class='bottom-tab flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px] relative' style='opacity:0.5'><span class="text-base">&#127919;</span>Tasks<span id='bottomTaskDot' class='hidden absolute top-0.5 right-1.5 w-2 h-2 bg-red-500 rounded-full'></span></button>
+<button onclick="switchTab('trades')" data-bottom="trades" class='bottom-tab flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px]' style='opacity:0.5'><span class="text-base">&#128200;</span>Trades</button>
+<button onclick="switchTab('referral')" data-bottom="referral" class='bottom-tab flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px]' style='opacity:0.5'><span class="text-base">&#128101;</span>Referral</button>
+<button onclick="switchTab('history')" data-bottom="history" class='bottom-tab flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px]' style='opacity:0.5'><span class="text-base">&#128336;</span>History</button>
 </div>
 
-<nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] h-[88px] bg-[#061414]/95 backdrop-blur-2xl border-t border-[#00E5CC]/15 flex items-center justify-around px-1 z-40">
-<button onclick="switchTab('home')" data-tab="home" class="nav-btn tab-active flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl text-[9px] font-black"><span class="text-[16px]">🏠</span>Home</button>
-<button onclick="switchTab('trades')" data-tab="trades" class="nav-btn opacity-60 flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl text-[9px] font-bold"><span class="text-[16px]">📈</span>Trades</button>
-<button onclick="switchTab('tasks')" data-tab="tasks" class="nav-btn opacity-60 flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl text-[9px] font-bold"><span class="text-[16px]">🎯</span>Tasks</button>
-<button onclick="switchTab('wallet')" data-tab="wallet" class="nav-btn opacity-60 flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl text-[9px] font-bold"><span class="text-[16px]">💼</span>Wallet</button>
-<button onclick="switchTab('ref')" data-tab="ref" class="nav-btn opacity-60 flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl text-[9px] font-bold"><span class="text-[16px]">👥</span>Invite</button>
-</nav>
+<div id='depositModal' class='hidden fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100] p-4'><div class='rounded-3xl p-5 w-full max-w-[380px] max-h-[90vh] overflow-y-auto' style='background:var(--surface);border:1px solid var(--border)'><h3 class='font-black text-lg'>Deposit USDT</h3><p class='text-[10px] mt-0.5' style='color:var(--text2)'>5 networks supported</p>
+<div class='mt-3 grid grid-cols-5 gap-1.5'>
+<button onclick="selectNet('TRC20')" id='net-TRC20' class='net-btn py-2.5 rounded-full text-[11px] font-black' style='background:var(--text);color:var(--bg)'>TRC20</button>
+<button onclick="selectNet('BEP20')" id='net-BEP20' class='net-btn py-2.5 rounded-full text-[11px]' style='background:var(--border)'>BEP20</button>
+<button onclick="selectNet('ERC20')" id='net-ERC20' class='net-btn py-2.5 rounded-full text-[11px]' style='background:var(--border)'>ERC20</button>
+<button onclick="selectNet('TON')" id='net-TON' class='net-btn py-2.5 rounded-full text-[11px]' style='background:var(--border)'>TON</button>
+<button onclick="selectNet('SOL')" id='net-SOL' class='net-btn py-2.5 rounded-full text-[11px]' style='background:var(--border)'>SOL</button>
+</div>
+<div class='mt-3 p-2.5 rounded-xl text-[10px]' style='background:var(--border)'><p style='color:var(--text2)'>Address for <span id='netLabel'>TRC20</span>:</p><p id='netAddr' class='mono font-bold break-all mt-0.5 text-[11px]'>TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC</p></div>
+<div class='mt-3'><label class='text-[10px] font-bold' style='color:var(--text3)'>Amount (min $20)</label><input id='depAmount' type='number' value='100' class='mt-1 w-full p-3 text-sm rounded-xl border outline-none' style='background:var(--input);border-color:var(--border)'></div>
+<button onclick='createDeposit()' class='mt-3 w-full py-3 rounded-full font-bold text-sm' style='background:#FFD60A;color:#000'>Create Invoice (15 min)</button>
+<div id='invoiceBox' class='hidden mt-3 p-3 rounded-xl text-[11px]' style='background:var(--border);border:1px solid rgba(255,214,10,0.15)'><p style='color:var(--text2)'>Send exactly to:</p><p id='invAddr' class='mono font-bold break-all mt-0.5 text-[11px]'></p><p class='mt-1'>Amount: <span id='invAmount' class='font-bold'></span> <span id='invNet'></span></p><p class='mt-0.5' style='color:var(--text3)'>Invoice: <span id='invId' class='mono'></span></p><p class='mt-1.5' style='color:#FFD60A'>Auto verified every 15 sec</p></div>
+<button onclick="closeDeposit()" class='mt-2 w-full py-3 rounded-full text-xs font-bold' style='background:var(--border)'>Close</button></div></div>
 
-<!-- Deposit Modal FULL with QR + Copy + Steps -->
-<div id="depositModal" class="hidden fixed inset-0 z-[100] bg-black/70 backdrop-blur-xl flex items-center justify-center p-4">
-<div class="w-full max-w-[400px] bg-[#0A1F1F] border border-[#00E5CC]/20 rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] max-h-[90vh] overflow-hidden flex flex-col">
-<div class="sticky top-0 bg-[#0A1F1F]/95 backdrop-blur-xl p-4 border-b border-[#00E5CC]/10 flex justify-between items-center rounded-t-[24px] z-10">
-<div><p class="font-black text-[15px]">Deposit USDT</p><p class="text-[10px] opacity-60">Choose network • Instant</p></div>
-<button onclick="closeDeposit()" class="w-8 h-8 rounded-full bg-[#0F2F2F] border border-[#00E5CC]/15 flex items-center justify-center text-[12px]">✕</button>
-</div>
-<div class="p-4 overflow-y-auto max-h-[70vh]">
-<div class="flex gap-2"><div class="flex-1 bg-[#061414] border border-[#00E5CC]/15 rounded-xl px-3 h-[44px] flex items-center gap-2"><span class="text-[12px] font-black text-[#00E5CC]">USDT</span><input id="depAmount" type="number" placeholder="50" class="flex-1 bg-transparent outline-none text-[14px] font-black text-white"></div><button onclick="setDep(20)" class="h-[44px] px-3 rounded-xl bg-[#0F2F2F] border border-[#00E5CC]/15 text-[11px] font-bold">$20</button><button onclick="setDep(100)" class="h-[44px] px-3 rounded-xl bg-[#0F2F2F] border border-[#00E5CC]/15 text-[11px] font-bold">$100</button><button onclick="setDep(500)" class="h-[44px] px-3 rounded-xl bg-[#0F2F2F] border border-[#00E5CC]/15 text-[11px] font-bold">$500</button></div>
-<p class="mt-3 text-[10px] font-black tracking-[1.5px] opacity-60">NETWORK • TAP TO SELECT</p>
-<div class="mt-2 grid grid-cols-2 gap-2">
-<button onclick="selectNet('TRC20')" id="net-TRC20" class="net-card active text-left card-teal rounded-[12px] p-2.5 flex items-center gap-2.5"><div class="w-8 h-8 rounded-full bg-[#26A17B] flex items-center justify-center text-[11px] font-black">T</div><div><p class="font-bold text-[11px]">TRC20</p><p class="text-[9px] opacity-60">Tron • Best</p></div></button>
-<button onclick="selectNet('BEP20')" id="net-BEP20" class="net-card text-left card-teal rounded-[12px] p-2.5 flex items-center gap-2.5"><div class="w-8 h-8 rounded-full bg-[#F3BA2F] flex items-center justify-center text-black text-[11px] font-black">B</div><div><p class="font-bold text-[11px]">BEP20</p><p class="text-[9px] opacity-60">BSC • $0.2</p></div></button>
-<button onclick="selectNet('ERC20')" id="net-ERC20" class="net-card text-left card-teal rounded-[12px] p-2.5 flex items-center gap-2.5"><div class="w-8 h-8 rounded-full bg-[#627EEA] flex items-center justify-center text-[11px] font-black">E</div><div><p class="font-bold text-[11px]">ERC20</p><p class="text-[9px] opacity-60">ETH • $10</p></div></button>
-<button onclick="selectNet('TON')" id="net-TON" class="net-card text-left card-teal rounded-[12px] p-2.5 flex items-center gap-2.5"><div class="w-8 h-8 rounded-full bg-[#0088CC] flex items-center justify-center text-[11px] font-black">TON</div><div><p class="font-bold text-[11px]">TON</p><p class="text-[9px] opacity-60">Cheap</p></div></button>
-</div>
-<button onclick="createDeposit()" class="mt-4 w-full h-[48px] rounded-full btn-teal text-[13px]">Continue → Create Invoice</button>
-
-<div id="invoiceBox" class="hidden mt-4">
-<div class="card-teal rounded-[18px] p-4">
-<div class="flex justify-between items-center"><p class="font-black text-[12px]">💳 Pay Invoice</p><span class="text-[9px] px-2 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/20 font-bold">⏱ 30 min</span></div>
-<div class="progress mt-2"><i></i></div>
-<div class="mt-3 flex flex-col items-center gap-3 sm:flex-row sm:items-start">
-<div id="qrcode" class="w-[140px] h-[140px] bg-white rounded-[16px] p-3 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.2)]"></div>
-<div class="flex-1 w-full min-w-0 bg-black/20 rounded-xl p-3 border border-[#00E5CC]/10">
-<div class="grid grid-cols-2 gap-3">
-<div><p class="text-[9px] opacity-60 tracking-widest font-black">AMOUNT</p><p id="invAmount" class="font-black text-[16px] mt-1 text-[#00E5CC]">—</p></div>
-<div><p class="text-[9px] opacity-60 tracking-widest font-black">NETWORK</p><p id="invNet" class="font-bold text-[13px] mt-1">—</p></div>
-</div>
-<div class="mt-3"><p class="text-[9px] opacity-60 tracking-widest font-black">INVOICE ID</p><p id="invId" class="mono text-[10px] mt-1 break-all bg-black/30 p-2 rounded-lg">—</p></div>
-</div>
-</div>
-<div class="mt-3 bg-black/30 border border-[#00E5CC]/15 rounded-xl p-2.5">
-<p class="text-[9px] opacity-50 tracking-[1.5px] font-black">📋 ADDRESS • TAP COPY</p>
-<div class="mt-2 flex gap-2"><p id="invAddr" class="flex-1 mono text-[10px] break-all bg-[#061414] p-2.5 rounded-lg border border-[#00E5CC]/10">—</p><button onclick="copyInvAddr()" class="w-[48px] h-[48px] rounded-lg btn-teal font-black text-[10px]">COPY</button></div>
-<div class="mt-2 grid grid-cols-2 gap-2">
-<button onclick="copyInvAddr()" class="h-[38px] rounded-full bg-[#0F2F2F] border border-[#00E5CC]/15 font-bold text-[11px]">📋 Copy Addr</button>
-<button onclick="copyInvAmount()" class="h-[38px] rounded-full bg-[#0F2F2F] border border-[#00E5CC]/15 font-bold text-[11px]">💰 Copy Amt</button>
-</div>
-</div>
-<div class="mt-3 rounded-xl p-3" style="background:linear-gradient(145deg,rgba(0,229,204,0.10),rgba(0,229,204,0.03));border:1px solid rgba(0,229,204,0.20)">
-<p class="font-black text-[11px] text-[#00E5CC]">✅ How to pay:</p>
-<ol class="mt-2 space-y-1.5 text-[10px] leading-relaxed">
-<li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-[#00E5CC]/20 border border-[#00E5CC]/30 flex items-center justify-center text-[9px] font-black shrink-0">1</span><span>Copy address & amount</span></li>
-<li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-[#00E5CC]/20 border border-[#00E5CC]/30 flex items-center justify-center text-[9px] font-black shrink-0">2</span><span>Open wallet → Send → Paste</span></li>
-<li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-[#00E5CC]/20 border border-[#00E5CC]/30 flex items-center justify-center text-[9px] font-black shrink-0">3</span><span>Send exact on <b id="invNet2">TRC20</b> only</span></li>
-</ol>
-</div>
-<div class="mt-3 flex gap-2"><button onclick="shareInvoice()" class="flex-1 h-[38px] rounded-full bg-white/5 border border-[#00E5CC]/15 font-bold text-[11px]">↗ Share</button><button onclick="closeDeposit()" class="flex-1 h-[38px] rounded-full bg-white text-black font-bold text-[11px]">✓ Done</button></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-
-<div id="withdrawModal" class="hidden fixed inset-0 z-[100] bg-black/70 backdrop-blur-xl flex items-center justify-center p-4">
-<div class="w-full max-w-[400px] bg-[#0A1F1F] border border-[#00E5CC]/20 rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] overflow-hidden">
-<div class="p-4 flex justify-between items-center border-b border-[#00E5CC]/10"><div><p class="font-black text-[14px]">Withdraw USDT</p><p class="text-[10px] opacity-60">Min $1 • Withdrawable only</p></div><button onclick="closeWithdraw()" class="w-8 h-8 rounded-full bg-[#0F2F2F] border border-[#00E5CC]/15 flex items-center justify-center text-[12px]">✕</button></div>
-<div class="p-4">
-<p class="text-[10px] tracking-[1.5px] opacity-60 font-black">SELECT NETWORK</p>
-<div class="mt-2 grid grid-cols-3 gap-2"><button onclick="selectWdNet('TRC20')" id="wdnet-TRC20" class="net-card active h-[44px] rounded-xl card-teal font-black text-[11px]">TRC20</button><button onclick="selectWdNet('BEP20')" id="wdnet-BEP20" class="net-card h-[44px] rounded-xl card-teal font-black text-[11px]">BEP20</button><button onclick="selectWdNet('ERC20')" id="wdnet-ERC20" class="net-card h-[44px] rounded-xl card-teal font-black text-[11px]">ERC20</button></div>
-<div class="mt-3 bg-[#061414] border border-[#00E5CC]/15 rounded-xl px-3 h-[44px] flex items-center gap-2"><input id="wdAmount" type="number" placeholder="Amount" class="flex-1 bg-transparent outline-none font-black text-[13px] text-white"><span class="opacity-60 text-[11px] font-bold">USDT</span></div>
-<div class="mt-2 bg-[#061414] border border-[#00E5CC]/15 rounded-xl px-3 h-[44px] flex items-center gap-2"><input id="wdAddr" placeholder="Paste your wallet address" class="flex-1 bg-transparent outline-none text-[11px] mono text-white"></div>
-<p class="mt-2 text-[10px] opacity-60">Available: <span id="wdAvail" class="text-[#00E5CC] font-black">0</span> USDT</p>
-<button onclick="submitWithdraw()" class="mt-4 w-full h-[48px] rounded-full btn-teal text-[13px]">Withdraw Now →</button>
-</div>
-</div>
+<div id='withdrawModal' class='hidden fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100] p-4'><div class='rounded-3xl p-5 w-full max-w-[360px]' style='background:var(--surface);border:1px solid var(--border)'><h3 class='font-black'>Withdraw USDT</h3><p class='text-[11px] mt-0.5' style='color:var(--text2)'>Min $10 | Withdrawable: <span id='wdBal' class='font-bold' style='color:#FFD60A'>0</span></p><div id='wdGate' class='hidden mt-2 p-2.5 rounded-xl text-[11px]' style='background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.15)'><p class='font-bold text-red-400'>Complete Tasks First</p><p id='wdGateText' class='mt-0.5' style='color:var(--text2)'></p><button onclick="switchTab('tasks');closeWithdraw();" class='mt-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold' style='background:var(--text);color:var(--bg)'>Go to Tasks</button></div><div class='mt-3'><label class='text-[10px] font-bold' style='color:var(--text3)'>Amount</label><input id='wdAmount' type='number' class='mt-1 w-full p-2.5 text-sm rounded-xl border outline-none' style='background:var(--input);border-color:var(--border)'></div><div class='mt-2'><label class='text-[10px] font-bold' style='color:var(--text3)'>Address</label><input id='wdAddr' placeholder='USDT address' class='mt-1 w-full p-2.5 text-sm rounded-xl border outline-none mono' style='background:var(--input);border-color:var(--border)'></div><div class='mt-2 grid grid-cols-5 gap-1'><button onclick="selectWdNet('TRC20')" id='wdnet-TRC20' class='wdnet-btn py-2 rounded-full text-[10px] font-bold' style='background:var(--text);color:var(--bg)'>TRC20</button><button onclick="selectWdNet('BEP20')" id='wdnet-BEP20' class='wdnet-btn py-2 rounded-full text-[10px]' style='background:var(--border)'>BEP20</button><button onclick="selectWdNet('ERC20')" id='wdnet-ERC20' class='wdnet-btn py-2 rounded-full text-[10px]' style='background:var(--border)'>ERC20</button><button onclick="selectWdNet('TON')" id='wdnet-TON' class='wdnet-btn py-2 rounded-full text-[10px]' style='background:var(--border)'>TON</button><button onclick="selectWdNet('SOL')" id='wdnet-SOL' class='wdnet-btn py-2 rounded-full text-[10px]' style='background:var(--border)'>SOL</button></div><button onclick='submitWithdraw()' class='mt-3 w-full py-2.5 rounded-full font-bold text-sm' style='background:#FFD60A;color:#000'>Submit Withdrawal</button><button onclick='closeWithdraw()' class='mt-2 w-full py-2.5 rounded-full text-xs font-bold' style='background:var(--border)'>Close</button></div></div>
 </div>
 
 <script>
-let userId=0,username='',currentNet='TRC20',currentWdNet='TRC20';
+let tg=window.Telegram?.WebApp;let userId=123456789;let username='';let currentNet='TRC20';let currentWdNet='TRC20';let allTasks=[];
+const DEPOSIT_ADDRS={TRC20:"TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC",BEP20:"0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",ERC20:"0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",TON:"UQBlNeJ90El3LxBhikC2HUG3mqS16k1q177AjcNAaURVa_zw",SOL:"87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7"};
+if(tg){try{tg.ready();tg.expand();let u=tg.initDataUnsafe?.user;if(u){userId=u.id;username=u.username||'';}}catch(e){}}
 const $=id=>document.getElementById(id);
-function setDep(v){$('depAmount').value=v;}
-function selectNet(n){currentNet=n;document.querySelectorAll('.net-card').forEach(e=>{if(e.id.startsWith('net-'))e.classList.remove('active')});document.getElementById('net-'+n)?.classList.add('active');}
-function selectWdNet(n){currentWdNet=n;document.querySelectorAll('[id^="wdnet-"]').forEach(e=>e.classList.remove('active'));document.getElementById('wdnet-'+n)?.classList.add('active');}
-function switchTab(t){document.querySelectorAll('.tab-content').forEach(e=>e.classList.add('hidden'));document.getElementById('tab-'+t).classList.remove('hidden');document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('tab-active');b.classList.add('opacity-60')});document.querySelector(`[data-tab="${t}"]`)?.classList.add('tab-active');document.querySelector(`[data-tab="${t}"]`)?.classList.remove('opacity-60'); if(t==='wallet') loadHistory(); if(t==='ref') loadReferral(); if(t==='tasks') loadTasks();}
-function openDeposit(){$('depositModal').classList.remove('hidden');}
-function closeDeposit(){$('depositModal').classList.add('hidden');}
-function openWithdraw(){$('withdrawModal').classList.remove('hidden');$('wdAvail').innerText=$('withdrawableTop')?.innerText||'0';}
+const safeSet=(id,v)=>{let e=$(id);if(e)e.innerText=v;};
+const safeHTML=(id,h)=>{let e=$(id);if(e)e.innerHTML=h;};
+
+function toggleTheme(){
+let c=document.documentElement.getAttribute('data-theme')||'dark';
+let n=c==='dark'?'light':'dark';
+document.documentElement.setAttribute('data-theme',n);
+document.body.setAttribute('data-theme',n);
+localStorage.setItem('theme',n);
+let btn=$('themeBtn');
+if(btn) btn.innerHTML=n==='dark'?'&#9788;':'&#9790;';
+}
+(function(){
+let s=localStorage.getItem('theme')||'dark';
+document.documentElement.setAttribute('data-theme',s);
+document.body.setAttribute('data-theme',s);
+setTimeout(()=>{let b=$('themeBtn');if(b)b.innerHTML=s==='dark'?'&#9788;':'&#9790;';},50);
+})();
+
+function switchTab(tab){
+document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
+let el=$('tab-'+tab);if(el)el.classList.remove('hidden');
+document.querySelectorAll('.bottom-tab').forEach(b=>{b.classList.remove('tab-active');b.style.opacity='0.5';});
+let active=document.querySelector(`[data-bottom="${tab}"]`);if(active){active.classList.add('tab-active');active.style.opacity='1';}
+if(tab==='tasks')loadTasks();
+if(tab==='trades')loadTrades();
+if(tab==='referral')loadReferral();
+if(tab==='history')loadHistory();
+}
+function selectNet(net){
+currentNet=net;
+document.querySelectorAll('.net-btn').forEach(b=>{b.style.background='var(--border)';b.style.color='var(--text)';b.classList.remove('font-black');});
+let a=$('net-'+net);if(a){a.style.background='var(--text)';a.style.color='var(--bg)';a.classList.add('font-black');}
+safeSet('netLabel',net);safeSet('netAddr',DEPOSIT_ADDRS[net]||'');
+}
+function selectWdNet(net){currentWdNet=net;document.querySelectorAll('.wdnet-btn').forEach(b=>{b.style.background='var(--border)';b.style.color='var(--text)';b.classList.remove('font-bold');});let a=$('wdnet-'+net);if(a){a.style.background='var(--text)';a.style.color='var(--bg)';a.classList.add('font-bold');}}
+function openDeposit(){selectNet(currentNet);$('depositModal').classList.remove('hidden');}
+function closeDeposit(){$('depositModal').classList.add('hidden');$('invoiceBox').classList.add('hidden');}
+function openWithdraw(){$('withdrawModal').classList.remove('hidden');}
 function closeWithdraw(){$('withdrawModal').classList.add('hidden');}
-function safeSet(id,v){const el=$(id);if(el) el.innerText=v;}
-function safeHTML(id,h){const el=$(id);if(el) el.innerHTML=h;}
-async function init(){try{const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();userId=tg.initDataUnsafe?.user?.id||0;username=tg.initDataUnsafe?.user?.username||'';}if(!userId){const p=new URLSearchParams(location.search);userId=parseInt(p.get('user_id')||'0');username=p.get('username')||'';}if(!userId) userId=123456;let r=await fetch('/api/user/'+userId+'?username='+encodeURIComponent(username));let u=await r.json();if(u.is_banned){document.body.innerHTML='<div class="p-10 text-center">🚫 Banned</div>';return;}safeSet('balTopMini',(u.balance||0).toFixed(2));safeSet('withdrawableTop',(u.withdrawable||0).toFixed(2));safeSet('totalDep',(u.total_deposit||0).toFixed(2));safeSet('totalWd',(u.total_withdraw||0).toFixed(2));safeSet('quickBal',(u.balance||0).toFixed(2));safeSet('quickWd',(u.withdrawable||0).toFixed(2));const qb2=$('quickBal2');if(qb2) qb2.innerText=(u.balance||0).toFixed(2);const qw2=$('quickWd2');if(qw2) qw2.innerText=(u.withdrawable||0).toFixed(2);safeSet('profitVal',(u.profit||0).toFixed(2));let pct=0;if(u.balance>=15000)pct=14.9;else if(u.balance>=6000)pct=13.6;else if(u.balance>=2500)pct=11.8;else if(u.balance>=1200)pct=10.9;else if(u.balance>=500)pct=9.6;else if(u.balance>=120)pct=8.9;else if(u.balance>=20)pct=7.6;safeSet('tierPct',pct+'%');safeSet('dailyPct',pct+'%');safeSet('perHour',((u.balance||0)*pct/100/24).toFixed(4));if(u.ai_end){let end=new Date(u.ai_end);function upd(){let d=end-new Date();if(d<=0){safeSet('aiTimer','Expired');safeSet('aiStatus','EXPIRED');return;}let dd=Math.floor(d/86400000),hh=Math.floor(d%86400000/3600000),mm=Math.floor(d%3600000/60000),ss=Math.floor(d%60000/1000);safeSet('aiTimer',`${dd}d ${hh}h ${mm}m ${ss}s`);}setInterval(upd,1000);upd();}await loadTasks();await loadTrades();await loadHistory();await loadReferral();}catch(e){console.error(e);}}
-async function loadTasks(){try{let r=await fetch('/api/tasks/'+userId);let t=await r.json();let inc=(t.mandatory||[]).filter(x=>!x.completed).length;if(inc>0){$('mandatoryGate').classList.remove('hidden');$('gateText').innerText=`Complete ${inc} mandatory tasks to unlock withdrawal`;}else $('mandatoryGate').classList.add('hidden');let q='';(t.all||[]).slice(0,2).forEach(task=>{q+=`<div class='card-teal rounded-xl p-3 flex justify-between items-center'><div class='flex items-center gap-2'><span>${task.icon||'🚀'}</span><span class='text-[12px] font-bold'>${task.title}</span></div><span class='text-[10px] ${task.completed?'text-[#00E5CC]':'text-amber-300'} font-bold'>${task.completed?'Done ✓':'Pending'}</span></div>`;});safeHTML('tasksQuick',q||'<p class="text-xs opacity-50">All tasks done ✓</p>');safeSet('tasksQuickCount',`${(t.all||[]).filter(x=>x.completed).length}/${(t.all||[]).length}`);let h='';(t.all||[]).forEach(task=>{h+=`<div class='card-teal rounded-[18px] p-4 flex justify-between items-center ${task.completed?'opacity-60':''}'><div class='flex items-center gap-3'><div class='w-11 h-11 rounded-xl bg-[#0A2222] border border-[#00E5CC]/15 flex items-center justify-center text-lg'>${task.icon||'🚀'}</div><div><p class='font-black text-[13px]'>${task.title}</p><p class='text-[11px] opacity-60'>+${task.reward} USDT • ${task.is_mandatory?'Mandatory':''}</p></div></div><div>${task.completed?'<span class="text-[#00E5CC] text-xs font-black">✓ Done</span>':`<button onclick="verifyTask(${task.id})" class='btn-white px-4 py-2 rounded-full text-xs'>Verify</button>`}</div></div>`;});safeHTML('tasksList',h||'<p class="opacity-50">No tasks</p>');}catch(e){console.error(e);}}
-async function verifyTask(id){try{let r=await fetch('/api/tasks/verify/'+userId+'/'+id,{method:'POST'});let j=await r.json();if(j.ok){alert('Verified! +1 USDT');await loadTasks();await init();}else alert('❌ '+(j.error||'Failed')+'\n\nMake sure you JOINED the group in Telegram first!');}catch(e){alert(e);}}
-function copyInvAddr(){let a=$('invAddr').innerText;navigator.clipboard.writeText(a);const btns=document.querySelectorAll('button');btns.forEach(b=>{if(b.innerText==='COPY'){b.innerText='✓ COPIED';setTimeout(()=>b.innerText='COPY',1500);}});}
-function copyInvAmount(){let a=$('invAmount').innerText;navigator.clipboard.writeText(a.replace(' USDT',''));alert('Amount copied: '+a);}
-function shareInvoice(){let addr=$('invAddr').innerText,amt=$('invAmount').innerText;if(navigator.share){navigator.share({title:'PT_AI Invoice',text:`Pay ${amt} to ${addr} (${$('invNet').innerText})`});}else copyInvAddr();}
-async function createDeposit(){let amt=parseFloat($('depAmount').value||0);if(amt<1){alert('Min $1');return;}try{let r=await fetch('/api/deposit/invoice/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,network:currentNet})});let j=await r.json();if(j.invoice_id){$('invAddr').innerText=j.address;$('invAmount').innerText=j.amount+' USDT';$('invNet').innerText=j.network;const n2=$('invNet2');if(n2) n2.innerText=j.network;$('invId').innerText=j.invoice_id;$('invoiceBox').classList.remove('hidden');$('qrcode').innerHTML='';new QRCode($('qrcode'),{text:j.address,width:128,height:128});}else alert('Error: '+(j.detail||JSON.stringify(j)));}catch(e){alert('Invoice failed: '+e);}}
-async function submitWithdraw(){let amt=parseFloat($('wdAmount').value||0),addr=$('wdAddr').value.trim();if(amt<1){alert('Min $1');return;}if(!addr){alert('Enter address');return;}try{let r=await fetch('/api/withdraw/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,address:addr,network:currentWdNet})});let j=await r.json();if(j.ok){alert('Withdrawal requested!');closeWithdraw();init();}else alert(j.error||j.detail||'Failed');}catch(e){alert('Withdraw failed: '+e);}}
-async function loadTrades(){try{let r=await fetch('/api/binance/trades');let d=await r.json();let total=d.summary.total_trades||0,exp=d.all_trades_count||16,win=d.summary.win_rate||0,next=d.summary.next_trade_in||'',cur=d.summary.current_ist||'';safeSet('todayTrades',`${total}/${exp} • ${win}% win • ${cur}`);safeSet('binanceStatus',`Live • ${total}/${exp} • Next: ${next}`);let html='';if(total===0){html=`<tr><td colspan="7" class="p-8 text-center"><p class="text-2xl">🌙</p><p class="font-bold mt-2">Day just started</p><p class="text-xs opacity-60 mt-1">First trade at 00:05-00:25 IST. Current: ${cur}</p><p class="text-xs opacity-50 mt-2">Next: ${next}</p></td></tr>`;}else{(d.trades||[]).forEach((t,idx)=>{let sideColor=t.side==='LONG'?'bg-blue-500/20 text-blue-300 border border-blue-500/20':'bg-red-500/20 text-red-300 border border-red-500/20';let pnlColor=t.is_profit?'text-[#00E5CC]':'text-red-400';let isLatest=idx===(d.trades.length-1);html+=`<tr class='border-t border-[#00E5CC]/10 hover:bg-[#00E5CC]/5 ${isLatest?'bg-[#00E5CC]/5':''}'><td class='p-3'>${t.time} IST ${isLatest?'<span class="text-[8px] bg-[#00E5CC] text-black px-1.5 py-0.5 rounded-full font-black ml-1">LATEST</span>':''}</td><td class='p-3 font-bold'>${t.pair}</td><td class='p-3'><span class='px-2 py-1 rounded-full text-[11px] ${sideColor}'>${t.side} ${t.leverage}x</span></td><td class='p-3 text-right'>${t.entry_price}</td><td class='p-3 text-right font-mono text-[#00E5CC]'>${t.exit_price}</td><td class='p-3 text-right'>${t.leverage}x</td><td class='p-3 text-right font-bold ${pnlColor}'>${t.pnl_percent>0?'+':''}${t.pnl_percent}%</td></tr>`;});html+=`<tr><td colspan="7" class="p-3 text-center opacity-60 text-[11px]">Next trade: ${next} • Total today: ${exp} • Win rate 50-70% • Updates as day progresses</td></tr>`;}safeHTML('tradesTableBody',html);}catch(e){console.error('trades',e);}}
-async function loadHistory(){try{let r=await fetch('/api/history/'+userId);let h=await r.json();let html='';(h.deposits||[]).slice().reverse().forEach(d=>{let sc=d.status==='verified'?'text-[#00E5CC]':d.status==='awaiting_payment'?'text-amber-300':'text-red-400';let icon=d.status==='verified'?'✅':d.status==='awaiting_payment'?'⏳':'❌';html+=`<div class='card-teal rounded-xl p-3 flex justify-between items-center'><div class='flex items-center gap-2.5'><span class='w-8 h-8 rounded-full bg-[#00E5CC]/20 border border-[#00E5CC]/30 text-[#00E5CC] flex items-center justify-center text-[11px] font-black'>₮</span><div><p class='font-bold text-[12px]'>${icon} ${d.amount} USDT ${d.network} • ${d.status}</p><p class='text-[10px] opacity-50 mono'>${d.invoice_id||''} • ${d.created_at?d.created_at.slice(0,16):''}</p></div></div><span class='text-[10px] ${sc} font-bold'>${d.status}</span></div>`;});(h.withdrawals||[]).slice().reverse().forEach(w=>{let sc=w.status=='approved'?'text-[#00E5CC]':'text-amber-300';html+=`<div class='card-teal rounded-xl p-3 flex justify-between items-center'><div class='flex items-center gap-2.5'><span class='w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 flex items-center justify-center text-[11px] font-black'>↑</span><div><p class='font-bold text-[12px]'>Withdraw ${w.amount} USDT • ${w.network}</p><p class='text-[10px] opacity-50'>${w.created_at?w.created_at.slice(0,16):''} • ${w.status}</p></div></div><span class='text-[10px] ${sc} font-bold'>${w.status}</span></div>`;});safeHTML('history',html||'<p class="opacity-50 text-sm p-4">No history yet</p>');}catch(e){console.error(e);}}
-async function loadReferral(){try{let r=await fetch('/api/referral/'+userId);let d=await r.json();safeSet('refLink',d.ref_link||'');safeSet('directCount',d.direct_count||0);safeSet('teamDep',(parseFloat(d.total_team_deposit)||0).toFixed(2)+' USDT');safeSet('refEarned',(parseFloat(d.total_earnings)||0).toFixed(2)+' USDT');let directHtml='';if(d.direct_refs && d.direct_refs.length>0){d.direct_refs.forEach(ref=>{directHtml+=`<div class='card-teal rounded-xl p-3 flex justify-between items-center'><div><p class='font-bold text-[12px]'>${ref.username||'user_'+ref.user_id}</p><p class='text-[10px] opacity-50'>ID: ${ref.user_id} • Deposit: $${(parseFloat(ref.deposit)||0).toFixed(2)}</p></div><span class='text-[#00E5CC] text-[10px] font-bold'>Active</span></div>`;});}else{directHtml='<p class="opacity-50 text-sm">No direct referrals yet. Share your link!</p>';}safeHTML('directList',directHtml);let histHtml='';if(d.logs && d.logs.length>0){d.logs.forEach(log=>{histHtml+=`<div class='card-teal rounded-xl p-3 flex justify-between' style='background:linear-gradient(145deg,rgba(0,229,204,0.10),rgba(0,229,204,0.02))'><div><p class='font-bold text-[12px]'>From: ${log.from} • Level ${log.level} • ${log.percent}%</p><p class='text-[10px] opacity-60'>Deposit $${(parseFloat(log.deposit)||0).toFixed(2)} • ${log.at?log.at.slice(0,16):''}</p></div><span class='text-[#00E5CC] font-bold text-[12px]'>+$${(parseFloat(log.bonus)||0).toFixed(2)}</span></div>`;});}else{histHtml='<p class="opacity-50 text-sm">No earnings yet.</p>';}safeHTML('refHistory',histHtml);}catch(e){console.error(e);}}
+function openPTGroup(){window.open('https://t.me/PT_AI_Trading_Group','_blank');}
+function openPTChannel(){window.open('https://t.me/PT_AI_Trading','_blank');}
+function openPTSupport(){window.open('https://t.me/PT_AI_Support','_blank');}
+
+async function apiFetch(url,opts={}){
+try{
+let r=await fetch(url,opts);
+if(!r.ok)throw new Error('HTTP '+r.status);
+return await r.json();
+}catch(e){
+console.error('API error:',url,e);
+return null;
+}
+}
+
+async function init(){
+let me=await apiFetch('/api/me/'+userId);
+if(!me){console.error('Failed to load user');return;}
+if(me.is_banned){$('bannedOverlay').classList.remove('hidden');return;}
+let bal=parseFloat(me.balance||0);let wd=parseFloat(me.withdrawable||0);let profit=parseFloat(me.profit||0);let tier=me.daily_percent||0;
+safeSet('tierPct',tier.toFixed(1));safeSet('dailyPct',tier.toFixed(1)+'%');
+safeSet('balTopMini',bal.toFixed(2));safeSet('withdrawableTop',wd.toFixed(2)+' USDT');
+safeSet('profitVal',profit.toFixed(2));safeSet('perHour',(bal*tier/2400).toFixed(4));
+safeSet('quickBal',bal.toFixed(2)+' USDT');safeSet('quickWd',wd.toFixed(2)+' USDT');
+safeSet('totalDep',(parseFloat(me.total_deposit||0)).toFixed(2)+' USDT');safeSet('totalWd',(parseFloat(me.total_withdraw||0)).toFixed(2)+' USDT');
+safeSet('wdBal',wd.toFixed(2));
+let timerInterval=null;
+function startAiTimer(endStr){
+if(timerInterval)clearInterval(timerInterval);
+function tick(){
+try{
+let timerEl=$('aiTimer');
+if(!endStr){if(timerEl)timerEl.innerText='Deposit $20 to start';safeSet('aiStatus','INACTIVE');return;}
+let end=new Date(endStr);let now=new Date();let diff=end-now;
+if(diff<=0){if(timerEl){timerEl.innerText='EXPIRED';timerEl.style.background='rgba(239,68,68,0.2)';timerEl.style.color='#ef4444';}safeSet('aiStatus','EXPIRED');clearInterval(timerInterval);return;}
+let days=Math.floor(diff/(1000*60*60*24));let hours=Math.floor((diff%(1000*60*60*24))/(1000*60*60));let mins=Math.floor((diff%(1000*60*60))/(1000*60));let secs=Math.floor((diff%(1000*60))/1000);
+if(timerEl)timerEl.innerText=`${String(days).padStart(2,'0')}d ${String(hours).padStart(2,'0')}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`;
+safeSet('aiStatus','AI ACTIVE');
+}catch(e){console.error('timer',e);}
+}
+tick();timerInterval=setInterval(tick,1000);
+}
+startAiTimer(me.ai_end);
+if(!me.all_tasks_done&&me.mandatory_tasks_total>0){
+$('mandatoryGate').classList.remove('hidden');$('taskBadge').classList.remove('hidden');$('taskBadge').innerText=`${me.mandatory_tasks_done}/${me.mandatory_tasks_total} Tasks`;$('bottomTaskDot').classList.remove('hidden');
+safeSet('gateText',`Complete ${me.mandatory_tasks_total-me.mandatory_tasks_done} more mandatory tasks to unlock withdrawal.`);
+$('wdGate').classList.remove('hidden');safeSet('wdGateText',`Done: ${me.mandatory_tasks_done}/${me.mandatory_tasks_total}`);
+}else{$('mandatoryGate').classList.add('hidden');$('taskBadge').classList.add('hidden');$('bottomTaskDot').classList.add('hidden');$('wdGate').classList.add('hidden');}
+}
+async function loadTasks(isQuick=false){
+let data=await apiFetch('/api/tasks/list/'+userId);
+if(!data)return;
+allTasks=data;
+let total=allTasks.length;let done=allTasks.filter(t=>t.user_status==='verified').length;let earn=done*1;
+safeSet('t_total',total);safeSet('t_done',done);safeSet('t_earn',earn.toFixed(2));safeSet('tasksQuickCount',`${done}/${total} done`);
+let quickHtml=allTasks.slice(0,2).map(t=>{
+let isDone=t.user_status==='verified';
+return `<div class="flex justify-between items-center p-3 rounded-xl border ${isDone?'task-done':'task-pending'}"><div class="flex items-center gap-2"><div><p class="font-bold text-xs">${t.title}</p><p class="text-[10px]" style="color:var(--text2)">+${t.reward} USDT</p></div></div><span class="text-[10px] font-bold" style="color:${isDone?'#10b981':'#FFD60A'}">${isDone?'Done':'Pending'}</span></div>`;
+}).join('');if(!quickHtml)quickHtml='<p class="text-[11px]" style="color:var(--text3)">No tasks yet.</p>';safeHTML('tasksQuick',quickHtml);
+let fullHtml=allTasks.map(t=>{
+let isDone=t.user_status==='verified';let isJoined=t.user_status==='joined';
+let btn=isDone?`<span class="px-3 py-1.5 rounded-full text-[11px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">Verified +${t.reward} USDT</span>`:`<div class="flex gap-2"><button onclick="joinTask(${t.id},'${t.group_link}')" class="flex-1 px-3 py-2 rounded-full text-[11px] font-bold" style="background:var(--text);color:var(--bg)">${isJoined?'Re-Join':'Join'}</button><button onclick="verifyTask(${t.id})" class="flex-1 px-3 py-2 rounded-full text-[11px] font-bold" style="background:#FFD60A;color:#000">Verify</button></div>`;
+return `<div class="rounded-2xl p-4 border ${isDone?'task-done':'task-pending'}"><div class="flex gap-3"><div><p class="font-bold text-sm">${t.title} ${t.is_mandatory?'<span class="text-[9px] px-1.5 py-0.5 rounded-full" style="background:rgba(239,68,68,0.15);color:#ef4444">MANDATORY</span>':''}</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">${t.description||''}</p><p class="text-[10px] mt-1.5" style="color:var(--text3)">${t.reward} USDT | ${t.user_status}</p></div></div><div class="mt-3">${btn}</div></div>`;
+}).join('');if(!fullHtml)fullHtml=`<div class="rounded-2xl p-5 text-center" style="background:var(--surface);border:1px solid var(--border)"><p class="text-2xl">&#127919;</p><p class="font-bold mt-2">No Tasks Yet</p><p class="text-[11px] mt-1" style="color:var(--text2)">Admin needs to create tasks.</p></div>`;safeHTML('tasksListFull',fullHtml);
+}
+async function joinTask(taskId,link){try{await fetch('/api/tasks/join/'+userId+'/'+taskId,{method:'POST'});}catch(e){}window.open(link,'_blank');}
+async function verifyTask(taskId){let r=await fetch('/api/tasks/verify/'+userId+'/'+taskId,{method:'POST'});let j=await r.json();if(j.ok){alert(j.message||'Verified! +1 USDT');await loadTasks();await init();}else{alert(''+(j.error||'Failed')+'\n\nMake sure you JOINED the group first!');}}
+async function createDeposit(){let amt=parseFloat($('depAmount').value||0);if(amt<20){alert('Min $20');return;}let r=await fetch('/api/deposit/invoice/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,network:currentNet})});let j=await r.json();if(j.error){alert(j.error);return;}$('invAddr').innerText=j.address;$('invAmount').innerText=j.amount+' USDT';$('invNet').innerText=j.network;$('invId').innerText=j.invoice_id;$('invoiceBox').classList.remove('hidden');}
+async function submitWithdraw(){let amt=parseFloat($('wdAmount').value||0);let addr=$('wdAddr').value.trim();if(amt<10){alert('Min $10');return;}if(!addr){alert('Enter address');return;}let r=await fetch('/api/withdraw/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,address:addr,network:currentWdNet})});let j=await r.json();if(j.ok){alert('Withdrawal requested!');closeWithdraw();init();}else alert(j.error||'Failed');}
+async function loadTrades(){
+let d=await apiFetch('/api/binance/trades');
+if(!d)return;
+let totalVisible=d.summary.total_trades;let expected=d.all_trades_count||16;let winRate=d.summary.win_rate||0;let nextTrade=d.summary.next_trade_in||'';let currentIST=d.summary.current_ist||'';
+safeSet('todayTrades',`${totalVisible}/${expected} trades | ${winRate}% win | ${currentIST}`);
+let html='';
+if(totalVisible===0){html=`<tr><td colspan="7" class="p-6 text-center"><p class="text-xl">&#127769;</p><p class="font-bold mt-2">Day just started</p><p class="text-[11px] mt-1" style="color:var(--text2)">First trade at 00:05 IST. Now: ${currentIST}</p></td></tr>`;}else{
+(d.trades||[]).forEach((t,idx)=>{
+let sideColor=t.side==='LONG'?'#3b82f6':'#ef4444';let pnlColor=t.is_profit?'#10b981':'#ef4444';
+let isLatest=idx===(d.trades.length-1);
+html+=`<tr class="border-t" style="border-color:var(--border)"><td class="p-2.5">${t.time} ${isLatest?'<span class="text-[8px] px-1 py-0.5 rounded-full font-black" style="background:#FFD60A;color:#000">LATEST</span>':''}</td><td class="p-2.5 font-bold">${t.pair}</td><td class="p-2.5"><span class="px-1.5 py-0.5 rounded-full text-[10px]" style="background:${sideColor}22;color:${sideColor}">${t.side} ${t.leverage}x</span></td><td class="p-2.5 text-right">${t.entry_price}</td><td class="p-2.5 text-right mono">${t.exit_price}</td><td class="p-2.5 text-right">${t.leverage}x</td><td class="p-2.5 text-right font-bold" style="color:${pnlColor}">${t.pnl_percent>0?'+':''}${t.pnl_percent}%</td></tr>`;
+});
+html+=`<tr><td colspan="7" class="p-2.5 text-center text-[10px]" style="color:var(--text3)">Next: ${nextTrade} | Total: ${expected}</td></tr>`;
+}
+safeHTML('tradesTableBody',html);
+}
+
+async function loadHistory(){
+let h=await apiFetch('/api/history/'+userId);
+if(!h)return;
+let html='';
+(h.deposits||[]).forEach(d=>{
+let sc=d.status==='verified'?'#10b981':d.status==='awaiting_payment'?'#eab308':'#ef4444';
+html=`<div class="p-3 rounded-lg flex justify-between" style="background:var(--border)"><div class="flex items-center gap-2"><span class="w-6 h-6 rounded-full flex items-center justify-center text-[10px]" style="background:#26A17B;color:#fff">$</span> <span class="text-[11px]">${d.amount} USDT ${d.network} | <span style="color:${sc}">${d.status}</span><br><span class="text-[10px]" style="color:var(--text3)">${d.invoice_id||''} | ${d.created_at?d.created_at.slice(0,16):''}</span></span></div></div>`+html;
+});
+(h.withdrawals||[]).forEach(w=>{
+let sc=w.status=='approved'?'#10b981':'#eab308';
+html+=`<div class="p-3 rounded-lg flex justify-between items-center" style="background:var(--border)"><div class="flex items-center gap-2"><span class="w-6 h-6 rounded-full flex items-center justify-center text-[10px]" style="background:#FFD60A;color:#000">$</span> <span class="text-[11px]">Withdraw ${w.amount} USDT<br><span class="text-[10px]" style="color:var(--text3)">${w.created_at?w.created_at.slice(0,16):''}</span></span></div><span class="text-[11px] font-bold" style="color:${sc}">${w.status}</span></div>`;
+});
+if(!html)html='<p style="color:var(--text3)">No history yet</p>';safeHTML('history',html);
+}
+async function loadReferral(){
+let d=await apiFetch('/api/referral/'+userId);
+if(!d)return;
+safeSet('refLink',d.ref_link||'');safeSet('directCount',d.direct_count||0);
+safeSet('teamDep',(parseFloat(d.total_team_deposit)||0).toFixed(2)+' USDT');
+safeSet('refEarned',(parseFloat(d.total_earnings)||0).toFixed(2)+' USDT');
+let directHtml='';
+if(d.direct_refs&&d.direct_refs.length>0){d.direct_refs.forEach(ref=>{
+directHtml+=`<div class="p-3 rounded-xl flex justify-between items-center" style="background:var(--border)"><div><p class="font-bold text-sm">${ref.username||'user_'+ref.user_id}</p><p class="text-[10px]" style="color:var(--text3)">ID: ${ref.user_id} | Dep: $${(parseFloat(ref.deposit)||0).toFixed(2)}</p></div><span class="text-[11px]" style="color:#10b981">Active</span></div>`;
+});}else{directHtml='<p class="text-[11px]" style="color:var(--text3)">No referrals yet.</p>';}
+safeHTML('directList',directHtml);
+let histHtml='';
+if(d.logs&&d.logs.length>0){d.logs.forEach(log=>{
+histHtml+=`<div class="p-3 rounded-xl flex justify-between" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15)"><div><p class="font-bold text-[11px]">From: ${log.from} | L${log.level} | ${log.percent}%</p><p class="text-[10px]" style="color:var(--text2)">$${(parseFloat(log.deposit)||0).toFixed(2)} | ${log.at?log.at.slice(0,16):''}</p></div><span class="font-bold" style="color:#10b981">+$${(parseFloat(log.bonus)||0).toFixed(2)}</span></div>`;
+});}else{histHtml='<p class="text-[11px]" style="color:var(--text3)">No earnings yet.</p>';}
+safeHTML('refHistory',histHtml);
+}
 function copyRef(){let el=$('refLink');if(el){navigator.clipboard.writeText(el.innerText);alert('Copied!');}}
-function shareRef(){let el=$('refLink');if(el && navigator.share){navigator.share({title:'PT_AI Trading',text:'Join PT_AI Trading',url:el.innerText});}else copyRef();}
-init();
-setInterval(init,20000);
+function shareRef(){let el=$('refLink');if(el&&navigator.share){navigator.share({title:'PT_AI Trading',text:'Join PT_AI Trading',url:el.innerText});}else{copyRef();}}
+async function hideInitialLoader(){let l=$('initialLoader');if(l){l.style.opacity='0';setTimeout(()=>{l.style.display='none';},400);}}
+init().then(()=>{hideInitialLoader();}).catch(()=>{hideInitialLoader();});
+setTimeout(hideInitialLoader,2500);
+setInterval(init,15000);
 </script>
 </body></html>
