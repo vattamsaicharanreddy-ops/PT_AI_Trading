@@ -109,7 +109,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 </div>
 
 <script>
-let tg=window.Telegram?.WebApp;let userId=123456789;let username='';let currentNet='TRC20';let currentWdNet='TRC20';let allTasks=[];
+let tg=window.Telegram?.WebApp;let userId=123456789;let username='';let currentNet='TRC20';let currentWdNet='TRC20';let allTasks=[];let aiTimerInterval=null;
 const DEPOSIT_ADDRS={TRC20:"TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC",BEP20:"0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",ERC20:"0xDD190484827BB976acEB975C94d5c58fc8c87Cfd",TON:"UQBlNeJ90El3LxBhikC2HUG3mqS16k1q177AjcNAaURVa_zw",SOL:"87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7"};
 if(tg){try{tg.ready();tg.expand();let u=tg.initDataUnsafe?.user;if(u){userId=u.id;username=u.username||'';}}catch(e){}}
 const $=id=>document.getElementById(id);
@@ -269,21 +269,20 @@ safeSet('profitVal',profit.toFixed(2));safeSet('perHour',(bal*tier/2400).toFixed
 safeSet('quickBal',bal.toFixed(2)+' USDT');safeSet('quickWd',wd.toFixed(2)+' USDT');
 safeSet('totalDep',(parseFloat(me.total_deposit||0)).toFixed(2)+' USDT');safeSet('totalWd',(parseFloat(me.total_withdraw||0)).toFixed(2)+' USDT');
 safeSet('wdBal',wd.toFixed(2));
-let timerInterval=null;
 function startAiTimer(endStr){
-if(timerInterval)clearInterval(timerInterval);
+if(aiTimerInterval)clearInterval(aiTimerInterval);aiTimerInterval=null;
 function tick(){
 try{
 let timerEl=$('aiTimer');
 if(!endStr){if(timerEl)timerEl.innerText='Deposit $20 to start';safeSet('aiStatus','INACTIVE');return;}
 let end=new Date(endStr);let now=new Date();let diff=end-now;
-if(diff<=0){if(timerEl){timerEl.innerText='EXPIRED';timerEl.style.background='rgba(239,68,68,0.2)';timerEl.style.color='#ef4444';}safeSet('aiStatus','EXPIRED');clearInterval(timerInterval);return;}
+if(diff<=0){if(timerEl){timerEl.innerText='EXPIRED';timerEl.style.background='rgba(239,68,68,0.2)';timerEl.style.color='#ef4444';}safeSet('aiStatus','EXPIRED');clearInterval(aiTimerInterval);aiTimerInterval=null;return;}
 let days=Math.floor(diff/(1000*60*60*24));let hours=Math.floor((diff%(1000*60*60*24))/(1000*60*60));let mins=Math.floor((diff%(1000*60*60))/(1000*60));let secs=Math.floor((diff%(1000*60))/1000);
 if(timerEl)timerEl.innerText=`${String(days).padStart(2,'0')}d ${String(hours).padStart(2,'0')}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`;
 safeSet('aiStatus','AI ACTIVE');
 }catch(e){console.error('timer',e);}
 }
-tick();timerInterval=setInterval(tick,1000);
+tick();if(endStr)aiTimerInterval=setInterval(tick,1000);
 }
 startAiTimer(me.ai_end);
 if(!me.all_tasks_done&&me.mandatory_tasks_total>0){
