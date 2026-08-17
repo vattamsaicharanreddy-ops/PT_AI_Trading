@@ -55,6 +55,41 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 .empty-state{text-align:center;padding:32px 16px}
 .empty-state svg{margin:0 auto 12px;opacity:0.4}
 .haptic-ripple{position:relative;overflow:hidden}
+.task-card{border-radius:20px;padding:16px;position:relative;overflow:hidden;transition:transform 0.2s}
+.task-card:active{transform:scale(0.98)}
+.task-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:20px 20px 0 0}
+.task-card-join{background:linear-gradient(145deg,rgba(255,214,10,0.1),var(--surface));border:1px solid rgba(255,214,10,0.2)}
+.task-card-join::before{background:linear-gradient(90deg,#FFD60A,#f59e0b)}
+.task-card-referral{background:linear-gradient(145deg,rgba(108,59,255,0.1),var(--surface));border:1px solid rgba(108,59,255,0.2)}
+.task-card-referral::before{background:linear-gradient(90deg,#6C3BFF,#A5A6F6)}
+.task-card-deposit{background:linear-gradient(145deg,rgba(38,161,123,0.1),var(--surface));border:1px solid rgba(38,161,123,0.2)}
+.task-card-deposit::before{background:linear-gradient(90deg,#26A17B,#10b981)}
+.task-card-done{background:linear-gradient(145deg,rgba(16,185,129,0.12),var(--surface));border:1px solid rgba(16,185,129,0.25)!important}
+.task-card-done::before{background:linear-gradient(90deg,#10b981,#34d399)}
+.task-icon{width:40px;height:40px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.task-icon-join{background:rgba(255,214,10,0.15)}
+.task-icon-referral{background:rgba(108,59,255,0.15)}
+.task-icon-deposit{background:rgba(38,161,123,0.15)}
+.task-reward-pill{padding:4px 12px;border-radius:999px;font-size:12px;font-weight:900;white-space:nowrap}
+.task-reward-join{background:rgba(255,214,10,0.15);color:#FFD60A;border:1px solid rgba(255,214,10,0.2)}
+.task-reward-referral{background:rgba(108,59,255,0.15);color:#A5A6F6;border:1px solid rgba(108,59,255,0.2)}
+.task-reward-deposit{background:rgba(38,161,123,0.15);color:#26A17B;border:1px solid rgba(38,161,123,0.2)}
+.task-reward-done{background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.2)}
+.task-progress-track{height:6px;border-radius:999px;background:var(--border);overflow:hidden}
+.task-progress-fill{height:100%;border-radius:999px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1)}
+.task-progress-gold{background:linear-gradient(90deg,#FFD60A,#f59e0b)}
+.task-progress-purple{background:linear-gradient(90deg,#6C3BFF,#A5A6F6)}
+.task-progress-teal{background:linear-gradient(90deg,#26A17B,#10b981)}
+.task-progress-green{background:linear-gradient(90deg,#10b981,#34d399)}
+.task-cta{width:100%;padding:12px;border-radius:14px;font-size:13px;font-weight:800;border:none;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px}
+.task-cta:active{transform:scale(0.97)}
+.task-cta-gold{background:linear-gradient(135deg,#FFD60A,#f59e0b);color:#000;box-shadow:0 4px 15px rgba(255,214,10,0.3)}
+.task-cta-purple{background:linear-gradient(135deg,#6C3BFF,#8A5CFF);color:#fff;box-shadow:0 4px 15px rgba(108,59,255,0.3)}
+.task-cta-teal{background:linear-gradient(135deg,#26A17B,#10b981);color:#fff;box-shadow:0 4px 15px rgba(38,161,123,0.3)}
+.task-cta-green{background:linear-gradient(135deg,#10b981,#34d399);color:#fff;box-shadow:0 4px 15px rgba(16,185,129,0.3)}
+.task-cta-done{background:rgba(16,185,129,0.15);color:#10b981;box-shadow:none}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.task-shimmer{background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.05) 50%,transparent 100%);background-size:200% 100%;animation:shimmer 2s infinite}
 </style>
 </head>
 <body class='min-h-screen flex justify-center' data-theme='dark'>
@@ -97,7 +132,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 
 <div id='tab-tasks' class='tab-content hidden'>
 <div class='mx-4 mt-4 rounded-3xl p-5' style='background:linear-gradient(135deg,rgba(108,59,255,0.15),var(--surface),rgba(255,214,10,0.06));border:1px solid rgba(108,59,255,0.15)'>
-<h2 class='text-lg font-black'>Join-to-Earn Tasks</h2><p class='text-[11px] mt-1.5 leading-relaxed' style='color:var(--text2)'>Join groups, earn <b style="color:#FFD60A">1 USDT</b> per task. Mandatory tasks block withdrawal.</p>
+<h2 class='text-lg font-black'>Join-to-Earn Tasks</h2><p class='text-[11px] mt-1.5 leading-relaxed' style='color:var(--text2)'>Join groups, refer friends & earn <b style="color:#FFD60A">USDT</b>. Mandatory tasks block withdrawal.</p>
 <div class='mt-3 grid grid-cols-3 gap-2 text-center'><div class='rounded-xl p-2.5' style='background:var(--border)'><p id='t_total' class='font-black text-lg'>0</p><p class='text-[9px]' style='color:var(--text3)'>TOTAL</p></div><div class='rounded-xl p-2.5' style='background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.15)'><p id='t_done' class='font-black text-lg text-emerald-400'>0</p><p class='text-[9px]' style='color:var(--text3)'>DONE</p></div><div class='rounded-xl p-2.5' style='background:rgba(255,214,10,0.1);border:1px solid rgba(255,214,10,0.15)'><p id='t_earn' class='font-black text-lg' style='color:#FFD60A'>0</p><p class='text-[9px]' style='color:var(--text3)'>USDT EARNED</p></div></div>
 </div>
 <div id='tasksListFull' class='mx-4 mt-4 space-y-3'></div>
@@ -516,28 +551,36 @@ safeSet('t_total',total);safeSet('t_done',done);safeSet('t_earn',earn.toFixed(2)
 let quickHtml=allTasks.slice(0,3).map(t=>{
 let isDone=t.user_status==='verified';
 let isRef=t.task_type==='referral';
-let extra=isRef?`<span class="text-[9px] px-1 py-0.5 rounded-full" style="background:rgba(124,77,255,0.15);color:#7c4dff">REF</span>`:'';
-return `<div class="flex justify-between items-center p-3 rounded-xl border ${isDone?'task-done':'task-pending'}"><div class="flex items-center gap-2"><div><p class="font-bold text-xs">${t.title} ${extra}</p><p class="text-[10px]" style="color:var(--text2)">+${t.reward} USDT</p></div></div><span class="text-[10px] font-bold" style="color:${isDone?'#10b981':'#FFD60A'}">${isDone?'Done':'Pending'}</span></div>`;
+let minDep=t.min_deposit||0;
+let isDepositRef=isRef&&minDep>0;
+let cardType=isDone?'done':isDepositRef?'deposit':isRef?'referral':'join';
+let icon=isDepositRef?'&#128142;':isRef?'&#128101;':'&#127919;';
+return `<div class="flex justify-between items-center p-3 rounded-2xl task-card-${cardType}" style="border:1px solid var(--border)"><div class="flex items-center gap-2.5"><div class="task-icon task-icon-${cardType}" style="width:32px;height:32px;border-radius:10px;font-size:16px">${icon}</div><div><p class="font-bold text-xs">${t.title}</p><p class="text-[10px]" style="color:var(--text2)">+${t.reward} USDT</p></div></div><span class="text-[10px] font-bold px-2 py-1 rounded-full" style="background:${isDone?'rgba(16,185,129,0.15)':'rgba(255,214,10,0.15)'};color:${isDone?'#10b981':'#FFD60A'}">${isDone?'&#10003; Done':'Pending'}</span></div>`;
 }).join('');if(!quickHtml)quickHtml='<p class="text-[11px]" style="color:var(--text3)">No tasks yet.</p>';safeHTML('tasksQuick',quickHtml);
 let fullHtml=allTasks.map(t=>{
 let isDone=t.user_status==='verified';let isJoined=t.user_status==='joined';
 let isRef=t.task_type==='referral';
+let minDep=t.min_deposit||0;
+let isDepositRef=isRef&&minDep>0;
+let cardType=isDone?'done':isDepositRef?'deposit':isRef?'referral':'join';
+let icon=isDepositRef?'<div class="task-icon task-icon-deposit">&#128142;</div>':isRef?'<div class="task-icon task-icon-referral">&#128101;</div>':'<div class="task-icon task-icon-join">&#127919;</div>';
 let refCur=t.referral_current||0;let refTgt=t.referral_target||0;
 let refComplete=isRef&&refCur>=refTgt&&refTgt>0;
+let pct=refTgt>0?Math.min(100,Math.round(refCur/refTgt*100)):0;
+let progressColor=cardType==='done'?'task-progress-green':cardType==='deposit'?'task-progress-teal':cardType==='referral'?'task-progress-purple':'task-progress-gold';
 let btn='';
 if(isDone){
-btn=`<span class="px-3 py-1.5 rounded-full text-[11px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">Verified +${t.reward} USDT</span>`;
+btn=`<div class="flex items-center justify-center gap-2 task-cta task-cta-done"><span style="font-size:16px">&#10003;</span> Verified +${t.reward} USDT</div>`;
 }else if(isRef){
-let pct=refTgt>0?Math.min(100,Math.round(refCur/refTgt*100)):0;
-let barColor=refComplete?'#10b981':'#FFD60A';
-btn=`<div class="w-full"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold" style="color:var(--text2)">${refCur}/${refTgt} friends</span><span class="text-[10px] font-bold" style="color:${barColor}">${pct}%</span></div><div class="w-full h-2 rounded-full overflow-hidden" style="background:var(--border)"><div class="h-full rounded-full transition-all" style="width:${pct}%;background:${barColor}"></div></div>${refComplete?`<button onclick="verifyTask(${t.id})" class="w-full mt-2 px-3 py-2 rounded-full text-[11px] font-bold" style="background:#10b981;color:#fff">Claim +${t.reward} USDT</button>`:''}</div>`;
+let statusText=isDepositRef?`${refCur}/${refTgt} friends deposited ≥${minDep} USDT`:`${refCur}/${refTgt} friends joined`;
+btn=`<div class="mt-3"><div class="flex justify-between items-center mb-1.5"><span class="text-[11px] font-bold" style="color:var(--text2)">${statusText}</span><span class="text-[11px] font-black" style="color:${refComplete?'#10b981':'var(--text2)'}">${pct}%</span></div><div class="task-progress-track"><div class="task-progress-fill ${progressColor}" style="width:${pct}%"></div></div>${refComplete?`<button onclick="verifyTask(${t.id})" class="task-cta task-cta-${cardType} mt-3">&#127881; Claim +${t.reward} USDT</button>`:`<p class="text-[10px] mt-2 font-semibold" style="color:var(--text3)">${isDepositRef?'Deposit referrals unlock bigger rewards':'Keep inviting to unlock reward'}</p>`}</div>`;
 }else{
-btn=`<div class="flex gap-2"><button onclick="joinTask(${t.id},'${t.group_link||''}')" class="flex-1 px-3 py-2 rounded-full text-[11px] font-bold" style="background:var(--text);color:var(--bg)">${isJoined?'Re-Join':'Join'}</button><button onclick="verifyTask(${t.id})" class="flex-1 px-3 py-2 rounded-full text-[11px] font-bold" style="background:#FFD60A;color:#000">Verify</button></div>`;
+let ctaClass=cardType==='join'?'task-cta-gold':'task-cta-'+cardType;
+btn=`<div class="flex gap-2 mt-1"><button onclick="joinTask(${t.id},'${t.group_link||''}')" class="flex-1 task-cta task-cta-${cardType}" style="padding:10px;font-size:12px">${isJoined?'&#128279; Re-Join':'&#128279; Join Group'}</button><button onclick="verifyTask(${t.id})" class="flex-1 task-cta task-cta-${cardType}" style="padding:10px;font-size:12px">&#10003; Verify</button></div>`;
 }
-let refBadge=isRef?'<span class="text-[9px] px-1.5 py-0.5 rounded-full ml-1" style="background:rgba(124,77,255,0.15);color:#7c4dff">REFERRAL</span>':'';
-let mandBadge=t.is_mandatory?'<span class="text-[9px] px-1.5 py-0.5 rounded-full" style="background:rgba(239,68,68,0.15);color:#ef4444">MANDATORY</span>':'';
-let statusLine=isRef?`<p class="text-[10px] mt-1.5" style="color:var(--text3)">${t.reward} USDT | Referral Task | ${refCur}/${refTgt}</p>`:`<p class="text-[10px] mt-1.5" style="color:var(--text3)">${t.reward} USDT | ${t.user_status}</p>`;
-return `<div class="rounded-2xl p-4 border ${isDone?'task-done':'task-pending'}"><div class="flex gap-3"><div class="flex-1"><p class="font-bold text-sm">${t.title} ${mandBadge}${refBadge}</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">${t.description||''}</p>${statusLine}</div></div><div class="mt-3">${btn}</div></div>`;
+let badge=isDone?'<span class="task-reward-pill task-reward-done">&#10003; Done</span>':isDepositRef?`<span class="task-reward-pill task-reward-deposit">+${t.reward} USDT</span>`:isRef?`<span class="task-reward-pill task-reward-referral">+${t.reward} USDT</span>`:`<span class="task-reward-pill task-reward-join">+${t.reward} USDT</span>`;
+let typeTag=isDepositRef?'<span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(38,161,123,0.15);color:#26A17B;border:1px solid rgba(38,161,123,0.2)">&#128142; DEPOSIT REF</span>':isRef?'<span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(108,59,255,0.15);color:#A5A6F6;border:1px solid rgba(108,59,255,0.2)">&#128101; REFERRAL</span>':t.is_mandatory?'<span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.2)">&#9888; MANDATORY</span>':'';
+return `<div class="task-card task-card-${cardType}"><div class="flex items-start gap-3">${icon}<div class="flex-1 min-w-0"><div class="flex items-center justify-between gap-2"><p class="font-black text-sm truncate">${t.title}</p>${badge}</div><p class="text-[11px] mt-1 leading-relaxed" style="color:var(--text2)">${t.description||''}</p>${typeTag?`<div class="mt-1.5">${typeTag}</div>`:''}</div></div>${btn}</div>`;
 }).join('');if(!fullHtml)fullHtml=`<div class="rounded-2xl p-5 text-center" style="background:var(--surface);border:1px solid var(--border)"><p class="text-2xl">&#127919;</p><p class="font-bold mt-2">No Tasks Yet</p><p class="text-[11px] mt-1" style="color:var(--text2)">Admin needs to create tasks.</p></div>`;safeHTML('tasksListFull',fullHtml);
 }catch(e){console.error('loadTasks error:',e);safeHTML('tasksQuick','<p class="text-[11px]" style="color:var(--text3)">No tasks yet.</p>');safeHTML('tasksListFull',`<div class="rounded-2xl p-5 text-center" style="background:var(--surface);border:1px solid var(--border)"><p class="font-bold">No Tasks Yet</p><p class="text-[11px] mt-1" style="color:var(--text2)">Admin needs to create tasks.</p></div>`);}
 }

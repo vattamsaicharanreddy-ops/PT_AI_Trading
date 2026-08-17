@@ -53,21 +53,25 @@ def _seed_referral_tasks():
         cur = cursor(conn)
         cur.execute(f"SELECT COUNT(*) as cnt FROM tasks WHERE task_type='referral'")
         cnt = val(cur.fetchone(), "cnt", 0) or 0
-        if cnt > 0:
+        if cnt >= 4:
             return
         now = datetime.utcnow().isoformat()
         seed_tasks = [
-            ("Refer 1 Friend", "Invite 1 friend to join any task group", 0.5, '{"ref_count":1}'),
-            ("Refer 3 Friends", "Invite 3 friends to join any task groups", 1.5, '{"ref_count":3}'),
-            ("Refer 5 Friends", "Invite 5 friends to join any task groups", 3.0, '{"ref_count":5}'),
+            ("Refer 1 Friend", "Invite 1 friend to join any task group", 0.5, '{"ref_count":1}', 100),
+            ("Refer 3 Friends", "Invite 3 friends to join any task groups", 1.5, '{"ref_count":3}', 101),
+            ("Refer 5 Friends", "Invite 5 friends to join any task groups", 3.0, '{"ref_count":5}', 102),
+            ("Super Recruiter", "Refer 5 friends who each deposit \u226520 USDT", 25.0, '{"ref_count":5,"min_deposit":20}', 103),
         ]
-        for i, (title, desc, reward, config) in enumerate(seed_tasks):
+        for title, desc, reward, config, sort_o in seed_tasks:
+            cur.execute(f"SELECT id FROM tasks WHERE title={ph()} LIMIT 1", (title,))
+            if cur.fetchone():
+                continue
             cur.execute(
                 f"INSERT INTO tasks (title,description,reward,reward_type,is_active,is_mandatory,icon,task_type,task_config,sort_order,created_at) VALUES ({ph()},{ph()},{ph()},'withdrawable',1,0,'', 'referral',{ph()},{ph()},{ph()})",
-                (title, desc, reward, config, 100 + i, now),
+                (title, desc, reward, config, sort_o, now),
             )
         conn.commit()
-        logger.info("Seeded 3 referral tasks")
+        logger.info("Seeded referral tasks (checked/inserted)")
     except Exception as e:
         logger.error(f"Seed referral tasks error: {e}")
     finally:
@@ -665,12 +669,14 @@ def tasks_list(user_id: int):
             ref_count = val(cur.fetchone(), "cnt", 0) or 0
         except Exception:
             pass
+        ref_deposit_count_cache = {}
         out = []
         for t in tasks:
             s = ut.get(t.get("id"))
             tt = val(t, "task_type", "join") or "join"
             referral_current = 0
             referral_target = 0
+            min_deposit = 0
             if tt == "referral":
                 cfg = val(t, "task_config", "") or ""
                 try:
@@ -678,13 +684,28 @@ def tasks_list(user_id: int):
                 except Exception:
                     cfg_obj = {}
                 referral_target = int(cfg_obj.get("ref_count", 0))
-                referral_current = min(ref_count, referral_target) if referral_target > 0 else ref_count
+                min_deposit = float(cfg_obj.get("min_deposit", 0) or 0)
+                if min_deposit > 0:
+                    cache_key = int(min_deposit)
+                    if cache_key not in ref_deposit_count_cache:
+                        try:
+                            cur.execute(
+                                f"SELECT COUNT(*) as cnt FROM users WHERE referred_by={ph()} AND total_deposit>={ph()}",
+                                (user_id, min_deposit),
+                            )
+                            ref_deposit_count_cache[cache_key] = val(cur.fetchone(), "cnt", 0) or 0
+                        except Exception:
+                            ref_deposit_count_cache[cache_key] = 0
+                    referral_current = min(ref_deposit_count_cache[cache_key], referral_target) if referral_target > 0 else ref_deposit_count_cache[cache_key]
+                else:
+                    referral_current = min(ref_count, referral_target) if referral_target > 0 else ref_count
             out.append({
                 **t,
                 "user_status": s.get("status", "pending") if s else "pending",
                 "reward_claimed": s.get("reward_claimed", 0) if s else 0,
                 "referral_current": referral_current,
                 "referral_target": referral_target,
+                "min_deposit": min_deposit,
             })
         return out
     except Exception as e:
@@ -729,10 +750,20 @@ def _verify_referral_task(cur, conn, user_id, task):
     except Exception:
         cfg = {}
     ref_count = int(cfg.get("ref_count", 0))
-    cur.execute(f"SELECT COUNT(*) as cnt FROM users WHERE referred_by={ph()}", (user_id,))
-    actual = val(cur.fetchone(), "cnt", 0) or 0
-    if actual < ref_count:
-        return {"ok": False, "error": f"You have {actual}/{ref_count} referrals. Keep inviting!"}
+    min_deposit = float(cfg.get("min_deposit", 0) or 0)
+    if min_deposit > 0:
+        cur.execute(
+            f"SELECT COUNT(*) as cnt FROM users WHERE referred_by={ph()} AND total_deposit>={ph()}",
+            (user_id, min_deposit),
+        )
+        actual = val(cur.fetchone(), "cnt", 0) or 0
+        if actual < ref_count:
+            return {"ok": False, "error": f"You have {actual}/{ref_count} qualifying referrals (≥{int(min_deposit)} USDT deposit). Keep inviting!"}
+    else:
+        cur.execute(f"SELECT COUNT(*) as cnt FROM users WHERE referred_by={ph()}", (user_id,))
+        actual = val(cur.fetchone(), "cnt", 0) or 0
+        if actual < ref_count:
+            return {"ok": False, "error": f"You have {actual}/{ref_count} referrals. Keep inviting!"}
     return _award_task_reward(cur, conn, user_id, task)
 
 
