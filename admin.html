@@ -328,12 +328,19 @@ setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},3000
 function showReasonModal(title){
 return new Promise(resolve=>{
 let overlay=document.createElement('div');
+overlay.id='reasonModalOverlay';
 overlay.className='modal-overlay';
-overlay.innerHTML=`<div class="modal-card"><h3 class="font-bold text-sm mb-3">${title}</h3><textarea id="reasonInput" rows="3" placeholder="Reason (optional)" class="w-full rounded-xl p-3 text-sm border outline-none resize-none" style="background:var(--input);border-color:var(--border)"></textarea><div class="flex gap-2 mt-3"><button id="reasonCancel" class="flex-1 py-2.5 rounded-full text-xs font-bold" style="background:var(--hover)">Cancel</button><button id="reasonOk" class="flex-1 py-2.5 rounded-full text-xs font-bold" style="background:var(--text);color:var(--bg)">Confirm</button></div></div>`;
+overlay.style.cssText='position:fixed;inset:0;z-index:90000;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px';
+let card=document.createElement('div');
+card.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:360px';
+card.innerHTML=`<h3 class="font-bold text-sm mb-3">${title}</h3><textarea id="rmReasonInput" rows="3" placeholder="Reason (optional)" class="w-full rounded-xl p-3 text-sm border outline-none resize-none" style="background:var(--input);border-color:var(--border)"></textarea><div class="flex gap-2 mt-3"><button id="rmCancel" class="flex-1 py-2.5 rounded-full text-xs font-bold" style="background:var(--hover)">Cancel</button><button id="rmConfirm" class="flex-1 py-2.5 rounded-full text-xs font-bold" style="background:var(--text);color:var(--bg)">Confirm</button></div>`;
+overlay.appendChild(card);
 document.body.appendChild(overlay);
-document.getElementById('reasonCancel').onclick=()=>{overlay.remove();resolve('');};
-document.getElementById('reasonOk').onclick=()=>{let v=document.getElementById('reasonInput').value.trim();overlay.remove();resolve(v);};
-overlay.addEventListener('click',e=>{if(e.target===overlay){overlay.remove();resolve('');}});
+document.getElementById('rmReasonInput').focus();
+function cleanup(){if(overlay.parentNode)overlay.remove();}
+document.getElementById('rmCancel').onclick=()=>{cleanup();resolve(false);};
+document.getElementById('rmConfirm').onclick=()=>{let v=document.getElementById('rmReasonInput').value.trim();cleanup();resolve(v);};
+overlay.addEventListener('click',e=>{if(e.target===overlay){cleanup();resolve(false);}});
 });
 }
 
@@ -435,16 +442,14 @@ function filterUsers(){renderUsers(allUsers);}
 async function actWd(id,action){
 let note='';
 if(action==='reject'||action==='expire'){
-note=await showReasonModal('Reason for '+action+':');
-if(note===null)return;
+note=await showReasonModal('Reason for '+action);
+if(note===false)return;
 }
-let btn=event?.target;
-if(btn){btn.disabled=true;btn.style.opacity='0.5';}
 try{
-let r=await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note})});
+let r=await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note:note||''})});
 let j=await r.json();
 if(j.ok){
-toast(action.charAt(0).toUpperCase()+action.slice(1)+' withdrawal #'+id+' done','success');
+toast(action.charAt(0).toUpperCase()+action.slice(1)+' withdrawal #'+id,'success');
 loadAll();
 }else{
 toast(j.error||'Action failed','error');
@@ -452,23 +457,20 @@ toast(j.error||'Action failed','error');
 }catch(e){
 toast('Request failed: '+e.message,'error');
 }
-if(btn){btn.disabled=false;btn.style.opacity='1';}
 }
 
 async function actDep(id,action){
 if(action==='delete'&&!confirm('Delete deposit '+id+'?')) return;
 let note='';
 if(action==='reject'||action==='expire'){
-note=await showReasonModal('Reason for '+action+':');
-if(note===null)return;
+note=await showReasonModal('Reason for '+action);
+if(note===false)return;
 }
-let btn=event?.target;
-if(btn){btn.disabled=true;btn.style.opacity='0.5';}
 try{
-let r=await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note})});
+let r=await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note:note||''})});
 let j=await r.json();
 if(j.ok){
-toast(action.charAt(0).toUpperCase()+action.slice(1)+' deposit #'+id+' done','success');
+toast(action.charAt(0).toUpperCase()+action.slice(1)+' deposit #'+id,'success');
 loadAll();
 }else{
 toast(j.error||'Action failed','error');
@@ -476,7 +478,6 @@ toast(j.error||'Action failed','error');
 }catch(e){
 toast('Request failed: '+e.message,'error');
 }
-if(btn){btn.disabled=false;btn.style.opacity='1';}
 }
 
 async function editDepAmount(id,current){
