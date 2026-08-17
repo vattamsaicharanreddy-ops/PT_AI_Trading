@@ -157,16 +157,16 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 <!-- TASKS -->
 <section id="sec-tasks" class="hidden space-y-5 fade-in">
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-<div class="lg:col-span-2 card p-5"><h2 class="text-lg font-black">Tasks & Join Rewards</h2><p class="text-[11px] mt-1" style="color:var(--text2)">Create tasks. User joins group, bot verifies, 1 USDT reward. Blocks withdrawal until done.</p>
+<div class="lg:col-span-2 card p-5"><h2 class="text-lg font-black">Tasks & Rewards</h2><p class="text-[11px] mt-1" style="color:var(--text2)">Join tasks: verify group membership. Referral tasks: auto-verify referral counts. Non-mandatory tasks don't block withdrawals.</p>
 <div class="overflow-x-auto mt-4"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">ID</th><th class="text-left p-2.5">Title / Group</th><th class="text-left p-2.5">Link</th><th class="text-left p-2.5">Reward</th><th class="text-left p-2.5">Mandatory</th><th class="text-left p-2.5">Active</th><th class="text-left p-2.5">Actions</th></tr></thead><tbody id="tasksList"></tbody></table></div></div>
 <div class="card p-5" style="background:linear-gradient(135deg,rgba(124,77,255,0.06),var(--surface));border-color:rgba(124,77,255,0.15)">
-<h3 class="font-black text-sm">Create Join Task</h3>
+<h3 class="font-black text-sm">Create Task</h3>
 <div class="mt-4 space-y-2.5">
+<select id="t_type" onchange="toggleTaskFields()" class="w-full rounded-xl p-3 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="join">Join Group Task</option><option value="referral">Referral Task</option></select>
 <input id="t_title" placeholder="Title: Join Main Group" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
 <input id="t_desc" placeholder="Description" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
-<input id="t_link" placeholder="Group Link" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
-<input id="t_group_id" placeholder="Group ID: @username or -100..." class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
-<input id="t_username" placeholder="Username" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+<div id="joinFields"><input id="t_link" placeholder="Group Link" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"><input id="t_group_id" placeholder="Group ID: @username or -100..." class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"><input id="t_username" placeholder="Username" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"></div>
+<div id="refFields" class="hidden"><input id="t_config" placeholder='Config: {"ref_count":1}' class="w-full rounded-xl p-3 text-[11px] border outline-none mono" style="background:var(--input);border-color:var(--border)"></div>
 <div class="grid grid-cols-2 gap-2"><input id="t_reward" type="number" value="1" step="0.1" class="rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"><select id="t_reward_type" class="rounded-xl p-3 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="withdrawable">Withdrawable</option><option value="balance">Trading Balance</option></select></div>
 <div class="grid grid-cols-2 gap-2"><label class="flex items-center gap-2 p-3 rounded-xl text-[11px]" style="background:var(--hover)"><input id="t_mandatory" type="checkbox" checked> Mandatory</label><label class="flex items-center gap-2 p-3 rounded-xl text-[11px]" style="background:var(--hover)"><input id="t_active" type="checkbox" checked> Active</label></div>
 <button onclick="createTask()" class="w-full btn-gold py-3 rounded-full text-sm mt-1">Create Task</button>
@@ -352,7 +352,7 @@ document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('nav-active
 let btn=document.querySelector(`[data-tab="${tab}"]`);
 if(btn){btn.classList.add('nav-active');btn.style.color='';}
 document.getElementById('pageTitle').innerText=btn?btn.innerText.replace('NEW','').trim():tab;
-if(['deposits','users','dashboard','withdrawals','referrals'].includes(tab)) loadAll();
+if(['deposits','users','dashboard','withdrawals','referrals','tasks'].includes(tab)) loadAll();
 }
 
 async function fetchJson(url){
@@ -413,7 +413,7 @@ renderUsers(users);
 
 try{
 let tasks=await fetchJson('/api/admin/tasks');
-document.getElementById('tasksList').innerHTML=tasks.map(t=>`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono">${t.id}</td><td class="p-2.5"><p class="font-bold">${t.title}</p><p class="text-[9px] mono" style="color:var(--text3)">${t.group_id}</p></td><td class="p-2.5 text-[11px] mono" style="color:var(--text3)">${(t.group_link||'').slice(0,24)}...</td><td class="p-2.5 font-bold" style="color:#FFD60A">$${Number(t.reward).toFixed(2)}<br><span class="text-[9px]" style="color:var(--text3)">${t.reward_type}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${t.is_mandatory?'background:rgba(239,68,68,0.15);color:#ef4444':'background:var(--hover)'}">${t.is_mandatory?'Mandatory':'Optional'}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${t.is_active?'background:rgba(16,185,129,0.15);color:#10b981':'background:var(--hover);color:var(--text3)'}">${t.is_active?'Active':'Off'}</span></td><td class="p-2.5"><div class="flex flex-wrap gap-1"><button onclick="toggleTask(${t.id},'toggle_active')" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:var(--hover)">Toggle</button><button onclick="toggleTask(${t.id},'toggle_mandatory')" class="px-2 py-1 rounded-full text-[10px]" style="background:var(--hover)">Mand</button><button onclick="toggleTask(${t.id},'delete')" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Del</button></div></td></tr>`).join('')||`<tr><td colspan="7" class="p-6 text-center" style="color:var(--text3)">No tasks yet.</td></tr>`;
+document.getElementById('tasksList').innerHTML=tasks.map(t=>{let typeBadge=t.task_type==='referral'?'<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:rgba(124,77,255,0.15);color:#7c4dff">REF</span>':'';let configInfo=t.task_type==='referral'&&t.task_config?'<br><span class="text-[9px]" style="color:#7c4dff">Config: '+t.task_config+'</span>':'';return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono">${t.id}</td><td class="p-2.5"><p class="font-bold">${t.title}${typeBadge}</p><p class="text-[9px] mono" style="color:var(--text3)">${t.group_id||''}${configInfo}</p></td><td class="p-2.5 text-[11px] mono" style="color:var(--text3)">${(t.group_link||'').slice(0,24)}</td><td class="p-2.5 font-bold" style="color:#FFD60A">${Number(t.reward).toFixed(2)} USDT<br><span class="text-[9px]" style="color:var(--text3)">${t.reward_type}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${t.is_mandatory?'background:rgba(239,68,68,0.15);color:#ef4444':'background:var(--hover)'}">${t.is_mandatory?'Mandatory':'Optional'}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${t.is_active?'background:rgba(16,185,129,0.15);color:#10b981':'background:var(--hover);color:var(--text3)'}">${t.is_active?'Active':'Off'}</span></td><td class="p-2.5"><div class="flex flex-wrap gap-1"><button onclick="toggleTask(${t.id},'toggle_active')" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:var(--hover)">Toggle</button><button onclick="toggleTask(${t.id},'toggle_mandatory')" class="px-2 py-1 rounded-full text-[10px]" style="background:var(--hover)">Mand</button><button onclick="toggleTask(${t.id},'delete')" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Del</button></div></td></tr>`}).join('')||`<tr><td colspan="7" class="p-6 text-center" style="color:var(--text3)">No tasks yet.</td></tr>`;
 }catch(e){}
 
 try{
@@ -591,10 +591,19 @@ let log=document.getElementById('envLog');log.classList.remove('hidden');log.inn
 }
 
 async function createTask(){
-let payload={title:document.getElementById('t_title').value,description:document.getElementById('t_desc').value,group_link:document.getElementById('t_link').value,group_id:document.getElementById('t_group_id').value,group_username:document.getElementById('t_username').value||'',reward:parseFloat(document.getElementById('t_reward').value||1),reward_type:document.getElementById('t_reward_type').value,is_mandatory:document.getElementById('t_mandatory').checked?1:0,is_active:document.getElementById('t_active').checked?1:0,icon:document.getElementById('t_icon')?.value||''};
-if(!payload.title||!payload.group_link||!payload.group_id){alert('Title, Group Link and Group ID required');return;}
+let tt=document.getElementById('t_type')?.value||'join';
+let payload={title:document.getElementById('t_title').value,description:document.getElementById('t_desc').value,group_link:document.getElementById('t_link')?.value||'',group_id:document.getElementById('t_group_id')?.value||'',group_username:document.getElementById('t_username')?.value||'',reward:parseFloat(document.getElementById('t_reward').value||1),reward_type:document.getElementById('t_reward_type').value,is_mandatory:document.getElementById('t_mandatory').checked?1:0,is_active:document.getElementById('t_active').checked?1:0,icon:document.getElementById('t_icon')?.value||'',task_type:tt,task_config:document.getElementById('t_config')?.value||''};
+if(!payload.title){alert('Title required');return;}
+if(tt==='join'&&(!payload.group_link||!payload.group_id)){alert('For join tasks: Group Link and Group ID required');return;}
+if(tt==='referral'&&!payload.task_config){alert('For referral tasks: Config JSON required (e.g. {"ref_count":1})');return;}
 let r=await fetch('/api/admin/tasks/create',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify(payload)});
 let j=await r.json();if(j.ok){alert('Task created!');loadAll();}else alert('Failed: '+(j.error||''));
+}
+
+function toggleTaskFields(){
+let tt=document.getElementById('t_type').value;
+document.getElementById('joinFields').classList.toggle('hidden',tt!=='join');
+document.getElementById('refFields').classList.toggle('hidden',tt!=='referral');
 }
 
 async function toggleTask(id,action){

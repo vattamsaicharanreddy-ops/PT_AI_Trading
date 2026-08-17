@@ -201,6 +201,8 @@ def init_db():
             migrations = [
                 "ALTER TABLE deposits ADD COLUMN IF NOT EXISTS admin_note TEXT",
                 "ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS admin_note TEXT",
+                "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_type TEXT DEFAULT 'join'",
+                "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_config TEXT DEFAULT ''",
             ]
             for m in migrations:
                 try:
@@ -287,6 +289,15 @@ def init_db():
                     conn.execute(stmt)
                 except Exception:
                     pass
+
+            try:
+                conn.execute("ALTER TABLE tasks ADD COLUMN task_type TEXT DEFAULT 'join'")
+            except Exception:
+                pass
+            try:
+                conn.execute("ALTER TABLE tasks ADD COLUMN task_config TEXT DEFAULT ''")
+            except Exception:
+                pass
 
             conn.commit()
         logger.info(f"Database ready: {'POSTGRES' if USE_POSTGRES else 'SQLITE at ' + SQLITE_PATH}")

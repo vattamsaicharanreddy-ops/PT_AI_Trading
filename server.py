@@ -46,6 +46,36 @@ app.add_middleware(
 )
 init_db()
 
+
+def _seed_referral_tasks():
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"SELECT COUNT(*) as cnt FROM tasks WHERE task_type='referral'")
+        cnt = val(cur.fetchone(), "cnt", 0) or 0
+        if cnt > 0:
+            return
+        now = datetime.utcnow().isoformat()
+        seed_tasks = [
+            ("Refer 1 Friend", "Invite 1 friend to join any task group", 0.5, '{"ref_count":1}'),
+            ("Refer 3 Friends", "Invite 3 friends to join any task groups", 1.5, '{"ref_count":3}'),
+            ("Refer 5 Friends", "Invite 5 friends to join any task groups", 3.0, '{"ref_count":5}'),
+        ]
+        for i, (title, desc, reward, config) in enumerate(seed_tasks):
+            cur.execute(
+                f"INSERT INTO tasks (title,description,reward,reward_type,is_active,is_mandatory,icon,task_type,task_config,sort_order,created_at) VALUES ({ph()},{ph()},{ph()},'withdrawable',1,0,'', 'referral',{ph()},{ph()},{ph()})",
+                (title, desc, reward, config, 100 + i, now),
+            )
+        conn.commit()
+        logger.info("Seeded 3 referral tasks")
+    except Exception as e:
+        logger.error(f"Seed referral tasks error: {e}")
+    finally:
+        safe_close(conn)
+
+
+_seed_referral_tasks()
+
 DEPOSIT_ADDR = {
     "TRC20": os.getenv("ADDR_TRC20", "TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC"),
     "BEP20": os.getenv("ADDR_BEP20", "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd"),
@@ -110,14 +140,16 @@ class IdAction(BaseModel):
 class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = ""
-    group_link: str
-    group_id: str
+    group_link: Optional[str] = ""
+    group_id: Optional[str] = ""
     group_username: Optional[str] = ""
     reward: float = 1.0
     reward_type: str = "withdrawable"
     is_active: int = 1
     is_mandatory: int = 1
     icon: str = ""
+    task_type: str = "join"
+    task_config: Optional[str] = ""
 
 
 class GroupBulkAdd(BaseModel):
@@ -623,10 +655,30 @@ def tasks_list(user_id: int):
         tasks = rows_as_dicts(cur.fetchall())
         cur.execute(f"SELECT task_id,status,reward_claimed FROM user_tasks WHERE user_id={ph()}", (user_id,))
         ut = {r["task_id"]: r for r in rows_as_dicts(cur.fetchall())}
+        cur.execute(f"SELECT COUNT(*) as cnt FROM users WHERE referred_by={ph()}", (user_id,))
+        ref_count = val(cur.fetchone(), "cnt", 0) or 0
         out = []
         for t in tasks:
             s = ut.get(t["id"])
-            out.append({**t, "user_status": s["status"] if s else "pending", "reward_claimed": s["reward_claimed"] if s else 0})
+            tt = val(t, "task_type", "join")
+            referral_current = 0
+            referral_target = 0
+            if tt == "referral":
+                cfg = val(t, "task_config", "")
+                try:
+                    import json as _json
+                    cfg_obj = _json.loads(cfg) if cfg else {}
+                except Exception:
+                    cfg_obj = {}
+                referral_target = int(cfg_obj.get("ref_count", 0))
+                referral_current = min(ref_count, referral_target) if referral_target > 0 else ref_count
+            out.append({
+                **t,
+                "user_status": s["status"] if s else "pending",
+                "reward_claimed": s["reward_claimed"] if s else 0,
+                "referral_current": referral_current,
+                "referral_target": referral_target,
+            })
         return out
     finally:
         safe_close(conn)
@@ -641,6 +693,9 @@ def tasks_verify(user_id: int, task_id: int):
         task = cur.fetchone()
         if not task:
             return {"ok": False, "error": "Task not found"}
+        task_type = val(task, "task_type", "join")
+        if task_type == "referral":
+            return _verify_referral_task(cur, conn, user_id, task)
         bot_token = os.getenv("BOT_TOKEN", "")
         if not bot_token:
             return {"ok": False, "error": "BOT_TOKEN not set in server env"}
@@ -648,30 +703,50 @@ def tasks_verify(user_id: int, task_id: int):
         is_member, details = check_telegram_membership(bot_token, chat_id, user_id)
         if not is_member:
             return {"ok": False, "error": "Not joined yet. Please JOIN the group/channel first, then click Verify", "details": details}
-        cur.execute(f"SELECT * FROM user_tasks WHERE user_id={ph()} AND task_id={ph()}", (user_id, task_id))
-        existing = cur.fetchone()
-        now = datetime.utcnow().isoformat()
-        if existing:
-            cur.execute(f"UPDATE user_tasks SET status='verified', verified_at={ph()} WHERE user_id={ph()} AND task_id={ph()}", (now, user_id, task_id))
-        else:
-            cur.execute(f"INSERT INTO user_tasks (user_id,task_id,status,verified_at,reward_claimed) VALUES ({ph()},{ph()},'verified',{ph()},0)", (user_id, task_id, now))
-        reward = float(val(task, "reward", 1.0) or 1.0)
-        cur.execute(f"SELECT reward_claimed FROM user_tasks WHERE user_id={ph()} AND task_id={ph()}", (user_id, task_id))
-        rw = cur.fetchone()
-        if not val(rw, "reward_claimed", 0):
-            rtype = val(task, "reward_type", "withdrawable")
-            if rtype == "withdrawable":
-                cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()} WHERE user_id={ph()}", (reward, user_id))
-            else:
-                cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()} WHERE user_id={ph()}", (reward, user_id))
-            cur.execute(f"UPDATE user_tasks SET reward_claimed=1 WHERE user_id={ph()} AND task_id={ph()}", (user_id, task_id))
-        conn.commit()
-        return {"ok": True, "reward": reward, "message": f"Verified! +{reward} USDT added to withdrawable balance"}
+        return _award_task_reward(cur, conn, user_id, task)
     except Exception as e:
         logger.error(f"tasks_verify error: {e}")
         return {"ok": False, "error": str(e)}
     finally:
         safe_close(conn)
+
+
+def _verify_referral_task(cur, conn, user_id, task):
+    import json as _json
+    cfg_str = val(task, "task_config", "")
+    try:
+        cfg = _json.loads(cfg_str) if cfg_str else {}
+    except Exception:
+        cfg = {}
+    ref_count = int(cfg.get("ref_count", 0))
+    cur.execute(f"SELECT COUNT(*) as cnt FROM users WHERE referred_by={ph()}", (user_id,))
+    actual = val(cur.fetchone(), "cnt", 0) or 0
+    if actual < ref_count:
+        return {"ok": False, "error": f"You have {actual}/{ref_count} referrals. Keep inviting!"}
+    return _award_task_reward(cur, conn, user_id, task)
+
+
+def _award_task_reward(cur, conn, user_id, task):
+    task_id = val(task, "id")
+    cur.execute(f"SELECT * FROM user_tasks WHERE user_id={ph()} AND task_id={ph()}", (user_id, task_id))
+    existing = cur.fetchone()
+    now = datetime.utcnow().isoformat()
+    if existing:
+        cur.execute(f"UPDATE user_tasks SET status='verified', verified_at={ph()} WHERE user_id={ph()} AND task_id={ph()}", (now, user_id, task_id))
+    else:
+        cur.execute(f"INSERT INTO user_tasks (user_id,task_id,status,verified_at,reward_claimed) VALUES ({ph()},{ph()},'verified',{ph()},0)", (user_id, task_id, now))
+    reward = float(val(task, "reward", 1.0) or 1.0)
+    cur.execute(f"SELECT reward_claimed FROM user_tasks WHERE user_id={ph()} AND task_id={ph()}", (user_id, task_id))
+    rw = cur.fetchone()
+    if not val(rw, "reward_claimed", 0):
+        rtype = val(task, "reward_type", "withdrawable")
+        if rtype == "withdrawable":
+            cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()} WHERE user_id={ph()}", (reward, user_id))
+        else:
+            cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()} WHERE user_id={ph()}", (reward, user_id))
+        cur.execute(f"UPDATE user_tasks SET reward_claimed=1 WHERE user_id={ph()} AND task_id={ph()}", (user_id, task_id))
+    conn.commit()
+    return {"ok": True, "reward": reward, "message": f"Verified! +{reward} USDT added to withdrawable balance"}
 
 
 @app.post("/api/tasks/join/{user_id}/{task_id}")
@@ -900,8 +975,8 @@ def admin_tasks_create(t: TaskCreate, request: Request):
     try:
         cur = cursor(conn)
         cur.execute(
-            f"INSERT INTO tasks (title,description,group_link,group_id,group_username,reward,reward_type,is_active,is_mandatory,icon,created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()})",
-            (t.title, t.description, t.group_link, t.group_id, t.group_username, t.reward, t.reward_type, t.is_active, t.is_mandatory, t.icon, datetime.utcnow().isoformat()),
+            f"INSERT INTO tasks (title,description,group_link,group_id,group_username,reward,reward_type,is_active,is_mandatory,icon,task_type,task_config,created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()})",
+            (t.title, t.description, t.group_link, t.group_id, t.group_username, t.reward, t.reward_type, t.is_active, t.is_mandatory, t.icon, t.task_type, t.task_config, datetime.utcnow().isoformat()),
         )
         conn.commit()
         return {"ok": True}
