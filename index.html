@@ -219,6 +219,7 @@ const DEPOSIT_ADDRS={TRC20:"TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC",BEP20:"0xDD19048
 if(tg){try{tg.ready();tg.expand();let u=tg.initDataUnsafe?.user;if(u){userId=u.id;username=u.username||'';}}catch(e){}}
 const $=id=>document.getElementById(id);
 const safeSet=(id,v)=>{let e=$(id);if(e)e.innerText=v;};
+const parseUTC=(s)=>s?s.endsWith('Z')||s.endsWith('+00:00')?new Date(s):new Date(s+'Z'):null;
 const safeHTML=(id,h)=>{let e=$(id);if(e)e.innerHTML=h;};
 
 function toggleTheme(){
@@ -435,7 +436,7 @@ let aiBadge=$('pfAiBadge');
 let aiTimerBox=$('pfAiTimerBox');
 let aiTimerEl=$('pfAiTimer');
 function tickPfTimer(){
-let end=new Date(aiEnd);let now=new Date();let diff=end-now;
+let end=parseUTC(aiEnd);let now=new Date();let diff=end-now;
 if(diff<=0){
 if(aiBadge){aiBadge.innerText='EXPIRED';aiBadge.style.background='rgba(239,68,68,0.15)';aiBadge.style.color='#ef4444';}
 if(aiTimerEl)aiTimerEl.innerText='Contract expired';
@@ -455,8 +456,8 @@ if(aiBadge){aiBadge.innerText='ACTIVE';aiBadge.style.background='rgba(16,185,129
 if(aiTimerBox)aiTimerBox.style.opacity='1';
 tickPfTimer();
 pfTimerInterval=setInterval(tickPfTimer,1000);
-if(aiStart)try{safeSet('pfAiStart',new Date(aiStart).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}));}catch(e){safeSet('pfAiStart','-');}
-if(aiEnd)try{safeSet('pfAiEnd',new Date(aiEnd).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}));}catch(e){safeSet('pfAiEnd','-');}
+if(aiStart)try{safeSet('pfAiStart',parseUTC(aiStart).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}));}catch(e){safeSet('pfAiStart','-');}
+if(aiEnd)try{safeSet('pfAiEnd',parseUTC(aiEnd).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}));}catch(e){safeSet('pfAiEnd','-');}
 }
 }
 
@@ -478,7 +479,7 @@ function tick(){
 try{
 let timerEl=$('aiTimer');
 if(!endStr){if(timerEl)timerEl.innerText='Deposit $20 to start';safeSet('aiStatus','INACTIVE');return;}
-let end=new Date(endStr);let now=new Date();let diff=end-now;
+let end=parseUTC(endStr);let now=new Date();let diff=end-now;
 if(diff<=0){if(timerEl){timerEl.innerText='EXPIRED';timerEl.style.background='rgba(239,68,68,0.2)';timerEl.style.color='#ef4444';}safeSet('aiStatus','EXPIRED');clearInterval(aiTimerInterval);aiTimerInterval=null;return;}
 let days=Math.floor(diff/(1000*60*60*24));let hours=Math.floor((diff%(1000*60*60*24))/(1000*60*60));let mins=Math.floor((diff%(1000*60*60))/(1000*60));let secs=Math.floor((diff%(1000*60))/1000);
 if(timerEl)timerEl.innerText=`${String(days).padStart(2,'0')}d ${String(hours).padStart(2,'0')}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`;
