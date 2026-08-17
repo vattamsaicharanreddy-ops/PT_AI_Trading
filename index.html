@@ -15,6 +15,17 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 [data-theme="light"] .task-done{background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(255,255,255,0.5))}
 [data-theme="light"] .task-pending{background:linear-gradient(135deg,rgba(255,214,10,0.06),rgba(255,255,255,0.5))}
 .theme-btn{position:fixed;top:12px;right:12px;z-index:200;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--border);background:var(--surface);box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.hidden{display:none!important}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-20px);z-index:99999;padding:10px 20px;border-radius:999px;font-size:11px;font-weight:700;opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast-success{background:rgba(16,185,129,0.95);color:#fff}
+.toast-error{background:rgba(239,68,68,0.95);color:#fff}
+.copy-btn{cursor:pointer;padding:6px 12px;border-radius:8px;font-size:10px;font-weight:700;background:rgba(255,214,10,0.15);color:#FFD60A;border:1px solid rgba(255,214,10,0.2);transition:all 0.2s;white-space:nowrap}
+.copy-btn:active{transform:scale(0.95);background:rgba(255,214,10,0.3)}
+.copy-btn.copied{background:rgba(16,185,129,0.2);color:#10b981;border-color:rgba(16,185,129,0.3)}
+.qr-box{margin-top:12px;text-align:center}
+.qr-box img{border-radius:12px;border:1px solid var(--border)}
+.inv-timer{margin-top:8px;padding:6px 12px;border-radius:8px;font-size:10px;font-weight:700;text-align:center;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.15);color:#ef4444}
 </style>
 </head>
 <body class='min-h-screen flex justify-center' data-theme='dark'>
@@ -87,10 +98,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <button onclick="selectNet('TON')" id='net-TON' class='net-btn py-2.5 rounded-full text-[11px]' style='background:var(--border)'>TON</button>
 <button onclick="selectNet('SOL')" id='net-SOL' class='net-btn py-2.5 rounded-full text-[11px]' style='background:var(--border)'>SOL</button>
 </div>
-<div class='mt-3 p-2.5 rounded-xl text-[10px]' style='background:var(--border)'><p style='color:var(--text2)'>Address for <span id='netLabel'>TRC20</span>:</p><p id='netAddr' class='mono font-bold break-all mt-0.5 text-[11px]'>TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC</p></div>
+<div class='mt-3 p-2.5 rounded-xl text-[10px]' style='background:var(--border)'><div class='flex justify-between items-center'><p style='color:var(--text2)'>Address for <span id='netLabel'>TRC20</span>:</p><span class='copy-btn' onclick="copyAddress('netAddr',this)">COPY</span></div><p id='netAddr' class='mono font-bold break-all mt-0.5 text-[11px]'>TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC</p></div>
+<div class='qr-box' id='qrBox'></div>
 <div class='mt-3'><label class='text-[10px] font-bold' style='color:var(--text3)'>Amount (min $20)</label><input id='depAmount' type='number' value='100' class='mt-1 w-full p-3 text-sm rounded-xl border outline-none' style='background:var(--input);border-color:var(--border)'></div>
 <button onclick='createDeposit()' class='mt-3 w-full py-3 rounded-full font-bold text-sm' style='background:#FFD60A;color:#000'>Create Invoice (15 min)</button>
-<div id='invoiceBox' class='hidden mt-3 p-3 rounded-xl text-[11px]' style='background:var(--border);border:1px solid rgba(255,214,10,0.15)'><p style='color:var(--text2)'>Send exactly to:</p><p id='invAddr' class='mono font-bold break-all mt-0.5 text-[11px]'></p><p class='mt-1'>Amount: <span id='invAmount' class='font-bold'></span> <span id='invNet'></span></p><p class='mt-0.5' style='color:var(--text3)'>Invoice: <span id='invId' class='mono'></span></p><p class='mt-1.5' style='color:#FFD60A'>Auto verified every 15 sec</p></div>
+<div id='invoiceBox' class='hidden mt-3 p-3 rounded-xl text-[11px]' style='background:var(--border);border:1px solid rgba(255,214,10,0.15)'><p style='color:var(--text2)'>Send exactly to:</p><div class='flex justify-between items-start gap-2'><p id='invAddr' class='mono font-bold break-all mt-0.5 text-[11px] flex-1'></p><span class='copy-btn shrink-0' onclick="copyAddress('invAddr',this)">COPY</span></div><div class='qr-box mt-2' id='invQrBox'></div><p class='mt-1'>Amount: <span id='invAmount' class='font-bold'></span> <span id='invNet'></span></p><p class='mt-0.5' style='color:var(--text3)'>Invoice: <span id='invId' class='mono'></span></p><div id='invTimerBox' class='inv-timer hidden'>Expires in <span id='invCountdown'>15:00</span></div><p class='mt-1.5' style='color:#FFD60A'>Auto verified every 15 sec</p></div>
 <button onclick="closeDeposit()" class='mt-2 w-full py-3 rounded-full text-xs font-bold' style='background:var(--border)'>Close</button></div></div>
 
 <div id='withdrawModal' class='hidden fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100] p-4'><div class='rounded-3xl p-5 w-full max-w-[360px]' style='background:var(--surface);border:1px solid var(--border)'><h3 class='font-black'>Withdraw USDT</h3><p class='text-[11px] mt-0.5' style='color:var(--text2)'>Min $10 | Withdrawable: <span id='wdBal' class='font-bold' style='color:#FFD60A'>0</span></p><div id='wdGate' class='hidden mt-2 p-2.5 rounded-xl text-[11px]' style='background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.15)'><p class='font-bold text-red-400'>Complete Tasks First</p><p id='wdGateText' class='mt-0.5' style='color:var(--text2)'></p><button onclick="switchTab('tasks');closeWithdraw();" class='mt-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold' style='background:var(--text);color:var(--bg)'>Go to Tasks</button></div><div class='mt-3'><label class='text-[10px] font-bold' style='color:var(--text3)'>Amount</label><input id='wdAmount' type='number' class='mt-1 w-full p-2.5 text-sm rounded-xl border outline-none' style='background:var(--input);border-color:var(--border)'></div><div class='mt-2'><label class='text-[10px] font-bold' style='color:var(--text3)'>Address</label><input id='wdAddr' placeholder='USDT address' class='mt-1 w-full p-2.5 text-sm rounded-xl border outline-none mono' style='background:var(--input);border-color:var(--border)'></div><div class='mt-2 grid grid-cols-5 gap-1'><button onclick="selectWdNet('TRC20')" id='wdnet-TRC20' class='wdnet-btn py-2 rounded-full text-[10px] font-bold' style='background:var(--text);color:var(--bg)'>TRC20</button><button onclick="selectWdNet('BEP20')" id='wdnet-BEP20' class='wdnet-btn py-2 rounded-full text-[10px]' style='background:var(--border)'>BEP20</button><button onclick="selectWdNet('ERC20')" id='wdnet-ERC20' class='wdnet-btn py-2 rounded-full text-[10px]' style='background:var(--border)'>ERC20</button><button onclick="selectWdNet('TON')" id='wdnet-TON' class='wdnet-btn py-2 rounded-full text-[10px]' style='background:var(--border)'>TON</button><button onclick="selectWdNet('SOL')" id='wdnet-SOL' class='wdnet-btn py-2 rounded-full text-[10px]' style='background:var(--border)'>SOL</button></div><button onclick='submitWithdraw()' class='mt-3 w-full py-2.5 rounded-full font-bold text-sm' style='background:#FFD60A;color:#000'>Submit Withdrawal</button><button onclick='closeWithdraw()' class='mt-2 w-full py-2.5 rounded-full text-xs font-bold' style='background:var(--border)'>Close</button></div></div>
@@ -130,15 +142,64 @@ if(tab==='trades')loadTrades();
 if(tab==='referral')loadReferral();
 if(tab==='history')loadHistory();
 }
+function userToast(msg,type){
+let t=document.createElement('div');
+t.className='toast toast-'+(type||'success');
+t.innerText=msg;
+document.body.appendChild(t);
+requestAnimationFrame(()=>t.classList.add('show'));
+setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},2500);
+}
+function copyAddress(elemId,btn){
+let el=$(elemId);
+if(!el)return;
+let addr=el.innerText.trim();
+if(!addr){userToast('No address to copy','error');return;}
+navigator.clipboard.writeText(addr).then(()=>{
+btn.innerText='COPIED!';
+btn.classList.add('copied');
+userToast('Address copied!');
+setTimeout(()=>{btn.innerText='COPY';btn.classList.remove('copied');},2000);
+}).catch(()=>{
+let ta=document.createElement('textarea');
+ta.value=addr;ta.style.position='fixed';ta.style.left='-9999px';
+document.body.appendChild(ta);ta.select();
+try{document.execCommand('copy');btn.innerText='COPIED!';btn.classList.add('copied');userToast('Address copied!');
+setTimeout(()=>{btn.innerText='COPY';btn.classList.remove('copied');},2000);}
+catch(e){userToast('Copy failed','error');}
+document.body.removeChild(ta);
+});
+}
+function generateQR(text,size){
+return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&bgcolor=0a0a0f&color=ffffff&margin=8`;
+}
+let invCountdownInterval=null;
+function startInvCountdown(){
+if(invCountdownInterval)clearInterval(invCountdownInterval);
+let total=15*60;
+let box=$('invTimerBox');
+let display=$('invCountdown');
+if(!box||!display)return;
+box.classList.remove('hidden');
+invCountdownInterval=setInterval(()=>{
+total--;
+if(total<=0){clearInterval(invCountdownInterval);display.innerText='EXPIRED';box.style.background='rgba(239,68,68,0.2)';box.style.color='#ef4444';return;}
+let m=Math.floor(total/60);let s=total%60;
+display.innerText=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+},1000);
+}
+function stopInvCountdown(){if(invCountdownInterval){clearInterval(invCountdownInterval);invCountdownInterval=null;}}
 function selectNet(net){
 currentNet=net;
 document.querySelectorAll('.net-btn').forEach(b=>{b.style.background='var(--border)';b.style.color='var(--text)';b.classList.remove('font-black');});
 let a=$('net-'+net);if(a){a.style.background='var(--text)';a.style.color='var(--bg)';a.classList.add('font-black');}
 safeSet('netLabel',net);safeSet('netAddr',DEPOSIT_ADDRS[net]||'');
+let qrBox=$('qrBox');
+if(qrBox&&DEPOSIT_ADDRS[net]){qrBox.innerHTML=`<img src="${generateQR(DEPOSIT_ADDRS[net],150)}" alt="QR" width="150" height="150" style="margin:0 auto;border-radius:12px">`;}
 }
 function selectWdNet(net){currentWdNet=net;document.querySelectorAll('.wdnet-btn').forEach(b=>{b.style.background='var(--border)';b.style.color='var(--text)';b.classList.remove('font-bold');});let a=$('wdnet-'+net);if(a){a.style.background='var(--text)';a.style.color='var(--bg)';a.classList.add('font-bold');}}
 function openDeposit(){selectNet(currentNet);$('depositModal').classList.remove('hidden');}
-function closeDeposit(){$('depositModal').classList.add('hidden');$('invoiceBox').classList.add('hidden');}
+function closeDeposit(){$('depositModal').classList.add('hidden');$('invoiceBox').classList.add('hidden');stopInvCountdown();let iqb=$('invQrBox');if(iqb)iqb.innerHTML='';}
 function openWithdraw(){$('withdrawModal').classList.remove('hidden');}
 function closeWithdraw(){$('withdrawModal').classList.add('hidden');}
 function openPTGroup(){window.open('https://t.me/PT_AI_Trading_Group','_blank');}
@@ -207,9 +268,42 @@ return `<div class="rounded-2xl p-4 border ${isDone?'task-done':'task-pending'}"
 }).join('');if(!fullHtml)fullHtml=`<div class="rounded-2xl p-5 text-center" style="background:var(--surface);border:1px solid var(--border)"><p class="text-2xl">&#127919;</p><p class="font-bold mt-2">No Tasks Yet</p><p class="text-[11px] mt-1" style="color:var(--text2)">Admin needs to create tasks.</p></div>`;safeHTML('tasksListFull',fullHtml);
 }
 async function joinTask(taskId,link){try{await fetch('/api/tasks/join/'+userId+'/'+taskId,{method:'POST'});}catch(e){}window.open(link,'_blank');}
-async function verifyTask(taskId){let r=await fetch('/api/tasks/verify/'+userId+'/'+taskId,{method:'POST'});let j=await r.json();if(j.ok){alert(j.message||'Verified! +1 USDT');await loadTasks();await init();}else{alert(''+(j.error||'Failed')+'\n\nMake sure you JOINED the group first!');}}
-async function createDeposit(){let amt=parseFloat($('depAmount').value||0);if(amt<20){alert('Min $20');return;}let r=await fetch('/api/deposit/invoice/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,network:currentNet})});let j=await r.json();if(j.error){alert(j.error);return;}$('invAddr').innerText=j.address;$('invAmount').innerText=j.amount+' USDT';$('invNet').innerText=j.network;$('invId').innerText=j.invoice_id;$('invoiceBox').classList.remove('hidden');}
-async function submitWithdraw(){let amt=parseFloat($('wdAmount').value||0);let addr=$('wdAddr').value.trim();if(amt<10){alert('Min $10');return;}if(!addr){alert('Enter address');return;}let r=await fetch('/api/withdraw/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,address:addr,network:currentWdNet})});let j=await r.json();if(j.ok){alert('Withdrawal requested!');closeWithdraw();init();}else alert(j.error||'Failed');}
+async function verifyTask(taskId){let r=await fetch('/api/tasks/verify/'+userId+'/'+taskId,{method:'POST'});let j=await r.json();if(j.ok){userToast(j.message||'Verified! +1 USDT');await loadTasks();await init();}else{userToast(j.error||'Failed to verify','error');}}
+async function createDeposit(){
+let amt=parseFloat($('depAmount').value||0);
+if(amt<20){userToast('Min $20','error');return;}
+let btn=event?.target;
+if(btn){btn.disabled=true;btn.style.opacity='0.6';btn.innerText='Creating...';}
+try{
+let r=await fetch('/api/deposit/invoice/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,network:currentNet})});
+let j=await r.json();
+if(j.error){userToast(j.error,'error');return;}
+$('invAddr').innerText=j.address;
+$('invAmount').innerText=j.amount+' USDT';
+$('invNet').innerText=j.network;
+$('invId').innerText=j.invoice_id;
+$('invoiceBox').classList.remove('hidden');
+let iqb=$('invQrBox');
+if(iqb&&j.address){iqb.innerHTML=`<img src="${generateQR(j.address,160)}" alt="QR" width="160" height="160" style="margin:0 auto;border-radius:12px;border:1px solid var(--border)">`;}
+startInvCountdown();
+userToast('Invoice created!');
+}catch(e){userToast('Failed: '+e.message,'error');}
+if(btn){btn.disabled=false;btn.style.opacity='1';btn.innerText='Create Invoice (15 min)';}
+}
+async function submitWithdraw(){
+let amt=parseFloat($('wdAmount').value||0);
+let addr=$('wdAddr').value.trim();
+if(amt<10){userToast('Min $10','error');return;}
+if(!addr){userToast('Enter address','error');return;}
+let btn=event?.target;
+if(btn){btn.disabled=true;btn.style.opacity='0.6';}
+try{
+let r=await fetch('/api/withdraw/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,address:addr,network:currentWdNet})});
+let j=await r.json();
+if(j.ok){userToast('Withdrawal requested!');closeWithdraw();init();}else userToast(j.error||'Failed','error');
+}catch(e){userToast('Request failed','error');}
+if(btn){btn.disabled=false;btn.style.opacity='1';}
+}
 async function loadTrades(){
 let d=await apiFetch('/api/binance/trades');
 if(!d)return;
@@ -258,7 +352,7 @@ histHtml+=`<div class="p-3 rounded-xl flex justify-between" style="background:rg
 });}else{histHtml='<p class="text-[11px]" style="color:var(--text3)">No earnings yet.</p>';}
 safeHTML('refHistory',histHtml);
 }
-function copyRef(){let el=$('refLink');if(el){navigator.clipboard.writeText(el.innerText);alert('Copied!');}}
+function copyRef(){let el=$('refLink');if(el){navigator.clipboard.writeText(el.innerText).then(()=>{userToast('Link copied!');}).catch(()=>{userToast('Copy failed','error');});}}
 function shareRef(){let el=$('refLink');if(el&&navigator.share){navigator.share({title:'PT_AI Trading',text:'Join PT_AI Trading',url:el.innerText});}else{copyRef();}}
 async function hideInitialLoader(){let l=$('initialLoader');if(l){l.style.opacity='0';setTimeout(()=>{l.style.display='none';},400);}}
 init().then(()=>{hideInitialLoader();}).catch(()=>{hideInitialLoader();});

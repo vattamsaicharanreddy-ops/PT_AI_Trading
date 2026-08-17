@@ -30,6 +30,13 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 .theme-toggle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--border);background:var(--hover);transition:all 0.2s}
 .theme-toggle:hover{transform:scale(1.1)}
 .hidden{display:none!important}
+.toast{position:fixed;top:20px;right:20px;z-index:99999;padding:12px 20px;border-radius:12px;font-size:12px;font-weight:700;opacity:0;transform:translateY(-10px);transition:all 0.3s;pointer-events:none;max-width:320px;word-wrap:break-word}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast-success{background:rgba(16,185,129,0.95);color:#fff}
+.toast-error{background:rgba(239,68,68,0.95);color:#fff}
+.toast-info{background:rgba(124,77,255,0.95);color:#fff}
+.modal-overlay{position:fixed;inset:0;z-index:90000;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:360px}
 </style>
 </head>
 <body class="min-h-screen flex" data-theme="dark">
@@ -213,7 +220,7 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 </div>
 
 <div id="actionModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
-<div class="card p-5 w-full max-w-[400px]" style="border-color:rgba(255,214,10,0.15)"><h3 id="modalTitle" class="font-black text-lg">Action</h3><p id="modalUser" class="text-[11px] mt-0.5" style="color:var(--text2)"></p><div id="modalContent" class="mt-4"></div><div class="mt-5 flex gap-2"><button onclick="closeModal()" class="flex-1 glass py-3 rounded-full text-sm font-bold">Cancel</button><button onclick="confirmAction()" class="flex-1 btn-gold py-3 rounded-full text-sm">Confirm</button></div></div>
+<div class="card p-5 w-full max-w-[400px]" style="border-color:rgba(255,214,10,0.15)"><h3 id="modalTitle" class="font-black text-lg">Action</h3><p id="modalUser" class="text-[11px] mt-0.5" style="color:var(--text2)"></p><div id="modalContent" class="mt-4"></div><div class="mt-5 flex gap-2"><button onclick="closeModal()" class="flex-1 glass py-3 rounded-full text-sm font-bold">Cancel</button><button id="confirmBtn" onclick="confirmAction()" class="flex-1 btn-gold py-3 rounded-full text-sm">Confirm</button></div></div>
 </div>
 
 <script>
@@ -308,6 +315,27 @@ document.getElementById('authHint').innerText='Could not check server. Try enter
 document.getElementById('authHint').style.color='var(--red)';
 });
 })();
+
+function toast(msg,type='success'){
+let t=document.createElement('div');
+t.className='toast toast-'+type;
+t.innerText=msg;
+document.body.appendChild(t);
+requestAnimationFrame(()=>t.classList.add('show'));
+setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},3000);
+}
+
+function showReasonModal(title){
+return new Promise(resolve=>{
+let overlay=document.createElement('div');
+overlay.className='modal-overlay';
+overlay.innerHTML=`<div class="modal-card"><h3 class="font-bold text-sm mb-3">${title}</h3><textarea id="reasonInput" rows="3" placeholder="Reason (optional)" class="w-full rounded-xl p-3 text-sm border outline-none resize-none" style="background:var(--input);border-color:var(--border)"></textarea><div class="flex gap-2 mt-3"><button id="reasonCancel" class="flex-1 py-2.5 rounded-full text-xs font-bold" style="background:var(--hover)">Cancel</button><button id="reasonOk" class="flex-1 py-2.5 rounded-full text-xs font-bold" style="background:var(--text);color:var(--bg)">Confirm</button></div></div>`;
+document.body.appendChild(overlay);
+document.getElementById('reasonCancel').onclick=()=>{overlay.remove();resolve('');};
+document.getElementById('reasonOk').onclick=()=>{let v=document.getElementById('reasonInput').value.trim();overlay.remove();resolve(v);};
+overlay.addEventListener('click',e=>{if(e.target===overlay){overlay.remove();resolve('');}});
+});
+}
 
 function showTab(tab){
 document.querySelectorAll('[id^="sec-"]').forEach(s=>s.classList.add('hidden'));
@@ -406,24 +434,59 @@ function filterUsers(){renderUsers(allUsers);}
 
 async function actWd(id,action){
 let note='';
-if(action==='reject'||action==='expire') note=prompt(`Reason for ${action}:`)||'';
-await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note})});
+if(action==='reject'||action==='expire'){
+note=await showReasonModal('Reason for '+action+':');
+if(note===null)return;
+}
+let btn=event?.target;
+if(btn){btn.disabled=true;btn.style.opacity='0.5';}
+try{
+let r=await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note})});
+let j=await r.json();
+if(j.ok){
+toast(action.charAt(0).toUpperCase()+action.slice(1)+' withdrawal #'+id+' done','success');
 loadAll();
+}else{
+toast(j.error||'Action failed','error');
+}
+}catch(e){
+toast('Request failed: '+e.message,'error');
+}
+if(btn){btn.disabled=false;btn.style.opacity='1';}
 }
 
 async function actDep(id,action){
-let note='';
-if(action==='reject'||action==='expire') note=prompt(`Reason for ${action}:`)||'';
 if(action==='delete'&&!confirm('Delete deposit '+id+'?')) return;
-await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note})});
+let note='';
+if(action==='reject'||action==='expire'){
+note=await showReasonModal('Reason for '+action+':');
+if(note===null)return;
+}
+let btn=event?.target;
+if(btn){btn.disabled=true;btn.style.opacity='0.5';}
+try{
+let r=await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note})});
+let j=await r.json();
+if(j.ok){
+toast(action.charAt(0).toUpperCase()+action.slice(1)+' deposit #'+id+' done','success');
 loadAll();
+}else{
+toast(j.error||'Action failed','error');
+}
+}catch(e){
+toast('Request failed: '+e.message,'error');
+}
+if(btn){btn.disabled=false;btn.style.opacity='1';}
 }
 
 async function editDepAmount(id,current){
 let amt=prompt('New expected amount:',current);
 if(!amt) return;
-await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action:'edit_amount',amount:parseFloat(amt)})});
-loadAll();
+try{
+let r=await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action:'edit_amount',amount:parseFloat(amt)})});
+let j=await r.json();
+if(j.ok){toast('Amount updated','success');loadAll();}else{toast(j.error||'Failed','error');}
+}catch(e){toast('Request failed','error');}
 }
 
 function openAction(userId,action){
@@ -450,9 +513,14 @@ function closeModal(){document.getElementById('actionModal').classList.add('hidd
 async function confirmAction(){
 let amount=parseFloat(document.getElementById('actionAmount')?.value||0);
 let note=document.getElementById('actionNote')?.value||'';
+let btn=document.getElementById('confirmBtn');
+if(btn){btn.disabled=true;btn.style.opacity='0.5';}
+try{
 let res=await fetch('/api/admin/user/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({user_id:selectedUser,action:currentAction,amount,note})});
 let j=await res.json();
-if(j.ok){closeModal();loadAll();}else alert(j.error||'Failed');
+if(j.ok){closeModal();toast('Action completed','success');loadAll();}else{toast(j.error||'Failed','error');}
+}catch(e){toast('Request failed','error');}
+if(btn){btn.disabled=false;btn.style.opacity='1';}
 }
 
 async function addMembers(){
