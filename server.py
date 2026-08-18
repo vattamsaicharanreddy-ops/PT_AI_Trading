@@ -1385,16 +1385,50 @@ def debug_tasks():
 
 @app.get("/api/debug/seed-referrals")
 def debug_seed_referrals():
-    _seed_referral_tasks()
-    _seed_join_tasks()
     conn = get_conn()
+    errors = []
     try:
         cur = cursor(conn)
+        cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_type TEXT DEFAULT 'join'")
+        cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_config TEXT DEFAULT ''")
+        cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0")
+        conn.commit()
+    except Exception as e:
+        errors.append(f"migrate: {e}")
+
+    conn2 = get_conn()
+    try:
+        cur = cursor(conn2)
+        now = datetime.utcnow().isoformat()
+        inserted = 0
+        seed_tasks = [
+            ("Refer 1 Friend", "Invite 1 friend to join any task group", 0.5, '{"ref_count":1}', 100),
+            ("Refer 3 Friends", "Invite 3 friends to join any task groups", 1.5, '{"ref_count":3}', 101),
+            ("Refer 5 Friends", "Invite 5 friends to join any task groups", 3.0, '{"ref_count":5}', 102),
+            ("Super Recruiter", "Refer 5 friends who each deposit \u226520 USDT", 25.0, '{"ref_count":5,"min_deposit":20}', 103),
+        ]
+        for title, desc, reward, config, sort_o in seed_tasks:
+            try:
+                cur.execute(f"SELECT id FROM tasks WHERE title={ph()} LIMIT 1", (title,))
+                if cur.fetchone():
+                    continue
+                cur.execute(
+                    f"INSERT INTO tasks (title,description,reward,reward_type,is_active,is_mandatory,icon,task_type,task_config,sort_order,created_at) VALUES ({ph()},{ph()},{ph()},'withdrawable',1,0,'','referral',{ph()},{ph()},{ph()})",
+                    (title, desc, reward, config, sort_o, now),
+                )
+                inserted += 1
+            except Exception as e:
+                errors.append(f"insert '{title}': {e}")
+        conn2.commit()
         cur.execute("SELECT id, title, task_type, sort_order FROM tasks ORDER BY sort_order ASC, id ASC")
         tasks = rows_as_dicts(cur.fetchall())
-        return {"ok": True, "tasks": tasks}
+        return {"ok": True, "inserted": inserted, "tasks": tasks, "errors": errors}
+    except Exception as e:
+        errors.append(f"outer: {e}")
+        return {"ok": False, "errors": errors}
     finally:
         safe_close(conn)
+        safe_close(conn2)
 
 
 try:
