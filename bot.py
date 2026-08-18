@@ -4,9 +4,6 @@ import urllib.request
 import urllib.parse
 import json
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ContextTypes
-
 logger = logging.getLogger("bot")
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
@@ -15,28 +12,83 @@ WEBAPP_URL = os.getenv("WEBAPP_URL", "https://example.com")
 _bot_username_cache = None
 
 
+def _tg_api(token, method, payload=None):
+    url = f"https://api.telegram.org/bot{token}/{method}"
+    body = json.dumps(payload).encode() if payload else None
+    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        return json.loads(r.read().decode())
+
+
 def get_bot_username():
     global _bot_username_cache
     if _bot_username_cache:
         return _bot_username_cache
     try:
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/getMe"
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=10) as r:
-            data = json.loads(r.read().decode())
-            if data.get("ok"):
-                _bot_username_cache = data["result"]["username"]
-                logger.info(f"Fetched bot username from API: @{_bot_username_cache}")
-                return _bot_username_cache
+        data = _tg_api(BOT_TOKEN, "getMe")
+        if data.get("ok"):
+            _bot_username_cache = data["result"]["username"]
+            logger.info(f"Fetched bot username from API: @{_bot_username_cache}")
+            return _bot_username_cache
     except Exception as e:
         logger.error(f"Failed to fetch bot username from API: {e}")
     _bot_username_cache = os.getenv("BOT_USERNAME", "").strip().lstrip("@")
     if _bot_username_cache:
-        logger.info(f"Using bot username from env: @{_bot_username_cache}")
         return _bot_username_cache
     _bot_username_cache = "PT_AI_TRADING_TESTINGBOT"
-    logger.warning(f"Using hardcoded bot username: @{_bot_username_cache}")
     return _bot_username_cache
+
+
+def _send_message(token, chat_id, text, reply_markup=None, parse_mode="HTML"):
+    payload = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode}
+    if reply_markup:
+        payload["reply_markup"] = reply_markup
+    return _tg_api(token, "sendMessage", payload)
+
+
+def _edit_message(token, chat_id, message_id, text, reply_markup=None, parse_mode="HTML"):
+    payload = {"chat_id": chat_id, "message_id": message_id, "text": text, "parse_mode": parse_mode}
+    if reply_markup:
+        payload["reply_markup"] = reply_markup
+    return _tg_api(token, "editMessageText", payload)
+
+
+def _answer_callback(token, callback_query_id, text="", show_alert=False):
+    return _tg_api(token, "answerCallbackQuery", {
+        "callback_query_id": callback_query_id,
+        "text": text,
+        "show_alert": show_alert,
+    })
+
+
+def _inline_kb(rows):
+    return {"inline_keyboard": rows}
+
+
+def _btn(text, **kwargs):
+    return {"text": text, **kwargs}
+
+
+def _make_kb():
+    return _inline_kb([
+        [_btn("\U0001f4b0  Open Trading Dashboard", web_app={"url": WEBAPP_URL})],
+        [
+            _btn("\U0001f465  Join Group", url="https://t.me/PT_AI_Trading_Group"),
+            _btn("\U0001f4e2  Join Channel", url="https://t.me/PT_AI_Trading"),
+        ],
+        [
+            _btn("\U0001f527  Support", url="https://t.me/PT_AI_Support"),
+            _btn("\U0001f464  Profile", callback_data="profile"),
+        ],
+        [
+            _btn("\U0001f4b3  Deposit", callback_data="deposit_info"),
+            _btn("\U0001f4b5  Withdraw", callback_data="withdraw_info"),
+        ],
+        [
+            _btn("\U0001f3af  Tasks & Earn", callback_data="tasks_info"),
+            _btn("\U0001f91d  Refer & Earn", callback_data="referral_info"),
+        ],
+    ])
 
 
 WELCOME_TEXT = """\u2728 <b>Welcome, {name}!</b>
@@ -66,65 +118,58 @@ TRC20 \u2022 BEP20 \u2022 ERC20 \u2022 TON \u2022 SOL
 \U0001f680 <b>Tap a button below to get started!</b>{ref_line}"""
 
 
-def _make_kb():
-    return [
-        [InlineKeyboardButton("\U0001f4b0  Open Trading Dashboard", web_app={"url": WEBAPP_URL})],
-        [
-            InlineKeyboardButton("\U0001f465  Join Group", url="https://t.me/PT_AI_Trading_Group"),
-            InlineKeyboardButton("\U0001f4e2  Join Channel", url="https://t.me/PT_AI_Trading"),
-        ],
-        [
-            InlineKeyboardButton("\U0001f527  Support", url="https://t.me/PT_AI_Support"),
-            InlineKeyboardButton("\U0001f464  Profile", callback_data="profile"),
-        ],
-        [
-            InlineKeyboardButton("\U0001f4b3  Deposit", callback_data="deposit_info"),
-            InlineKeyboardButton("\U0001f4b5  Withdraw", callback_data="withdraw_info"),
-        ],
-        [
-            InlineKeyboardButton("\U0001f3af  Tasks & Earn", callback_data="tasks_info"),
-            InlineKeyboardButton("\U0001f91d  Refer & Earn", callback_data="referral_info"),
-        ],
-    ]
-
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    args = context.args
-    ref = args[0] if args and len(args) > 0 else None
-
+def _ensure_user(user_id, username="", referred_by=None):
     try:
         port = int(os.getenv("PORT", 10000))
-        url = f"http://127.0.0.1:{port}/api/me/{user.id}?username={user.username or ''}&referred_by={ref or ''}"
+        url = f"http://127.0.0.1:{port}/api/me/{user_id}?username={urllib.parse.quote(username or '')}&referred_by={referred_by or ''}"
         req = urllib.request.Request(url, headers={"User-Agent": "bot"})
         with urllib.request.urlopen(req, timeout=5) as r:
             r.read()
     except Exception as e:
-        logger.warning(f"ensure_user failed for {user.id}: {e}")
+        logger.warning(f"ensure_user failed for {user_id}: {e}")
+
+
+def _fetch_user_data(user_id):
+    try:
+        port = int(os.getenv("PORT", 10000))
+        url = f"http://127.0.0.1:{port}/api/me/{user_id}"
+        req = urllib.request.Request(url, headers={"User-Agent": "bot"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            return json.loads(r.read().decode())
+    except Exception as e:
+        logger.warning(f"fetch_user failed for {user_id}: {e}")
+        return None
+
+
+async def handle_start(token, chat_id, user, args):
+    user_id = user.get("id", 0)
+    username = user.get("username", "")
+    first_name = user.get("first_name", "Trader")
+    ref = args[0] if args else None
+
+    _ensure_user(user_id, username, ref)
 
     ref_line = ""
     if ref:
         ref_line = f"\n\n\U0001f517 <b>Referred by:</b> User #{ref}"
 
-    text = WELCOME_TEXT.format(name=user.first_name or "Trader", ref_line=ref_line)
+    text = WELCOME_TEXT.format(name=first_name, ref_line=ref_line)
     kb = _make_kb()
 
-    await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
+    try:
+        _send_message(token, chat_id, text, reply_markup=kb)
+    except Exception as e:
+        logger.error(f"Failed to send /start reply: {e}", exc_info=True)
 
 
-async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    data = query.data
+async def handle_callback(token, chat_id, message_id, user, cb_data):
+    cb_id = user.get("id", 0)
 
     try:
-        if data == "profile":
-            user_id = query.from_user.id
-            try:
-                port = int(os.getenv("PORT", 10000))
-                url = f"http://127.0.0.1:{port}/api/me/{user_id}"
-                req = urllib.request.Request(url, headers={"User-Agent": "bot"})
-                with urllib.request.urlopen(req, timeout=5) as r:
-                    me = json.loads(r.read().decode())
+        if cb_data == "profile":
+            user_id = user.get("id", 0)
+            me = _fetch_user_data(user_id)
+            if me:
                 bal = float(me.get("balance", 0) or 0)
                 wd = float(me.get("withdrawable", 0) or 0)
                 profit = float(me.get("profit", 0) or 0)
@@ -142,12 +187,12 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     f"\U0001f91d <b>Referral Earnings:</b> {refs:.2f} USDT\n\n"
                     f"\U0001f449 Open dashboard for full details"
                 )
-            except Exception:
+            else:
                 text = "\u274c Could not load profile. Try again later."
-            kb = [[InlineKeyboardButton("\U0001f4b0  Open Dashboard", web_app={"url": WEBAPP_URL})]]
-            await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
+            kb = _inline_kb([[_btn("\U0001f4b0  Open Dashboard", web_app={"url": WEBAPP_URL})]])
+            _edit_message(token, chat_id, message_id, text, reply_markup=kb)
 
-        elif data == "deposit_info":
+        elif cb_data == "deposit_info":
             text = (
                 f"\U0001f4b3 <b>Deposit USDT</b>\n\n"
                 f"\u2022 Minimum deposit: <b>20 USDT</b>\n"
@@ -163,13 +208,13 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"After deposit, AI contract starts automatically for <b>30 days</b>.\n\n"
                 f"\U0001f449 Tap below to create an invoice"
             )
-            kb = [
-                [InlineKeyboardButton("\U0001f4b3  Make Deposit", web_app={"url": WEBAPP_URL})],
-                [InlineKeyboardButton("\u2b05\ufe0f  Back", callback_data="back_start")],
-            ]
-            await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
+            kb = _inline_kb([
+                [_btn("\U0001f4b3  Make Deposit", web_app={"url": WEBAPP_URL})],
+                [_btn("\u2b05\ufe0f  Back", callback_data="back_start")],
+            ])
+            _edit_message(token, chat_id, message_id, text, reply_markup=kb)
 
-        elif data == "withdraw_info":
+        elif cb_data == "withdraw_info":
             text = (
                 f"\U0001f4b5 <b>Withdraw USDT</b>\n\n"
                 f"\u2022 Minimum withdrawal: <b>10 USDT</b>\n"
@@ -180,13 +225,13 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"\u2022 Must have sufficient <b>withdrawable</b> balance\n\n"
                 f"\U0001f449 Tap below to open withdrawal"
             )
-            kb = [
-                [InlineKeyboardButton("\U0001f4b5  Withdraw Now", web_app={"url": WEBAPP_URL})],
-                [InlineKeyboardButton("\u2b05\ufe0f  Back", callback_data="back_start")],
-            ]
-            await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
+            kb = _inline_kb([
+                [_btn("\U0001f4b5  Withdraw Now", web_app={"url": WEBAPP_URL})],
+                [_btn("\u2b05\ufe0f  Back", callback_data="back_start")],
+            ])
+            _edit_message(token, chat_id, message_id, text, reply_markup=kb)
 
-        elif data == "tasks_info":
+        elif cb_data == "tasks_info":
             text = (
                 f"\U0001f3af <b>Tasks & Earn USDT</b>\n\n"
                 f"\u2705 <b>Join Group Tasks</b>\n"
@@ -199,15 +244,16 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"Complete all mandatory tasks to unlock.\n\n"
                 f"\U0001f449 Tap below to see all tasks"
             )
-            kb = [
-                [InlineKeyboardButton("\U0001f3af  Open Tasks", web_app={"url": WEBAPP_URL})],
-                [InlineKeyboardButton("\u2b05\ufe0f  Back", callback_data="back_start")],
-            ]
-            await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
+            kb = _inline_kb([
+                [_btn("\U0001f3af  Open Tasks", web_app={"url": WEBAPP_URL})],
+                [_btn("\u2b05\ufe0f  Back", callback_data="back_start")],
+            ])
+            _edit_message(token, chat_id, message_id, text, reply_markup=kb)
 
-        elif data == "referral_info":
+        elif cb_data == "referral_info":
             bot_name = get_bot_username()
-            ref_link = f"https://t.me/{bot_name}?start={query.from_user.id}"
+            user_id = user.get("id", 0)
+            ref_link = f"https://t.me/{bot_name}?start={user_id}"
             text = (
                 f"\U0001f91d <b>Refer & Earn</b>\n\n"
                 f"\u2022 Earn <b>7%</b> bonus on direct referral deposits\n"
@@ -217,27 +263,21 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"<code>{ref_link}</code>\n\n"
                 f"\U0001f4a1 Share this link with friends to start earning!"
             )
-            share_text = urllib.parse.quote(
-                f"Join PT_AI Trading and earn USDT daily!\n\nUse my referral link:\n{ref_link}"
-            )
-            kb = [
-                [InlineKeyboardButton("\U0001f44c  Copy & Share", callback_data="copy_ref")],
-                [InlineKeyboardButton("\u2b05\ufe0f  Back", callback_data="back_start")],
-            ]
-            await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
+            kb = _inline_kb([
+                [_btn("\u2b05\ufe0f  Back", callback_data="back_start")],
+            ])
+            _edit_message(token, chat_id, message_id, text, reply_markup=kb)
 
-        elif data == "back_start":
-            ref_line = ""
-            text = WELCOME_TEXT.format(name=query.from_user.first_name or "Trader", ref_line=ref_line)
+        elif cb_data == "back_start":
+            first_name = user.get("first_name", "Trader")
+            text = WELCOME_TEXT.format(name=first_name, ref_line="")
             kb = _make_kb()
-            await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
-
-        elif data == "copy_ref":
-            bot_name = get_bot_username()
-            ref_link = f"https://t.me/{bot_name}?start={query.from_user.id}"
-            await query.answer(text=f"Link ready to paste!", show_alert=True)
+            _edit_message(token, chat_id, message_id, text, reply_markup=kb)
 
     except Exception as e:
-        logger.error(f"Callback handler error for '{data}': {e}", exc_info=True)
+        logger.error(f"Callback error for '{cb_data}': {e}", exc_info=True)
 
-    await query.answer()
+    try:
+        _answer_callback(token, cb_data)
+    except Exception:
+        pass

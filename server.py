@@ -449,17 +449,29 @@ async def webhook_handler(token: str, request: Request):
         return {"ok": False}
     try:
         data = await request.json()
-        from telegram import Update
-        from telegram.ext import Application, CommandHandler, CallbackQueryHandler
-        from bot import start, callback_handler
-        if not hasattr(app, "_tg_app"):
-            app._tg_app = Application.builder().token(BOT_TOKEN).build()
-            app._tg_app.add_handler(CommandHandler("start", start))
-            app._tg_app.add_handler(CallbackQueryHandler(callback_handler))
-            logger.info("Telegram Application built once and cached")
-        tg_app = app._tg_app
-        update = Update.de_json(data, tg_app.bot)
-        await tg_app.process_update(update)
+        msg = data.get("message") or data.get("callback_query")
+        if not msg:
+            return {"ok": True}
+
+        is_callback = "callback_query" in data
+        if is_callback:
+            cb = data["callback_query"]
+            chat_id = cb["message"]["chat"]["id"]
+            message_id = cb["message"]["message_id"]
+            user = cb["from"]
+            cb_data = cb.get("data", "")
+        else:
+            chat_id = msg["chat"]["id"]
+            user = msg.get("from", {})
+            cb_data = ""
+
+        from bot import handle_start, handle_callback
+        if not is_callback and msg.get("text", "").startswith("/start"):
+            args = msg["text"].split(" ", 1)[1:] if " " in msg.get("text", "") else []
+            await handle_start(BOT_TOKEN, chat_id, user, args)
+        elif is_callback:
+            await handle_callback(BOT_TOKEN, chat_id, message_id, user, cb_data)
+
         return {"ok": True}
     except Exception as e:
         logger.error(f"Webhook error: {e}", exc_info=True)
