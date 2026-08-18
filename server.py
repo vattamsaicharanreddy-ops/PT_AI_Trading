@@ -51,6 +51,13 @@ def _seed_referral_tasks():
     conn = get_conn()
     try:
         cur = cursor(conn)
+        try:
+            cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_type TEXT DEFAULT 'join'")
+            cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_config TEXT DEFAULT ''")
+            cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0")
+            conn.commit()
+        except Exception:
+            pass
         cur.execute(f"SELECT COUNT(*) as cnt FROM tasks WHERE task_type='referral'")
         cnt = val(cur.fetchone(), "cnt", 0) or 0
         if cnt >= 4:
