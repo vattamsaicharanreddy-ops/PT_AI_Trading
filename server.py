@@ -650,7 +650,7 @@ def withdraw(user_id: int, req: WithdrawalRequest):
         cur.execute(f"SELECT COUNT(*) as cnt FROM tasks WHERE is_mandatory=1 AND is_active=1")
         mand = val(cur.fetchone(), "cnt", 0) or 0
         if mand > 0:
-        cur.execute(f"SELECT COUNT(*) as cnt FROM user_tasks ut JOIN tasks t ON ut.task_id=t.id WHERE ut.user_id={ph()} AND ut.status='verified' AND t.is_mandatory=1 AND t.is_active=1", (user_id,))
+            cur.execute(f"SELECT COUNT(*) as cnt FROM user_tasks ut JOIN tasks t ON ut.task_id=t.id WHERE ut.user_id={ph()} AND ut.status='verified' AND t.is_mandatory=1 AND t.is_active=1", (user_id,))
             done = val(cur.fetchone(), "cnt", 0) or 0
             if done < mand:
                 return {"ok": False, "error": f"Complete {mand} mandatory join tasks first! Go to Tasks tab"}
