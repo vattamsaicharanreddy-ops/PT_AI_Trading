@@ -1307,9 +1307,43 @@ def admin_bulk_action(request: Request):
 
 
 @app.post("/api/admin/broadcast")
-def admin_broadcast(request: Request):
+async def admin_broadcast(request: Request):
     require_admin(request)
-    return {"ok": True, "sent": 0, "message": "Broadcast via Telegram Bot API recommended"}
+    import json as _json
+    import urllib.request as _urllib
+    body = await request.json()
+    message = body.get("message", "").strip()
+    if not message:
+        return {"ok": False, "error": "Message is required", "sent": 0}
+    token = os.getenv("BOT_TOKEN", "")
+    if not token:
+        return {"ok": False, "error": "BOT_TOKEN not set", "sent": 0}
+    conn = get_conn()
+    sent = 0
+    failed = 0
+    try:
+        cur = cursor(conn)
+        cur.execute("SELECT user_id FROM users")
+        users = cur.fetchall()
+        for row in users:
+            uid = row[0] if isinstance(row, tuple) else row.get("user_id", 0)
+            if not uid:
+                continue
+            try:
+                url = f"https://api.telegram.org/bot{token}/sendMessage"
+                payload = _json.dumps({"chat_id": uid, "text": message, "parse_mode": "HTML"}).encode()
+                req = _urllib.Request(url, data=payload, headers={"Content-Type": "application/json"})
+                with _urllib.urlopen(req, timeout=10) as r:
+                    resp = _json.loads(r.read().decode())
+                    if resp.get("ok"):
+                        sent += 1
+                    else:
+                        failed += 1
+            except Exception:
+                failed += 1
+    finally:
+        safe_close(conn)
+    return {"ok": sent > 0, "sent": sent, "failed": failed}
 
 
 @app.post("/api/admin/upload")
