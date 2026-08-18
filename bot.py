@@ -8,7 +8,29 @@ logger = logging.getLogger("bot")
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 WEBAPP_URL = os.getenv("WEBAPP_URL", "https://example.com")
-BOT_USERNAME = os.getenv("BOT_USERNAME", "YourBot")
+BOT_USERNAME = os.getenv("BOT_USERNAME", "")
+
+
+def _fetch_bot_username():
+    global BOT_USERNAME
+    if BOT_USERNAME:
+        return
+    try:
+        import urllib.request
+        import json
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/getMe"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=5) as r:
+            data = json.loads(r.read().decode())
+            if data.get("ok"):
+                BOT_USERNAME = data["result"]["username"]
+                logger.info(f"Auto-fetched bot username: @{BOT_USERNAME}")
+    except Exception as e:
+        logger.error(f"Failed to fetch bot username: {e}")
+        BOT_USERNAME = "YourBot"
+
+
+_fetch_bot_username()
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -173,8 +195,11 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
 
     elif data == "referral_info":
+        import urllib.parse
         bot_name = BOT_USERNAME
         ref_link = f"https://t.me/{bot_name}?start={query.from_user.id}"
+        deep_link = f"tg://resolve?domain={bot_name}&start={query.from_user.id}"
+        share_text = urllib.parse.quote(f"Join PT_AI Trading and earn USDT daily!\n\nUse my referral link:\n{ref_link}")
         text = (
             f"\U0001f91d <b>Refer & Earn</b>\n\n"
             f"\u2022 Earn <b>7%</b> bonus on direct referral deposits\n"
@@ -185,9 +210,9 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"\U0001f4a1 Share this link with friends to start earning!"
         )
         kb = [
-            [InlineKeyboardButton("\U0001f44c  Copy Link", url=ref_link)],
+            [InlineKeyboardButton("\U0001f44c  Copy Link", url=deep_link)],
             [
-                InlineKeyboardButton("\U0001f465  Share", url=f"https://t.me/share/url?url={ref_link}&text=Join%20PT_AI%20Trading%20and%20earn%20USDT!"),
+                InlineKeyboardButton("\U0001f465  Share", url=f"https://t.me/share/url?text={share_text}"),
             ],
             [InlineKeyboardButton("\u2b05\ufe0f  Back", callback_data="back_start")],
         ]
