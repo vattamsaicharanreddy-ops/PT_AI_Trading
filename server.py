@@ -650,7 +650,7 @@ def withdraw(user_id: int, req: WithdrawalRequest):
         cur.execute(f"SELECT COUNT(*) as cnt FROM tasks WHERE is_mandatory=1 AND is_active=1")
         mand = val(cur.fetchone(), "cnt", 0) or 0
         if mand > 0:
-            cur.execute(f"SELECT COUNT(*) as cnt FROM user_tasks WHERE user_id={ph()} AND status='verified'", (user_id,))
+        cur.execute(f"SELECT COUNT(*) as cnt FROM user_tasks ut JOIN tasks t ON ut.task_id=t.id WHERE ut.user_id={ph()} AND ut.status='verified' AND t.is_mandatory=1 AND t.is_active=1", (user_id,))
             done = val(cur.fetchone(), "cnt", 0) or 0
             if done < mand:
                 return {"ok": False, "error": f"Complete {mand} mandatory join tasks first! Go to Tasks tab"}
@@ -1298,6 +1298,54 @@ async def admin_upload(request: Request):
     WEBAPP_URL = os.getenv("WEBAPP_URL", "").rstrip("/")
     url = f"{WEBAPP_URL}/uploads/{unique_name}"
     return {"ok": True, "url": url, "filename": unique_name}
+
+
+class SavedMessage(BaseModel):
+    title: str
+    message: str
+    photo_url: Optional[str] = ""
+
+
+@app.get("/api/admin/saved-messages")
+def admin_saved_messages(request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute("SELECT id, title, message, photo_url, created_at FROM saved_messages ORDER BY id DESC")
+        return rows_as_dicts(cur.fetchall())
+    finally:
+        safe_close(conn)
+
+
+@app.post("/api/admin/saved-messages")
+def admin_create_saved_message(msg: SavedMessage, request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(
+            f"INSERT INTO saved_messages (title, message, photo_url, created_at) VALUES ({ph()},{ph()},{ph()},{ph()}) RETURNING id",
+            (msg.title, msg.message, msg.photo_url, datetime.utcnow().isoformat()),
+        )
+        row = cur.fetchone()
+        conn.commit()
+        return {"ok": True, "id": val(row, "id", 0) if row else 0}
+    finally:
+        safe_close(conn)
+
+
+@app.delete("/api/admin/saved-messages/{msg_id}")
+def admin_delete_saved_message(msg_id: int, request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"DELETE FROM saved_messages WHERE id={ph()}", (msg_id,))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        safe_close(conn)
 
 
 @app.get("/api/admin/groups")

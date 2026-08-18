@@ -232,6 +232,18 @@ Upload Image
 <pre id="broadcastLog" class="hidden mt-3 p-3 rounded-xl text-[10px] overflow-auto mono" style="background:var(--input);border:1px solid var(--border)"></pre>
 </div>
 <div class="card p-5">
+<div class="flex justify-between items-center">
+<h2 class="text-lg font-black">Saved Messages</h2>
+<button onclick="loadSavedMessages()" class="glass px-3 py-1.5 rounded-full text-[10px] font-bold">Refresh</button>
+</div>
+<p class="text-[11px] mt-1" style="color:var(--text2)">Save message templates. Click a message to load it into the broadcast editor.</p>
+<div class="mt-3 flex gap-2">
+<input id="savedMsgTitle" placeholder="Title" class="flex-1 rounded-xl p-2.5 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+<button onclick="saveMessage()" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">Save Current</button>
+</div>
+<div id="savedMessagesList" class="mt-3 space-y-2 max-h-64 overflow-y-auto"></div>
+</div>
+<div class="card p-5">
 <h2 class="text-lg font-black">Broadcast to All Bot Users</h2>
 <textarea id="broadcastMsgUsers" placeholder="Message to all users..." class="mt-4 w-full h-32 rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)"></textarea>
 <button onclick="sendBroadcast()" class="mt-3 btn-gold px-6 py-3 rounded-full text-sm">Send to All Users</button>
@@ -662,6 +674,54 @@ status.style.color='#10b981';
 
 async function loadBroadcastTab(){
 loadGroups();
+loadSavedMessages();
+}
+
+async function loadSavedMessages(){
+try{
+let r=await fetch('/api/admin/saved-messages',{headers:apiHeaders()});
+let msgs=await r.json();
+let el=document.getElementById('savedMessagesList');
+if(!msgs.length){el.innerHTML='<p class="text-[11px]" style="color:var(--text3)">No saved messages yet.</p>';return;}
+el.innerHTML=msgs.map(m=>`<div class="p-3 rounded-xl cursor-pointer" style="background:var(--hover);border:1px solid var(--border2)" onclick="loadSavedMessage(${m.id})">
+<div class="flex justify-between items-start"><p class="font-bold text-[11px]">${m.title}</p><button onclick="event.stopPropagation();deleteSavedMessage(${m.id})" class="px-2 py-0.5 rounded-full text-[9px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Del</button></div>
+<p class="text-[10px] mt-1 line-clamp-2" style="color:var(--text3)">${m.message.slice(0,120)}${m.message.length>120?'...':''}</p>
+${m.photo_url?'<p class="text-[9px] mt-0.5" style="color:#10b981">Has image</p>':''}
+</div>`).join('');
+}catch(e){console.error('loadSavedMessages',e);}
+}
+
+async function saveMessage(){
+let title=document.getElementById('savedMsgTitle').value.trim();
+let message=document.getElementById('broadcastMsg').value.trim();
+let photo_url=document.getElementById('broadcastImgUrl').value.trim();
+if(!title){alert('Enter a title');return;}
+if(!message){alert('Enter a message first');return;}
+try{
+let r=await fetch('/api/admin/saved-messages',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({title,message,photo_url})});
+let j=await r.json();
+if(j.ok){document.getElementById('savedMsgTitle').value='';loadSavedMessages();alert('Saved!');}
+else alert('Failed');
+}catch(e){alert('Error: '+e);}
+}
+
+async function deleteSavedMessage(id){
+if(!confirm('Delete this message?'))return;
+try{
+await fetch('/api/admin/saved-messages/'+id,{method:'DELETE',headers:apiHeaders()});
+loadSavedMessages();
+}catch(e){alert('Error: '+e);}
+}
+
+async function loadSavedMessage(id){
+try{
+let msgs=await fetch('/api/admin/saved-messages',{headers:apiHeaders()}).then(r=>r.json());
+let m=msgs.find(x=>x.id===id);
+if(!m)return;
+document.getElementById('broadcastMsg').value=m.message;
+if(m.photo_url){document.getElementById('broadcastImgUrl').value=m.photo_url;document.getElementById('broadcastImgUrl').dispatchEvent(new Event('input'));}
+alert('Message loaded into editor!');
+}catch(e){alert('Error: '+e);}
 }
 
 async function loadEnvStatus(){

@@ -210,6 +210,17 @@ def init_db():
                 except Exception:
                     pass
 
+            try:
+                cur.execute("""CREATE TABLE IF NOT EXISTS saved_messages (
+                    id SERIAL PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    photo_url TEXT DEFAULT '',
+                    created_at TEXT
+                )""")
+            except Exception:
+                pass
+
             conn.commit()
             cur.close()
         else:
@@ -265,6 +276,13 @@ def init_db():
                 user_id INTEGER, task_id INTEGER, status TEXT DEFAULT 'pending',
                 verified_at TEXT, reward_claimed INTEGER DEFAULT 0,
                 UNIQUE(user_id, task_id)
+            )""")
+            conn.execute("""CREATE TABLE IF NOT EXISTS saved_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                message TEXT NOT NULL,
+                photo_url TEXT DEFAULT '',
+                created_at TEXT
             )""")
 
             for stmt in [
