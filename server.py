@@ -74,7 +74,7 @@ def _seed_referral_tasks():
             if cur.fetchone():
                 continue
             cur.execute(
-                f"INSERT INTO tasks (title,description,reward,reward_type,is_active,is_mandatory,icon,task_type,task_config,sort_order,created_at) VALUES ({ph()},{ph()},{ph()},'withdrawable',1,0,'', 'referral',{ph()},{ph()},{ph()})",
+                f"INSERT INTO tasks (title,description,group_link,group_id,group_username,reward,reward_type,is_active,is_mandatory,icon,task_type,task_config,sort_order,created_at) VALUES ({ph()},{ph()},'','','',{ph()},'withdrawable',1,0,'','referral',{ph()},{ph()},{ph()})",
                 (title, desc, reward, config, sort_o, now),
             )
         conn.commit()
@@ -1413,7 +1413,7 @@ def debug_seed_referrals():
                 if cur.fetchone():
                     continue
                 cur.execute(
-                    f"INSERT INTO tasks (title,description,reward,reward_type,is_active,is_mandatory,icon,task_type,task_config,sort_order,created_at) VALUES ({ph()},{ph()},{ph()},'withdrawable',1,0,'','referral',{ph()},{ph()},{ph()})",
+                    f"INSERT INTO tasks (title,description,group_link,group_id,group_username,reward,reward_type,is_active,is_mandatory,icon,task_type,task_config,sort_order,created_at) VALUES ({ph()},{ph()},'','','',{ph()},'withdrawable',1,0,'','referral',{ph()},{ph()},{ph()})",
                     (title, desc, reward, config, sort_o, now),
                 )
                 inserted += 1
