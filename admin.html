@@ -2,166 +2,690 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PT_AI — ULTRA COMMAND V7</title>
+<title>PT_AI — ULTRA COMMAND V5</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *{font-family:'Inter',sans-serif}
 .mono{font-family:'JetBrains Mono',monospace}
-body{background:#06060a}
-.nav-active{background:linear-gradient(135deg,#fff,#e5e5e5)!important;color:#000!important;box-shadow:0 0 40px rgba(255,255,255,0.4)!important;font-weight:900!important}
-.card{background:radial-gradient(120% 120% at 0% 0%,#1a1a25 0%,#121214 55%,#0f0f12 100%);border:1px solid rgba(255,255,255,0.08);border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)}
-.glass{backdrop-filter:blur(16px);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1)}
-.btn-gold{background:linear-gradient(135deg,#FFD60A 0%,#FFB800 100%);color:#000;font-weight:900;box-shadow:0 4px 20px rgba(255,214,10,0.4)}
+:root{--bg:#06060a;--surface:#121214;--card:#1a1a25;--text:#ffffff;--text2:rgba(255,255,255,0.6);--text3:rgba(255,255,255,0.35);--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.04);--sidebar:#08080c;--hover:rgba(255,255,255,0.06);--input:#0a0a0f;--gold:#FFD60A;--emerald:#10b981;--red:#ef4444;--purple:#7C4DFF;--accent:rgba(124,77,255,0.12)}
+[data-theme="light"]{--bg:#f5f5f7;--surface:#ffffff;--card:#ffffff;--text:#1a1a2e;--text2:rgba(26,26,46,0.6);--text3:rgba(26,26,46,0.35);--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.04);--sidebar:#ffffff;--hover:rgba(0,0,0,0.04);--input:#f0f0f5;--accent:rgba(124,77,255,0.08)}
+body{background:var(--bg);color:var(--text)}
+.nav-active{background:var(--text)!important;color:var(--bg)!important;box-shadow:0 4px 20px rgba(0,0,0,0.15)!important;font-weight:900!important}
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,0.08)}
+[data-theme="light"] .card{box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.glass{backdrop-filter:blur(16px);background:var(--hover);border:1px solid var(--border)}
+.btn-gold{background:linear-gradient(135deg,#FFD60A 0%,#FFB800 100%);color:#000;font-weight:900;box-shadow:0 4px 16px rgba(255,214,10,0.3)}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(255,214,10,0.4)}
+.btn-emerald{background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800}
+.btn-red{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;font-weight:800}
+table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weight:700}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+#authGate{position:fixed;inset:0;z-index:10000;background:var(--bg);display:flex;align-items:center;justify-content:center}
+.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:48px;width:100%;max-width:400px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+[data-theme="light"] .auth-card{box-shadow:0 8px 32px rgba(0,0,0,0.08)}
+.fade-in{animation:fadeIn 0.3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.theme-toggle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--border);background:var(--hover);transition:all 0.2s}
+.theme-toggle:hover{transform:scale(1.1)}
+.hidden{display:none!important}
+.toast{position:fixed;top:20px;right:20px;z-index:99999;padding:12px 20px;border-radius:12px;font-size:12px;font-weight:700;opacity:0;transform:translateY(-10px);transition:all 0.3s;pointer-events:none;max-width:320px;word-wrap:break-word}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast-success{background:rgba(16,185,129,0.95);color:#fff}
+.toast-error{background:rgba(239,68,68,0.95);color:#fff}
+.toast-info{background:rgba(124,77,255,0.95);color:#fff}
+.modal-overlay{position:fixed;inset:0;z-index:90000;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:360px}
 </style>
 </head>
-<body class="text-white min-h-screen flex">
-<div id="authOverlay" class="fixed inset-0 z-[99999] bg-[#06060a]/95 backdrop-blur-xl flex items-center justify-center p-6">
-  <div class="w-full max-w-[380px] bg-[#121214] border border-white/10 rounded-[24px] p-8 text-center">
-    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black text-xl mx-auto">PT</div>
-    <h2 class="font-black text-xl mt-5">Admin Login V7</h2>
-    <p class="text-xs opacity-60 mt-2">Enter ADMIN_SECRET</p>
-    <input id="adminSecretInput" type="password" placeholder="ADMIN_SECRET" class="w-full mt-6 bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none">
-    <button onclick="loginAdmin()" class="w-full mt-4 bg-[#FFD60A] text-black py-3 rounded-xl font-black">Unlock</button>
-    <p id="authError" class="text-xs text-red-400 mt-3 hidden"></p>
-  </div>
+<body class="min-h-screen flex" data-theme="dark">
+
+<div id="authGate">
+<div class="auth-card">
+<div class="w-16 h-16 mx-auto rounded-[18px] bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black text-[22px] shadow-lg mb-6">PT</div>
+<h2 class="font-black text-xl tracking-tight">Admin Access</h2>
+<p class="text-xs mt-2" style="color:var(--text2)">Enter admin secret to continue</p>
+<p id="authHint" class="text-[10px] mt-1 hidden" style="color:var(--emerald)">No secret configured. Any code works.</p>
+<input id="authInput" type="password" placeholder="Admin Secret" class="mt-4 w-full p-3.5 rounded-xl text-sm border outline-none" style="background:var(--input);border-color:var(--border)" onkeydown="if(event.key==='Enter')doLogin()">
+<button onclick="doLogin()" class="mt-3 w-full btn-gold py-3 rounded-full text-sm font-black">Unlock</button>
+<p id="authError" class="text-red-400 text-xs mt-3 hidden">Invalid secret</p>
 </div>
-<aside class="w-[310px] shrink-0 bg-[#08080c] border-r border-white/[0.07] flex flex-col h-screen sticky top-0">
-<div class="p-7 border-b border-white/[0.06]">
-<div class="flex items-center gap-3.5"><div class="w-12 h-12 rounded-[14px] bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black">PT</div><div><p class="font-black text-[15px]">PT_AI ULTRA V7</p><p class="text-[10px] tracking-[3.5px] opacity-40 font-bold">COMMAND V7 • LIVE</p></div></div>
-<div class="mt-5 grid grid-cols-2 gap-2.5"><div class="rounded-2xl bg-[#10b981]/10 border border-[#10b981]/20 p-3 text-center"><p class="text-[9px] opacity-50 tracking-widest">USERS</p><p id="navUsers" class="font-black text-[13px] mt-1">0</p></div><div class="rounded-2xl bg-[#FFD60A]/10 border border-[#FFD60A]/20 p-3 text-center"><p class="text-[9px] opacity-50 tracking-widest">STATUS</p><p class="font-black text-[13px] mt-1 text-[#FFD60A]">● LIVE</p></div></div>
 </div>
-<nav class="flex-1 p-4 space-y-1.5 overflow-y-auto">
-<button onclick="showTab('dashboard')" data-tab="dashboard" class="nav-btn nav-active w-full text-left px-4 py-3.5 rounded-2xl text-[13px] flex justify-between"><span>📊 Dashboard</span></button>
-<button onclick="showTab('users')" data-tab="users" class="nav-btn w-full text-left px-4 py-3.5 rounded-2xl text-[13px] opacity-70 hover:bg-white/[0.06] flex justify-between"><span>👥 Users</span><span id="navUsers2" class="bg-white/10 px-2.5 py-1 rounded-full text-[11px] font-bold">0</span></button>
-<button onclick="showTab('deposits')" data-tab="deposits" class="nav-btn w-full text-left px-4 py-3.5 rounded-2xl text-[13px] opacity-70 hover:bg-white/[0.06] flex justify-between"><span>💳 Deposits</span><span id="navDeposits" class="bg-yellow-500/20 text-yellow-300 px-2.5 py-1 rounded-full text-[11px] font-bold">0</span></button>
-<button onclick="showTab('withdrawals')" data-tab="withdrawals" class="nav-btn w-full text-left px-4 py-3.5 rounded-2xl text-[13px] opacity-70 hover:bg-white/[0.06] flex justify-between"><span>💸 Withdrawals</span><span id="navWd" class="bg-orange-500/20 text-orange-300 px-2.5 py-1 rounded-full text-[11px] font-bold">0</span></button>
-<button onclick="showTab('tasks')" data-tab="tasks" class="nav-btn w-full text-left px-4 py-3.5 rounded-2xl text-[13px] bg-gradient-to-r from-[#6C3BFF]/15 to-[#FFD60A]/15 border border-[#6C3BFF]/20 font-bold"><span>🎯 Tasks</span></button>
-<button onclick="showTab('debug')" data-tab="debug" class="nav-btn w-full text-left px-4 py-3.5 rounded-2xl text-[13px] bg-red-500/10 border border-red-500/20 text-red-300">🔧 Debug & Migration</button>
+
+<aside id="sidebar" class="hidden w-[280px] shrink-0 border-r flex flex-col h-screen sticky top-0" style="background:var(--sidebar);border-color:var(--border)">
+<div class="p-5 border-b" style="border-color:var(--border2)">
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black text-[15px] shadow-md">PT</div><div><p class="font-black tracking-[0.3px] text-[14px]">PT_AI ULTRA</p><p class="text-[9px] tracking-[3px] font-bold" style="color:var(--text3)">COMMAND V5</p></div></div>
+<div class="mt-4 grid grid-cols-2 gap-2"><div class="rounded-xl p-2.5 text-center" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.15)"><p class="text-[8px] tracking-widest font-bold" style="color:var(--text3)">VOLUME</p><p id="navVol" class="font-black text-[12px] mt-0.5">$0</p></div><div class="rounded-xl p-2.5 text-center" style="background:rgba(255,214,10,0.1);border:1px solid rgba(255,214,10,0.15)"><p class="text-[8px] tracking-widest font-bold" style="color:var(--text3)">STATUS</p><p class="font-black text-[12px] mt-0.5 text-[#FFD60A]">LIVE</p></div></div>
+</div>
+<nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+<button onclick="showTab('dashboard')" data-tab="dashboard" class="nav-btn nav-active w-full text-left px-3 py-3 rounded-xl text-[12px] flex justify-between items-center"><span>Dashboard</span><span class="text-[9px] opacity-50">1</span></button>
+<button onclick="showTab('users')" data-tab="users" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px] flex justify-between" style="color:var(--text2)"><span>Users</span><span id="navUsers" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:var(--hover)">0</span></button>
+<button onclick="showTab('deposits')" data-tab="deposits" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px] flex justify-between" style="color:var(--text2)"><span>Deposits</span><span id="navDeposits" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(255,214,10,0.15);color:#FFD60A">0</span></button>
+<button onclick="showTab('withdrawals')" data-tab="withdrawals" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px] flex justify-between" style="color:var(--text2)"><span>Withdrawals</span><span id="navWd" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(249,115,22,0.15);color:#fb923c">0</span></button>
+<button onclick="showTab('tasks')" data-tab="tasks" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px] flex justify-between" style="color:var(--text2)"><span>Tasks & Rewards</span><span class="text-[8px] px-1.5 py-0.5 rounded-full font-black" style="background:var(--gold);color:#000">NEW</span></button>
+<button onclick="showTab('groups')" data-tab="groups" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px]" style="color:var(--text2)">Groups Manager</button>
+<button onclick="showTab('referrals')" data-tab="referrals" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px]" style="color:var(--text2)">Referrals & Logs</button>
+<button onclick="showTab('extreme')" data-tab="extreme" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px] font-bold" style="color:#f87171;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15)">Extreme Tools</button>
+<button onclick="showTab('broadcast')" data-tab="broadcast" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px]" style="color:var(--text2)">Broadcast</button>
+<button onclick="showTab('settings')" data-tab="settings" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px]" style="color:var(--text2)">Settings</button>
 </nav>
-<div class="p-4 border-t border-white/[0.06]"><button onclick="logoutAdmin()" class="w-full glass py-2.5 rounded-xl text-xs">🔒 Logout</button></div>
 </aside>
-<main class="flex-1 min-h-screen">
-<header class="h-[76px] border-b border-white/[0.06] flex items-center px-8 justify-between sticky top-0 backdrop-blur-2xl bg-[#06060a]/70 z-20">
-<div><h1 id="pageTitle" class="font-black text-[20px]">Dashboard</h1><p class="text-[11px] opacity-50">V7 Final - Auto refresh 10s</p></div>
-<div class="flex gap-2.5"><button onclick="loadAll()" class="glass px-5 py-2.5 rounded-full text-xs font-bold">↻ Refresh</button><button onclick="restoreTasks()" class="bg-[#FFD60A] text-black px-5 py-2.5 rounded-full text-xs font-black">Restore Tasks</button></div>
+
+<main id="mainContent" class="hidden flex-1 min-h-screen">
+<header class="h-16 border-b flex items-center px-6 justify-between sticky top-0 backdrop-blur-xl z-20" style="background:color-mix(in srgb, var(--bg) 80%, transparent);border-color:var(--border2)">
+<div><h1 id="pageTitle" class="font-black text-[17px] tracking-tight">Dashboard</h1><p class="text-[10px]" style="color:var(--text3)">Auto refresh 10s</p></div>
+<div class="flex gap-2 items-center">
+<div class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><span id="themeIcon"></span></div>
+<button onclick="loadAll()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh</button>
+<button onclick="exportData()" class="btn-gold px-4 py-2 rounded-full text-[11px]">Export CSV</button>
+<button onclick="doLogout()" class="px-3 py-2 rounded-full text-[11px] font-bold" style="background:var(--hover);color:var(--text2)">Logout</button>
+</div>
 </header>
-<div class="p-8 space-y-8">
-<section id="sec-dashboard" class="space-y-6">
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
-<div class="card p-5"><p class="text-[10px] opacity-50 tracking-widest">TOTAL USERS</p><p id="statUsers" class="font-black text-2xl mt-2">0</p></div>
-<div class="card p-5"><p class="text-[10px] opacity-50 tracking-widest">TOTAL BALANCE</p><p id="statBal" class="font-black text-2xl mt-2">0</p></div>
-<div class="card p-5"><p class="text-[10px] opacity-50 tracking-widest">PENDING DEPOSITS</p><p id="statPendDep" class="font-black text-2xl mt-2 text-yellow-400">0</p></div>
-<div class="card p-5"><p class="text-[10px] opacity-50 tracking-widest">PENDING WD</p><p id="statPendWd" class="font-black text-2xl mt-2 text-orange-400">0</p></div>
+
+<div class="p-6 space-y-6">
+
+<!-- DASHBOARD -->
+<section id="sec-dashboard" class="space-y-5 fade-in">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="card p-5"><p class="text-[9px] tracking-[2px] font-bold" style="color:var(--text3)">TOTAL USERS</p><p id="stat_users" class="text-[28px] font-black mt-1.5 tracking-tight">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">active users</p></div>
+<div class="card p-5" style="border-color:rgba(255,214,10,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-[#FFD60A]">TOTAL BALANCE</p><p id="stat_bal" class="text-[28px] font-black mt-1.5">$0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">trading + wallet</p></div>
+<div class="card p-5" style="border-color:rgba(16,185,129,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-emerald-400">VERIFIED DEPOSITS</p><p id="total_dep" class="text-[28px] font-black mt-1.5">$0</p><p id="total_dep_cnt" class="text-[11px] mt-0.5" style="color:var(--text2)">0 verified</p></div>
+<div class="card p-5" style="border-color:rgba(249,115,22,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-orange-400">PENDING ACTIONS</p><p id="pend_all" class="text-[28px] font-black mt-1.5">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">need action</p></div>
 </div>
-<div class="grid grid-cols-2 gap-5">
-<div class="card p-6"><h3 class="font-bold">Recent Deposits</h3><div id="dashDeposits" class="mt-4 space-y-2 text-xs"></div></div>
-<div class="card p-6"><h3 class="font-bold">Recent Withdrawals</h3><div id="dashWd" class="mt-4 space-y-2 text-xs"></div></div>
+<div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">AWAITING</p><p id="pend_dep" class="text-xl font-black text-yellow-400 mt-0.5">0</p></div>
+<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">EXPIRED</p><p id="stat_expired" class="text-xl font-black text-red-400 mt-0.5">0</p></div>
+<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">PEND WD</p><p id="pend_wd" class="text-xl font-black text-orange-400 mt-0.5">0</p></div>
+<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">REF PAID</p><p id="ref_paid" class="text-xl font-black mt-0.5" style="color:#A5A6F6">$0</p></div>
+<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">TASKS DONE</p><p id="stat_tasks" class="text-xl font-black mt-0.5" style="color:#7C4DFF">0</p></div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+<div class="lg:col-span-2 card p-6"><div class="flex justify-between"><h3 class="font-bold text-sm">Revenue Chart</h3><span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">Live</span></div><canvas id="revChart" height="120" class="mt-3"></canvas></div>
+<div class="card p-5" style="border-color:rgba(16,185,129,0.15)"><h3 class="font-bold text-sm">System Health</h3>
+<div class="mt-4 space-y-2 text-[11px]">
+<div class="flex justify-between items-center p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><span>Blockchain Monitor</span><span class="text-emerald-400 font-bold">Active 15s</span></div>
+<div class="space-y-1.5 mt-2">
+<div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span>TRC20</span><span class="mono text-[10px]">OK</span></div>
+<div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span>BEP20/ERC20</span><span class="mono text-[10px]">OK</span></div>
+<div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span>TON</span><span class="mono text-[10px]">OK</span></div>
+<div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span>SOL</span><span class="mono text-[10px]">OK</span></div>
+</div>
+<div class="p-3 rounded-xl mt-2" style="background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.15)"><p class="font-black text-[10px] tracking-widest text-[#FFD60A]">V5 FIXES:</p><p class="mt-1.5 leading-relaxed text-[11px]" style="color:var(--text2)">5 networks enabled<br>Deposit: Approve/Reject/Expire/Edit/Delete<br>Users: Add/Deduct/Set Balance & WD<br>Tasks: 1 USDT join reward</p></div>
+</div></div>
+</div>
+<div class="card p-5"><h3 class="font-bold text-sm">Recent Admin Logs</h3><div class="overflow-x-auto mt-3"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">Action</th><th class="text-left p-2.5">User</th><th class="text-left p-2.5">Details</th><th class="text-left p-2.5">Time</th></tr></thead><tbody id="logs"></tbody></table></div></div>
+</section>
+
+<!-- USERS -->
+<section id="sec-users" class="hidden space-y-5 fade-in">
+<div class="card p-5">
+<div class="flex flex-wrap gap-2 justify-between items-center">
+<h2 class="text-lg font-black">Users Control</h2>
+<div class="flex gap-2">
+<input id="userSearch" oninput="filterUsers()" placeholder="Search ID or username..." class="rounded-full px-4 py-2 text-[11px] w-[200px] border outline-none focus:ring-1" style="background:var(--input);border-color:var(--border)">
+<select id="userFilter" onchange="filterUsers()" class="rounded-full px-3 py-2 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="all">All Users</option><option value="banned">Banned</option><option value="whale">Whales >$500</option></select>
+<button onclick="bulkActionPrompt()" class="btn-gold px-4 py-2 rounded-full text-[11px]">Bulk Action</button>
+</div>
+</div>
+<div class="mt-4 overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">ID</th><th class="text-left p-2.5">User</th><th class="text-left p-2.5">Balance</th><th class="text-left p-2.5">Withdrawable</th><th class="text-left p-2.5">Deposit / Withdraw</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Actions</th></tr></thead><tbody id="users"></tbody></table></div>
 </div>
 </section>
-<section id="sec-users" class="hidden space-y-4"><h2 class="font-black text-xl">Users</h2><div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr><th class="text-left p-3 opacity-50">ID</th><th class="text-left p-3 opacity-50">Username</th><th class="text-left p-3 opacity-50">Balance</th><th class="text-left p-3 opacity-50">Withdrawable</th><th class="text-left p-3 opacity-50">Deposit</th><th class="text-left p-3 opacity-50">Actions</th></tr></thead><tbody id="usersTable"></tbody></table></div></section>
-<section id="sec-deposits" class="hidden space-y-4"><h2 class="font-black text-xl">Deposits</h2><div class="flex gap-2"><button onclick="approveAllPending()" class="btn-gold px-4 py-2 rounded-full text-xs">Approve All Pending</button></div><div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr><th class="text-left p-3 opacity-50">ID</th><th class="text-left p-3 opacity-50">User</th><th class="text-left p-3 opacity-50">Amount</th><th class="text-left p-3 opacity-50">Network</th><th class="text-left p-3 opacity-50">Status</th><th class="text-left p-3 opacity-50">Invoice</th><th class="text-left p-3 opacity-50">Actions</th></tr></thead><tbody id="depositsTable"></tbody></table></div></section>
-<section id="sec-withdrawals" class="hidden space-y-4"><h2 class="font-black text-xl">Withdrawals</h2><div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr><th class="text-left p-3 opacity-50">ID</th><th class="text-left p-3 opacity-50">User</th><th class="text-left p-3 opacity-50">Amount</th><th class="text-left p-3 opacity-50">Address</th><th class="text-left p-3 opacity-50">Network</th><th class="text-left p-3 opacity-50">Status</th><th class="text-left p-3 opacity-50">Actions</th></tr></thead><tbody id="wdTable"></tbody></table></div></section>
-<section id="sec-tasks" class="hidden space-y-4"><h2 class="font-black text-xl">Tasks</h2><div class="card p-6 space-y-3"><input id="t_title" placeholder="Title" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-sm"><input id="t_desc" placeholder="Description" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-sm"><input id="t_link" placeholder="Group Link https://t.me/..." class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-sm"><input id="t_group_id" placeholder="Group ID @username or -100..." class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-sm"><button onclick="createTask()" class="btn-gold px-5 py-2 rounded-full text-xs">Create Task</button></div><div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr><th class="text-left p-3 opacity-50">ID</th><th class="text-left p-3 opacity-50">Title</th><th class="text-left p-3 opacity-50">Link</th><th class="text-left p-3 opacity-50">Active</th><th class="text-left p-3 opacity-50">Actions</th></tr></thead><tbody id="tasksTable"></tbody></table></div></section>
-<section id="sec-debug" class="hidden space-y-4">
-<h2 class="font-black text-xl text-red-400">🔧 Debug & Migration</h2>
-<div class="card p-6"><h3 class="font-bold">Database Status</h3><pre id="debugDb" class="mt-3 bg-black/50 p-3 rounded-xl text-[11px] overflow-x-auto">Click Load</pre><button onclick="loadDebug()" class="mt-3 glass px-4 py-2 rounded-full text-xs">Load DB Status</button></div>
-<div class="card p-6"><h3 class="font-bold">Restore Default Tasks</h3><p class="text-xs opacity-60 mt-2">If tasks list is empty after migration, click below</p><button onclick="restoreTasks()" class="mt-3 bg-[#FFD60A] text-black px-4 py-2 rounded-full text-xs font-black">Restore 3 Default Tasks</button><pre id="restoreLog" class="mt-3 bg-black/50 p-3 rounded-xl text-[11px]"></pre></div>
-<div class="card p-6 border-red-500/20"><h3 class="font-bold text-red-400">Migration from Old DB</h3><p class="text-xs opacity-60 mt-2">If you migrated Render DB, old DB URL might be in Render dashboard → Postgres → Connections. If users = 0, check if DATABASE_URL changed.</p><p class="text-xs opacity-60 mt-2">Current DATABASE_URL prefix: <span id="dbUrlPrefix" class="font-mono"></span></p></div>
+
+<!-- DEPOSITS -->
+<section id="sec-deposits" class="hidden space-y-5 fade-in">
+<div class="card p-5">
+<div class="flex justify-between items-center"><h2 class="text-lg font-black">Deposits - 5 Networks</h2>
+<div class="flex gap-2"><select id="depFilter" onchange="loadAll()" class="rounded-full px-3 py-2 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="all">All</option><option value="awaiting_payment">Awaiting</option><option value="verified">Verified</option><option value="rejected">Rejected</option><option value="expired">Expired</option></select>
+<button onclick="loadAll()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh</button></div></div>
+<div class="mt-4 flex flex-wrap gap-1.5">
+<span class="text-[10px] px-2.5 py-1 rounded-full" style="background:var(--hover);border:1px solid var(--border)">TRC20</span>
+<span class="text-[10px] px-2.5 py-1 rounded-full" style="background:var(--hover);border:1px solid var(--border)">BEP20/ERC20</span>
+<span class="text-[10px] px-2.5 py-1 rounded-full" style="background:var(--hover);border:1px solid var(--border)">TON</span>
+<span class="text-[10px] px-2.5 py-1 rounded-full" style="background:var(--hover);border:1px solid var(--border)">SOL</span>
+</div>
+<div class="overflow-x-auto mt-4"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">ID / Invoice</th><th class="text-left p-2.5">User</th><th class="text-left p-2.5">Amount</th><th class="text-left p-2.5">Network</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Created</th><th class="text-left p-2.5">Actions</th></tr></thead><tbody id="deposits"></tbody></table></div>
+</div>
 </section>
+
+<!-- WITHDRAWALS -->
+<section id="sec-withdrawals" class="hidden space-y-5 fade-in">
+<div class="card p-5"><h2 class="text-lg font-black">Withdrawals</h2>
+<div class="overflow-x-auto mt-4"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">ID</th><th class="text-left p-2.5">User</th><th class="text-left p-2.5">Amount</th><th class="text-left p-2.5">Address</th><th class="text-left p-2.5">Network</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Time</th><th class="text-left p-2.5">Actions</th></tr></thead><tbody id="withdrawals"></tbody></table></div></div>
+</section>
+
+<!-- TASKS -->
+<section id="sec-tasks" class="hidden space-y-5 fade-in">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+<div class="lg:col-span-2 card p-5"><h2 class="text-lg font-black">Tasks & Rewards</h2><p class="text-[11px] mt-1" style="color:var(--text2)">Join tasks: verify group membership. Referral tasks: auto-verify referral counts. Non-mandatory tasks don't block withdrawals.</p>
+<div class="overflow-x-auto mt-4"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">ID</th><th class="text-left p-2.5">Title / Group</th><th class="text-left p-2.5">Link</th><th class="text-left p-2.5">Reward</th><th class="text-left p-2.5">Mandatory</th><th class="text-left p-2.5">Active</th><th class="text-left p-2.5">Actions</th></tr></thead><tbody id="tasksList"></tbody></table></div></div>
+<div class="card p-5" style="background:linear-gradient(135deg,rgba(124,77,255,0.06),var(--surface));border-color:rgba(124,77,255,0.15)">
+<h3 class="font-black text-sm">Create Task</h3>
+<div class="mt-4 space-y-2.5">
+<select id="t_type" onchange="toggleTaskFields()" class="w-full rounded-xl p-3 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="join">Join Group Task</option><option value="referral">Referral Task</option></select>
+<input id="t_title" placeholder="Title: Join Main Group" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+<input id="t_desc" placeholder="Description" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+<div id="joinFields"><input id="t_link" placeholder="Group Link" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"><input id="t_group_id" placeholder="Group ID: @username or -100..." class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"><input id="t_username" placeholder="Username" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"></div>
+<div id="refFields" class="hidden"><input id="t_config" placeholder='Config: {"ref_count":1}' class="w-full rounded-xl p-3 text-[11px] border outline-none mono" style="background:var(--input);border-color:var(--border)"></div>
+<div class="grid grid-cols-2 gap-2"><input id="t_reward" type="number" value="1" step="0.1" class="rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"><select id="t_reward_type" class="rounded-xl p-3 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="withdrawable">Withdrawable</option><option value="balance">Trading Balance</option></select></div>
+<div class="grid grid-cols-2 gap-2"><label class="flex items-center gap-2 p-3 rounded-xl text-[11px]" style="background:var(--hover)"><input id="t_mandatory" type="checkbox" checked> Mandatory</label><label class="flex items-center gap-2 p-3 rounded-xl text-[11px]" style="background:var(--hover)"><input id="t_active" type="checkbox" checked> Active</label></div>
+<button onclick="createTask()" class="w-full btn-gold py-3 rounded-full text-sm mt-1">Create Task</button>
+</div>
+</div>
+</div>
+</section>
+
+<!-- GROUPS -->
+<section id="sec-groups" class="hidden space-y-5 fade-in">
+<div class="card p-5"><h2 class="text-lg font-black">Groups Manager</h2>
+<div class="mt-4 grid grid-cols-2 gap-3"><div><label class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">TARGET GROUP</label><select id="addGroupSelect" class="mt-1.5 w-full rounded-xl p-3 text-sm border" style="background:var(--input);border-color:var(--border)"><option value="group">Main Group</option><option value="channel">Channel</option><option value="support">Support</option><option value="all">All</option></select></div><div><label class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">METHOD</label><select id="addMethod" class="mt-1.5 w-full rounded-xl p-3 text-sm border" style="background:var(--input);border-color:var(--border)"><option value="direct">Direct Add</option></select></div></div>
+<div class="mt-4"><label class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">TELEGRAM USER IDS</label><textarea id="bulkIds" placeholder="Paste IDs: 8942668092" class="mt-1.5 w-full h-24 rounded-xl p-3 text-sm mono border outline-none" style="background:var(--input);border-color:var(--border)"></textarea></div>
+<div class="mt-3 flex gap-2"><button onclick="addMembers()" class="flex-1 btn-gold py-3 rounded-full text-sm font-bold">Add Members</button><button onclick="generateInvites()" class="glass px-5 py-3 rounded-full text-sm font-bold">Invite Link</button></div>
+<div id="addLog" class="hidden mt-3 rounded-xl p-3 text-[11px] mono" style="background:var(--input);border:1px solid var(--border)"></div>
+</div>
+<div class="card p-5"><h3 class="font-bold text-sm">Recent Group Adds</h3><div class="overflow-x-auto mt-3"><table class="w-full text-[11px]"><thead><tr><th class="p-2.5 text-left">ID</th><th class="p-2.5 text-left">User</th><th class="p-2.5 text-left">Group</th><th class="p-2.5 text-left">Method</th><th class="p-2.5 text-left">Status</th><th class="p-2.5 text-left">Time</th></tr></thead><tbody id="groupMembers"></tbody></table></div></div>
+</section>
+
+<section id="sec-referrals" class="hidden space-y-5 fade-in"><div class="card p-5"><h2 class="text-lg font-black">Referral Logs</h2><div class="overflow-x-auto mt-4"><table class="w-full text-[11px]"><thead><tr><th class="p-2.5 text-left">From</th><th class="p-2.5 text-left">To</th><th class="p-2.5 text-left">Level</th><th class="p-2.5 text-left">Deposit</th><th class="p-2.5 text-left">Bonus</th></tr></thead><tbody id="refs"></tbody></table></div></div></section>
+
+<section id="sec-extreme" class="hidden space-y-5 fade-in">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+<div class="card p-5" style="border-color:rgba(239,68,68,0.15)"><h3 class="font-black text-red-400">Extreme Fund Controls</h3>
+<div class="mt-4 space-y-2.5">
+<div class="grid grid-cols-3 gap-2"><input id="ex_user" placeholder="User ID" class="rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"><input id="ex_amount" type="number" placeholder="Amount" class="rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"><select id="ex_field" class="rounded-xl p-3 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="balance">Balance</option><option value="withdrawable">Withdrawable</option></select></div>
+<div class="grid grid-cols-3 gap-2"><button onclick="extremeAction('add_balance')" class="btn-emerald py-2.5 rounded-full text-[11px]">+ Add Bal</button><button onclick="extremeAction('deduct_balance')" class="btn-red py-2.5 rounded-full text-[11px]">- Less Bal</button><button onclick="extremeAction('set_balance')" class="glass py-2.5 rounded-full text-[11px] font-bold">Set Bal</button></div>
+<div class="grid grid-cols-3 gap-2"><button onclick="extremeAction('add_withdrawable')" class="btn-emerald py-2.5 rounded-full text-[11px]">+ Add WD</button><button onclick="extremeAction('deduct_withdrawable')" class="btn-red py-2.5 rounded-full text-[11px]">- Less WD</button><button onclick="extremeAction('set_withdrawable')" class="glass py-2.5 rounded-full text-[11px] font-bold">Set WD</button></div>
+<div class="grid grid-cols-2 gap-2"><button onclick="extremeAction('reset_profit')" class="glass py-2.5 rounded-xl text-[11px] font-bold">Reset Profit</button><button onclick="extremeAction('clear_tasks')" class="glass py-2.5 rounded-xl text-[11px] font-bold">Clear Tasks</button></div>
+</div></div>
+<div class="card p-5" style="border-color:rgba(255,214,10,0.15)"><h3 class="font-black" style="color:#FFD60A">System Actions</h3>
+<div class="mt-4 grid grid-cols-2 gap-2">
+<button onclick="purgeExpired()" class="glass py-3 rounded-xl text-[11px] font-bold">Purge Expired</button>
+<button onclick="approveAllPending()" class="btn-gold py-3 rounded-xl text-[11px]">Approve All Pending</button>
+<button onclick="broadcastBonus()" class="glass py-3 rounded-xl text-[11px] font-bold">Bonus to All</button>
+<button onclick="createDefaultTasks()" class="glass py-3 rounded-xl text-[11px] font-bold" style="background:rgba(124,77,255,0.1);border:1px solid rgba(124,77,255,0.2)">Create Default Tasks</button>
+</div>
+<div class="mt-4 p-3 rounded-xl text-[11px] leading-relaxed" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15)"><b class="text-red-400">Danger Zone:</b><br>Deduct = instantly less funds. Set = override. All actions logged.</div>
+</div>
+</div>
+</section>
+
+<section id="sec-broadcast" class="hidden space-y-5 fade-in"><div class="card p-5"><h2 class="text-lg font-black">Broadcast to All Users</h2><textarea id="broadcastMsg" placeholder="Message to all users..." class="mt-4 w-full h-32 rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)"></textarea><button onclick="sendBroadcast()" class="mt-3 btn-gold px-6 py-3 rounded-full text-sm">Send to All Users</button></div></section>
+
+<section id="sec-settings" class="hidden space-y-5 fade-in"><div class="card p-5"><h2 class="text-lg font-black">Settings</h2><div id="envStatus" class="mt-4 grid grid-cols-2 gap-2 text-[11px]"></div>
+<div class="mt-4 flex gap-2"><button onclick="loadEnvStatus()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh Status</button><button onclick="testBot()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Test Bot</button></div>
+<pre id="envLog" class="hidden mt-3 p-3 rounded-xl text-[10px] overflow-auto mono" style="background:var(--input);border:1px solid var(--border)"></pre></div></section>
+
 </div>
 </main>
+</div>
+
+<div id="actionModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+<div class="card p-5 w-full max-w-[400px]" style="border-color:rgba(255,214,10,0.15)"><h3 id="modalTitle" class="font-black text-lg">Action</h3><p id="modalUser" class="text-[11px] mt-0.5" style="color:var(--text2)"></p><div id="modalContent" class="mt-4"></div><div class="mt-5 flex gap-2"><button onclick="closeModal()" class="flex-1 glass py-3 rounded-full text-sm font-bold">Cancel</button><button id="confirmBtn" onclick="confirmAction()" class="flex-1 btn-gold py-3 rounded-full text-sm">Confirm</button></div></div>
+</div>
+
 <script>
-const ADMIN_KEY='pt_admin_secret';
-function getSecret(){ return localStorage.getItem(ADMIN_KEY)||''; }
-function setSecret(s){ localStorage.setItem(ADMIN_KEY,s); }
-function adminHeaders(){ return {'Content-Type':'application/json','X-Admin-Secret': getSecret()}; }
-async function apiFetch(url, opts={}){
-  opts.headers={...(opts.headers||{}), ...adminHeaders()};
-  let res=await fetch(url, opts);
-  if(res.status===401){
-    document.getElementById('authOverlay').classList.remove('hidden');
-    document.getElementById('authError').innerText='Invalid ADMIN_SECRET';
-    document.getElementById('authError').classList.remove('hidden');
-    throw new Error('401');
-  }
-  if(!res.ok){
-    let txt=await res.text();
-    console.error('API fail', url, res.status, txt);
-    throw new Error(txt);
-  }
-  return res.json();
+let ADMIN_TOKEN=localStorage.getItem('admin_token')||'';
+let selectedUser=null,currentAction=null,allUsers=[],allDeposits=[];
+let chartInstance=null;
+
+function apiHeaders(){return ADMIN_TOKEN&&ADMIN_TOKEN!=='__no_auth__'?{'X-Admin-Token':ADMIN_TOKEN}:{};}
+
+async function doLogin(){
+let token=document.getElementById('authInput').value.trim();
+if(!token){document.getElementById('authError').innerText='Enter a code';document.getElementById('authError').classList.remove('hidden');setTimeout(()=>document.getElementById('authError').classList.add('hidden'),2000);return;}
+ADMIN_TOKEN=token;
+try{
+let r=await fetch('/api/admin/stats',{headers:apiHeaders()});
+if(r.status===401||!r.ok){
+ADMIN_TOKEN='';
+let errMsg='Invalid secret (HTTP '+r.status+')';
+try{let d=await r.json();if(d&&d.detail)errMsg=d.detail;}catch(x){}
+document.getElementById('authError').innerText=errMsg;
+document.getElementById('authError').classList.remove('hidden');
+setTimeout(()=>document.getElementById('authError').classList.add('hidden'),4000);
+return;
 }
-function loginAdmin(){
-  let v=document.getElementById('adminSecretInput').value.trim();
-  if(!v){ alert('Enter secret'); return; }
-  setSecret(v);
-  // test
-  apiFetch('/api/admin/stats').then(()=>{
-    document.getElementById('authOverlay').classList.add('hidden');
-    loadAll();
-  }).catch(e=>{
-    document.getElementById('authError').innerText='Login failed: '+e;
-    document.getElementById('authError').classList.remove('hidden');
-  });
+localStorage.setItem('admin_token',token);
+document.getElementById('authGate').classList.add('hidden');
+document.getElementById('sidebar').classList.remove('hidden');
+document.getElementById('mainContent').classList.remove('hidden');
+loadAll();
+}catch(e){
+ADMIN_TOKEN='';
+document.getElementById('authError').innerText='Cannot reach server: '+e.message;
+document.getElementById('authError').classList.remove('hidden');
+setTimeout(()=>document.getElementById('authError').classList.remove('hidden'),5000);
 }
-function logoutAdmin(){ localStorage.removeItem(ADMIN_KEY); location.reload(); }
-function showTab(name){
-  document.querySelectorAll('section[id^="sec-"]').forEach(s=>s.classList.add('hidden'));
-  let el=document.getElementById('sec-'+name); if(el) el.classList.remove('hidden');
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('nav-active'));
-  let btn=document.querySelector(`[data-tab="${name}"]`); if(btn) btn.classList.add('nav-active');
-  document.getElementById('pageTitle').innerText=name.charAt(0).toUpperCase()+name.slice(1);
 }
-let allUsers=[], allDeposits=[], allWd=[];
-async function loadAll(){
-  if(!getSecret()){ document.getElementById('authOverlay').classList.remove('hidden'); return; }
-  try{
-    let stats=await apiFetch('/api/admin/stats');
-    document.getElementById('statUsers').innerText=stats.total_users;
-    document.getElementById('statBal').innerText='$'+(stats.total_balance||0).toFixed(2);
-    document.getElementById('statPendDep').innerText=stats.pending_deposits;
-    document.getElementById('statPendWd').innerText=stats.pending_withdrawals;
-    document.getElementById('navUsers').innerText=stats.total_users;
-    document.getElementById('navUsers2').innerText=stats.total_users;
-    document.getElementById('navDeposits').innerText=stats.pending_deposits;
-    document.getElementById('navWd').innerText=stats.pending_withdrawals;
-    let deposits=await apiFetch('/api/admin/deposits');
-    allDeposits=deposits;
-    let depHtml=''; deposits.slice(0,10).forEach(d=>{ depHtml+=`<div class="flex justify-between bg-white/5 p-2 rounded-lg"><span>${d.user_id} $${d.amount} ${d.network}</span><span class="opacity-60">${d.status}</span></div>`; });
-    document.getElementById('dashDeposits').innerHTML=depHtml||'No deposits';
-    let wds=await apiFetch('/api/admin/withdrawals');
-    allWd=wds;
-    let wdHtml=''; wds.slice(0,10).forEach(w=>{ wdHtml+=`<div class="flex justify-between bg-white/5 p-2 rounded-lg"><span>${w.user_id} $${w.amount}</span><span class="opacity-60">${w.status}</span></div>`; });
-    document.getElementById('dashWd').innerHTML=wdHtml||'No withdrawals';
-    let users=await apiFetch('/api/admin/users');
-    allUsers=users;
-    let uHtml=''; users.slice(0,100).forEach(u=>{ uHtml+=`<tr class="border-t border-white/5"><td class="p-3">${u.user_id}</td><td class="p-3">${u.username||''}</td><td class="p-3">${(u.balance||0).toFixed(2)}</td><td class="p-3 text-[#FFD60A]">${(u.withdrawable||0).toFixed(2)}</td><td class="p-3">${(u.total_deposit||0).toFixed(2)}</td><td class="p-3"><button onclick="addBal(${u.user_id})" class="bg-white/10 px-2 py-1 rounded-full text-[10px]">+Bal</button></td></tr>`; });
-    document.getElementById('usersTable').innerHTML=uHtml;
-    let dHtml=''; deposits.forEach(d=>{ dHtml+=`<tr class="border-t border-white/5"><td class="p-3">${d.id}</td><td class="p-3">${d.user_id}</td><td class="p-3">$${d.amount}</td><td class="p-3">${d.network}</td><td class="p-3">${d.status}</td><td class="p-3 font-mono text-[10px]">${d.invoice_id||''}</td><td class="p-3"><button onclick="approveDep(${d.id})" class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full text-[10px]">Approve</button> <button onclick="rejectDep(${d.id})" class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-[10px]">Reject</button></td></tr>`; });
-    document.getElementById('depositsTable').innerHTML=dHtml;
-    let wHtml=''; wds.forEach(w=>{ wHtml+=`<tr class="border-t border-white/5"><td class="p-3">${w.id}</td><td class="p-3">${w.user_id}</td><td class="p-3">$${w.amount}</td><td class="p-3 font-mono text-[10px]">${(w.address||'').slice(0,20)}...</td><td class="p-3">${w.network}</td><td class="p-3">${w.status}</td><td class="p-3"><button onclick="approveWd(${w.id})" class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full text-[10px]">Approve</button> <button onclick="rejectWd(${w.id})" class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-[10px]">Reject</button></td></tr>`; });
-    document.getElementById('wdTable').innerHTML=wHtml;
-    let tasks=await apiFetch('/api/admin/tasks');
-    let tHtml=''; tasks.forEach(t=>{ tHtml+=`<tr class="border-t border-white/5"><td class="p-3">${t.id}</td><td class="p-3">${t.title}</td><td class="p-3 font-mono text-[10px]">${t.group_link}</td><td class="p-3">${t.is_active?'✅':''} ${t.is_mandatory?'🔒':''}</td><td class="p-3"><button onclick="delTask(${t.id})" class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-[10px]">Del</button></td></tr>`; });
-    document.getElementById('tasksTable').innerHTML=tHtml;
-  }catch(e){ console.error(e); }
+
+function doLogout(){
+localStorage.removeItem('admin_token');
+ADMIN_TOKEN='';
+location.reload();
 }
-async function approveDep(id){ if(!confirm('Approve '+id+'?')) return; await apiFetch('/api/admin/deposit/action',{method:'POST',body:JSON.stringify({id,action:'approve'})}); loadAll(); }
-async function rejectDep(id){ await apiFetch('/api/admin/deposit/action',{method:'POST',body:JSON.stringify({id,action:'reject'})}); loadAll(); }
-async function approveWd(id){ if(!confirm('Approve withdrawal '+id+'? Have you sent funds?')) return; await apiFetch('/api/admin/withdraw/action',{method:'POST',body:JSON.stringify({id,action:'approve'})}); loadAll(); }
-async function rejectWd(id){ await apiFetch('/api/admin/withdraw/action',{method:'POST',body:JSON.stringify({id,action:'reject'})}); loadAll(); }
-async function delTask(id){ if(!confirm('Delete task '+id+'?')) return; await apiFetch('/api/admin/tasks/action',{method:'POST',body:JSON.stringify({id,action:'delete'})}); loadAll(); }
-async function createTask(){ let payload={title:document.getElementById('t_title').value, description:'', group_link:document.getElementById('t_link').value, group_id:document.getElementById('t_group_id').value, group_username:'', reward:1, reward_type:'withdrawable', is_active:1, is_mandatory:1, icon:'🚀', sort_order:0}; if(!payload.title||!payload.group_link||!payload.group_id){ alert('Fill title, link, group_id'); return; } await apiFetch('/api/admin/tasks/create',{method:'POST',body:JSON.stringify(payload)}); alert('Created'); loadAll(); }
-async function approveAllPending(){ if(!confirm('Approve ALL pending?')) return; let deps=allDeposits.filter(d=>d.status==='awaiting_payment'); for(let d of deps){ await apiFetch('/api/admin/deposit/action',{method:'POST',body:JSON.stringify({id:d.id,action:'approve'})}); } alert('Done '+deps.length); loadAll(); }
-async function addBal(uid){ let amt=prompt('Amount to add to balance:','10'); if(!amt) return; await apiFetch('/api/admin/user/action',{method:'POST',body:JSON.stringify({user_id:uid,action:'add_balance',amount:parseFloat(amt)})}); loadAll(); }
-async function loadDebug(){ let d=await apiFetch('/api/debug/db'); document.getElementById('debugDb').innerText=JSON.stringify(d,null,2); try{ let env=await apiFetch('/api/debug/env'); document.getElementById('dbUrlPrefix').innerText=env.deposit_addrs?JSON.stringify(env.deposit_addrs):''; }catch(e){} }
-async function restoreTasks(){ let r=await apiFetch('/api/admin/tasks/restore_defaults',{method:'POST'}); document.getElementById('restoreLog').innerText=JSON.stringify(r,null,2); loadAll(); }
-window.addEventListener('DOMContentLoaded', ()=>{
-  if(getSecret()){ apiFetch('/api/admin/stats').then(()=>{ document.getElementById('authOverlay').classList.add('hidden'); loadAll(); }).catch(()=>{ document.getElementById('authOverlay').classList.remove('hidden'); }); }
-  setInterval(loadAll,15000);
+
+function checkAuth(){
+if(!ADMIN_TOKEN)return;
+fetch('/api/admin/stats',{headers:apiHeaders()}).then(r=>{
+if(r.ok){
+document.getElementById('authGate').classList.add('hidden');
+document.getElementById('sidebar').classList.remove('hidden');
+document.getElementById('mainContent').classList.remove('hidden');
+loadAll();
+}else{
+localStorage.removeItem('admin_token');
+ADMIN_TOKEN='';
+}
+}).catch(()=>{});
+}
+
+function toggleTheme(){
+let html=document.documentElement;
+let current=html.getAttribute('data-theme')||'dark';
+let next=current==='dark'?'light':'dark';
+html.setAttribute('data-theme',next);
+document.body.setAttribute('data-theme',next);
+localStorage.setItem('theme',next);
+document.getElementById('themeIcon').innerHTML=next==='dark'?'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>':'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>';
+}
+
+(function(){
+let saved=localStorage.getItem('theme')||'dark';
+document.documentElement.setAttribute('data-theme',saved);
+document.body.setAttribute('data-theme',saved);
+setTimeout(()=>{
+let icon=document.getElementById('themeIcon');
+if(icon) icon.innerHTML=saved==='dark'?'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>':'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>';
+},100);
+fetch('/api/admin/auth/check').then(r=>r.json()).then(d=>{
+if(!d.auth_required){
+document.getElementById('authHint').classList.remove('hidden');
+document.getElementById('authHint').innerText='No secret configured. Any code works.';
+}else{
+document.getElementById('authHint').classList.remove('hidden');
+document.getElementById('authHint').innerText='Secret is set on server. Enter it below.';
+document.getElementById('authHint').style.color='var(--gold)';
+}
+if(ADMIN_TOKEN&&ADMIN_TOKEN!=='__no_auth__'){
+checkAuth();
+}
+}).catch(()=>{
+document.getElementById('authHint').classList.remove('hidden');
+document.getElementById('authHint').innerText='Could not check server. Try entering your secret.';
+document.getElementById('authHint').style.color='var(--red)';
 });
+})();
+
+function toast(msg,type='success'){
+let t=document.createElement('div');
+t.className='toast toast-'+type;
+t.innerText=msg;
+document.body.appendChild(t);
+requestAnimationFrame(()=>t.classList.add('show'));
+setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},3000);
+}
+
+function showReasonModal(title){
+return new Promise(resolve=>{
+let overlay=document.createElement('div');
+overlay.id='reasonModalOverlay';
+overlay.className='modal-overlay';
+overlay.style.cssText='position:fixed;inset:0;z-index:90000;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px';
+let card=document.createElement('div');
+card.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:360px';
+card.innerHTML=`<h3 class="font-bold text-sm mb-3">${title}</h3><textarea id="rmReasonInput" rows="3" placeholder="Reason (optional)" class="w-full rounded-xl p-3 text-sm border outline-none resize-none" style="background:var(--input);border-color:var(--border)"></textarea><div class="flex gap-2 mt-3"><button id="rmCancel" class="flex-1 py-2.5 rounded-full text-xs font-bold" style="background:var(--hover)">Cancel</button><button id="rmConfirm" class="flex-1 py-2.5 rounded-full text-xs font-bold" style="background:var(--text);color:var(--bg)">Confirm</button></div>`;
+overlay.appendChild(card);
+document.body.appendChild(overlay);
+document.getElementById('rmReasonInput').focus();
+function cleanup(){if(overlay.parentNode)overlay.remove();}
+document.getElementById('rmCancel').onclick=()=>{cleanup();resolve(false);};
+document.getElementById('rmConfirm').onclick=()=>{let v=document.getElementById('rmReasonInput').value.trim();cleanup();resolve(v);};
+overlay.addEventListener('click',e=>{if(e.target===overlay){cleanup();resolve(false);}});
+});
+}
+
+function showTab(tab){
+document.querySelectorAll('[id^="sec-"]').forEach(s=>s.classList.add('hidden'));
+let sec=document.getElementById('sec-'+tab);
+if(sec){sec.classList.remove('hidden');sec.classList.add('fade-in');}
+document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('nav-active');b.style.color='var(--text2)';});
+let btn=document.querySelector(`[data-tab="${tab}"]`);
+if(btn){btn.classList.add('nav-active');btn.style.color='';}
+document.getElementById('pageTitle').innerText=btn?btn.innerText.replace('NEW','').trim():tab;
+if(['deposits','users','dashboard','withdrawals','referrals','tasks'].includes(tab)) loadAll();
+}
+
+async function fetchJson(url){
+let r=await fetch(url,{headers:apiHeaders()});
+if(!r.ok) throw new Error(url+' '+r.status);
+return r.json();
+}
+
+async function loadAll(){
+try{
+let stats=await fetchJson('/api/admin/stats');
+document.getElementById('stat_users').innerText=stats.total_users;
+document.getElementById('stat_bal').innerText='$'+Number(stats.total_balance).toFixed(2);
+document.getElementById('total_dep').innerText='$'+Number(stats.total_verified_deposits).toFixed(2);
+document.getElementById('total_dep_cnt').innerText=stats.verified_deposits+' verified';
+document.getElementById('pend_dep').innerText=stats.pending_deposits;
+document.getElementById('stat_expired').innerText=stats.expired_deposits;
+document.getElementById('pend_wd').innerText=stats.pending_withdrawals;
+document.getElementById('pend_all').innerText=Number(stats.pending_deposits)+Number(stats.pending_withdrawals);
+document.getElementById('ref_paid').innerText='$'+Number(stats.total_ref_paid).toFixed(2);
+document.getElementById('stat_tasks').innerText=stats.completed_tasks+'/'+stats.active_tasks;
+document.getElementById('navUsers').innerText=stats.total_users;
+document.getElementById('navDeposits').innerText=stats.pending_deposits;
+document.getElementById('navWd').innerText=stats.pending_withdrawals;
+document.getElementById('navVol').innerText='$'+Number(stats.total_deposits_all||0).toFixed(0);
+}catch(e){console.error('stats',e);}
+
+try{
+let deposits=await fetchJson('/api/admin/deposits');allDeposits=deposits;
+let filter=document.getElementById('depFilter')?.value||'all';
+let filtered=filter==='all'?deposits:deposits.filter(d=>d.status===filter);
+document.getElementById('deposits').innerHTML=filtered.map(d=>{
+let sc=d.status==='verified'?'color:#10b981':d.status==='awaiting_payment'?'color:#eab308':d.status==='rejected'?'color:#ef4444':'color:#f97316';
+let actions=d.status==='awaiting_payment'?`<div class="flex flex-wrap gap-1"><button onclick="actDep(${d.id},'approve')" class="px-2.5 py-1 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981">Approve</button><button onclick="actDep(${d.id},'reject')" class="px-2.5 py-1 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Reject</button><button onclick="actDep(${d.id},'expire')" class="px-2.5 py-1 rounded-full text-[10px] font-bold" style="background:rgba(249,115,22,0.15);color:#f97316">Expire</button><button onclick="editDepAmount(${d.id},${d.expected||d.amount})" class="px-2.5 py-1 rounded-full text-[10px] font-bold" style="background:var(--hover)">Edit</button></div>`:d.status!=='verified'?`<button onclick="actDep(${d.id},'delete')" class="px-2.5 py-1 rounded-full text-[10px]" style="background:rgba(239,68,68,0.1);color:#ef4444">Delete</button>`:`<span class="mono text-[10px]" style="color:var(--text3)">${d.tx_hash?d.tx_hash.slice(0,10)+'...':''}</span>`;
+return `<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5"><p class="mono font-bold">${d.id}</p><p class="mono text-[9px]" style="color:var(--text3)">${d.invoice_id||''}</p></td><td class="p-2.5 mono font-bold">${d.user_id}</td><td class="p-2.5"><p class="font-bold">$${Number(d.amount).toFixed(2)}</p><p class="text-[9px]" style="color:var(--text3)">exp $${Number(d.expected||d.amount).toFixed(2)}</p></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:var(--hover);border:1px solid var(--border)">${d.network}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${sc};opacity:0.9">${d.status}</span></td><td class="p-2.5 text-[10px] mono" style="color:var(--text3)">${(d.created_at||'').slice(0,16)}</td><td class="p-2.5">${actions}</td></tr>`;
+}).join('')||`<tr><td colspan="7" class="p-6 text-center" style="color:var(--text3)">No deposits yet.</td></tr>`;
+}catch(e){console.error('deps',e);}
+
+try{
+let wds=await fetchJson('/api/admin/withdrawals');
+document.getElementById('withdrawals').innerHTML=wds.map(w=>{
+let sc=w.status==='approved'?'color:#10b981':w.status==='pending'?'color:#eab308':'color:#ef4444';
+let actions=w.status==='pending'?`<div class="flex gap-1"><button onclick="actWd(${w.id},'approve')" class="px-2.5 py-1 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981">Approve</button><button onclick="actWd(${w.id},'reject')" class="px-2.5 py-1 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Reject</button><button onclick="actWd(${w.id},'expire')" class="px-2.5 py-1 rounded-full text-[10px]" style="background:rgba(249,115,22,0.15);color:#f97316">Expire</button></div>`:`<button onclick="actWd(${w.id},'delete')" class="px-2.5 py-1 rounded-full text-[10px]" style="background:rgba(239,68,68,0.1);color:#ef4444">Delete</button>`;
+let addr=w.address||'';
+return `<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono">${w.id}</td><td class="p-2.5 mono font-bold">${w.user_id}</td><td class="p-2.5 font-bold">$${Number(w.amount).toFixed(2)}</td><td class="p-2.5" title="${addr}"><span class="mono text-[10px] break-all">${addr.length>20?addr.slice(0,10)+'...'+addr.slice(-10):addr}</span><button onclick="copyWdAddr('${addr}',this)" class="ml-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold" style="background:rgba(108,59,255,0.15);color:#A5A6F6">Copy</button></td><td class="p-2.5"><span class="px-2.5 py-1 rounded-full text-[10px] font-black" style="background:${w.network==='TRC20'?'rgba(239,68,68,0.15);color:#ef4444':w.network==='BEP20'?'rgba(250,204,21,0.15);color:#facc15':w.network==='ERC20'?'rgba(96,165,250,0.15);color:#60a5fa':w.network==='TON'?'rgba(16,185,129,0.15);color:#10b981':'rgba(165,166,246,0.15);color:#A5A6F6'}">${w.network}</span></td><td class="p-2.5"><span class="font-bold text-[11px]" style="${sc}">${w.status}</span></td><td class="p-2.5 text-[10px] mono" style="color:var(--text3)">${(w.created_at||'').slice(0,16)}</td><td class="p-2.5">${actions}</td></tr>`;
+}).join('')||`<tr><td colspan="8" class="p-6 text-center" style="color:var(--text3)">No withdrawals</td></tr>`;
+}catch(e){}
+
+try{
+let refs=await fetchJson('/api/admin/referrals');
+document.getElementById('refs').innerHTML=refs.map(r=>`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5">${r.from_user}</td><td class="p-2.5">${r.to_user}</td><td class="p-2.5">L${r.level}</td><td class="p-2.5">$${Number(r.deposit).toFixed(2)}</td><td class="p-2.5 font-bold" style="color:#FFD60A">$${Number(r.bonus).toFixed(2)} (${r.percent}%)</td></tr>`).join('')||`<tr><td colspan="5" class="p-6 text-center" style="color:var(--text3)">No referrals</td></tr>`;
+}catch(e){}
+
+try{
+let users=await fetchJson('/api/admin/users');allUsers=users;
+renderUsers(users);
+}catch(e){console.error('users',e);}
+
+try{
+let tasks=await fetchJson('/api/admin/tasks');
+document.getElementById('tasksList').innerHTML=tasks.map(t=>{let typeBadge=t.task_type==='referral'?'<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:rgba(124,77,255,0.15);color:#7c4dff">REF</span>':'';let configInfo=t.task_type==='referral'&&t.task_config?'<br><span class="text-[9px]" style="color:#7c4dff">Config: '+t.task_config+'</span>':'';return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono">${t.id}</td><td class="p-2.5"><p class="font-bold">${t.title}${typeBadge}</p><p class="text-[9px] mono" style="color:var(--text3)">${t.group_id||''}${configInfo}</p></td><td class="p-2.5 text-[11px] mono" style="color:var(--text3)">${(t.group_link||'').slice(0,24)}</td><td class="p-2.5 font-bold" style="color:#FFD60A">${Number(t.reward).toFixed(2)} USDT<br><span class="text-[9px]" style="color:var(--text3)">${t.reward_type}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${t.is_mandatory?'background:rgba(239,68,68,0.15);color:#ef4444':'background:var(--hover)'}">${t.is_mandatory?'Mandatory':'Optional'}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${t.is_active?'background:rgba(16,185,129,0.15);color:#10b981':'background:var(--hover);color:var(--text3)'}">${t.is_active?'Active':'Off'}</span></td><td class="p-2.5"><div class="flex flex-wrap gap-1"><button onclick="toggleTask(${t.id},'toggle_active')" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:var(--hover)">Toggle</button><button onclick="toggleTask(${t.id},'toggle_mandatory')" class="px-2 py-1 rounded-full text-[10px]" style="background:var(--hover)">Mand</button><button onclick="toggleTask(${t.id},'delete')" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Del</button></div></td></tr>`}).join('')||`<tr><td colspan="7" class="p-6 text-center" style="color:var(--text3)">No tasks yet.</td></tr>`;
+}catch(e){}
+
+try{
+let logs=await fetchJson('/api/admin/logs');
+document.getElementById('logs').innerHTML=logs.slice(0,20).map(l=>`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 font-bold">${l.admin_action}</td><td class="p-2.5 mono">${l.target_user_id||l.target_id||'-'}</td><td class="p-2.5 text-[10px]" style="color:var(--text2)">${(l.details||'').slice(0,60)}</td><td class="p-2.5 text-[10px] mono" style="color:var(--text3)">${(l.created_at||'').slice(0,16)}</td></tr>`).join('');
+}catch(e){}
+}
+
+function renderUsers(users){
+let q=document.getElementById('userSearch')?.value?.toLowerCase()||'';
+let f=document.getElementById('userFilter')?.value||'all';
+let filtered=users;
+if(q) filtered=filtered.filter(u=>String(u.user_id).includes(q)||(u.username||'').toLowerCase().includes(q));
+if(f==='banned') filtered=filtered.filter(u=>u.is_banned);
+if(f==='whale') filtered=filtered.filter(u=>Number(u.balance)>500);
+document.getElementById('users').innerHTML=filtered.slice(0,300).map(u=>`<tr class="border-t" style="border-color:var(--border2);${u.is_banned?'background:rgba(239,68,68,0.04)':''}">
+<td class="p-2.5 mono font-bold">${u.user_id}</td><td class="p-2.5"><p class="font-bold">${u.username||''}</p><p class="text-[9px] mono" style="color:var(--text3)">ref:${u.referred_by||'-'}</p></td>
+<td class="p-2.5 font-bold">$${Number(u.balance).toFixed(2)}<br><span class="text-[9px]" style="color:var(--text3)">$${Number(u.profit||0).toFixed(2)} profit</span></td>
+<td class="p-2.5 font-black" style="color:#FFD60A">$${Number(u.withdrawable).toFixed(2)}</td>
+<td class="p-2.5 text-[10px]"><span style="color:#10b981">dep $${Number(u.total_deposit||0).toFixed(0)}</span><br><span style="color:#f97316">wd $${Number(u.total_withdraw||0).toFixed(0)}</span></td>
+<td class="p-2.5">${u.is_banned?'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">BANNED</span>':'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">ACTIVE</span>'}</td>
+<td class="p-2.5"><div class="flex flex-wrap gap-1 max-w-[250px]"><button onclick="viewUserHistory(${u.user_id},'${u.username||''}')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(108,59,255,0.15);color:#A5A6F6">History</button><button onclick="openAction(${u.user_id},'add_balance')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981">+Bal</button><button onclick="openAction(${u.user_id},'deduct_balance')" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">-Bal</button><button onclick="openAction(${u.user_id},'add_withdrawable')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(255,214,10,0.15);color:#FFD60A">+WD</button><button onclick="openAction(${u.user_id},'deduct_withdrawable')" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(249,115,22,0.15);color:#f97316">-WD</button><button onclick="openAction(${u.user_id},'set_balance')" class="px-2 py-0.5 rounded-full text-[10px]" style="background:var(--hover)">Set Bal</button><button onclick="openAction(${u.user_id},${u.is_banned?'\'unban\'':'\'ban\''})" class="px-2 py-0.5 rounded-full text-[10px]" style="background:var(--hover)">${u.is_banned?'Unban':'Ban'}</button></div></td></tr>`).join('')||`<tr><td colspan="7" class="p-8 text-center" style="color:var(--text3)">No users found.</td></tr>`;
+}
+
+function filterUsers(){renderUsers(allUsers);}
+
+function copyWdAddr(addr,btn){navigator.clipboard.writeText(addr).then(()=>{btn.innerText='Copied!';setTimeout(()=>{btn.innerText='Copy';},1500);}).catch(()=>{let ta=document.createElement('textarea');ta.value=addr;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.innerText='Copied!';setTimeout(()=>{btn.innerText='Copy';},1500);});}
+async function viewUserHistory(userId,username){
+try{
+let r=await fetch('/api/history/'+userId,{headers:apiHeaders()});
+let d=await r.json();
+let deps=d.deposits||[];
+let wds=d.withdrawals||[];
+let overlay=document.createElement('div');overlay.className='modal-overlay';
+let depRows=deps.length?deps.map(dep=>`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2">${dep.id}</td><td class="p-2 font-bold">$${Number(dep.amount).toFixed(2)}</td><td class="p-2"><span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:var(--hover)">${dep.network||'-'}</span></td><td class="p-2"><span class="font-bold text-[10px]" style="color:${dep.status==='verified'?'#10b981':dep.status==='rejected'?'#ef4444':'#eab308'}">${dep.status}</span></td><td class="p-2 text-[9px]" style="color:var(--text3)">${(dep.created_at||'').slice(0,16)}</td></tr>`).join(''):'<tr><td colspan="5" class="p-4 text-center" style="color:var(--text3)">No deposits</td></tr>';
+let wdRows=wds.length?wds.map(w=>`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2">${w.id}</td><td class="p-2 font-bold">$${Number(w.amount).toFixed(2)}</td><td class="p-2"><span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:var(--hover)">${w.network||'-'}</span></td><td class="p-2"><span class="font-bold text-[10px]" style="color:${w.status==='approved'?'#10b981':w.status==='rejected'?'#ef4444':'#eab308'}">${w.status}</span></td><td class="p-2"><span class="mono text-[8px]" style="color:var(--text3)">${(w.address||'').slice(0,14)}...</span></td><td class="p-2 text-[9px]" style="color:var(--text3)">${(w.created_at||'').slice(0,16)}</td></tr>`).join(''):'<tr><td colspan="6" class="p-4 text-center" style="color:var(--text3)">No withdrawals</td></tr>';
+overlay.innerHTML=`<div class="modal-card" style="max-width:600px;max-height:80vh;overflow-y:auto"><div class="flex justify-between items-center mb-3"><h3 class="font-black text-lg">User #${userId} ${username?'('+username+')':''}</h3><button onclick="this.closest('.modal-overlay').remove()" class="px-3 py-1 rounded-full text-[11px] font-bold" style="background:var(--hover)">Close</button></div><p class="text-[11px] mb-4" style="color:var(--text2)">Deposits: ${deps.length} | Withdrawals: ${wds.length}</p><h4 class="font-black text-[12px] mb-2" style="color:#10b981">Deposits</h4><table class="w-full text-[10px] mb-4"><thead><tr><th class="text-left p-2">ID</th><th class="text-left p-2">Amount</th><th class="text-left p-2">Network</th><th class="text-left p-2">Status</th><th class="text-left p-2">Time</th></tr></thead><tbody>${depRows}</tbody></table><h4 class="font-black text-[12px] mb-2" style="color:#f97316">Withdrawals</h4><table class="w-full text-[10px]"><thead><tr><th class="text-left p-2">ID</th><th class="text-left p-2">Amount</th><th class="text-left p-2">Network</th><th class="text-left p-2">Status</th><th class="text-left p-2">Address</th><th class="text-left p-2">Time</th></tr></thead><tbody>${wdRows}</tbody></table></div>`;
+overlay.onclick=(e)=>{if(e.target===overlay)overlay.remove();};
+document.body.appendChild(overlay);
+}catch(e){toast('Failed to load history','error');}
+}
+async function actWd(id,action){
+let note='';
+if(action==='reject'||action==='expire'){
+note=await showReasonModal('Reason for '+action);
+if(note===false)return;
+}
+try{
+let r=await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note:note||''})});
+let j=await r.json();
+if(j.ok){
+toast(action.charAt(0).toUpperCase()+action.slice(1)+' withdrawal #'+id,'success');
+loadAll();
+}else{
+toast(j.error||'Action failed','error');
+}
+}catch(e){
+toast('Request failed: '+e.message,'error');
+}
+}
+
+async function actDep(id,action){
+if(action==='delete'&&!confirm('Delete deposit '+id+'?')) return;
+let note='';
+if(action==='reject'||action==='expire'){
+note=await showReasonModal('Reason for '+action);
+if(note===false)return;
+}
+try{
+let r=await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note:note||''})});
+let text=await r.text();
+let j;try{j=JSON.parse(text);}catch(x){toast('Server error ('+r.status+'): '+text.slice(0,100),'error');return;}
+if(j.ok){
+toast(action.charAt(0).toUpperCase()+action.slice(1)+' deposit #'+id,'success');
+loadAll();
+}else{
+toast(j.error||'Action failed','error');
+}
+}catch(e){
+toast('Network error: '+e.message,'error');
+}
+}
+
+async function editDepAmount(id,current){
+let amt=prompt('New expected amount:',current);
+if(!amt) return;
+try{
+let r=await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action:'edit_amount',amount:parseFloat(amt)})});
+let j=await r.json();
+if(j.ok){toast('Amount updated','success');loadAll();}else{toast(j.error||'Failed','error');}
+}catch(e){toast('Request failed','error');}
+}
+
+function openAction(userId,action){
+selectedUser=userId;currentAction=action;
+document.getElementById('modalUser').innerText='User ID: '+userId;
+document.getElementById('actionModal').classList.remove('hidden');
+let title=action.replace(/_/g,' ').toUpperCase();
+let content='';
+if(action.includes('balance')||action.includes('withdrawable')){
+content=`<input id='actionAmount' type='number' step='0.01' placeholder='Amount USDT' class='w-full rounded-xl p-3 text-sm border outline-none' style='background:var(--input);border-color:var(--border)'><input id='actionNote' placeholder='Note (optional)' class='w-full mt-2 rounded-xl p-3 text-sm border outline-none' style='background:var(--input);border-color:var(--border)'>`;
+}else if(action==='delete'){
+content=`<p class='text-sm'>Delete user <b>${userId}</b>? <b class='text-red-400'>Irreversible!</b></p>`;
+}else if(action==='set_balance'||action==='set_withdrawable'){
+content=`<input id='actionAmount' type='number' step='0.01' placeholder='Set exact amount' class='w-full rounded-xl p-3 text-sm border outline-none' style='background:var(--input);border-color:var(--border)'><input id='actionNote' placeholder='Note' class='w-full mt-2 rounded-xl p-3 text-sm border outline-none' style='background:var(--input);border-color:var(--border)'>`;
+}else{
+content=`<p class='text-sm'>Confirm <b>${action}</b> for user ${userId}?</p>`;
+}
+document.getElementById('modalTitle').innerText=title;
+document.getElementById('modalContent').innerHTML=content;
+}
+
+function closeModal(){document.getElementById('actionModal').classList.add('hidden');}
+
+async function confirmAction(){
+let amount=parseFloat(document.getElementById('actionAmount')?.value||0);
+let note=document.getElementById('actionNote')?.value||'';
+let btn=document.getElementById('confirmBtn');
+if(btn){btn.disabled=true;btn.style.opacity='0.5';}
+try{
+let res=await fetch('/api/admin/user/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({user_id:selectedUser,action:currentAction,amount,note})});
+let j=await res.json();
+if(j.ok){closeModal();toast('Action completed','success');loadAll();}else{toast(j.error||'Failed','error');}
+}catch(e){toast('Request failed','error');}
+if(btn){btn.disabled=false;btn.style.opacity='1';}
+}
+
+async function addMembers(){
+let ids=document.getElementById('bulkIds').value.trim();
+let grp=document.getElementById('addGroupSelect').value;
+if(!ids){alert('Paste IDs');return;}
+let list=ids.split(/[\s,;\n]+/).filter(Boolean);
+let log=document.getElementById('addLog');log.classList.remove('hidden');
+log.innerHTML='Adding '+list.length+' members...';
+try{
+let res=await fetch('/api/admin/group/bulk_add',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({user_ids:list,group:grp,method:'direct'})});
+let j=await res.json();log.innerHTML=(j.logs||[]).join('<br>')+'<br>Done: '+(j.added||0)+' added';
+}catch(e){log.innerHTML='Error: '+e;}
+}
+
+async function generateInvites(){
+try{
+let grp=document.getElementById('addGroupSelect').value;
+let res=await fetch('/api/admin/group/invite',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({group:grp})});
+let j=await res.json();if(j.ok)prompt('Invite Link:',j.invite_link);else alert('Failed');
+}catch(e){alert('Error');}
+}
+
+async function loadGroupMembers(){
+try{
+let m=await fetchJson('/api/admin/group/members');
+document.getElementById('groupMembers').innerHTML=m.map(x=>`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5">${x.id}</td><td class="p-2.5 mono font-bold">${x.user_id}</td><td class="p-2.5">${x.group_name}</td><td class="p-2.5">${x.method}</td><td class="p-2.5 font-bold" style="color:${x.status==='added'?'#10b981':'#eab308'}">${x.status}</td><td class="p-2.5 text-[10px] mono" style="color:var(--text3)">${(x.created_at||'').slice(0,16)}</td></tr>`).join('');
+}catch(e){}
+}
+
+async function sendBroadcast(){
+let msg=document.getElementById('broadcastMsg').value;
+if(!msg){alert('Enter message');return;}
+let r=await fetch('/api/admin/broadcast',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({message:msg})});
+let j=await r.json();alert('Sent to '+j.sent+' users');
+}
+
+async function loadEnvStatus(){
+try{
+let s=await fetchJson('/api/admin/env/status');
+document.getElementById('envStatus').innerHTML=`<div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">BOT_TOKEN</p><p class="font-bold mt-0.5" style="color:${s.has_bot_token?'#10b981':'#ef4444'}">${s.BOT_TOKEN}</p></div><div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">ADMIN_AUTH</p><p class="mono text-[11px] mt-0.5">${s.ADMIN_SECRET}</p></div>`;
+}catch(e){}
+}
+
+async function testBot(){
+try{
+let r=await fetch('/api/admin/env/save',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({})}).then(r=>r.json());
+let log=document.getElementById('envLog');log.classList.remove('hidden');log.innerHTML=JSON.stringify(r,null,2);
+}catch(e){}
+}
+
+async function createTask(){
+let tt=document.getElementById('t_type')?.value||'join';
+let payload={title:document.getElementById('t_title').value,description:document.getElementById('t_desc').value,group_link:document.getElementById('t_link')?.value||'',group_id:document.getElementById('t_group_id')?.value||'',group_username:document.getElementById('t_username')?.value||'',reward:parseFloat(document.getElementById('t_reward').value||1),reward_type:document.getElementById('t_reward_type').value,is_mandatory:document.getElementById('t_mandatory').checked?1:0,is_active:document.getElementById('t_active').checked?1:0,icon:document.getElementById('t_icon')?.value||'',task_type:tt,task_config:document.getElementById('t_config')?.value||''};
+if(!payload.title){alert('Title required');return;}
+if(tt==='join'&&(!payload.group_link||!payload.group_id)){alert('For join tasks: Group Link and Group ID required');return;}
+if(tt==='referral'&&!payload.task_config){alert('For referral tasks: Config JSON required (e.g. {"ref_count":1})');return;}
+let r=await fetch('/api/admin/tasks/create',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify(payload)});
+let j=await r.json();if(j.ok){alert('Task created!');loadAll();}else alert('Failed: '+(j.error||''));
+}
+
+function toggleTaskFields(){
+let tt=document.getElementById('t_type').value;
+document.getElementById('joinFields').classList.toggle('hidden',tt!=='join');
+document.getElementById('refFields').classList.toggle('hidden',tt!=='referral');
+}
+
+async function toggleTask(id,action){
+if(action==='delete'&&!confirm('Delete task '+id+'?')) return;
+await fetch('/api/admin/tasks/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action})});
+loadAll();
+}
+
+async function extremeAction(action){
+let uid=parseInt(document.getElementById('ex_user').value);
+let amt=parseFloat(document.getElementById('ex_amount').value||0);
+if(!uid){alert('Enter User ID');return;}
+let res=await fetch('/api/admin/user/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({user_id:uid,action,amount:amt})});
+let j=await res.json();if(j.ok){alert('Done: '+action);loadAll();}else alert(j.error||'Failed');
+}
+
+async function approveAllPending(){
+if(!confirm('Approve ALL pending deposits?')) return;
+let deps=await fetchJson('/api/admin/deposits');
+let pend=deps.filter(d=>d.status==='awaiting_payment');
+for(let d of pend){
+await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id:d.id,action:'approve'})});
+}
+alert('Approved '+pend.length);loadAll();
+}
+
+async function purgeExpired(){
+if(!confirm('Delete all expired deposits?')) return;
+let deps=await fetchJson('/api/admin/deposits');
+let exp=deps.filter(d=>d.status==='expired');
+for(let d of exp){
+await fetch('/api/admin/deposit/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id:d.id,action:'delete'})});
+}
+alert('Purged '+exp.length);loadAll();
+}
+
+async function broadcastBonus(){
+let amt=prompt('Bonus amount to give ALL users (withdrawable)?','1');
+if(!amt)return;amt=parseFloat(amt);if(amt<=0)return;
+if(!confirm(`Give $${amt} to ALL ${allUsers.length} users?`)) return;
+for(let u of allUsers){
+await fetch('/api/admin/user/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({user_id:u.user_id,action:'add_withdrawable',amount:amt})});
+}
+alert('Done');loadAll();
+}
+
+async function createDefaultTasks(){
+let defaults=[
+{title:"Join Main Trading Group",description:"Join PT_AI Trading Group and earn 1 USDT",group_link:"https://t.me/PT_AI_Trading_Group",group_id:"@PT_AI_Trading_Group",group_username:"PT_AI_Trading_Group",reward:1,reward_type:"withdrawable",is_mandatory:1,is_active:1,icon:""},
+{title:"Join Trading Channel",description:"Join official channel for signals",group_link:"https://t.me/PT_AI_Trading",group_id:"@PT_AI_Trading",group_username:"PT_AI_Trading",reward:1,reward_type:"withdrawable",is_mandatory:1,is_active:1,icon:""},
+{title:"Join Support Group",description:"Join support and earn bonus",group_link:"https://t.me/PT_AI_Support",group_id:"@PT_AI_Support",group_username:"PT_AI_Support",reward:1,reward_type:"withdrawable",is_mandatory:0,is_active:1,icon:""}
+];
+for(let t of defaults){
+await fetch('/api/admin/tasks/create',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify(t)});
+}
+alert('Default tasks created! Edit Group IDs to real IDs where bot is admin.');loadAll();
+}
+
+function exportData(){
+let csv="user_id,username,balance,withdrawable,total_deposit,total_withdraw,is_banned\n"+allUsers.map(u=>`${u.user_id},${u.username||''},${u.balance},${u.withdrawable},${u.total_deposit},${u.total_withdraw},${u.is_banned}`).join("\n");
+let blob=new Blob([csv],{type:'text/csv'});
+let url=URL.createObjectURL(blob);
+let a=document.createElement('a');a.href=url;a.download='users_'+Date.now()+'.csv';a.click();
+}
+
+function bulkActionPrompt(){
+let ids=prompt('Enter user IDs comma separated:');
+if(!ids) return;
+let list=ids.split(/[\s,]+/).filter(Boolean).map(x=>parseInt(x));
+let action=prompt('Action: add_balance / add_withdrawable / ban / unban');
+if(!action) return;
+let amount=0;
+if(action.includes('add')) amount=parseFloat(prompt('Amount:')||'0');
+fetch('/api/admin/bulk_action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({action,user_ids:list,amount})}).then(r=>r.json()).then(j=>{alert('Done '+j.count);loadAll();}).catch(e=>alert('Error'));
+}
+
+let ctx=document.getElementById('revChart')?.getContext('2d');
+if(ctx){
+chartInstance=new Chart(ctx,{type:'line',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'Revenue',data:[120,450,380,720,560,900,1100],borderColor:'#FFD60A',backgroundColor:'rgba(255,214,10,0.1)',tension:0.4,fill:true,borderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'rgba(255,255,255,0.3)'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(255,255,255,0.3)'}}}}});
+}
+
+setInterval(()=>{if(ADMIN_TOKEN)loadAll();},10000);
 </script>
 </body>
 </html>
