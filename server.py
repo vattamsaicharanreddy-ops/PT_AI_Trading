@@ -24,6 +24,12 @@ logger = logging.getLogger("server")
 
 app = FastAPI(title="PT_AI Trading ULTRA V5")
 
+UPLOAD_DIR = "/data/uploads" if os.path.isdir("/data") else os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+from fastapi.staticfiles import StaticFiles
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -189,6 +195,13 @@ class TaskCreate(BaseModel):
     icon: str = ""
     task_type: str = "join"
     task_config: Optional[str] = ""
+
+
+class GroupBroadcast(BaseModel):
+    message: str
+    group_ids: list = []
+    parse_mode: str = "HTML"
+    photo_url: Optional[str] = ""
 
 
 class GroupBulkAdd(BaseModel):
@@ -1260,6 +1273,90 @@ def admin_bulk_action(request: Request):
 def admin_broadcast(request: Request):
     require_admin(request)
     return {"ok": True, "sent": 0, "message": "Broadcast via Telegram Bot API recommended"}
+
+
+@app.post("/api/admin/upload")
+async def admin_upload(request: Request):
+    require_admin(request)
+    import uuid
+    content_type = request.headers.get("content-type", "")
+    if "multipart" not in content_type:
+        return {"ok": False, "error": "Expected multipart/form-data"}
+    form = await request.form()
+    file = form.get("file")
+    if not file:
+        return {"ok": False, "error": "No file provided"}
+    filename = getattr(file, "filename", "image.jpg") or "image.jpg"
+    ext = os.path.splitext(filename)[1].lower() or ".jpg"
+    if ext not in (".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"):
+        return {"ok": False, "error": "Unsupported image format"}
+    unique_name = f"{uuid.uuid4().hex[:12]}{ext}"
+    save_path = os.path.join(UPLOAD_DIR, unique_name)
+    data = await file.read()
+    with open(save_path, "wb") as f:
+        f.write(data)
+    WEBAPP_URL = os.getenv("WEBAPP_URL", "").rstrip("/")
+    url = f"{WEBAPP_URL}/uploads/{unique_name}"
+    return {"ok": True, "url": url, "filename": unique_name}
+
+
+@app.get("/api/admin/groups")
+def admin_groups(request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        try:
+            cur.execute("SELECT DISTINCT group_id, group_username, group_link FROM tasks WHERE task_type='join' AND group_id IS NOT NULL AND group_id != ''")
+            groups = rows_as_dicts(cur.fetchall())
+        except Exception:
+            groups = []
+        return {"groups": groups}
+    finally:
+        safe_close(conn)
+
+
+@app.post("/api/admin/group/broadcast")
+def admin_group_broadcast(req: GroupBroadcast, request: Request):
+    require_admin(request)
+    import json as _json
+    import urllib.request as _urllib
+    message = req.message.strip()
+    group_ids = req.group_ids
+    parse_mode = req.parse_mode
+
+    if not message:
+        return {"ok": False, "error": "Message is required"}
+    if not group_ids:
+        return {"ok": False, "error": "Select at least one group"}
+
+    token = os.getenv("BOT_TOKEN", "")
+    if not token:
+        return {"ok": False, "error": "BOT_TOKEN not set"}
+
+    results = []
+    sent = 0
+    has_photo = bool(req.photo_url and req.photo_url.strip())
+    for gid in group_ids:
+        try:
+            if has_photo:
+                tg_url = f"https://api.telegram.org/bot{token}/sendPhoto"
+                payload = _json.dumps({"chat_id": gid, "photo": req.photo_url.strip(), "caption": message, "parse_mode": parse_mode}).encode()
+            else:
+                tg_url = f"https://api.telegram.org/bot{token}/sendMessage"
+                payload = _json.dumps({"chat_id": gid, "text": message, "parse_mode": parse_mode}).encode()
+            req_url = _urllib.Request(tg_url, data=payload, headers={"Content-Type": "application/json"})
+            with _urllib.urlopen(req_url, timeout=15) as r:
+                resp = _json.loads(r.read().decode())
+                if resp.get("ok"):
+                    sent += 1
+                    results.append({"group_id": gid, "ok": True})
+                else:
+                    results.append({"group_id": gid, "ok": False, "error": resp.get("description", "Unknown error")})
+        except Exception as e:
+            results.append({"group_id": gid, "ok": False, "error": str(e)})
+
+    return {"ok": sent > 0, "sent": sent, "results": results}
 
 
 @app.post("/api/admin/group/bulk_add")

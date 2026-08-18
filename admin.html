@@ -209,7 +209,34 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 </div>
 </section>
 
-<section id="sec-broadcast" class="hidden space-y-5 fade-in"><div class="card p-5"><h2 class="text-lg font-black">Broadcast to All Users</h2><textarea id="broadcastMsg" placeholder="Message to all users..." class="mt-4 w-full h-32 rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)"></textarea><button onclick="sendBroadcast()" class="mt-3 btn-gold px-6 py-3 rounded-full text-sm">Send to All Users</button></div></section>
+<section id="sec-broadcast" class="hidden space-y-5 fade-in">
+<div class="card p-5">
+<h2 class="text-lg font-black">Broadcast to Telegram Groups</h2>
+<p class="text-[11px] mt-1" style="color:var(--text2)">Bot must be an admin in the selected groups. Supports HTML formatting and images.</p>
+<div id="groupCheckboxes" class="mt-4 space-y-2"></div>
+<input id="broadcastImgUrl" type="url" placeholder="Image URL (https://...)" class="mt-4 w-full rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)">
+<div class="mt-2 flex items-center gap-2">
+<label class="px-3 py-2 rounded-full text-[11px] font-bold cursor-pointer" style="background:var(--hover);border:1px solid var(--border2);color:var(--text2)">
+<input type="file" id="broadcastImgFile" accept="image/*" class="hidden" onchange="uploadBroadcastImage(this)">
+Upload Image
+</label>
+<span id="broadcastImgStatus" class="text-[10px]" style="color:var(--text3)"></span>
+</div>
+<img id="broadcastImgPreview" class="hidden mt-2 rounded-xl max-h-48 object-cover" style="border:1px solid var(--border2)">
+<textarea id="broadcastMsg" placeholder="Type your message... (HTML supported: <b>bold</b>, <i>italic</i>, <a href='url'>links</a>)" class="mt-3 w-full h-32 rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)"></textarea>
+<div class="mt-2 flex items-center gap-2">
+<input type="checkbox" id="broadcastParseHTML" checked class="accent-yellow-400">
+<label for="broadcastParseHTML" class="text-[11px]" style="color:var(--text2)">Parse HTML</label>
+</div>
+<button onclick="sendGroupBroadcast()" class="mt-3 btn-gold px-6 py-3 rounded-full text-sm">Send to Selected Groups</button>
+<pre id="broadcastLog" class="hidden mt-3 p-3 rounded-xl text-[10px] overflow-auto mono" style="background:var(--input);border:1px solid var(--border)"></pre>
+</div>
+<div class="card p-5">
+<h2 class="text-lg font-black">Broadcast to All Bot Users</h2>
+<textarea id="broadcastMsgUsers" placeholder="Message to all users..." class="mt-4 w-full h-32 rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)"></textarea>
+<button onclick="sendBroadcast()" class="mt-3 btn-gold px-6 py-3 rounded-full text-sm">Send to All Users</button>
+</div>
+</section>
 
 <section id="sec-settings" class="hidden space-y-5 fade-in"><div class="card p-5"><h2 class="text-lg font-black">Settings</h2><div id="envStatus" class="mt-4 grid grid-cols-2 gap-2 text-[11px]"></div>
 <div class="mt-4 flex gap-2"><button onclick="loadEnvStatus()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh Status</button><button onclick="testBot()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Test Bot</button></div>
@@ -353,6 +380,7 @@ let btn=document.querySelector(`[data-tab="${tab}"]`);
 if(btn){btn.classList.add('nav-active');btn.style.color='';}
 document.getElementById('pageTitle').innerText=btn?btn.innerText.replace('NEW','').trim():tab;
 if(['deposits','users','dashboard','withdrawals','referrals','tasks'].includes(tab)) loadAll();
+if(tab==='broadcast') loadBroadcastTab();
 }
 
 async function fetchJson(url){
@@ -570,10 +598,70 @@ document.getElementById('groupMembers').innerHTML=m.map(x=>`<tr class="border-t"
 }
 
 async function sendBroadcast(){
-let msg=document.getElementById('broadcastMsg').value;
+let msg=document.getElementById('broadcastMsgUsers').value;
 if(!msg){alert('Enter message');return;}
 let r=await fetch('/api/admin/broadcast',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({message:msg})});
 let j=await r.json();alert('Sent to '+j.sent+' users');
+}
+
+async function loadGroups(){
+try{
+let r=await fetch('/api/admin/groups',{headers:apiHeaders()});
+let j=await r.json();
+let el=document.getElementById('groupCheckboxes');
+if(!j.groups||j.groups.length===0){el.innerHTML='<p class="text-[11px]" style="color:var(--text3)">No groups found. Create join tasks with group_id first.</p>';return;}
+el.innerHTML=j.groups.map(g=>`<label class="flex items-center gap-3 p-3 rounded-xl cursor-pointer" style="background:var(--hover);border:1px solid var(--border2)"><input type="checkbox" value="${g.group_id}" class="group-cb accent-yellow-400"><div><p class="font-bold text-[12px]">${g.group_username||'Unknown'}</p><p class="text-[10px] mono" style="color:var(--text3)">ID: ${g.group_id}</p></div></label>`).join('');
+}catch(e){console.error('loadGroups',e);}
+}
+
+async function sendGroupBroadcast(){
+let msg=document.getElementById('broadcastMsg').value;
+if(!msg){alert('Enter a message');return;}
+let cbs=document.querySelectorAll('.group-cb:checked');
+let ids=Array.from(cbs).map(c=>c.value);
+if(ids.length===0){alert('Select at least one group');return;}
+let parseHTML=document.getElementById('broadcastParseHTML').checked;
+let imgUrl=document.getElementById('broadcastImgUrl').value.trim();
+let log=document.getElementById('broadcastLog');
+log.classList.remove('hidden');
+log.innerHTML='Sending...';
+try{
+let r=await fetch('/api/admin/group/broadcast',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({message:msg,group_ids:ids,parse_mode:parseHTML?'HTML':'Markdown',photo_url:imgUrl})});
+let j=await r.json();
+let lines=(j.results||[]).map(r=>`${r.group_id}: ${r.ok?'OK':'FAIL - '+r.error}`);
+log.innerHTML=`Sent: ${j.sent}/${ids.length}<br>`+lines.join('<br>');
+if(j.ok)alert('Sent to '+j.sent+' group(s)');else alert('Failed. Check log.');
+}catch(e){log.innerHTML='Error: '+e;alert('Error: '+e);}
+}
+
+document.getElementById('broadcastImgUrl').addEventListener('input',function(){
+let preview=document.getElementById('broadcastImgPreview');
+if(this.value.trim()){preview.src=this.value.trim();preview.classList.remove('hidden');preview.onerror=()=>preview.classList.add('hidden');}
+else{preview.classList.add('hidden');}
+});
+
+async function uploadBroadcastImage(input){
+let file=input.files[0];
+if(!file)return;
+let status=document.getElementById('broadcastImgStatus');
+status.textContent='Uploading...';
+status.style.color='var(--text3)';
+try{
+let fd=new FormData();
+fd.append('file',file);
+let r=await fetch('/api/admin/upload',{method:'POST',headers:apiHeaders(),body:fd});
+let j=await r.json();
+if(j.ok){
+document.getElementById('broadcastImgUrl').value=j.url;
+document.getElementById('broadcastImgUrl').dispatchEvent(new Event('input'));
+status.textContent='Uploaded!';
+status.style.color='#10b981';
+}else{status.textContent=j.error||'Upload failed';status.style.color='#ef4444';}
+}catch(e){status.textContent='Error: '+e;status.style.color='#ef4444';}
+}
+
+async function loadBroadcastTab(){
+loadGroups();
 }
 
 async function loadEnvStatus(){
