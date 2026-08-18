@@ -1546,12 +1546,16 @@ def admin_logs(request: Request):
 
 @app.get("/")
 def root():
-    return FileResponse("index.html")
+    from fastapi.responses import HTMLResponse
+    with open("index.html", "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read(), headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"})
 
 
 @app.get("/admin")
 def admin_page():
-    return FileResponse("admin.html")
+    from fastapi.responses import HTMLResponse
+    with open("admin.html", "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read(), headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"})
 
 
 @app.get("/health")
