@@ -1368,6 +1368,35 @@ def admin_auth_check():
     return {"auth_required": bool(ADMIN_SECRET), "secret_length": len(ADMIN_SECRET)}
 
 
+@app.get("/api/debug/tasks")
+def debug_tasks():
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        try:
+            cur.execute("SELECT id, title, task_type, task_config, sort_order, is_active FROM tasks ORDER BY sort_order ASC, id ASC")
+            tasks = rows_as_dicts(cur.fetchall())
+        except Exception as e:
+            return {"error": str(e)}
+        return {"tasks": tasks, "count": len(tasks)}
+    finally:
+        safe_close(conn)
+
+
+@app.get("/api/debug/seed-referrals")
+def debug_seed_referrals():
+    _seed_referral_tasks()
+    _seed_join_tasks()
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute("SELECT id, title, task_type, sort_order FROM tasks ORDER BY sort_order ASC, id ASC")
+        tasks = rows_as_dicts(cur.fetchall())
+        return {"ok": True, "tasks": tasks}
+    finally:
+        safe_close(conn)
+
+
 try:
     import blockchain_monitor
     logger.info("Blockchain monitor loaded")
