@@ -516,7 +516,7 @@ def api_me(user_id: int, username: Optional[str] = Query(None), referred_by: Opt
         cur = cursor(conn)
         cur.execute(f"SELECT COUNT(*) as cnt FROM tasks WHERE is_mandatory=1 AND is_active=1")
         mand_cnt = val(cur.fetchone(), "cnt", 0) or 0
-        cur.execute(f"SELECT COUNT(*) as cnt FROM user_tasks WHERE user_id={ph()} AND status='verified'", (user_id,))
+        cur.execute(f"SELECT COUNT(*) as cnt FROM user_tasks ut JOIN tasks t ON ut.task_id=t.id WHERE ut.user_id={ph()} AND ut.status='verified' AND t.is_mandatory=1 AND t.is_active=1", (user_id,))
         verified_cnt = val(cur.fetchone(), "cnt", 0) or 0
         d["mandatory_tasks_total"] = mand_cnt
         d["mandatory_tasks_done"] = verified_cnt
