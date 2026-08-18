@@ -450,24 +450,19 @@ async def webhook_handler(token: str, request: Request):
     try:
         data = await request.json()
         from telegram import Update
-        from telegram.ext import Application
+        from telegram.ext import Application, CommandHandler, CallbackQueryHandler
         from bot import start, callback_handler
         if not hasattr(app, "_tg_app"):
             app._tg_app = Application.builder().token(BOT_TOKEN).build()
-            app._tg_app.add_handler(
-                __import__("telegram.ext", fromlist=["CommandHandler"]).CommandHandler("start", start)
-            )
-            app._tg_app.add_handler(
-                __import__("telegram.ext", fromlist=["CallbackQueryHandler"]).CallbackQueryHandler(callback_handler)
-            )
+            app._tg_app.add_handler(CommandHandler("start", start))
+            app._tg_app.add_handler(CallbackQueryHandler(callback_handler))
             logger.info("Telegram Application built once and cached")
         tg_app = app._tg_app
-        async with tg_app:
-            update = Update.de_json(data, tg_app.bot)
-            await tg_app.process_update(update)
+        update = Update.de_json(data, tg_app.bot)
+        await tg_app.process_update(update)
         return {"ok": True}
     except Exception as e:
-        logger.error(f"Webhook error: {e}")
+        logger.error(f"Webhook error: {e}", exc_info=True)
         return {"ok": False}
 
 
