@@ -88,9 +88,9 @@ def _seed_join_tasks():
             return
         now = datetime.utcnow().isoformat()
         seed_tasks = [
-            ("Join Main Trading Group", "Join PT_AI Trading Group and earn reward", "https://t.me/PT_AI_Trading_Group", "@PT_AI_Trading_Group", "PT_AI_Trading_Group", 1.0, 1, 200),
-            ("Join Trading Channel", "Join official channel for signals and updates", "https://t.me/PT_AI_Trading", "@PT_AI_Trading", "PT_AI_Trading", 1.0, 1, 201),
-            ("Join Support Group", "Join support group and earn bonus reward", "https://t.me/PT_AI_Support", "@PT_AI_Support", "PT_AI_Support", 1.0, 0, 202),
+            ("Join Main Trading Group", "Join PT_AI Trading Group and earn reward", "https://t.me/PT_AI_Trading_Group", "@PT_AI_Trading_Group", "PT_AI_Trading_Group", 1.0, 1, 1),
+            ("Join Trading Channel", "Join official channel for signals and updates", "https://t.me/PT_AI_Trading", "@PT_AI_Trading", "PT_AI_Trading", 1.0, 1, 2),
+            ("Join Support Group", "Join support group and earn bonus reward", "https://t.me/PT_AI_Support", "@PT_AI_Support", "PT_AI_Support", 1.0, 1, 3),
         ]
         for title, desc, link, gid, username, reward, mandatory, sort_o in seed_tasks:
             cur.execute(f"SELECT id FROM tasks WHERE title={ph()} LIMIT 1", (title,))
