@@ -855,6 +855,7 @@ let oldMe=window._lastMe;
 window._lastMe=me;
 if(me.is_banned){$('bannedOverlay').classList.remove('hidden');return;}
 checkTierUpgrade(me.tier||7);
+loadTasks(true);
 let depCount=me.verified_deposits_count||0;
 if(_lastVerifiedDeposits>0&&depCount>_lastVerifiedDeposits){
 let lastDepAmt=me.last_deposit_amount||20;
