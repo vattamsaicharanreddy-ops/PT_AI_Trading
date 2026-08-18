@@ -77,6 +77,37 @@ def _seed_referral_tasks():
     finally:
         safe_close(conn)
 
+
+def _seed_join_tasks():
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"SELECT COUNT(*) as cnt FROM tasks WHERE task_type='join'")
+        cnt = val(cur.fetchone(), "cnt", 0) or 0
+        if cnt >= 3:
+            return
+        now = datetime.utcnow().isoformat()
+        seed_tasks = [
+            ("Join Main Trading Group", "Join PT_AI Trading Group and earn reward", "https://t.me/PT_AI_Trading_Group", "@PT_AI_Trading_Group", "PT_AI_Trading_Group", 1.0, 1, 200),
+            ("Join Trading Channel", "Join official channel for signals and updates", "https://t.me/PT_AI_Trading", "@PT_AI_Trading", "PT_AI_Trading", 1.0, 1, 201),
+            ("Join Support Group", "Join support group and earn bonus reward", "https://t.me/PT_AI_Support", "@PT_AI_Support", "PT_AI_Support", 1.0, 0, 202),
+        ]
+        for title, desc, link, gid, username, reward, mandatory, sort_o in seed_tasks:
+            cur.execute(f"SELECT id FROM tasks WHERE title={ph()} LIMIT 1", (title,))
+            if cur.fetchone():
+                continue
+            cur.execute(
+                f"INSERT INTO tasks (title,description,group_link,group_id,group_username,reward,reward_type,is_active,is_mandatory,icon,task_type,task_config,sort_order,created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},'withdrawable',1,{ph()},'','join',{ph()},{ph()},{ph()})",
+                (title, desc, link, gid, username, reward, mandatory, '', sort_o, now),
+            )
+        conn.commit()
+        logger.info("Seeded join tasks (checked/inserted)")
+    except Exception as e:
+        logger.error(f"Seed join tasks error: {e}")
+    finally:
+        safe_close(conn)
+
+
 DEPOSIT_ADDR = {
     "TRC20": os.getenv("ADDR_TRC20", "TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC"),
     "BEP20": os.getenv("ADDR_BEP20", "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd"),
@@ -184,6 +215,7 @@ def get_tier(balance):
 
 
 _seed_referral_tasks()
+_seed_join_tasks()
 
 
 def invoice_id():
