@@ -460,17 +460,19 @@ async def webhook_handler(token: str, request: Request):
             message_id = cb["message"]["message_id"]
             user = cb["from"]
             cb_data = cb.get("data", "")
+            cb_query_id = cb.get("id", "")
         else:
             chat_id = msg["chat"]["id"]
             user = msg.get("from", {})
             cb_data = ""
+            cb_query_id = ""
 
         from bot import handle_start, handle_callback
         if not is_callback and msg.get("text", "").startswith("/start"):
             args = msg["text"].split(" ", 1)[1:] if " " in msg.get("text", "") else []
             await handle_start(BOT_TOKEN, chat_id, user, args)
         elif is_callback:
-            await handle_callback(BOT_TOKEN, chat_id, message_id, user, cb_data)
+            await handle_callback(BOT_TOKEN, chat_id, message_id, user, cb_data, cb_query_id)
 
         return {"ok": True}
     except Exception as e:

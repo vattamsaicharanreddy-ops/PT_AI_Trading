@@ -91,31 +91,7 @@ def _make_kb():
     ])
 
 
-WELCOME_TEXT = """\u2728 <b>Welcome, {name}!</b>
-
-\U0001f3af <b>PT_AI Trading</b> \u2014 AI-Powered Crypto Trading Platform
-{'━' * 30}
-
-\U0001f4ca <b>How It Works</b>
-\u2022 Complete <b>tasks</b> \u2192 Earn <b>1+ USDT</b> each
-\u2022 <b>Deposit</b> min <b>$20 USDT</b> \u2192 AI earns <b>7.6% \u2013 14.9%</b> daily
-\u2022 <b>Auto-compound</b> profits for 30 days
-\u2022 <b>Withdraw</b> anytime to your wallet
-
-\U0001f3e6 <b>Supported Networks</b>
-TRC20 \u2022 BEP20 \u2022 ERC20 \u2022 TON \u2022 SOL
-
-\U0001f48e <b>Tier System</b> \u2014 Higher balance = Higher returns
-\U0001f7e2 Starter: 7.6% | \U0001f7e1 Bronze: 8.9% | \U0001f535 Silver: 9.6%
-\U0001f7e3 Platinum: 10.9% | \U0001f48e Gold: 11.8% | \U0001f48e Diamond: 13.6%
-\U0001f451 Platinum+: 14.9%
-
-\u26a0\ufe0f <b>Important</b>
-\u2022 Complete <b>mandatory tasks</b> to unlock withdrawal
-\u2022 Refer friends to earn <b>7% bonus</b> on deposits
-\u2022 Minimum deposit: <b>20 USDT</b>
-{'━' * 30}
-\U0001f680 <b>Tap a button below to get started!</b>{ref_line}"""
+WELCOME_TEXT_TEMPLATE = "\u2728 <b>Welcome, {name}!</b>\n\n\U0001f3af <b>PT_AI Trading</b> \u2014 AI-Powered Crypto Trading Platform\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n\U0001f4ca <b>How It Works</b>\n\u2022 Complete <b>tasks</b> \u2192 Earn <b>1+ USDT</b> each\n\u2022 <b>Deposit</b> min <b>$20 USDT</b> \u2192 AI earns <b>7.6% \u2013 14.9%</b> daily\n\u2022 <b>Auto-compound</b> profits for 30 days\n\u2022 <b>Withdraw</b> anytime to your wallet\n\n\U0001f3e6 <b>Supported Networks</b>\nTRC20 \u2022 BEP20 \u2022 ERC20 \u2022 TON \u2022 SOL\n\n\U0001f48e <b>Tier System</b> \u2014 Higher balance = Higher returns\n\U0001f7e2 Starter: 7.6% | \U0001f7e1 Bronze: 8.9% | \U0001f535 Silver: 9.6%\n\U0001f7e3 Platinum: 10.9% | \U0001f48e Gold: 11.8% | \U0001f48e Diamond: 13.6%\n\U0001f451 Platinum+: 14.9%\n\n\u26a0\ufe0f <b>Important</b>\n\u2022 Complete <b>mandatory tasks</b> to unlock withdrawal\n\u2022 Refer friends to earn <b>7% bonus</b> on deposits\n\u2022 Minimum deposit: <b>20 USDT</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\U0001f680 <b>Tap a button below to get started!</b>{ref_line}"
 
 
 def _ensure_user(user_id, username="", referred_by=None):
@@ -147,22 +123,25 @@ async def handle_start(token, chat_id, user, args):
     first_name = user.get("first_name", "Trader")
     ref = args[0] if args else None
 
+    logger.info(f"/start from user {user_id} (@{username}) ref={ref}")
+
     _ensure_user(user_id, username, ref)
 
     ref_line = ""
     if ref:
         ref_line = f"\n\n\U0001f517 <b>Referred by:</b> User #{ref}"
 
-    text = WELCOME_TEXT.format(name=first_name, ref_line=ref_line)
+    text = WELCOME_TEXT_TEMPLATE.format(name=first_name, ref_line=ref_line)
     kb = _make_kb()
 
     try:
         _send_message(token, chat_id, text, reply_markup=kb)
+        logger.info(f"Sent /start reply to {chat_id}")
     except Exception as e:
-        logger.error(f"Failed to send /start reply: {e}", exc_info=True)
+        logger.error(f"Failed to send /start reply to {chat_id}: {e}", exc_info=True)
 
 
-async def handle_callback(token, chat_id, message_id, user, cb_data):
+async def handle_callback(token, chat_id, message_id, user, cb_data, cb_query_id=""):
     cb_id = user.get("id", 0)
 
     try:
@@ -270,7 +249,7 @@ async def handle_callback(token, chat_id, message_id, user, cb_data):
 
         elif cb_data == "back_start":
             first_name = user.get("first_name", "Trader")
-            text = WELCOME_TEXT.format(name=first_name, ref_line="")
+            text = WELCOME_TEXT_TEMPLATE.format(name=first_name, ref_line="")
             kb = _make_kb()
             _edit_message(token, chat_id, message_id, text, reply_markup=kb)
 
@@ -278,6 +257,6 @@ async def handle_callback(token, chat_id, message_id, user, cb_data):
         logger.error(f"Callback error for '{cb_data}': {e}", exc_info=True)
 
     try:
-        _answer_callback(token, cb_data)
+        _answer_callback(token, cb_query_id)
     except Exception:
         pass
