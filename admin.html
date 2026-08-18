@@ -244,6 +244,19 @@ Upload Image
 <div id="savedMessagesList" class="mt-3 space-y-2 max-h-64 overflow-y-auto"></div>
 </div>
 <div class="card p-5">
+<h2 class="text-lg font-black">Direct Message</h2>
+<p class="text-[11px] mt-1" style="color:var(--text2)">Send a private message to any user by their User ID.</p>
+<div class="mt-3 flex gap-2">
+<input id="dmUserId" type="number" placeholder="User ID" class="w-32 rounded-xl p-2.5 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+<input id="dmImgUrl" type="url" placeholder="Image URL (optional)" class="flex-1 rounded-xl p-2.5 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+</div>
+<textarea id="dmMsg" placeholder="Type your message..." class="mt-2 w-full h-24 rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)"></textarea>
+<div class="mt-2 flex items-center gap-3">
+<button onclick="sendDM()" class="btn-gold px-5 py-2 rounded-full text-[11px] font-bold">Send DM</button>
+<span id="dmStatus" class="text-[10px]" style="color:var(--text3)"></span>
+</div>
+</div>
+<div class="card p-5">
 <h2 class="text-lg font-black">Broadcast to All Bot Users</h2>
 <textarea id="broadcastMsgUsers" placeholder="Message to all users..." class="mt-4 w-full h-32 rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)"></textarea>
 <button onclick="sendBroadcast()" class="mt-3 btn-gold px-6 py-3 rounded-full text-sm">Send to All Users</button>
@@ -644,6 +657,22 @@ let lines=(j.results||[]).map(r=>`${r.group_id}: ${r.ok?'OK':'FAIL - '+r.error}`
 log.innerHTML=`Sent: ${j.sent}/${ids.length}<br>`+lines.join('<br>');
 if(j.ok)alert('Sent to '+j.sent+' group(s)');else alert('Failed. Check log.');
 }catch(e){log.innerHTML='Error: '+e;alert('Error: '+e);}
+}
+
+async function sendDM(){
+let userId=document.getElementById('dmUserId').value.trim();
+let msg=document.getElementById('dmMsg').value.trim();
+let imgUrl=document.getElementById('dmImgUrl').value.trim();
+let status=document.getElementById('dmStatus');
+if(!userId){alert('Enter User ID');return;}
+if(!msg){alert('Enter a message');return;}
+status.textContent='Sending...';status.style.color='var(--text3)';
+try{
+let r=await fetch('/api/admin/dm',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({user_id:parseInt(userId),message:msg,photo_url:imgUrl})});
+let j=await r.json();
+if(j.ok){status.textContent='Sent!';status.style.color='#10b981';document.getElementById('dmMsg').value='';}
+else{status.textContent=j.error||'Failed';status.style.color='#ef4444';}
+}catch(e){status.textContent='Error: '+e;status.style.color='#ef4444';}
 }
 
 document.getElementById('broadcastImgUrl').addEventListener('input',function(){

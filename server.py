@@ -204,6 +204,43 @@ class GroupBroadcast(BaseModel):
     photo_url: Optional[str] = ""
 
 
+class DirectMessage(BaseModel):
+    user_id: int
+    message: str
+    photo_url: Optional[str] = ""
+    parse_mode: str = "HTML"
+
+
+@app.post("/api/admin/dm")
+def admin_send_dm(req: DirectMessage, request: Request):
+    require_admin(request)
+    import json as _json
+    import urllib.request as _urllib
+    token = os.getenv("BOT_TOKEN", "")
+    if not token:
+        return {"ok": False, "error": "BOT_TOKEN not set"}
+    message = req.message.strip()
+    if not message:
+        return {"ok": False, "error": "Message is required"}
+    has_photo = bool(req.photo_url and req.photo_url.strip())
+    try:
+        if has_photo:
+            url = f"https://api.telegram.org/bot{token}/sendPhoto"
+            payload = _json.dumps({"chat_id": req.user_id, "photo": req.photo_url.strip(), "caption": message, "parse_mode": req.parse_mode}).encode()
+        else:
+            url = f"https://api.telegram.org/bot{token}/sendMessage"
+            payload = _json.dumps({"chat_id": req.user_id, "text": message, "parse_mode": req.parse_mode}).encode()
+        req_url = _urllib.Request(url, data=payload, headers={"Content-Type": "application/json"})
+        with _urllib.urlopen(req_url, timeout=15) as r:
+            resp = _json.loads(r.read().decode())
+            if resp.get("ok"):
+                return {"ok": True, "message": f"Message sent to user {req.user_id}"}
+            else:
+                return {"ok": False, "error": resp.get("description", "Unknown error")}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 class GroupBulkAdd(BaseModel):
     user_ids: List[str]
     group: str
