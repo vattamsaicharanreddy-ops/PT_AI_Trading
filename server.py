@@ -1319,14 +1319,26 @@ def admin_page():
 
 @app.get("/health")
 def health():
+    from bot import get_bot_username
     return {
         "ok": True,
         "db": "POSTGRES" if USE_POSTGRES else "SQLITE",
         "mode": "WEBHOOK",
+        "bot_username": get_bot_username(),
         "timer": "D:H:M:S live",
         "expiry": "auto balance zero",
         "tier_reset": "on tier change",
         "admin_auth": "enabled" if ADMIN_SECRET else "disabled",
+    }
+
+
+@app.get("/bot_info")
+def bot_info():
+    from bot import get_bot_username
+    uname = get_bot_username()
+    return {
+        "bot_username": uname,
+        "referral_example": f"https://t.me/{uname}?start=123456",
     }
 
 

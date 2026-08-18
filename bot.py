@@ -19,22 +19,23 @@ def get_bot_username():
     global _bot_username_cache
     if _bot_username_cache:
         return _bot_username_cache
-    env_name = os.getenv("BOT_USERNAME", "")
-    if env_name:
-        _bot_username_cache = env_name
-        return _bot_username_cache
     try:
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/getMe"
         req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=5) as r:
+        with urllib.request.urlopen(req, timeout=10) as r:
             data = json.loads(r.read().decode())
             if data.get("ok"):
                 _bot_username_cache = data["result"]["username"]
-                logger.info(f"Fetched bot username: @{_bot_username_cache}")
+                logger.info(f"Fetched bot username from API: @{_bot_username_cache}")
                 return _bot_username_cache
     except Exception as e:
-        logger.error(f"Failed to fetch bot username: {e}")
+        logger.error(f"Failed to fetch bot username from API: {e}")
+    _bot_username_cache = os.getenv("BOT_USERNAME", "").strip().lstrip("@")
+    if _bot_username_cache:
+        logger.info(f"Using bot username from env: @{_bot_username_cache}")
+        return _bot_username_cache
     _bot_username_cache = "PT_AI_TRADING_TESTINGBOT"
+    logger.warning(f"Using hardcoded bot username: @{_bot_username_cache}")
     return _bot_username_cache
 
 
@@ -207,7 +208,6 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif data == "referral_info":
             bot_name = get_bot_username()
             ref_link = f"https://t.me/{bot_name}?start={query.from_user.id}"
-            share_text = urllib.parse.quote(f"Join PT_AI Trading and earn USDT daily!\n\nUse my referral link:\n{ref_link}")
             text = (
                 f"\U0001f91d <b>Refer & Earn</b>\n\n"
                 f"\u2022 Earn <b>7%</b> bonus on direct referral deposits\n"
@@ -217,8 +217,11 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"<code>{ref_link}</code>\n\n"
                 f"\U0001f4a1 Share this link with friends to start earning!"
             )
+            share_text = urllib.parse.quote(
+                f"Join PT_AI Trading and earn USDT daily!\n\nUse my referral link:\n{ref_link}"
+            )
             kb = [
-                [InlineKeyboardButton("\U0001f465  Share Referral", url=f"https://t.me/share/url?text={share_text}")],
+                [InlineKeyboardButton("\U0001f44c  Copy & Share", callback_data="copy_ref")],
                 [InlineKeyboardButton("\u2b05\ufe0f  Back", callback_data="back_start")],
             ]
             await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
@@ -228,6 +231,11 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text = WELCOME_TEXT.format(name=query.from_user.first_name or "Trader", ref_line=ref_line)
             kb = _make_kb()
             await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
+
+        elif data == "copy_ref":
+            bot_name = get_bot_username()
+            ref_link = f"https://t.me/{bot_name}?start={query.from_user.id}"
+            await query.answer(text=f"Link ready to paste!", show_alert=True)
 
     except Exception as e:
         logger.error(f"Callback handler error for '{data}': {e}", exc_info=True)
