@@ -723,9 +723,10 @@ def play_coinflip(user_id: int, body: GameBet):
         won = result == choice
         profit = round(bet * 0.9, 2) if won else 0
         if won:
-            cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()} WHERE user_id={ph()}", (profit, user_id))
+            cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()},total_games_played=total_games_played+1,total_games_won=total_games_won+1 WHERE user_id={ph()}", (profit, user_id))
         else:
-            cur.execute(f"UPDATE users SET withdrawable=withdrawable-{ph()} WHERE user_id={ph()}", (bet, user_id))
+            cur.execute(f"UPDATE users SET withdrawable=withdrawable-{ph()},total_games_played=total_games_played+1 WHERE user_id={ph()}", (bet, user_id))
+        cur.execute(f"INSERT INTO game_history (user_id,game_type,bet,result,payout,choice,details,created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()})", (user_id, 'coinflip', bet, 'won' if won else 'lost', round(bet + profit, 2) if won else 0, choice, json.dumps({"coin": result}), datetime.utcnow().isoformat()))
         conn.commit()
         cur.execute(f"SELECT balance, withdrawable FROM users WHERE user_id={ph()}", (user_id,))
         row2 = cur.fetchone()
@@ -765,9 +766,10 @@ def play_dice(user_id: int, body: GameBet):
         won = (prediction == "over" and is_over) or (prediction == "under" and is_under)
         profit = round(bet * 1.0, 2) if won else 0
         if won:
-            cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()} WHERE user_id={ph()}", (profit, user_id))
+            cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()},total_games_played=total_games_played+1,total_games_won=total_games_won+1 WHERE user_id={ph()}", (profit, user_id))
         else:
-            cur.execute(f"UPDATE users SET withdrawable=withdrawable-{ph()} WHERE user_id={ph()}", (bet, user_id))
+            cur.execute(f"UPDATE users SET withdrawable=withdrawable-{ph()},total_games_played=total_games_played+1 WHERE user_id={ph()}", (bet, user_id))
+        cur.execute(f"INSERT INTO game_history (user_id,game_type,bet,result,payout,choice,details,created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()})", (user_id, 'dice', bet, 'won' if won else 'lost', round(bet + profit, 2) if won else 0, prediction, json.dumps({"dice": [d1, d2], "total": total}), datetime.utcnow().isoformat()))
         conn.commit()
         cur.execute(f"SELECT balance, withdrawable FROM users WHERE user_id={ph()}", (user_id,))
         row2 = cur.fetchone()
@@ -798,7 +800,8 @@ def play_crash(user_id: int, body: CrashBet):
             return {"ok": False, "error": f"Insufficient withdrawable ({wd:.2f} USDT)"}
         h = _random.random()
         crash_point = max(1.01, round(0.97 / max(0.0001, 1 - h), 2))
-        cur.execute(f"UPDATE users SET withdrawable=withdrawable-{ph()} WHERE user_id={ph()}", (bet, user_id))
+        cur.execute(f"UPDATE users SET withdrawable=withdrawable-{ph()},total_games_played=total_games_played+1 WHERE user_id={ph()}", (bet, user_id))
+        cur.execute(f"INSERT INTO game_history (user_id,game_type,bet,result,payout,choice,details,created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()})", (user_id, 'crash', bet, 'active', 0, '', json.dumps({"crash_point": crash_point}), datetime.utcnow().isoformat()))
         conn.commit()
         cur.execute(f"SELECT balance, withdrawable FROM users WHERE user_id={ph()}", (user_id,))
         row2 = cur.fetchone()
@@ -820,7 +823,8 @@ def crash_cashout(user_id: int, req: GameBet):
     conn = get_conn()
     try:
         cur = cursor(conn)
-        cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()} WHERE user_id={ph()}", (payout, user_id))
+        cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()},total_games_won=total_games_won+1 WHERE user_id={ph()}", (payout, user_id))
+        cur.execute(f"INSERT INTO game_history (user_id,game_type,bet,result,payout,choice,details,created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()})", (user_id, 'crash', payout, 'won', payout, 'cashout', json.dumps({"cashout_multiplier": round(payout / max(0.01, payout), 2)}), datetime.utcnow().isoformat()))
         conn.commit()
         cur.execute(f"SELECT balance, withdrawable FROM users WHERE user_id={ph()}", (user_id,))
         row = cur.fetchone()
@@ -857,9 +861,10 @@ def play_highlow(user_id: int, body: GameBet):
         won = (prediction == "high" and card2 > card1) or (prediction == "low" and card2 < card1)
         profit = round(bet * 0.8, 2) if won else 0
         if won:
-            cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()} WHERE user_id={ph()}", (profit, user_id))
+            cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()},total_games_played=total_games_played+1,total_games_won=total_games_won+1 WHERE user_id={ph()}", (profit, user_id))
         else:
-            cur.execute(f"UPDATE users SET withdrawable=withdrawable-{ph()} WHERE user_id={ph()}", (bet, user_id))
+            cur.execute(f"UPDATE users SET withdrawable=withdrawable-{ph()},total_games_played=total_games_played+1 WHERE user_id={ph()}", (bet, user_id))
+        cur.execute(f"INSERT INTO game_history (user_id,game_type,bet,result,payout,choice,details,created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()})", (user_id, 'highlow', bet, 'won' if won else 'lost', round(bet + profit, 2) if won else 0, prediction, json.dumps({"card1": card1, "card2": card2}), datetime.utcnow().isoformat()))
         conn.commit()
         cur.execute(f"SELECT balance, withdrawable FROM users WHERE user_id={ph()}", (user_id,))
         row2 = cur.fetchone()
@@ -1378,7 +1383,18 @@ def admin_users(request: Request):
     try:
         cur = cursor(conn)
         cur.execute("SELECT * FROM users ORDER BY created_at DESC")
-        return [{**x, "ref_earn": x.get("referral_earnings", 0)} for x in rows_as_dicts(cur.fetchall())]
+        users = rows_as_dicts(cur.fetchall())
+        for u in users:
+            uid = u["user_id"]
+            cur.execute(f"SELECT COUNT(*) as cnt FROM user_tasks WHERE user_id={ph()} AND reward_claimed=1", (uid,))
+            u["tasks_completed"] = val(cur.fetchone(), "cnt", 0) or 0
+            cur.execute(f"""SELECT COUNT(*) as cnt FROM user_tasks ut JOIN tasks t ON ut.task_id=t.id
+                WHERE ut.user_id={ph()} AND t.is_mandatory=1 AND ut.reward_claimed=1""", (uid,))
+            u["mandatory_completed"] = val(cur.fetchone(), "cnt", 0) or 0
+            cur.execute(f"SELECT COUNT(*) as cnt FROM tasks WHERE is_mandatory=1 AND is_active=1")
+            total_mandatory = val(cur.fetchone(), "cnt", 0) or 0
+            u["mandatory_done"] = (u["mandatory_completed"] or 0) >= total_mandatory and total_mandatory > 0
+        return users
     finally:
         safe_close(conn)
 
@@ -1816,6 +1832,101 @@ def admin_env_save(request: Request):
 def admin_env_group_ids(request: Request):
     require_admin(request)
     return {"GROUP_ID": os.getenv("GROUP_ID", ""), "CHANNEL_ID": os.getenv("CHANNEL_ID", "")}
+
+
+@app.get("/api/admin/user/{user_id}/profile")
+def admin_user_profile(user_id: int, request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"SELECT * FROM users WHERE user_id={ph()}", (user_id,))
+        user = cur.fetchone()
+        if not user:
+            return {"ok": False, "error": "User not found"}
+        u = dict(user) if not isinstance(user, dict) else user
+        cur.execute(f"SELECT COUNT(*) as cnt FROM user_tasks WHERE user_id={ph()} AND reward_claimed=1", (user_id,))
+        tasks_claimed = val(cur.fetchone(), "cnt", 0)
+        cur.execute(f"SELECT COUNT(*) as cnt FROM user_tasks WHERE user_id={ph()}", (user_id,))
+        tasks_total = val(cur.fetchone(), "cnt", 0)
+        cur.execute(f"SELECT COUNT(*) as cnt FROM referrals WHERE from_user={ph()} OR referred_by={ph()}", (user_id, user_id))
+        ref_count = val(cur.fetchone(), "cnt", 0)
+        cur.execute(f"SELECT COUNT(*) as cnt FROM game_history WHERE user_id={ph()}", (user_id,))
+        games_played = val(cur.fetchone(), "cnt", 0)
+        cur.execute(f"SELECT COUNT(*) as cnt FROM game_history WHERE user_id={ph()} AND result='won'", (user_id,))
+        games_won = val(cur.fetchone(), "cnt", 0)
+        cur.execute(f"SELECT COALESCE(SUM(bet),0) as total FROM game_history WHERE user_id={ph()}", (user_id,))
+        games_total_bet = float(val(cur.fetchone(), "total", 0) or 0)
+        cur.execute(f"SELECT COALESCE(SUM(payout),0) as total FROM game_history WHERE user_id={ph()} AND result='won'", (user_id,))
+        games_total_payout = float(val(cur.fetchone(), "total", 0) or 0)
+        return {
+            "ok": True,
+            "user": u,
+            "tasks_claimed": int(tasks_claimed or 0),
+            "tasks_total": int(tasks_total or 0),
+            "ref_count": int(ref_count or 0),
+            "games_played": int(games_played or 0),
+            "games_won": int(games_won or 0),
+            "games_total_bet": round(games_total_bet, 2),
+            "games_total_payout": round(games_total_payout, 2),
+            "games_net": round(games_total_payout - games_total_bet, 2),
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    finally:
+        safe_close(conn)
+
+
+@app.get("/api/admin/user/{user_id}/tasks")
+def admin_user_tasks(user_id: int, request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"""SELECT t.id, t.title, t.description, t.reward, t.reward_type, t.is_mandatory, t.task_type,
+            COALESCE(ut.status,'pending') as user_status, COALESCE(ut.reward_claimed,0) as reward_claimed, ut.verified_at
+            FROM tasks t LEFT JOIN user_tasks ut ON t.id=ut.task_id AND ut.user_id={ph()}
+            WHERE t.is_active=1 ORDER BY t.sort_order, t.id""", (user_id,))
+        return rows_as_dicts(cur.fetchall())
+    except Exception:
+        return []
+    finally:
+        safe_close(conn)
+
+
+@app.get("/api/admin/user/{user_id}/games")
+def admin_user_games(user_id: int, request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"SELECT * FROM game_history WHERE user_id={ph()} ORDER BY id DESC LIMIT 200", (user_id,))
+        history = rows_as_dicts(cur.fetchall())
+        cur.execute(f"SELECT game_type, COUNT(*) as plays, SUM(bet) as total_bet, SUM(CASE WHEN result='won' THEN payout ELSE 0 END) as total_payout FROM game_history WHERE user_id={ph()} GROUP BY game_type", (user_id,))
+        breakdown = rows_as_dicts(cur.fetchall())
+        return {"history": history, "breakdown": breakdown}
+    except Exception:
+        return {"history": [], "breakdown": []}
+    finally:
+        safe_close(conn)
+
+
+@app.get("/api/admin/user/{user_id}/referrals")
+def admin_user_referrals(user_id: int, request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"SELECT user_id, username, balance, total_deposit, created_at FROM users WHERE referred_by={ph()}", (user_id,))
+        referred = rows_as_dicts(cur.fetchall())
+        cur.execute(f"SELECT SUM(bonus_amount) as total_earned FROM referral_logs WHERE from_user={ph()}", (user_id,))
+        row = cur.fetchone()
+        total_earned = float(val(row, "total_earned", 0) or 0)
+        return {"referred": referred, "total_earned": round(total_earned, 2)}
+    except Exception:
+        return {"referred": [], "total_earned": 0}
+    finally:
+        safe_close(conn)
 
 
 @app.get("/api/admin/logs")
