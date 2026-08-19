@@ -111,6 +111,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <div id='mandatoryGate' class='hidden mx-4 mt-3 rounded-2xl p-4' style='background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(249,115,22,0.08));border:1px solid rgba(239,68,68,0.2)'><div class="flex gap-3"><div class="text-xl">&#128274;</div><div><p class='font-bold text-sm text-red-300'>Withdrawal Locked</p><p id='gateText' class='text-xs mt-1' style='color:var(--text2)'>Complete mandatory tasks to unlock.</p><button onclick="switchTab('tasks')" class='mt-2 px-4 py-2 rounded-full text-xs font-bold' style='background:var(--text);color:var(--bg)'>Go to Tasks</button></div></div></div>
 
 <div id='tab-home' class='tab-content'>
+<div class='mt-5 mx-4 rounded-3xl p-5' style='background:linear-gradient(135deg,#6C3BFF,#8A5CFF,#A5A6F6)'>
+<p class='text-white/70 text-sm'>Daily AI Profit <span id='dailyPct'>0%</span></p>
+<h1 class='text-[32px] font-extrabold leading-none mt-2 flex items-center gap-2'><span class='text-[18px] bg-white/20 w-9 h-9 rounded-full flex items-center justify-center'>$</span> <span id='profitVal'>0.00</span> <span class='text-sm opacity-60'>USDT</span></h1>
+<p class='text-sm text-white/80 mt-2'>+<span id='perHour'>0.00</span> USDT/hr</p>
+<div class='mt-4 flex gap-2 flex-wrap'><button onclick='openDeposit()' class='bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm'>Deposit</button><button onclick='openWithdraw()' class='px-5 py-2.5 rounded-full font-bold text-sm' style='background:#FFD60A;color:#000'>Withdraw</button></div>
+</div>
 <div class='mx-4 mt-4 rounded-2xl p-4' style='background:var(--surface);border:1px solid rgba(255,214,10,0.15)'>
 <div class="flex justify-between items-center"><h3 class='font-bold text-sm'>Tasks Quick</h3><span id='tasksQuickCount' class="text-[10px] px-2 py-0.5 rounded-full" style="background:rgba(255,214,10,0.15);color:#FFD60A">0/0 done</span></div>
 <div id='tasksQuick' class='mt-3 space-y-2'></div>
@@ -129,12 +135,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <div><h3 class='font-bold text-sm'>🎰 Lucky Spin</h3><p id='spinInfo' class='text-[11px] mt-0.5' style='color:var(--text2)'>Free spin every 24 hours</p></div>
 <button id='spinBtn' onclick="openSpinWheel()" class='px-4 py-2 rounded-full text-xs font-bold' style='background:#FFD60A;color:#000'>SPIN NOW</button>
 </div>
-</div>
-<div class='mt-5 mx-4 rounded-3xl p-5' style='background:linear-gradient(135deg,#6C3BFF,#8A5CFF,#A5A6F6)'>
-<p class='text-white/70 text-sm'>Daily AI Profit <span id='dailyPct'>0%</span></p>
-<h1 class='text-[32px] font-extrabold leading-none mt-2 flex items-center gap-2'><span class='text-[18px] bg-white/20 w-9 h-9 rounded-full flex items-center justify-center'>$</span> <span id='profitVal'>0.00</span> <span class='text-sm opacity-60'>USDT</span></h1>
-<p class='text-sm text-white/80 mt-2'>+<span id='perHour'>0.00</span> USDT/hr</p>
-<div class='mt-4 flex gap-2 flex-wrap'><button onclick='openDeposit()' class='bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm'>Deposit</button><button onclick='openWithdraw()' class='px-5 py-2.5 rounded-full font-bold text-sm' style='background:#FFD60A;color:#000'>Withdraw</button></div>
 </div>
 <div class='mx-4 mt-4 rounded-2xl p-4' style='background:var(--surface);border:1px solid rgba(255,214,10,0.15)'>
 <div class='flex justify-between items-center mb-3'><h3 class='font-bold text-sm'>Quick Stats</h3><span class='text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400'>Live</span></div>
