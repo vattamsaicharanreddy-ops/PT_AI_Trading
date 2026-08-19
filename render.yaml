@@ -18,6 +18,10 @@ services:
         sync: false
       - key: WEBAPP_URL
         sync: false
+      - key: FORCE_CHANNEL_LINK
+        sync: false
+      - key: FORCE_GROUP_LINK
+        sync: false
 
 databases:
   - name: pt-ai-db
