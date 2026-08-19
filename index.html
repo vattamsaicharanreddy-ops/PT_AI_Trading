@@ -357,7 +357,7 @@ function switchTab(tab){
 document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
 let el=$('tab-'+tab);if(el)el.classList.remove('hidden');
 document.querySelectorAll('.bottom-tab').forEach(b=>{b.classList.remove('tab-active');b.style.opacity='0.5';});
-let active=document.querySelector(`[data-bottom="${tab}"]');if(active){active.classList.add('tab-active');active.style.opacity='1';}
+let active=document.querySelector('[data-bottom="'+tab+'"]');if(active){active.classList.add('tab-active');active.style.opacity='1';}
 if(tab==='tasks')loadTasks();
 if(tab==='trades')loadTrades();
 if(tab==='referral')loadReferral();
