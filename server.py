@@ -695,34 +695,39 @@ def claim_spin(user_id: int):
 
 class GameBet(BaseModel):
     bet: float
+    choice: str = ""
+
+class CrashBet(BaseModel):
+    bet: float
 
 @app.post("/api/game/coinflip/{user_id}")
 def play_coinflip(user_id: int, body: GameBet):
     bet = round(body.bet, 2)
+    choice = body.choice.lower().strip()
     if bet < 0.50:
         return {"ok": False, "error": "Minimum bet is 0.50 USDT"}
+    if choice not in ("heads", "tails"):
+        return {"ok": False, "error": "Choose heads or tails"}
     conn = get_conn()
     try:
         cur = cursor(conn)
-        cur.execute(f"SELECT balance, withdrawable FROM users WHERE user_id={ph()}", (user_id,))
+        cur.execute(f"SELECT withdrawable FROM users WHERE user_id={ph()}", (user_id,))
         row = cur.fetchone()
         if not row:
             return {"ok": False, "error": "User not found"}
-        bal = float(val(row, "balance", 0) or 0)
         wd = float(val(row, "withdrawable", 0) or 0)
         if wd < bet:
-            return {"ok": False, "error": f"Insufficient withdrawable balance ({wd:.2f} USDT)"}
+            return {"ok": False, "error": f"Insufficient withdrawable ({wd:.2f} USDT)"}
         result = _random.choice(["heads", "tails"])
-        win = _random.choice(["heads", "tails"])
-        won = result == win
+        won = result == choice
         payout = round(bet * 1.9, 2) if won else 0
         if won:
             cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()}, withdrawable=COALESCE(withdrawable,0)-{ph()} WHERE user_id={ph()}", (payout, bet, user_id))
         else:
-            cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)-{ph()} WHERE user_id={ph()}", (bet, user_id))
+            cur.execute(f"UPDATE users SET withdrawable=withdrawable-{ph()} WHERE user_id={ph()}", (bet, user_id))
         conn.commit()
         new_wd = wd - bet + (payout if won else 0)
-        return {"ok": True, "result": result, "choice": win, "won": won, "payout": payout if won else 0, "bet": bet, "withdrawable": round(new_wd, 2)}
+        return {"ok": True, "result": result, "choice": choice, "won": won, "payout": payout if won else 0, "bet": bet, "withdrawable": round(new_wd, 2)}
     except Exception as e:
         logger.error(f"coinflip error: {e}")
         return {"ok": False, "error": str(e)}
@@ -733,30 +738,35 @@ def play_coinflip(user_id: int, body: GameBet):
 @app.post("/api/game/dice/{user_id}")
 def play_dice(user_id: int, body: GameBet):
     bet = round(body.bet, 2)
+    prediction = body.choice.lower().strip()
     if bet < 0.50:
         return {"ok": False, "error": "Minimum bet is 0.50 USDT"}
+    if prediction not in ("over", "under"):
+        return {"ok": False, "error": "Choose over or under"}
     conn = get_conn()
     try:
         cur = cursor(conn)
-        cur.execute(f"SELECT balance, withdrawable FROM users WHERE user_id={ph()}", (user_id,))
+        cur.execute(f"SELECT withdrawable FROM users WHERE user_id={ph()}", (user_id,))
         row = cur.fetchone()
         if not row:
             return {"ok": False, "error": "User not found"}
         wd = float(val(row, "withdrawable", 0) or 0)
         if wd < bet:
-            return {"ok": False, "error": f"Insufficient withdrawable balance ({wd:.2f} USDT)"}
-        dice = _random.randint(1, 6)
-        total = dice + _random.randint(1, 6)
-        over = total > 7
-        won = over
+            return {"ok": False, "error": f"Insufficient withdrawable ({wd:.2f} USDT)"}
+        d1 = _random.randint(1, 6)
+        d2 = _random.randint(1, 6)
+        total = d1 + d2
+        is_over = total > 7
+        is_under = total < 7
+        won = (prediction == "over" and is_over) or (prediction == "under" and is_under)
         payout = round(bet * 2.0, 2) if won else 0
         if won:
             cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()}, withdrawable=COALESCE(withdrawable,0)-{ph()} WHERE user_id={ph()}", (payout, bet, user_id))
         else:
-            cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)-{ph()} WHERE user_id={ph()}", (bet, user_id))
+            cur.execute(f"UPDATE users SET withdrawable=withdrawable-{ph()} WHERE user_id={ph()}", (bet, user_id))
         conn.commit()
         new_wd = wd - bet + (payout if won else 0)
-        return {"ok": True, "dice": [dice, _random.randint(1, 6)], "total": total, "over": over, "won": won, "payout": payout if won else 0, "bet": bet, "withdrawable": round(new_wd, 2)}
+        return {"ok": True, "dice": [d1, d2], "total": total, "won": won, "prediction": prediction, "payout": payout if won else 0, "bet": bet, "withdrawable": round(new_wd, 2)}
     except Exception as e:
         logger.error(f"dice error: {e}")
         return {"ok": False, "error": str(e)}
@@ -765,24 +775,23 @@ def play_dice(user_id: int, body: GameBet):
 
 
 @app.post("/api/game/crash/{user_id}")
-def play_crash(user_id: int, body: GameBet):
+def play_crash(user_id: int, body: CrashBet):
     bet = round(body.bet, 2)
     if bet < 0.50:
         return {"ok": False, "error": "Minimum bet is 0.50 USDT"}
     conn = get_conn()
     try:
         cur = cursor(conn)
-        cur.execute(f"SELECT balance, withdrawable FROM users WHERE user_id={ph()}", (user_id,))
+        cur.execute(f"SELECT withdrawable FROM users WHERE user_id={ph()}", (user_id,))
         row = cur.fetchone()
         if not row:
             return {"ok": False, "error": "User not found"}
         wd = float(val(row, "withdrawable", 0) or 0)
         if wd < bet:
-            return {"ok": False, "error": f"Insufficient withdrawable balance ({wd:.2f} USDT)"}
-        crash_point = max(1.0, round(_random.expovariate(0.06), 2))
-        if crash_point < 1.01:
-            crash_point = 1.01
-        cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)-{ph()} WHERE user_id={ph()}", (bet, user_id))
+            return {"ok": False, "error": f"Insufficient withdrawable ({wd:.2f} USDT)"}
+        h = _random.random()
+        crash_point = max(1.01, round(0.97 / max(0.0001, 1 - h), 2))
+        cur.execute(f"UPDATE users SET withdrawable=withdrawable-{ph()} WHERE user_id={ph()}", (bet, user_id))
         conn.commit()
         new_wd = wd - bet
         return {"ok": True, "crash_point": crash_point, "bet": bet, "withdrawable": round(new_wd, 2)}
@@ -817,29 +826,32 @@ def crash_cashout(user_id: int, req: GameBet):
 @app.post("/api/game/highlow/{user_id}")
 def play_highlow(user_id: int, body: GameBet):
     bet = round(body.bet, 2)
+    prediction = body.choice.lower().strip()
     if bet < 0.50:
         return {"ok": False, "error": "Minimum bet is 0.50 USDT"}
+    if prediction not in ("high", "low"):
+        return {"ok": False, "error": "Choose high or low"}
     conn = get_conn()
     try:
         cur = cursor(conn)
-        cur.execute(f"SELECT balance, withdrawable FROM users WHERE user_id={ph()}", (user_id,))
+        cur.execute(f"SELECT withdrawable FROM users WHERE user_id={ph()}", (user_id,))
         row = cur.fetchone()
         if not row:
             return {"ok": False, "error": "User not found"}
         wd = float(val(row, "withdrawable", 0) or 0)
         if wd < bet:
-            return {"ok": False, "error": f"Insufficient withdrawable balance ({wd:.2f} USDT)"}
+            return {"ok": False, "error": f"Insufficient withdrawable ({wd:.2f} USDT)"}
         card1 = _random.randint(2, 14)
         card2 = _random.randint(2, 14)
-        won = card2 > card1
+        won = (prediction == "high" and card2 > card1) or (prediction == "low" and card2 < card1)
         payout = round(bet * 1.8, 2) if won else 0
         if won:
             cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()}, withdrawable=COALESCE(withdrawable,0)-{ph()} WHERE user_id={ph()}", (payout, bet, user_id))
         else:
-            cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)-{ph()} WHERE user_id={ph()}", (bet, user_id))
+            cur.execute(f"UPDATE users SET withdrawable=withdrawable-{ph()} WHERE user_id={ph()}", (bet, user_id))
         conn.commit()
         new_wd = wd - bet + (payout if won else 0)
-        return {"ok": True, "card1": card1, "card2": card2, "won": won, "payout": payout if won else 0, "bet": bet, "withdrawable": round(new_wd, 2)}
+        return {"ok": True, "card1": card1, "card2": card2, "won": won, "prediction": prediction, "payout": payout if won else 0, "bet": bet, "withdrawable": round(new_wd, 2)}
     except Exception as e:
         logger.error(f"highlow error: {e}")
         return {"ok": False, "error": str(e)}
