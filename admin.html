@@ -87,11 +87,12 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 
 <!-- DASHBOARD -->
 <section id="sec-dashboard" class="space-y-5 fade-in">
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-<div class="card p-5"><p class="text-[9px] tracking-[2px] font-bold" style="color:var(--text3)">TOTAL USERS</p><p id="stat_users" class="text-[28px] font-black mt-1.5 tracking-tight">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">active users</p></div>
+<div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+<div class="card p-5"><p class="text-[9px] tracking-[2px] font-bold" style="color:var(--text3)">REGISTERED</p><p id="stat_users" class="text-[28px] font-black mt-1.5 tracking-tight">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">total users</p></div>
+<div class="card p-5" style="border-color:rgba(16,185,129,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-emerald-400">ACTIVE USERS</p><p id="stat_active" class="text-[28px] font-black mt-1.5 tracking-tight" style="color:#10b981">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">deposited & not banned</p></div>
 <div class="card p-5" style="border-color:rgba(255,214,10,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-[#FFD60A]">TOTAL BALANCE</p><p id="stat_bal" class="text-[28px] font-black mt-1.5">$0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">trading + wallet</p></div>
 <div class="card p-5" style="border-color:rgba(16,185,129,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-emerald-400">VERIFIED DEPOSITS</p><p id="total_dep" class="text-[28px] font-black mt-1.5">$0</p><p id="total_dep_cnt" class="text-[11px] mt-0.5" style="color:var(--text2)">0 verified</p></div>
-<div class="card p-5" style="border-color:rgba(249,115,22,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-orange-400">PENDING ACTIONS</p><p id="pend_all" class="text-[28px] font-black mt-1.5">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">need action</p></div>
+<div class="card p-5" style="border-color:rgba(124,77,255,0.15)"><p class="text-[9px] tracking-[2px] font-bold" style="color:#7C4DFF">ONLINE NOW</p><p id="stat_online" class="text-[28px] font-black mt-1.5 tracking-tight" style="color:#7C4DFF">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">active in last 5 min</p></div>
 </div>
 <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
 <div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">AWAITING</p><p id="pend_dep" class="text-xl font-black text-yellow-400 mt-0.5">0</p></div>
@@ -124,7 +125,7 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 <h2 class="text-lg font-black">Users Control</h2>
 <div class="flex gap-2">
 <input id="userSearch" oninput="filterUsers()" placeholder="Search ID or username..." class="rounded-full px-4 py-2 text-[11px] w-[200px] border outline-none focus:ring-1" style="background:var(--input);border-color:var(--border)">
-<select id="userFilter" onchange="filterUsers()" class="rounded-full px-3 py-2 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="all">All Users</option><option value="banned">Banned</option><option value="whale">Whales >$500</option><option value="no_tasks">No Tasks Done</option><option value="depositor">Has Deposited</option></select>
+<select id="userFilter" onchange="filterUsers()" class="rounded-full px-3 py-2 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="all">All Users</option><option value="online">Online Now</option><option value="active">Active (Deposited)</option><option value="banned">Banned</option><option value="whale">Whales >$500</option><option value="no_tasks">No Tasks Done</option></select>
 <button onclick="bulkActionPrompt()" class="btn-gold px-4 py-2 rounded-full text-[11px]">Bulk Action</button>
 </div>
 </div>
@@ -475,6 +476,8 @@ async function loadAll(){
 try{
 let stats=await fetchJson('/api/admin/stats');
 document.getElementById('stat_users').innerText=stats.total_users;
+document.getElementById('stat_active').innerText=stats.active_users||0;
+document.getElementById('stat_online').innerText=stats.online_users||0;
 document.getElementById('stat_bal').innerText='$'+Number(stats.total_balance).toFixed(2);
 document.getElementById('total_dep').innerText='$'+Number(stats.total_verified_deposits).toFixed(2);
 document.getElementById('total_dep_cnt').innerText=stats.verified_deposits+' verified';
@@ -484,7 +487,7 @@ document.getElementById('pend_wd').innerText=stats.pending_withdrawals;
 document.getElementById('pend_all').innerText=Number(stats.pending_deposits)+Number(stats.pending_withdrawals);
 document.getElementById('ref_paid').innerText='$'+Number(stats.total_ref_paid).toFixed(2);
 document.getElementById('stat_tasks').innerText=stats.completed_tasks+'/'+stats.active_tasks;
-document.getElementById('navUsers').innerText=stats.total_users;
+document.getElementById('navUsers').innerText=stats.active_users||stats.total_users;
 document.getElementById('navDeposits').innerText=stats.pending_deposits;
 document.getElementById('navWd').innerText=stats.pending_withdrawals;
 document.getElementById('navVol').innerText='$'+Number(stats.total_deposits_all||0).toFixed(0);
@@ -536,15 +539,19 @@ function renderUsers(users){
 let q=document.getElementById('userSearch')?.value?.toLowerCase()||'';
 let f=document.getElementById('userFilter')?.value||'all';
 let filtered=users;
+let now=new Date();
+let fiveMinAgo=new Date(now.getTime()-5*60000).toISOString();
 if(q) filtered=filtered.filter(u=>String(u.user_id).includes(q)||(u.username||'').toLowerCase().includes(q));
 if(f==='banned') filtered=filtered.filter(u=>u.is_banned);
+if(f==='online') filtered=filtered.filter(u=>!u.is_banned&&(u.last_webapp_open||'')>fiveMinAgo);
+if(f==='active') filtered=filtered.filter(u=>!u.is_banned&&Number(u.total_deposit)>0);
 if(f==='whale') filtered=filtered.filter(u=>Number(u.balance)>500);
 if(f==='no_tasks') filtered=filtered.filter(u=>!u.tasks_completed||u.tasks_completed===0);
-if(f==='depositor') filtered=filtered.filter(u=>Number(u.total_deposit)>0);
 document.getElementById('users').innerHTML=filtered.slice(0,300).map(u=>{
 let daysAgo=u.created_at?Math.floor((Date.now()-new Date(u.created_at).getTime())/(86400000)):'?';
 let joinedShort=u.created_at?(u.created_at.slice(5,10)):'-';
 let streak=u.login_streak||0;
+let isOnline=!u.is_banned&&(u.last_webapp_open||'')>fiveMinAgo;
 return`<tr class="border-t cursor-pointer" style="border-color:var(--border2);${u.is_banned?'background:rgba(239,68,68,0.04)':''}" onclick="openUserDetail(${u.user_id})">
 <td class="p-2.5"><p class="font-bold">${u.username||'@none'}</p><p class="text-[9px] mono" style="color:var(--text3)">#${u.user_id}</p></td>
 <td class="p-2.5"><p class="text-[11px]">${joinedShort}</p><p class="text-[9px]" style="color:var(--text3)">${daysAgo}d ago</p></td>
@@ -552,7 +559,7 @@ return`<tr class="border-t cursor-pointer" style="border-color:var(--border2);${
 <td class="p-2.5"><p class="text-[11px]">${u.tasks_completed||0} done</p><p class="text-[9px]" style="color:${u.mandatory_done?'#10b981':'#ef4444'}">${u.mandatory_done?'✓ All mandatory':'✗ Incomplete'}</p></td>
 <td class="p-2.5"><p class="text-[11px]">${u.total_games_played||0} plays</p><p class="text-[9px]" style="color:var(--text3)">${u.total_games_won||0} wins</p></td>
 <td class="p-2.5"><p class="text-[11px] font-bold" style="color:${streak>=7?'#FFD60A':streak>=3?'#10b981':'var(--text2)'}">${streak}d</p><p class="text-[9px]" style="color:var(--text3)">last: ${(u.last_login_date||'').slice(5,10)||'-'}</p></td>
-<td class="p-2.5">${u.is_banned?'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">BANNED</span>':'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">ACTIVE</span>'}</td>
+<td class="p-2.5">${u.is_banned?'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">BANNED</span>':isOnline?'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(124,77,255,0.15);color:#7C4DFF">● ONLINE</span>':'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">ACTIVE</span>'}</td>
 <td class="p-2.5"><div class="flex flex-wrap gap-1 max-w-[180px]"><button onclick="event.stopPropagation();openAction(${u.user_id},'add_balance')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981">+Bal</button><button onclick="event.stopPropagation();openAction(${u.user_id},'deduct_balance')" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">-Bal</button><button onclick="event.stopPropagation();openAction(${u.user_id},'add_withdrawable')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(255,214,10,0.15);color:#FFD60A">+WD</button><button onclick="event.stopPropagation();openAction(${u.user_id},${u.is_banned?'\'unban\'':'\'ban\''})" class="px-2 py-0.5 rounded-full text-[10px]" style="background:var(--hover)">${u.is_banned?'Unban':'Ban'}</button></div></td></tr>`;
 }).join('')||`<tr><td colspan="8" class="p-8 text-center" style="color:var(--text3)">No users found.</td></tr>`;
 }

@@ -580,6 +580,14 @@ def api_me(user_id: int, username: Optional[str] = Query(None), referred_by: Opt
         d["last_deposit_amount"] = 0
     finally:
         safe_close(conn2)
+    try:
+        conn3 = get_conn()
+        cur3 = cursor(conn3)
+        cur3.execute(f"UPDATE users SET last_webapp_open={ph()} WHERE user_id={ph()}", (datetime.utcnow().isoformat(), user_id))
+        conn3.commit()
+        safe_close(conn3)
+    except Exception:
+        pass
     return d
 
 
@@ -1275,6 +1283,7 @@ def binance_trades():
             "loss_trades": len(visible_trades) - profit_count,
             "total_pnl_percent": round(total_pnl, 2),
             "total_pnl_usdt": round(total_usdt, 2),
+            "daily_accumulated_pnl": round(total_pnl, 2),
             "funds_in_market": round(sum(t["usdt_amount"] for t in visible_trades), 2),
             "date": today_str,
             "current_ist": ist_now.strftime("%H:%M IST"),
@@ -1294,6 +1303,12 @@ def admin_stats(request: Request):
         cur = cursor(conn)
         cur.execute("SELECT COUNT(*) AS users, COALESCE(SUM(balance),0) AS balance, COALESCE(SUM(withdrawable),0) AS wd, COALESCE(SUM(total_deposit),0) AS tdep FROM users")
         stats = cur.fetchone()
+        cur.execute("SELECT COUNT(*) AS users FROM users WHERE is_banned=0 AND total_deposit>0")
+        active_stats = cur.fetchone()
+        cur.execute("SELECT COUNT(*) AS users FROM users WHERE is_banned=0 AND last_webapp_open > NOW() - INTERVAL '5 minutes'")
+        online_stats = cur.fetchone()
+        cur.execute("SELECT COUNT(*) AS users FROM users WHERE total_deposit>0")
+        deposited_stats = cur.fetchone()
         try:
             cur.execute("SELECT COUNT(*) as total FROM deposits WHERE status='awaiting_payment'")
             pending_cnt = val(cur.fetchone(), "total", 0)
@@ -1324,6 +1339,9 @@ def admin_stats(request: Request):
         comp = cur.fetchone()
         return {
             "total_users": val(stats, "users", 0),
+            "active_users": val(active_stats, "users", 0),
+            "online_users": val(online_stats, "users", 0),
+            "deposited_users": val(deposited_stats, "users", 0),
             "total_balance": val(stats, "balance", 0),
             "total_withdrawable": val(stats, "wd", 0),
             "total_deposits_all": val(stats, "tdep", 0),

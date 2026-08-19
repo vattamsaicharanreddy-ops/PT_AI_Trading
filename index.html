@@ -684,7 +684,13 @@ async function loadTrades(){
 let d=await apiFetch('/api/binance/trades');
 if(!d)return;
 let totalVisible=d.summary.total_trades;let expected=d.all_trades_count||16;let winRate=d.summary.win_rate||0;let nextTrade=d.summary.next_trade_in||'';let currentIST=d.summary.current_ist||'';
+let accumPnl=d.summary.daily_accumulated_pnl||0;
+let pnlColor=accumPnl>=0?'#10b981':'#ef4444';
 safeSet('todayTrades',`${totalVisible}/${expected} trades | ${winRate}% win | ${currentIST}`);
+let summaryHtml=`<div class="mb-2 p-3 rounded-xl flex items-center justify-between" style="background:linear-gradient(135deg,${accumPnl>=0?'rgba(16,185,129,0.08)':'rgba(239,68,68,0.08)'},rgba(108,59,255,0.04));border:1px solid ${accumPnl>=0?'rgba(16,185,129,0.15)':'rgba(239,68,68,0.15)'}"><div><p class="text-[9px] tracking-widest font-bold" style="color:var(--text3)">TODAY'S AI PERFORMANCE</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">${totalVisible} trades completed</p></div><div class="text-right"><p class="text-[20px] font-black" style="color:${pnlColor}">${accumPnl>=0?'+':''}${accumPnl.toFixed(2)}%</p><p class="text-[9px]" style="color:var(--text3)">accumulated today</p></div></div>`;
+let existingSummary=document.getElementById('tradesAccumSummary');
+if(existingSummary)existingSummary.remove();
+document.getElementById('tradesTableBody').closest('table').insertAdjacentHTML('beforebegin',`<div id="tradesAccumSummary">${summaryHtml}</div>`);
 let html='';
 if(totalVisible===0){html=`<tr><td colspan="7" class="p-6 text-center"><p class="text-xl">&#127769;</p><p class="font-bold mt-2">Day just started</p><p class="text-[11px] mt-1" style="color:var(--text2)">First trade at 00:05 IST. Now: ${currentIST}</p></td></tr>`;}else{
 (d.trades||[]).forEach((t,idx)=>{
