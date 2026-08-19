@@ -563,6 +563,10 @@ def api_me(user_id: int, username: Optional[str] = Query(None), referred_by: Opt
     d["tier"] = tier_idx
     d["daily_percent"] = pct
     d["is_banned"] = bool(d.get("is_banned", 0))
+    d["login_streak"] = int(d.get("login_streak", 0) or 0)
+    d["last_login_date"] = d.get("last_login_date", "") or ""
+    d["last_spin_date"] = d.get("last_spin_date", "") or ""
+    d["can_spin"] = d["last_spin_date"] != _today()
     conn2 = get_conn()
     try:
         cur2 = cursor(conn2)
@@ -582,6 +586,107 @@ def api_me(user_id: int, username: Optional[str] = Query(None), referred_by: Opt
 @app.get("/api/user/{user_id}")
 def api_user_alias(user_id: int, username: Optional[str] = Query(None), referred_by: Optional[str] = Query(None)):
     return api_me(user_id, username, referred_by)
+
+
+DAILY_BONUS_AMOUNT = 0.10
+STREAK_REWARDS = {3: 0.5, 7: 2.0, 14: 5.0, 30: 10.0}
+SPIN_PRIZES = [0.05, 0.10, 0.15, 0.20, 0.50, 1.00, 2.00, 5.00]
+SPIN_WEIGHTS = [30, 25, 18, 12, 8, 4, 2, 1]
+
+
+def _today():
+    return datetime.utcnow().strftime("%Y-%m-%d")
+
+
+def _is_yesterday(date_str):
+    if not date_str:
+        return False
+    try:
+        d = datetime.strptime(date_str, "%Y-%m-%d").date()
+        return d == (datetime.utcnow().date() - timedelta(days=1))
+    except Exception:
+        return False
+
+
+@app.post("/api/daily-bonus/{user_id}")
+def claim_daily_bonus(user_id: int):
+    today = _today()
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"SELECT last_login_date, login_streak FROM users WHERE user_id={ph()}", (user_id,))
+        row = cur.fetchone()
+        if not row:
+            return {"ok": False, "error": "User not found"}
+        last_date = val(row, "last_login_date", "") or ""
+        streak = int(val(row, "login_streak", 0) or 0)
+        if last_date == today:
+            return {"ok": False, "error": "Already claimed today", "streak": streak, "bonus": 0}
+        if _is_yesterday(last_date):
+            streak += 1
+        else:
+            streak = 1
+        bonus = DAILY_BONUS_AMOUNT
+        streak_bonus = 0
+        for days, reward in sorted(STREAK_REWARDS.items()):
+            if streak == days:
+                streak_bonus = reward
+                break
+        total = bonus + streak_bonus
+        cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()}, withdrawable=COALESCE(withdrawable,0)+{ph()}, last_login_date={ph()}, login_streak={ph()} WHERE user_id={ph()}", (total, total, today, streak, user_id))
+        conn.commit()
+        msg = f"+{bonus:.2f} USDT daily bonus!"
+        if streak_bonus > 0:
+            msg += f" +{streak_bonus:.2f} USDT streak bonus ({streak} days!)"
+        return {"ok": True, "bonus": bonus, "streak_bonus": streak_bonus, "total": total, "streak": streak, "message": msg}
+    except Exception as e:
+        logger.error(f"daily_bonus error: {e}")
+        return {"ok": False, "error": str(e)}
+    finally:
+        safe_close(conn)
+
+
+@app.get("/api/spin/status/{user_id}")
+def spin_status(user_id: int):
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"SELECT last_spin_date, login_streak FROM users WHERE user_id={ph()}", (user_id,))
+        row = cur.fetchone()
+        if not row:
+            return {"available": False}
+        last_spin = val(row, "last_spin_date", "") or ""
+        streak = int(val(row, "login_streak", 0) or 0)
+        can_spin = last_spin != _today()
+        return {"available": can_spin, "last_spin": last_spin, "streak": streak, "prizes": SPIN_PRIZES}
+    finally:
+        safe_close(conn)
+
+
+import random as _random
+
+@app.post("/api/spin/{user_id}")
+def claim_spin(user_id: int):
+    today = _today()
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"SELECT last_spin_date FROM users WHERE user_id={ph()}", (user_id,))
+        row = cur.fetchone()
+        if not row:
+            return {"ok": False, "error": "User not found"}
+        last_spin = val(row, "last_spin_date", "") or ""
+        if last_spin == today:
+            return {"ok": False, "error": "Already spun today. Come back tomorrow!"}
+        prize = _random.choices(SPIN_PRIZES, weights=SPIN_WEIGHTS, k=1)[0]
+        cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()}, withdrawable=COALESCE(withdrawable,0)+{ph()}, last_spin_date={ph()} WHERE user_id={ph()}", (prize, prize, today, user_id))
+        conn.commit()
+        return {"ok": True, "prize": prize, "message": f"You won {prize:.2f} USDT!"}
+    except Exception as e:
+        logger.error(f"spin error: {e}")
+        return {"ok": False, "error": str(e)}
+    finally:
+        safe_close(conn)
 
 
 @app.get("/api/deposit-addresses")

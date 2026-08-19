@@ -203,6 +203,9 @@ def init_db():
                 "ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS admin_note TEXT",
                 "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_type TEXT DEFAULT 'join'",
                 "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_config TEXT DEFAULT ''",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_date TEXT DEFAULT ''",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS login_streak INTEGER DEFAULT 0",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_spin_date TEXT DEFAULT ''",
             ]
             for m in migrations:
                 try:
@@ -316,6 +319,15 @@ def init_db():
                 conn.execute("ALTER TABLE tasks ADD COLUMN task_config TEXT DEFAULT ''")
             except Exception:
                 pass
+            for stmt in [
+                "ALTER TABLE users ADD COLUMN last_login_date TEXT DEFAULT ''",
+                "ALTER TABLE users ADD COLUMN login_streak INTEGER DEFAULT 0",
+                "ALTER TABLE users ADD COLUMN last_spin_date TEXT DEFAULT ''",
+            ]:
+                try:
+                    conn.execute(stmt)
+                except Exception:
+                    pass
 
             conn.commit()
         logger.info(f"Database ready: {'POSTGRES' if USE_POSTGRES else 'SQLITE at ' + SQLITE_PATH}")

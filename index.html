@@ -116,6 +116,20 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <div id='tasksQuick' class='mt-3 space-y-2'></div>
 <button onclick="switchTab('tasks')" class='mt-3 w-full py-2.5 rounded-xl text-xs font-bold' style='background:rgba(108,59,255,0.15);border:1px solid rgba(108,59,255,0.2)'>View All Tasks</button>
 </div>
+<div class='mx-4 mt-3 rounded-2xl p-4' style='background:var(--surface);border:1px solid rgba(16,185,129,0.15)'>
+<div class='flex justify-between items-center'>
+<div><h3 class='font-bold text-sm'>🔥 Daily Streak</h3><p id='streakInfo' class='text-[11px] mt-0.5' style='color:var(--text2)'>Open daily to earn rewards</p></div>
+<span id='streakBadge' class='text-lg font-extrabold' style='color:#10b981'>0</span>
+</div>
+<div id='streakMilestones' class='mt-3 flex gap-1.5'></div>
+<button id='dailyBonusBtn' onclick="claimDailyBonus()" class='mt-3 w-full py-2.5 rounded-xl text-xs font-bold btn-gold'>Claim Daily +0.10 USDT</button>
+</div>
+<div class='mx-4 mt-3 rounded-2xl p-4' style='background:linear-gradient(135deg,rgba(108,59,255,0.15),rgba(255,214,10,0.1));border:1px solid rgba(108,59,255,0.15)'>
+<div class='flex justify-between items-center'>
+<div><h3 class='font-bold text-sm'>🎰 Lucky Spin</h3><p id='spinInfo' class='text-[11px] mt-0.5' style='color:var(--text2)'>Free spin every 24 hours</p></div>
+<button id='spinBtn' onclick="openSpinWheel()" class='px-4 py-2 rounded-full text-xs font-bold' style='background:#FFD60A;color:#000'>SPIN NOW</button>
+</div>
+</div>
 <div class='mt-5 mx-4 rounded-3xl p-5' style='background:linear-gradient(135deg,#6C3BFF,#8A5CFF,#A5A6F6)'>
 <p class='text-white/70 text-sm'>Daily AI Profit <span id='dailyPct'>0%</span></p>
 <h1 class='text-[32px] font-extrabold leading-none mt-2 flex items-center gap-2'><span class='text-[18px] bg-white/20 w-9 h-9 rounded-full flex items-center justify-center'>$</span> <span id='profitVal'>0.00</span> <span class='text-sm opacity-60'>USDT</span></h1>
@@ -856,6 +870,11 @@ window._lastMe=me;
 if(me.is_banned){$('bannedOverlay').classList.remove('hidden');return;}
 checkTierUpgrade(me.tier||7);
 loadTasks(true);
+updateStreakUI(me);
+if(me.can_spin){$('spinBtn').innerText='SPIN NOW';$('spinBtn').style.background='#FFD60A';$('spinInfo').innerText='Free spin available!';}
+else{$('spinBtn').innerText='Come Back Tomorrow';$('spinBtn').style.background='var(--hover)';$('spinBtn').style.color='var(--text3)';$('spinInfo').innerText='Already spun today';}
+let today=new Date().toISOString().slice(0,10);
+if(me.last_login_date!==today){claimDailyBonus();}
 let depCount=me.verified_deposits_count||0;
 if(_lastVerifiedDeposits>0&&depCount>_lastVerifiedDeposits){
 let lastDepAmt=me.last_deposit_amount||20;
@@ -894,5 +913,95 @@ $('wdGate').classList.remove('hidden');safeSet('wdGateText',`Done: ${me.mandator
 init().then(()=>{hideInitialLoader();}).catch(()=>{hideInitialLoader();});
 setTimeout(hideInitialLoader,2500);
 setInterval(init,15000);
+
+// === DAILY BONUS ===
+async function claimDailyBonus(){
+let btn=$('dailyBonusBtn');
+btn.disabled=true;btn.innerText='Claiming...';
+try{
+let r=await fetch('/api/daily-bonus/'+userId,{method:'POST'});
+let j=await r.json();
+if(j.ok){userToast(j.message);btn.innerText='Claimed! Come back tomorrow';btn.style.background='rgba(16,185,129,0.2)';btn.style.color='#10b981';init();}
+else{btn.innerText=j.error||'Already claimed';btn.style.opacity='0.5';}
+}catch(e){btn.innerText='Error';btn.disabled=false;}
+}
+
+function updateStreakUI(me){
+let streak=me.login_streak||0;
+safeSet('streakInfo',streak>0?`Day ${streak} streak — keep it going!`:'Open the bot daily to build your streak');
+$('streakBadge').innerText=streak;
+let milestones=[3,7,14,30];
+let html=milestones.map(d=>{let reward=d<=3?0.5:d<=7?2:d<=14?5:10;let done=streak>=d;return`<div class="flex-1 text-center py-1.5 rounded-lg text-[9px] font-bold" style="background:${done?'rgba(16,185,129,0.2)':'var(--hover)'};color:${done?'#10b981':'var(--text3)'};border:1px solid ${done?'rgba(16,185,129,0.3)':'var(--border2)'}">${d}d<br>${reward}U</div>`}).join('');
+$('streakMilestones').innerHTML=html;
+let today=new Date().toISOString().slice(0,10);
+if(me.last_login_date===today){$('dailyBonusBtn').innerText='Claimed today ✓';$('dailyBonusBtn').style.background='rgba(16,185,129,0.2)';$('dailyBonusBtn').style.color='#10b981';$('dailyBonusBtn').disabled=true;}
+}
+
+// === SPIN WHEEL ===
+const SPIN_PRIZES=[0.05,0.10,0.15,0.20,0.50,1.00,2.00,5.00];
+const SPIN_COLORS=['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#6C3BFF','#ec4899','#FFD60A'];
+const SPIN_COUNT=8;
+
+function openSpinWheel(){
+let canSpin=true;
+let info=$('spinInfo');
+if(info&&info.innerText.includes('Come back'))canSpin=false;
+if(!canSpin){userToast('Already spun today! Come back tomorrow.');return;}
+showSpinOverlay();
+}
+
+function showSpinOverlay(){
+let ov=document.createElement('div');
+ov.id='spinOverlay';
+ov.className='fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[200] p-4';
+ov.innerHTML=`
+<div class="text-center w-full max-w-[340px]">
+<h2 class="font-extrabold text-xl text-white mb-2">🎰 Lucky Spin</h2>
+<p class="text-white/60 text-[11px] mb-5">Spin to win USDT! Free once every 24 hours.</p>
+<div class="relative mx-auto" style="width:280px;height:280px">
+<div id="spinPointer" class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-10 text-2xl">▼</div>
+<svg id="spinWheel" viewBox="0 0 200 200" width="280" height="280" style="transition:transform 4s cubic-bezier(0.17,0.67,0.12,0.99)">
+${Array.from({length:SPIN_COUNT},(_,i)=>{
+let angle=360/SPIN_COUNT;let start=angle*i-90;let end=start+angle;
+let s=(start*Math.PI)/180;let e=(end*Math.PI)/180;
+let x1=100+90*Math.cos(s);let y1=100+90*Math.sin(s);
+let x2=100+90*Math.cos(e);let y2=100+90*Math.sin(e);
+let mid=(start+end)/2;let tx=100+55*Math.cos(mid*Math.PI/180);let ty=100+55*Math.sin(mid*Math.PI/180);
+return`<path d="M100,100 L${x1},${y1} A90,90 0 0,1 ${x2},${y2} Z" fill="${SPIN_COLORS[i]}" stroke="#000" stroke-width="1.5"/>
+<text x="${tx}" y="${ty}" fill="#fff" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="central" transform="rotate(${(start+end)/2},${tx},${ty})">${SPIN_PRIZES[i]}</text>`;
+}).join('')}
+</svg>
+</div>
+<div id="spinResult" class="mt-4 text-white font-bold text-sm h-6"></div>
+<button id="spinGoBtn" onclick="doSpin()" class="mt-3 px-10 py-3 rounded-full font-bold text-sm" style="background:#FFD60A;color:#000">SPIN</button>
+<button onclick="document.getElementById('spinOverlay').remove()" class="mt-3 block mx-auto px-6 py-2 rounded-full text-[11px] font-bold text-white/50">Close</button>
+</div>`;
+document.body.appendChild(ov);
+}
+
+async function doSpin(){
+let btn=$('spinGoBtn');
+btn.disabled=true;btn.innerText='Spinning...';
+try{
+let r=await fetch('/api/spin/'+userId,{method:'POST'});
+let j=await r.json();
+if(!j.ok){$('spinResult').innerText=j.error||'Failed';btn.disabled=false;btn.innerText='SPIN';return;}
+let prize=j.prize;
+let idx=SPIN_PRIZES.indexOf(prize);
+if(idx===-1)idx=0;
+let wheel=$('spinWheel');
+let segAngle=360/SPIN_COUNT;
+let target=360-(idx*segAngle+segAngle/2);
+let spins=5+Math.floor(Math.random()*3);
+let final=spins*360+target;
+wheel.style.transition='transform 4s cubic-bezier(0.17,0.67,0.12,0.99)';
+wheel.style.transform=`rotate(${final}deg)`;
+setTimeout(()=>{
+$('spinResult').innerHTML=`🎉 You won <span style="color:#FFD60A;font-size:18px">${prize.toFixed(2)} USDT</span>!`;
+btn.innerText='Claimed!';
+init();
+},4200);
+}catch(e){$('spinResult').innerText='Error: '+e;btn.disabled=false;btn.innerText='SPIN';}
+}
 </script>
 </body></html>
