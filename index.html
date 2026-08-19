@@ -168,10 +168,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <div id='tab-games' class='tab-content hidden'>
 <div class='mx-4 mt-4 rounded-2xl p-4' style='background:linear-gradient(135deg,rgba(255,214,10,0.1),rgba(108,59,255,0.1));border:1px solid rgba(255,214,10,0.15)'>
 <h3 class='font-black text-base'>Play & Win</h3>
-<p class='text-[11px] mt-1' style='color:var(--text2)'>Use your withdrawable balance to play. Winnings go to deposit balance — trade to unlock withdrawals!</p>
-<div class='mt-2 p-2.5 rounded-xl flex justify-between items-center' style='background:var(--border)'>
-<span class='text-[11px]' style='color:var(--text2)'>Withdrawable:</span>
-<span id='gameWdBal' class='font-bold text-sm' style='color:#FFD60A'>0.00 USDT</span>
+<p class='text-[11px] mt-1' style='color:var(--text2)'>Bet from withdrawable. Profits go to deposit — trade to unlock!</p>
+<div class='mt-2 grid grid-cols-2 gap-2 text-[11px]'>
+<div class='p-2.5 rounded-xl text-center' style='background:rgba(38,161,123,0.08);border:1px solid rgba(38,161,123,0.12)'><p style='color:var(--text3)'>Balance</p><p id='gameBal' class='font-bold mt-0.5' style='color:#26A17B'>0.00 USDT</p></div>
+<div class='p-2.5 rounded-xl text-center' style='background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.12)'><p style='color:var(--text3)'>Withdrawable</p><p id='gameWdBal' class='font-bold mt-0.5' style='color:#FFD60A'>0.00 USDT</p></div>
 </div>
 </div>
 <div class='mx-4 mt-3 grid grid-cols-2 gap-3'>
@@ -1079,321 +1079,304 @@ init();
 // === MINI GAMES ===
 let _gameHistory=[];
 const CARD_NAMES=['','A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-const CARD_SUITS=['♥','♦','♣','♠'];
-const CARD_COLORS=['#ef4444','#ef4444','#1e293b','#1e293b'];
-function loadGamesTab(){if(window._lastMe)$('gameWdBal').innerText=(window._lastMe.withdrawable||0).toFixed(2)+' USDT';}
-function closeGame(){let o=$('gameOverlay');if(o)o.remove();}
-
+const CARD_SUITS=['\u2665','\u2666','\u2663','\u2660'];
+const CARD_COLORS_HL=['#ef4444','#ef4444','#1e293b','#1e293b'];
+function loadGamesTab(){if(window._lastMe){let e1=$('gameWdBal');if(e1)e1.innerText=(window._lastMe.withdrawable||0).toFixed(2)+' USDT';let e2=$('gameBal');if(e2)e2.innerText=(window._lastMe.balance||0).toFixed(2)+' USDT';}}
+function closeGame(){let o=$('gameOverlay');if(o)o.remove();if(_crashInterval){clearInterval(_crashInterval);_crashInterval=null;}}
 function getBet(){return parseFloat($('betInput').value)||0;}
 function getWd(){return window._lastMe?window._lastMe.withdrawable||0:0;}
-function updateWdUI(wd){
-if(window._lastMe)window._lastMe.withdrawable=wd;
-let a=$('gameWdShow');if(a)a.innerText=wd.toFixed(2)+' USDT';
-let b=$('gameWdBal');if(b)b.innerText=wd.toFixed(2)+' USDT';
-}
-function setBet(amt){let i=$('betInput');if(i)i.value=amt;document.querySelectorAll('.bet-pick').forEach(b=>{b.style.background='var(--border)';b.style.color='var(--text)';});}
-function addGameHistory(game,won,payout,bet){_gameHistory.unshift({game,won,payout,bet,time:new Date().toLocaleTimeString()});if(_gameHistory.length>10)_gameHistory.pop();let el=$('gameHistoryList');if(!el)return;el.innerHTML=_gameHistory.map(h=>'<div class="flex justify-between items-center py-1.5" style="border-bottom:1px solid var(--border)"><span>'+h.game+'</span><span style="color:'+(h.won?'#22c55e':'#ef4444')+'">'+(h.won?'+':'-')+(h.won?h.payout.toFixed(2):h.bet.toFixed(2))+' USDT</span></div>').join('');}
+function getBal(){return window._lastMe?window._lastMe.balance||0:0;}
+function updateBalUI(bal,wd){if(window._lastMe){window._lastMe.balance=bal;window._lastMe.withdrawable=wd;}let a=$('gameWdShow');if(a)a.innerText=wd.toFixed(2)+' USDT';let b=$('gameWdBal');if(b)b.innerText=wd.toFixed(2)+' USDT';let c=$('gameBal');if(c)c.innerText=bal.toFixed(2)+' USDT';}
+function setBet(amt){let i=$('betInput');if(i)i.value=amt;}
+function addGameHistory(game,won,amount,bet){_gameHistory.unshift({game,won,amount,bet,time:new Date().toLocaleTimeString()});if(_gameHistory.length>10)_gameHistory.pop();let el=$('gameHistoryList');if(!el)return;el.innerHTML=_gameHistory.map(function(h){return '<div class="flex justify-between items-center py-1.5" style="border-bottom:1px solid var(--border)"><span>'+h.game+'</span><span style="color:'+(h.won?'#22c55e':'#ef4444')+'">'+(h.won?'+':'-')+h.amount.toFixed(2)+' USDT</span></div>';}).join('');}
 
 function gameShell(title,bodyHTML){
-return`<div class="w-full max-w-[380px] rounded-3xl p-5" style="background:var(--surface);border:1px solid var(--border)">
-<div class="flex justify-between items-center"><h3 class="font-black text-lg">${title}</h3><button onclick="closeGame()" class="w-8 h-8 rounded-full flex items-center justify-center text-sm" style="background:var(--border)">&times;</button></div>
-<div class="mt-2 p-2.5 rounded-xl flex justify-between items-center text-[11px]" style="background:var(--border)"><span style="color:var(--text2)">Withdrawable:</span><span id="gameWdShow" style="color:#FFD60A" class="font-bold">${getWd().toFixed(2)} USDT</span></div>
-<div class="mt-2 flex gap-1.5" id="betBtns">
-<button onclick="setBet(0.5)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--border)">0.5</button>
-<button onclick="setBet(1)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--text);color:var(--bg)">1</button>
-<button onclick="setBet(2)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--border)">2</button>
-<button onclick="setBet(5)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--border)">5</button>
-<button onclick="setBet(10)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--border)">10</button>
-</div>
-<div class="mt-2 flex items-center gap-2"><input id="betInput" type="number" min="0.5" step="0.1" value="1" class="flex-1 p-2.5 text-sm rounded-xl border outline-none" style="background:var(--input);border-color:var(--border)"><span class="text-[11px] font-bold" style="color:var(--text3)">USDT</span></div>
-${bodyHTML}</div>`;
+var me=window._lastMe||{};
+return '<div class="w-full max-w-[380px] rounded-3xl p-5" style="background:var(--surface);border:1px solid var(--border)">'+
+'<div class="flex justify-between items-center"><h3 class="font-black text-lg">'+title+'</h3><button onclick="closeGame()" class="w-8 h-8 rounded-full flex items-center justify-center text-sm" style="background:var(--border)">&times;</button></div>'+
+'<div class="mt-2 grid grid-cols-2 gap-2 text-[11px]">'+
+'<div class="p-2.5 rounded-xl text-center" style="background:rgba(38,161,123,0.08);border:1px solid rgba(38,161,123,0.12)"><p style="color:var(--text3)">Balance</p><p id="gameBalShow" class="font-bold mt-0.5" style="color:#26A17B">'+(me.balance||0).toFixed(2)+' USDT</p></div>'+
+'<div class="p-2.5 rounded-xl text-center" style="background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.12)"><p style="color:var(--text3)">Withdrawable</p><p id="gameWdShow" class="font-bold mt-0.5" style="color:#FFD60A">'+(me.withdrawable||0).toFixed(2)+' USDT</p></div>'+
+'</div>'+
+'<div class="mt-3 flex gap-1.5">'+
+'<button onclick="setBet(0.5)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--border)">0.5</button>'+
+'<button onclick="setBet(1)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--text);color:var(--bg)">1</button>'+
+'<button onclick="setBet(2)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--border)">2</button>'+
+'<button onclick="setBet(5)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--border)">5</button>'+
+'<button onclick="setBet(10)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--border)">10</button>'+
+'</div>'+
+'<div class="mt-2 flex items-center gap-2"><input id="betInput" type="number" min="0.5" step="0.1" value="1" class="flex-1 p-2.5 text-sm rounded-xl border outline-none" style="background:var(--input);border-color:var(--border)"><span class="text-[11px] font-bold" style="color:var(--text3)">USDT</span></div>'+
+bodyHTML+'</div>';
 }
 
+function updateGameWd(bal,wd){updateBalUI(bal,wd);var a=$('gameBalShow');if(a)a.innerText=bal.toFixed(2)+' USDT';}
+
 // ====== COIN FLIP ======
+var _cfBusy=false;
 function openGame(type){
-let ov=document.createElement('div');ov.id='gameOverlay';
+if(_cfBusy||_hlBusy)return;
+var ov=document.createElement('div');ov.id='gameOverlay';
 ov.className='fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[200] p-4';
-let html='';
+var html='';
 if(type==='coinflip'){
-html=gameShell('&#129352; Coin Flip',`
-<div class="flex flex-col items-center mt-4">
-<div id="cfCoin" style="width:120px;height:120px;perspective:600px">
-<div id="cfCoinInner" style="width:120px;height:120px;border-radius:50%;position:relative;transition:transform 0.1s;transform-style:preserve-3d">
-<div id="cfFront" style="position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:900;background:linear-gradient(135deg,#FFD60A,#f97316);color:#000;border:4px solid rgba(255,255,255,0.3);box-shadow:0 8px 32px rgba(255,214,10,0.4)">H</div>
-<div id="cfBack" style="position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:900;background:linear-gradient(135deg,#A5A6F6,#6C3BFF);color:#fff;border:4px solid rgba(255,255,255,0.3);box-shadow:0 8px 32px rgba(108,59,255,0.4);transform:rotateX(180deg)">T</div>
-</div></div>
-<p id="cfStatus" class="mt-4 text-sm font-bold" style="color:var(--text3)">Pick a side</p>
-<div class="flex gap-3 mt-4 w-full">
-<button onclick="playCoinflip('heads')" id="cfHeads" class="flex-1 py-4 rounded-2xl font-black text-base" style="background:linear-gradient(135deg,rgba(255,214,10,0.15),rgba(249,115,22,0.1));border:2px solid rgba(255,214,10,0.3);color:#FFD60A">HEADS</button>
-<button onclick="playCoinflip('tails')" id="cfTails" class="flex-1 py-4 rounded-2xl font-black text-base" style="background:linear-gradient(135deg,rgba(108,59,255,0.15),rgba(165,166,246,0.1));border:2px solid rgba(108,59,255,0.3);color:#A5A6F6">TAILS</button>
-</div>
-<div id="cfResult" class="mt-3 text-center text-sm font-bold min-h-[24px]"></div>
-</div>
-`);
+html=gameShell('Coin Flip','<div class="flex flex-col items-center mt-4">'+
+'<div id="cfCoinWrap" style="width:120px;height:120px;perspective:800px;margin:0 auto">'+
+'<div id="cfCoinInner" style="width:120px;height:120px;border-radius:50%;position:relative;transition:transform 0.15s;transform-style:preserve-3d">'+
+'<div style="position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:900;background:linear-gradient(145deg,#FFD60A,#f59e0b);color:#000;border:4px solid rgba(255,255,255,0.4);box-shadow:0 8px 32px rgba(255,214,10,0.4),inset 0 -4px 12px rgba(0,0,0,0.2)">H</div>'+
+'<div style="position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:900;background:linear-gradient(145deg,#8A5CFF,#6C3BFF);color:#fff;border:4px solid rgba(255,255,255,0.3);box-shadow:0 8px 32px rgba(108,59,255,0.4),inset 0 -4px 12px rgba(0,0,0,0.2);transform:rotateX(180deg)">T</div>'+
+'</div></div>'+
+'<p id="cfStatus" class="mt-4 text-sm font-bold" style="color:var(--text3)">Pick a side</p>'+
+'<div class="flex gap-3 mt-4 w-full">'+
+'<button onclick="playCoinflip(\'heads\')" id="cfHeads" class="flex-1 py-4 rounded-2xl font-black text-base active:scale-95 transition-transform" style="background:linear-gradient(135deg,rgba(255,214,10,0.15),rgba(249,115,22,0.08));border:2px solid rgba(255,214,10,0.3);color:#FFD60A">HEADS</button>'+
+'<button onclick="playCoinflip(\'tails\')" id="cfTails" class="flex-1 py-4 rounded-2xl font-black text-base active:scale-95 transition-transform" style="background:linear-gradient(135deg,rgba(108,59,255,0.15),rgba(165,166,246,0.08));border:2px solid rgba(108,59,255,0.3);color:#A5A6F6">TAILS</button>'+
+'</div>'+
+'<div id="cfResult" class="mt-3 text-center text-sm font-bold min-h-[24px]"></div>'+
+'</div>');
 }else if(type==='dice'){
-html=gameShell('&#127922; Dice Roll',`
-<div class="flex flex-col items-center mt-4">
-<p class="text-[11px] mb-3" style="color:var(--text2)">Predict: Over 7 or Under 7</p>
-<div class="flex gap-4" id="diceContainer">
-<div id="diceA" style="width:80px;height:80px;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 6px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.5);border:2px solid #ddd;transition:transform 0.15s">?</div>
-<div id="diceB" style="width:80px;height:80px;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 6px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.5);border:2px solid #ddd;transition:transform 0.15s">?</div>
-</div>
-<p id="diceTotal" class="mt-3 text-lg font-black" style="color:var(--text3)">?</p>
-<div class="flex gap-3 mt-4 w-full">
-<button onclick="playDice('over')" id="diceOver" class="flex-1 py-4 rounded-2xl font-black text-sm" style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(16,185,129,0.1));border:2px solid rgba(34,197,94,0.3);color:#22c55e">OVER 7</button>
-<button onclick="playDice('under')" id="diceUnder" class="flex-1 py-4 rounded-2xl font-black text-sm" style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(249,115,22,0.1));border:2px solid rgba(239,68,68,0.3);color:#ef4444">UNDER 7</button>
-</div>
-<div id="diceResult" class="mt-3 text-center text-sm font-bold min-h-[24px]"></div>
-</div>
-`);
+html=gameShell('Dice Roll','<div class="flex flex-col items-center mt-4">'+
+'<p class="text-[11px] mb-4" style="color:var(--text2)">Predict the total of 2 dice</p>'+
+'<div class="flex gap-5 items-center" id="diceContainer">'+
+'<div id="diceA" style="width:80px;height:80px;border-radius:16px;background:#fff;display:grid;place-items:center;font-size:36px;box-shadow:0 6px 24px rgba(0,0,0,0.4),inset 0 2px 0 rgba(255,255,255,0.6);border:2px solid #e5e7eb;transition:transform 0.2s">?</div>'+
+'<div id="diceB" style="width:80px;height:80px;border-radius:16px;background:#fff;display:grid;place-items:center;font-size:36px;box-shadow:0 6px 24px rgba(0,0,0,0.4),inset 0 2px 0 rgba(255,255,255,0.6);border:2px solid #e5e7eb;transition:transform 0.2s">?</div>'+
+'</div>'+
+'<p id="diceTotal" class="mt-3 text-xl font-black" style="color:var(--text3)">?</p>'+
+'<div class="flex gap-3 mt-4 w-full">'+
+'<button onclick="playDice(\'over\')" id="diceOver" class="flex-1 py-4 rounded-2xl font-black text-sm active:scale-95 transition-transform" style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(16,185,129,0.08));border:2px solid rgba(34,197,94,0.3);color:#22c55e">OVER 7</button>'+
+'<button onclick="playDice(\'under\')" id="diceUnder" class="flex-1 py-4 rounded-2xl font-black text-sm active:scale-95 transition-transform" style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(249,115,22,0.08));border:2px solid rgba(239,68,68,0.3);color:#ef4444">UNDER 7</button>'+
+'</div>'+
+'<div id="diceResult" class="mt-3 text-center text-sm font-bold min-h-[24px]"></div>'+
+'</div>');
 }else if(type==='crash'){
-html=gameShell('&#128640; Crash',`
-<div class="mt-4 rounded-2xl overflow-hidden relative" style="background:#0a0e1a;border:1px solid rgba(34,197,94,0.2);height:200px">
-<canvas id="crashCanvas" style="width:100%;height:100%"></canvas>
-<div class="absolute inset-0 flex flex-col items-center justify-center">
-<p id="crashMult" class="text-5xl font-black" style="color:#22c55e;text-shadow:0 0 20px rgba(34,197,94,0.5)">1.00x</p>
-<p id="crashSub" class="text-[11px] mt-1" style="color:rgba(255,255,255,0.4)">Place your bet</p>
-</div>
-<div id="crashPlane" style="position:absolute;left:10%;bottom:50%;font-size:28px;transition:all 0.05s linear;filter:drop-shadow(0 0 8px rgba(255,214,10,0.6));display:none">&#128640;</div>
-</div>
-<button id="crashBetBtn" onclick="startCrash()" class="mt-4 w-full py-4 rounded-2xl font-black text-base" style="background:linear-gradient(135deg,#FFD60A,#f97316);color:#000;box-shadow:0 4px 20px rgba(255,214,10,0.3)">BET & FLY</button>
-<button id="crashCashBtn" onclick="cashoutCrash()" class="mt-2 w-full py-4 rounded-2xl font-black text-base hidden" style="background:linear-gradient(135deg,#22c55e,#10b981);color:#fff;box-shadow:0 4px 20px rgba(34,197,94,0.3);animation:cashPulse 0.8s ease-in-out infinite">CASH OUT</button>
-<div id="crashResult" class="mt-3 text-center text-sm font-bold min-h-[24px]"></div>
-<style>@keyframes cashPulse{0%,100%{box-shadow:0 4px 20px rgba(34,197,94,0.3)}50%{box-shadow:0 4px 40px rgba(34,197,94,0.7)}}</style>
-`);
+html=gameShell('Crash','<div class="mt-4 rounded-2xl overflow-hidden relative" style="background:#0a0e1a;border:1px solid rgba(34,197,94,0.15);height:200px">'+
+'<canvas id="crashCanvas" style="width:100%;height:100%"></canvas>'+
+'<div class="absolute inset-0 flex flex-col items-center justify-center" style="pointer-events:none"><p id="crashMult" class="text-5xl font-black" style="color:#22c55e;text-shadow:0 0 20px rgba(34,197,94,0.5)">1.00x</p><p id="crashSub" class="text-[11px] mt-1" style="color:rgba(255,255,255,0.4)">Place your bet</p></div>'+
+'</div>'+
+'<button id="crashBetBtn" onclick="startCrash()" class="mt-4 w-full py-4 rounded-2xl font-black text-base active:scale-95 transition-transform" style="background:linear-gradient(135deg,#FFD60A,#f59e0b);color:#000;box-shadow:0 4px 20px rgba(255,214,10,0.3)">BET & FLY</button>'+
+'<button id="crashCashBtn" onclick="cashoutCrash()" class="mt-2 w-full py-4 rounded-2xl font-black text-base hidden active:scale-95 transition-transform" style="background:linear-gradient(135deg,#22c55e,#10b981);color:#fff;box-shadow:0 4px 20px rgba(34,197,94,0.3)">CASH OUT</button>'+
+'<div id="crashResult" class="mt-3 text-center text-sm font-bold min-h-[24px]"></div>');
 }else if(type==='highlow'){
-html=gameShell('&#127183; Higher / Lower',`
-<div class="flex flex-col items-center mt-4">
-<div class="flex items-center gap-4" style="perspective:800px">
-<div id="hlCard1" style="width:90px;height:130px;border-radius:12px;background:linear-gradient(135deg,#1e293b,#334155);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--text3);border:2px solid var(--border2);box-shadow:0 8px 24px rgba(0,0,0,0.3);transition:transform 0.6s;transform-style:preserve-3d">?</div>
-<div style="font-size:20px;font-weight:900" id="hlArrow">?</div>
-<div id="hlCard2" style="width:90px;height:130px;border-radius:12px;background:linear-gradient(135deg,#1e293b,#334155);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--text3);border:2px solid var(--border2);box-shadow:0 8px 24px rgba(0,0,0,0.3);transition:transform 0.6s;transform-style:preserve-3d">?</div>
-</div>
-<div class="flex gap-3 mt-4 w-full">
-<button onclick="playHighlow('high')" class="flex-1 py-4 rounded-2xl font-black text-sm" style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(16,185,129,0.1));border:2px solid rgba(34,197,94,0.3);color:#22c55e">▲ HIGHER</button>
-<button onclick="playHighlow('low')" class="flex-1 py-4 rounded-2xl font-black text-sm" style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(249,115,22,0.1));border:2px solid rgba(239,68,68,0.3);color:#ef4444">▼ LOWER</button>
-</div>
-<div id="hlResult" class="mt-3 text-center text-sm font-bold min-h-[24px]"></div>
-</div>
-`);
+html=gameShell('Higher / Lower','<div class="flex flex-col items-center mt-4">'+
+'<div class="flex items-center gap-5" style="perspective:800px">'+
+'<div id="hlCard1" style="width:90px;height:130px;border-radius:12px;background:linear-gradient(145deg,#1e293b,#334155);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--text3);border:2px solid var(--border2);box-shadow:0 8px 24px rgba(0,0,0,0.4);transition:transform 0.5s cubic-bezier(0.4,0,0.2,1)">?</div>'+
+'<div style="font-size:22px;font-weight:900" id="hlArrow">?</div>'+
+'<div id="hlCard2" style="width:90px;height:130px;border-radius:12px;background:linear-gradient(145deg,#1e293b,#334155);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--text3);border:2px solid var(--border2);box-shadow:0 8px 24px rgba(0,0,0,0.4);transition:transform 0.5s cubic-bezier(0.4,0,0.2,1)">?</div>'+
+'</div>'+
+'<div class="flex gap-3 mt-4 w-full">'+
+'<button onclick="playHighlow(\'high\')" class="flex-1 py-4 rounded-2xl font-black text-sm active:scale-95 transition-transform" style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(16,185,129,0.08));border:2px solid rgba(34,197,94,0.3);color:#22c55e">HIGHER</button>'+
+'<button onclick="playHighlow(\'low\')" class="flex-1 py-4 rounded-2xl font-black text-sm active:scale-95 transition-transform" style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(249,115,22,0.08));border:2px solid rgba(239,68,68,0.3);color:#ef4444">LOWER</button>'+
+'</div>'+
+'<div id="hlResult" class="mt-3 text-center text-sm font-bold min-h-[24px]"></div>'+
+'</div>');
 }
 ov.innerHTML=html;document.body.appendChild(ov);
 }
 
 // ====== COIN FLIP PLAY ======
-let _cfSpinning=false;
 async function playCoinflip(choice){
-if(_cfSpinning)return;
-let bet=getBet();if(bet<0.5){userToast('Min bet 0.50 USDT');return;}
-if(getWd()<bet){userToast('Insufficient balance');return;}
-_cfSpinning=true;
-$('cfHeads').disabled=true;$('cfTails').disabled=true;
-$('cfHeads').style.opacity='0.4';$('cfTails').style.opacity='0.4';
-let coin=$('cfCoinInner');
-$('cfStatus').innerText='Flipping...';$('cfStatus').style.color='#FFD60A';
-$('cfResult').innerHTML='';
-let rotations=8+Math.floor(Math.random()*4);
-let finalAngle=choice==='tails'?180:0;
-let total=rotations*360+finalAngle;
-coin.style.transition='transform 1.8s cubic-bezier(0.17,0.67,0.12,0.99)';
-coin.style.transform='rotateX('+total+'deg)';
+if(_cfBusy)return;
+var bet=getBet();if(bet<0.5){userToast('Min bet 0.50 USDT');return;}
+if(getWd()<bet){userToast('Insufficient withdrawable balance');return;}
+_cfBusy=true;
+var hBtn=$('cfHeads'),tBtn=$('cfTails');
+hBtn.disabled=true;tBtn.disabled=true;hBtn.style.opacity='0.4';tBtn.style.opacity='0.4';
+var coin=$('cfCoinInner');
+$('cfStatus').innerText='Flipping...';$('cfStatus').style.color='#FFD60A';$('cfResult').innerHTML='';
 try{
-let r=await fetch('/api/game/coinflip/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet,choice})});
-let j=await r.json();
-if(!j.ok){$('cfStatus').innerText=j.error;$('cfStatus').style.color='#ef4444';resetCfBtns();_cfSpinning=false;return;}
-let landed=j.result;
-setTimeout(()=>{
-coin.style.transition='none';
-coin.style.transform='rotateX('+(landed==='tails'?180:0)+'deg)';
+var r=await fetch('/api/game/coinflip/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet:bet,choice:choice})});
+var j=await r.json();
+if(!j.ok){$('cfStatus').innerText=j.error;$('cfStatus').style.color='#ef4444';hBtn.disabled=false;tBtn.disabled=false;hBtn.style.opacity='1';tBtn.style.opacity='1';_cfBusy=false;return;}
+var landed=j.result;
+var rotations=8+Math.floor(Math.random()*4);
+var finalAngle=landed==='tails'?180:0;
+var total=rotations*360+finalAngle;
+coin.style.transition='transform 2s cubic-bezier(0.17,0.67,0.12,0.99)';
+coin.style.transform='rotateX('+total+'deg)';
+setTimeout(function(){
+coin.style.transition='none';coin.style.transform='rotateX('+finalAngle+'deg)';
 $('cfStatus').innerText=landed.toUpperCase()+'!';
 $('cfStatus').style.color=j.won?'#22c55e':'#ef4444';
-if(j.won){
-$('cfResult').innerHTML='<span style="color:#22c55e;font-size:18px">+'+j.payout.toFixed(2)+' USDT</span>';
-}else{
-$('cfResult').innerHTML='<span style="color:#ef4444;font-size:14px">-'+bet.toFixed(2)+' USDT</span>';
+if(j.won){$('cfResult').innerHTML='<span style="color:#22c55e;font-size:18px">+'+j.profit.toFixed(2)+' USDT</span>';}
+else{$('cfResult').innerHTML='<span style="color:#ef4444;font-size:14px">-'+bet.toFixed(2)+' USDT</span>';}
+updateGameWd(j.balance,j.withdrawable);addGameHistory('Coin Flip',j.won,j.won?j.profit:bet,bet);init();
+hBtn.disabled=false;tBtn.disabled=false;hBtn.style.opacity='1';tBtn.style.opacity='1';_cfBusy=false;
+},2100);
+}catch(e){$('cfStatus').innerText='Error';$('cfStatus').style.color='#ef4444';hBtn.disabled=false;tBtn.disabled=false;hBtn.style.opacity='1';tBtn.style.opacity='1';_cfBusy=false;}
 }
-updateWdUI(j.withdrawable);addGameHistory('Coin Flip',j.won,j.payout,bet);init();
-_cfSpinning=false;
-},1900);
-}catch(e){$('cfStatus').innerText='Error';$('cfStatus').style.color='#ef4444';resetCfBtns();_cfSpinning=false;}
-}
-function resetCfBtns(){$('cfHeads').disabled=false;$('cfTails').disabled=false;$('cfHeads').style.opacity='1';$('cfTails').style.opacity='1';}
 
 // ====== DICE PLAY ======
-const DICE_FACES=['⚀','⚁','⚂','⚃','⚄','⚅'];
-let _diceRolling=false;
+var _diceBusy=false;
+var DICE_DOT_PATTERNS={1:[[1,1]],2:[[0,2],[2,0]],3:[[0,2],[1,1],[2,0]],4:[[0,0],[0,2],[2,0],[2,2]],5:[[0,0],[0,2],[1,1],[2,0],[2,2]],6:[[0,0],[0,2],[1,0],[1,2],[2,0],[2,2]]};
+function renderDiceDots(el,num){
+var p=DICE_DOT_PATTERNS[num]||[];
+var html='<svg viewBox="0 0 3 3" width="48" height="48">';
+p.forEach(function(dot){html+='<circle cx="'+(dot[1]+0.5)+'" cy="'+(dot[0]+0.5)+'" r="0.35" fill="#1a1a2e"/>';});
+html+='</svg>';el.innerHTML=html;
+}
 async function playDice(prediction){
-if(_diceRolling)return;
-let bet=getBet();if(bet<0.5){userToast('Min bet 0.50 USDT');return;}
-if(getWd()<bet){userToast('Insufficient balance');return;}
-_diceRolling=true;
-$('diceOver').style.opacity='0.4';$('diceUnder').style.opacity='0.4';
+if(_diceBusy)return;
+var bet=getBet();if(bet<0.5){userToast('Min bet 0.50 USDT');return;}
+if(getWd()<bet){userToast('Insufficient withdrawable balance');return;}
+_diceBusy=true;
+var oBtn=$('diceOver'),uBtn=$('diceUnder');
+oBtn.style.opacity='0.4';uBtn.style.opacity='0.4';
 $('diceResult').innerHTML='';$('diceTotal').innerText='...';
-let dA=$('diceA'),dB=$('diceB');
-let rollCount=0;
-let rollInterval=setInterval(()=>{
-dA.innerText=DICE_FACES[Math.floor(Math.random()*6)];
-dB.innerText=DICE_FACES[Math.floor(Math.random()*6)];
-dA.style.transform='rotate('+((rollCount*37)%360)+'deg) scale('+(1+Math.sin(rollCount*0.5)*0.1)+')';
-dB.style.transform='rotate('+((rollCount*-29)%360)+'deg) scale('+(1+Math.cos(rollCount*0.5)*0.1)+')';
+var dA=$('diceA'),dB=$('diceB');
+var rollCount=0;
+var rollInterval=setInterval(function(){
+renderDiceDots(dA,Math.floor(Math.random()*6)+1);
+renderDiceDots(dB,Math.floor(Math.random()*6)+1);
+dA.style.transform='rotate('+((rollCount*37)%360)+'deg) scale(1.05)';
+dB.style.transform='rotate('+((rollCount*-29)%360)+'deg) scale(1.05)';
 rollCount++;
-if(rollCount>15)clearInterval(rollInterval);
 },80);
 try{
-let r=await fetch('/api/game/dice/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet,choice:prediction})});
-let j=await r.json();
-if(!j.ok){$('diceResult').innerHTML='<span style="color:#ef4444">'+j.error+'</span>';resetDiceBtns();_diceRolling=false;clearInterval(rollInterval);return;}
-setTimeout(()=>{
+var r=await fetch('/api/game/dice/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet:bet,choice:prediction})});
+var j=await r.json();
+if(!j.ok){$('diceResult').innerHTML='<span style="color:#ef4444">'+j.error+'</span>';clearInterval(rollInterval);oBtn.style.opacity='1';uBtn.style.opacity='1';_diceBusy=false;return;}
+setTimeout(function(){
 clearInterval(rollInterval);
-dA.innerText=DICE_FACES[j.dice[0]-1];dB.innerText=DICE_FACES[j.dice[1]-1];
+renderDiceDots(dA,j.dice[0]);renderDiceDots(dB,j.dice[1]);
 dA.style.transform='rotate(0deg) scale(1.15)';dB.style.transform='rotate(0deg) scale(1.15)';
 dA.style.boxShadow=j.won?'0 0 24px rgba(34,197,94,0.5)':'0 0 24px rgba(239,68,68,0.5)';
 dB.style.boxShadow=j.won?'0 0 24px rgba(34,197,94,0.5)':'0 0 24px rgba(239,68,68,0.5)';
 $('diceTotal').innerText=j.total;$('diceTotal').style.color=j.won?'#22c55e':'#ef4444';
-$('diceResult').innerHTML=j.won?'<span style="color:#22c55e;font-size:18px">+'+j.payout.toFixed(2)+' USDT</span>':'<span style="color:#ef4444;font-size:14px">-'+bet.toFixed(2)+' USDT</span>';
-updateWdUI(j.withdrawable);addGameHistory('Dice Roll',j.won,j.payout,bet);init();
-_diceRolling=false;resetDiceBtns();
-},1600);
-}catch(e){$('diceResult').innerHTML='<span style="color:#ef4444">Error</span>';resetDiceBtns();_diceRolling=false;clearInterval(rollInterval);}
+if(j.won){$('diceResult').innerHTML='<span style="color:#22c55e;font-size:18px">+'+j.profit.toFixed(2)+' USDT</span>';}
+else{$('diceResult').innerHTML='<span style="color:#ef4444;font-size:14px">-'+bet.toFixed(2)+' USDT</span>';}
+updateGameWd(j.balance,j.withdrawable);addGameHistory('Dice Roll',j.won,j.won?j.profit:bet,bet);init();
+oBtn.style.opacity='1';uBtn.style.opacity='1';_diceBusy=false;
+},1500);
+}catch(e){$('diceResult').innerHTML='<span style="color:#ef4444">Error</span>';clearInterval(rollInterval);oBtn.style.opacity='1';uBtn.style.opacity='1';_diceBusy=false;}
 }
-function resetDiceBtns(){$('diceOver').style.opacity='1';$('diceUnder').style.opacity='1';}
 
 // ====== CRASH (Aviator Style) ======
-let _crashInterval=null,_crashMult=1,_crashBet=0,_crashCrashPt=0,_crashActive=false,_crashStartTime=0,_crashCanvasCtx=null,_crashPoints=[];
+var _crashInterval=null,_crashMult=1,_crashBet=0,_crashCrashPt=0,_crashActive=false,_crashStartTime=0,_crashCanvasCtx=null,_crashPoints=[];
 function initCrashCanvas(){
-let c=$('crashCanvas');if(!c)return;
+var c=$('crashCanvas');if(!c)return;
 c.width=c.offsetWidth*2;c.height=c.offsetHeight*2;
-_crashCanvasCtx=c.getContext('2d');_crashCanvasCtx.scale(2,2);
-_crashPoints=[];
+_crashCanvasCtx=c.getContext('2d');_crashCanvasCtx.scale(2,2);_crashPoints=[];
 }
 function drawCrashGraph(){
-let ctx=_crashCanvasCtx;if(!ctx)return;
-let c=$('crashCanvas');let w=c.offsetWidth,h=c.offsetHeight;
+var ctx=_crashCanvasCtx;if(!ctx)return;
+var c=$('crashCanvas');var w=c.offsetWidth,h=c.offsetHeight;
 ctx.clearRect(0,0,w,h);
-let elapsed=(Date.now()-_crashStartTime)/1000;
-let x=Math.min(elapsed/15*w*0.9+w*0.05,w*0.95);
-let y=h-(_crashMult/10)*h*0.8-h*0.1;
+var elapsed=(Date.now()-_crashStartTime)/1000;
+var x=Math.min(elapsed/15*w*0.9+w*0.05,w*0.95);
+var y=h-(_crashMult/10)*h*0.8-h*0.1;
 y=Math.max(h*0.05,Math.min(h*0.9,y));
-_crashPoints.push({x,y});
-if(_crashPoints.length>200)_crashPoints.shift();
+_crashPoints.push({x:x,y:y});
+if(_crashPoints.length>300)_crashPoints.shift();
 if(_crashPoints.length>1){
 ctx.beginPath();
-let grd=ctx.createLinearGradient(0,0,0,h);
-grd.addColorStop(0,'rgba(34,197,94,0.4)');grd.addColorStop(1,'rgba(34,197,94,0.02)');
+var grd=ctx.createLinearGradient(0,0,0,h);
+grd.addColorStop(0,'rgba(34,197,94,0.35)');grd.addColorStop(1,'rgba(34,197,94,0.01)');
 ctx.moveTo(_crashPoints[0].x,h);
-_crashPoints.forEach(p=>ctx.lineTo(p.x,p.y));
+for(var i=0;i<_crashPoints.length;i++)ctx.lineTo(_crashPoints[i].x,_crashPoints[i].y);
 ctx.lineTo(_crashPoints[_crashPoints.length-1].x,h);
 ctx.fillStyle=grd;ctx.fill();
 ctx.beginPath();
 ctx.moveTo(_crashPoints[0].x,_crashPoints[0].y);
-_crashPoints.forEach(p=>ctx.lineTo(p.x,p.y));
+for(var i=0;i<_crashPoints.length;i++)ctx.lineTo(_crashPoints[i].x,_crashPoints[i].y);
 ctx.strokeStyle='#22c55e';ctx.lineWidth=2.5;ctx.stroke();
-let last=_crashPoints[_crashPoints.length-1];
-ctx.beginPath();ctx.arc(last.x,last.y,5,0,Math.PI*2);
-ctx.fillStyle='#22c55e';ctx.fill();
-ctx.beginPath();ctx.arc(last.x,last.y,10,0,Math.PI*2);
-ctx.fillStyle='rgba(34,197,94,0.2)';ctx.fill();
+var last=_crashPoints[_crashPoints.length-1];
+ctx.beginPath();ctx.arc(last.x,last.y,5,0,Math.PI*2);ctx.fillStyle='#22c55e';ctx.fill();
+ctx.beginPath();ctx.arc(last.x,last.y,12,0,Math.PI*2);ctx.fillStyle='rgba(34,197,94,0.15)';ctx.fill();
 }
 }
 
-async function startCrash(){
-let bet=getBet();if(bet<0.5){userToast('Min bet 0.50 USDT');return;}
-if(getWd()<bet){userToast('Insufficient balance');return;}
-$('crashBetBtn').classList.add('hidden');
-$('crashCashBtn').classList.remove('hidden');
-$('crashResult').innerHTML='';
-$('crashSub').innerText='Starting...';
-try{
-let r=await fetch('/api/game/crash/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet})});
-let j=await r.json();
-if(!j.ok){$('crashResult').innerHTML='<span style="color:#ef4444">'+j.error+'</span>';$('crashBetBtn').classList.remove('hidden');$('crashCashBtn').classList.add('hidden');return;}
-_crashCrashPt=j.crash_point;_crashBet=bet;_crashMult=1;_crashActive=true;_crashStartTime=Date.now();
-updateWdUI(j.withdrawable);
-let plane=$('crashPlane');plane.style.display='block';
-initCrashCanvas();
-_crashInterval=setInterval(()=>{
-let elapsed=(Date.now()-_crashStartTime)/1000;
+function crashFrame(){
+if(!_crashActive)return;
+var elapsed=(Date.now()-_crashStartTime)/1000;
 _crashMult=parseFloat(Math.pow(Math.E,0.06*elapsed).toFixed(2));
-let el=$('crashMult');if(!el)return;
+var el=$('crashMult');if(!el){_crashActive=false;return;}
 el.innerText=_crashMult.toFixed(2)+'x';
-let danger=_crashMult>=_crashCrashPt*0.6;
+var danger=_crashMult>=_crashCrashPt*0.6;
 el.style.color=danger?'#ef4444':_crashMult>=2?'#FFD60A':'#22c55e';
-el.style.textShadow='0 0 20px '+(_crashMult>=_crashCrashPt*0.6?'rgba(239,68,68,0.5)':'rgba(34,197,94,0.5)');
-let planeX=10+Math.min(elapsed/12*80,80);
-let planeY=50-Math.log(_crashMult+1)*20;
-plane.style.left=planeX+'%';plane.style.bottom=planeY+'%';
-plane.style.transform='rotate(-'+Math.min(_crashMult*2,25)+'deg)';
-$('crashSub').innerText='Cash out at any time!';
+el.style.textShadow='0 0 20px '+(danger?'rgba(239,68,68,0.5)':'rgba(34,197,94,0.5)');
+$('crashSub').innerText='Cash out anytime!';
 drawCrashGraph();
 if(_crashMult>=_crashCrashPt){
-clearInterval(_crashInterval);_crashActive=false;
-plane.style.display='none';
+_crashActive=false;
 el.innerText='CRASHED @ '+_crashCrashPt.toFixed(2)+'x';
 el.style.color='#ef4444';el.style.textShadow='0 0 20px rgba(239,68,68,0.5)';
 $('crashSub').innerText='Too late!';
 $('crashCashBtn').classList.add('hidden');$('crashBetBtn').classList.remove('hidden');
-$('crashResult').innerHTML='<span style="color:#ef4444;font-size:16px">-'+bet.toFixed(2)+' USDT</span>';
-addGameHistory('Crash',false,0,bet);init();
+$('crashResult').innerHTML='<span style="color:#ef4444;font-size:16px">-'+_crashBet.toFixed(2)+' USDT</span>';
+addGameHistory('Crash',false,_crashBet,_crashBet);init();
+return;
 }
-},50);
+_crashInterval=requestAnimationFrame(crashFrame);
+}
+
+async function startCrash(){
+var bet=getBet();if(bet<0.5){userToast('Min bet 0.50 USDT');return;}
+if(getWd()<bet){userToast('Insufficient withdrawable balance');return;}
+$('crashBetBtn').classList.add('hidden');$('crashCashBtn').classList.remove('hidden');
+$('crashResult').innerHTML='';$('crashSub').innerText='Starting...';
+try{
+var r=await fetch('/api/game/crash/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet:bet})});
+var j=await r.json();
+if(!j.ok){$('crashResult').innerHTML='<span style="color:#ef4444">'+j.error+'</span>';$('crashBetBtn').classList.remove('hidden');$('crashCashBtn').classList.add('hidden');return;}
+_crashCrashPt=j.crash_point;_crashBet=bet;_crashMult=1;_crashActive=true;_crashStartTime=Date.now();
+updateGameWd(j.balance,j.withdrawable);
+initCrashCanvas();
+_crashInterval=requestAnimationFrame(crashFrame);
 }catch(e){$('crashResult').innerHTML='<span style="color:#ef4444">Error</span>';$('crashBetBtn').classList.remove('hidden');$('crashCashBtn').classList.add('hidden');}
 }
 
 function cashoutCrash(){
 if(!_crashActive)return;
-clearInterval(_crashInterval);_crashActive=false;
-let payout=parseFloat((_crashBet*_crashMult).toFixed(2));
-let el=$('crashMult');
+_crashActive=false;
+if(_crashInterval)cancelAnimationFrame(_crashInterval);
+var payout=parseFloat((_crashBet*_crashMult).toFixed(2));
+var el=$('crashMult');
 el.innerText=_crashMult.toFixed(2)+'x — CASHED OUT!';
 el.style.color='#FFD60A';el.style.textShadow='0 0 20px rgba(255,214,10,0.5)';
 $('crashSub').innerText='+'+payout.toFixed(2)+' USDT';
 $('crashCashBtn').classList.add('hidden');$('crashBetBtn').classList.remove('hidden');
-$('crashPlane').style.display='none';
 $('crashResult').innerHTML='<span style="color:#22c55e;font-size:18px">+'+payout.toFixed(2)+' USDT!</span>';
 addGameHistory('Crash',true,payout,_crashBet);
-fetch('/api/game/crash/cashout/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet:payout})}).then(r=>r.json()).then(j=>{
-if(j.withdrawable!==undefined)updateWdUI(j.withdrawable);
+fetch('/api/game/crash/cashout/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet:payout})}).then(function(res){return res.json();}).then(function(j){
+if(j.balance!==undefined)updateGameWd(j.balance,j.withdrawable);
 init();
 });
 }
 
 // ====== HIGHER / LOWER ======
-let _hlBusy=false;
+var _hlBusy=false;
 async function playHighlow(prediction){
 if(_hlBusy)return;
-let bet=getBet();if(bet<0.5){userToast('Min bet 0.50 USDT');return;}
-if(getWd()<bet){userToast('Insufficient balance');return;}
+var bet=getBet();if(bet<0.5){userToast('Min bet 0.50 USDT');return;}
+if(getWd()<bet){userToast('Insufficient withdrawable balance');return;}
 _hlBusy=true;
 $('hlResult').innerHTML='';
-let c1=$('hlCard1'),c2=$('hlCard2'),ar=$('hlArrow');
+var c1=$('hlCard1'),c2=$('hlCard2'),ar=$('hlArrow');
 c1.style.transform='rotateY(0)';c2.style.transform='rotateY(0)';
-c1.style.background='linear-gradient(135deg,#1e293b,#334155)';c1.style.color='var(--text3)';c1.innerText='?';
-c2.style.background='linear-gradient(135deg,#1e293b,#334155)';c2.style.color='var(--text3)';c2.innerText='?';
-ar.innerText=prediction==='high'?'▲':'▼';ar.style.color=prediction==='high'?'#22c55e':'#ef4444';
+c1.style.background='linear-gradient(145deg,#1e293b,#334155)';c1.style.color='var(--text3)';c1.innerText='?';c1.style.borderColor='var(--border2)';c1.style.boxShadow='0 8px 24px rgba(0,0,0,0.4)';
+c2.style.background='linear-gradient(145deg,#1e293b,#334155)';c2.style.color='var(--text3)';c2.innerText='?';c2.style.borderColor='var(--border2)';c2.style.boxShadow='0 8px 24px rgba(0,0,0,0.4)';
+ar.innerText=prediction==='high'?'\u25B2':'\u25BC';ar.style.color=prediction==='high'?'#22c55e':'#ef4444';
 try{
-let r=await fetch('/api/game/highlow/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet,choice:prediction})});
-let j=await r.json();
+var r=await fetch('/api/game/highlow/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet:bet,choice:prediction})});
+var j=await r.json();
 if(!j.ok){$('hlResult').innerHTML='<span style="color:#ef4444">'+j.error+'</span>';_hlBusy=false;return;}
-let suit1=Math.floor(Math.random()*4),suit2=Math.floor(Math.random()*4);
-setTimeout(()=>{
+var suit1=Math.floor(Math.random()*4),suit2=Math.floor(Math.random()*4);
+setTimeout(function(){
 c1.innerText=CARD_NAMES[j.card1]+'\n'+CARD_SUITS[suit1];
-c1.style.background='#fff';c1.style.color=CARD_COLORS[suit1];
+c1.style.background='#fff';c1.style.color=CARD_COLORS_HL[suit1];
 c1.style.transform='rotateY(360deg)';
-c1.style.transition='transform 0.6s cubic-bezier(0.4,0,0.2,1)';
 },200);
-setTimeout(()=>{
-c2.style.transition='transform 0.6s cubic-bezier(0.4,0,0.2,1)';
+setTimeout(function(){
 c2.style.transform='rotateY(360deg)';
-setTimeout(()=>{
+setTimeout(function(){
 c2.innerText=CARD_NAMES[j.card2]+'\n'+CARD_SUITS[suit2];
-c2.style.background=j.won?'#fff':'#fff';
+c2.style.background='#fff';
 c2.style.color=j.won?'#22c55e':'#ef4444';
 c2.style.borderColor=j.won?'#22c55e':'#ef4444';
 c2.style.boxShadow='0 0 24px '+(j.won?'rgba(34,197,94,0.5)':'rgba(239,68,68,0.5)');
-$('hlResult').innerHTML=j.won?'<span style="color:#22c55e;font-size:18px">+'+j.payout.toFixed(2)+' USDT</span>':'<span style="color:#ef4444;font-size:14px">-'+bet.toFixed(2)+' USDT</span>';
-updateWdUI(j.withdrawable);addGameHistory('Higher/Lower',j.won,j.payout,bet);init();
+if(j.won){$('hlResult').innerHTML='<span style="color:#22c55e;font-size:18px">+'+j.profit.toFixed(2)+' USDT</span>';}
+else{$('hlResult').innerHTML='<span style="color:#ef4444;font-size:14px">-'+bet.toFixed(2)+' USDT</span>';}
+updateGameWd(j.balance,j.withdrawable);addGameHistory('Higher/Lower',j.won,j.won?j.profit:bet,bet);init();
 _hlBusy=false;
-},300);
+},350);
 },500);
 }catch(e){$('hlResult').innerHTML='<span style="color:#ef4444">Error</span>';_hlBusy=false;}
 }
