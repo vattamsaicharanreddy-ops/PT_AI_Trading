@@ -1849,7 +1849,7 @@ def admin_user_profile(user_id: int, request: Request):
         tasks_claimed = val(cur.fetchone(), "cnt", 0)
         cur.execute(f"SELECT COUNT(*) as cnt FROM user_tasks WHERE user_id={ph()}", (user_id,))
         tasks_total = val(cur.fetchone(), "cnt", 0)
-        cur.execute(f"SELECT COUNT(*) as cnt FROM referrals WHERE from_user={ph()} OR referred_by={ph()}", (user_id, user_id))
+        cur.execute(f"SELECT COUNT(*) as cnt FROM referral_logs WHERE from_user={ph()} OR to_user={ph()}", (user_id, user_id))
         ref_count = val(cur.fetchone(), "cnt", 0)
         cur.execute(f"SELECT COUNT(*) as cnt FROM game_history WHERE user_id={ph()}", (user_id,))
         games_played = val(cur.fetchone(), "cnt", 0)
