@@ -526,7 +526,31 @@ async def webhook_handler(token: str, request: Request):
             cb_query_id = ""
 
         from bot import handle_start, handle_callback
-        if not is_callback and msg.get("text", "").startswith("/start"):
+        if not is_callback and msg.get("new_chat_members"):
+            mid = msg.get("message_id")
+            if mid and chat_id:
+                try:
+                    import urllib.request as _urllib2
+                    import json as _json2
+                    del_url = f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage"
+                    del_payload = _json2.dumps({"chat_id": chat_id, "message_id": mid}).encode()
+                    del_req = _urllib2.Request(del_url, data=del_payload, headers={"Content-Type": "application/json"})
+                    _urllib2.urlopen(del_req, timeout=5)
+                except Exception:
+                    pass
+        elif not is_callback and msg.get("left_chat_member"):
+            mid = msg.get("message_id")
+            if mid and chat_id:
+                try:
+                    import urllib.request as _urllib3
+                    import json as _json3
+                    del_url = f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage"
+                    del_payload = _json3.dumps({"chat_id": chat_id, "message_id": mid}).encode()
+                    del_req = _urllib3.Request(del_url, data=del_payload, headers={"Content-Type": "application/json"})
+                    _urllib3.urlopen(del_req, timeout=5)
+                except Exception:
+                    pass
+        elif not is_callback and msg.get("text", "").startswith("/start"):
             args = msg["text"].split(" ", 1)[1:] if " " in msg.get("text", "") else []
             await handle_start(BOT_TOKEN, chat_id, user, args)
         elif is_callback:
