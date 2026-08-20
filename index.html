@@ -158,7 +158,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 
 <div id='tab-trades' class='tab-content hidden'>
 <div class='mx-4 mt-4 space-y-3'>
-<div class='flex items-center justify-between'><div class='flex items-center gap-2'><div class='w-2 h-2 rounded-full animate-pulse' style='background:#10b981'></div><h3 class='font-bold text-sm'>AI Trading Engine</h3></div><span class='text-[10px] px-2 py-0.5 rounded-full font-bold' style='background:rgba(16,185,129,0.15);color:#10b981'>v3.2 ACTIVE</span></div>
+<div class='flex items-center justify-between'><div class='flex items-center gap-2'><div class='w-2 h-2 rounded-full animate-pulse' style='background:#10b981'></div><h3 class='font-bold text-sm'>AI Trading Engine</h3></div><span class='text-[10px] px-2 py-0.5 rounded-full font-bold' style='background:rgba(16,185,129,0.15);color:#10b981'>● ACTIVE</span></div>
 <div id='marketPrices' class='grid grid-cols-2 gap-2'></div>
 <div id='activePositions' class='space-y-2'></div>
 <div id='aiSignals' class='rounded-2xl p-3' style='background:var(--surface);border:1px solid var(--border)'></div>
@@ -768,14 +768,12 @@ let isUp=totalPnl>=0;
 el.innerHTML=`<div class="flex items-center justify-between mb-2"><p class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">PORTFOLIO GROWTH</p><span class="text-[9px] font-bold" style="color:${isUp?'#10b981':'#ef4444'}">${isUp?'+':''}${totalPnl.toFixed(2)}%</span></div><div class="rounded-xl overflow-hidden p-2" style="background:var(--bg)">${svg}</div><div class="mt-2 flex justify-between text-[10px]"><span style="color:var(--text3)">Win Rate: <b style="color:#10b981">${totalPct}%</b></span><span style="color:var(--text3)">Trades: <b>${trades.length}</b></span><span style="color:var(--text3)">PnL: <b style="color:${isUp?'#10b981':'#ef4444'}">${isUp?'+':''}${totalPnl.toFixed(2)}%</b></span></div>`;
 }
 async function loadTrades(){
-await _fetchLivePrices();
-_renderMarketPrices();
+_fetchLivePrices().then(()=>_renderMarketPrices()).catch(()=>{});
 let d=await apiFetch('/api/binance/trades');
-if(!d)return;
+if(!d){safeHTML('tradesTableBody','<tr><td colspan="7" class="p-6 text-center" style="color:var(--text3)">Loading trades...</td></tr>');return;}
 let trades=d.trades||[];
 let totalVisible=d.summary.total_trades;let expected=d.all_trades_count||16;
 let winRate=d.summary.win_rate||0;let currentIST=d.summary.current_ist||'';
-let accumPnl=d.summary.daily_accumulated_pnl||0;
 safeSet('todayTrades',`${totalVisible}/${expected} trades · ${winRate}% win · ${currentIST}`);
 _renderActivePositions(trades);
 _renderAISignals(trades);
@@ -788,7 +786,6 @@ trades.forEach((t,idx)=>{
 let sideColor=t.side==='LONG'?'#3b82f6':'#ef4444';
 let pnlColor=t.is_profit?'#10b981':'#ef4444';
 let isLatest=idx===(trades.length-1);
-let conf=82+Math.floor(Math.random()*13);
 html+=`<tr class="border-t" style="border-color:var(--border)"><td class="p-2.5">${t.time} ${isLatest?'<span class="text-[8px] px-1 py-0.5 rounded-full font-black" style="background:#FFD60A;color:#000">LIVE</span>':''}</td><td class="p-2.5 font-bold">${t.pair}</td><td class="p-2.5"><span class="px-1.5 py-0.5 rounded-full text-[10px]" style="background:${sideColor}22;color:${sideColor}">${t.side} ${t.leverage}x</span></td><td class="p-2.5 text-right">${t.entry_price}</td><td class="p-2.5 text-right mono">${t.exit_price}</td><td class="p-2.5 text-right">${t.leverage}x</td><td class="p-2.5 text-right font-bold" style="color:${pnlColor}">${t.pnl_percent>0?'+':''}${t.pnl_percent}%</td></tr>`;
 });
 }
