@@ -180,6 +180,7 @@ class IdAction(BaseModel):
     action: str
     amount: Optional[float] = None
     note: Optional[str] = None
+    tx_hash: Optional[str] = None
 
 
 class TaskCreate(BaseModel):
@@ -1522,6 +1523,46 @@ def admin_deposit_action(action: IdAction, request: Request):
         safe_close(conn)
 
 
+def _send_wd_notification(wd, tx_hash):
+    import json as _json
+    import urllib.request as _urllib
+    import urllib.parse
+    token = os.getenv("BOT_TOKEN", "")
+    notify_chat = os.getenv("NOTIFY_CHANNEL", "").strip()
+    if not token or not notify_chat:
+        return
+    uid = val(wd, "user_id")
+    amount = val(wd, "amount", 0)
+    network = val(wd, "network", "BEP-20")
+    addr = val(wd, "address", "")
+    short_addr = (addr[:8] + "..." + addr[-6:]) if addr and len(addr) > 16 else addr
+    now_str = datetime.utcnow().strftime("%d %b %Y, %H:%M UTC")
+    bscscan_link = f"https://bscscan.com/tx/{tx_hash}" if tx_hash else ""
+    lines = [
+        "<b>✅ Withdrawal Approved</b>",
+        "",
+        f"👤 User: <code>#{uid}</code>",
+        f"💵 Amount: <b>${amount:.2f} USDT</b>",
+        f"🔗 Network: {network}",
+    ]
+    if short_addr:
+        lines.append(f"📬 To: <code>{short_addr}</code>")
+    if tx_hash:
+        lines.append(f"📝 Tx Hash: <code>{tx_hash}</code>")
+        lines.append(f"🔍 <a href=\"{bscscan_link}\">View on BSCScan</a>")
+    lines.append(f"🕐 {now_str}")
+    lines.append(f"📊 Status: <b>Completed</b>")
+    text = "\n".join(lines)
+    try:
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        payload = _json.dumps({"chat_id": notify_chat, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True}).encode()
+        req = _urllib.Request(url, data=payload, headers={"Content-Type": "application/json"})
+        with _urllib.urlopen(req, timeout=10) as r:
+            logger.info(f"Withdrawal notification sent for wd #{val(wd, 'id')}")
+    except Exception as e:
+        logger.error(f"Failed to send wd notification: {e}")
+
+
 @app.post("/api/admin/withdraw/action")
 def admin_withdraw_action(action: IdAction, request: Request):
     require_admin(request)
@@ -1533,11 +1574,16 @@ def admin_withdraw_action(action: IdAction, request: Request):
         if not wd:
             return {"ok": False, "error": "Not found"}
         if action.action == "approve":
-            cur.execute(f"UPDATE withdrawals SET status='approved', auto_approved=1 WHERE id={ph()}", (action.id,))
+            tx = action.tx_hash or ""
+            cur.execute(f"UPDATE withdrawals SET status='approved', auto_approved=1, tx_hash={ph()} WHERE id={ph()}", (tx, action.id,))
             cur.execute(
                 f"UPDATE users SET total_withdraw=COALESCE(total_withdraw,0)+{ph()} WHERE user_id={ph()}",
                 (val(wd, "amount", 0), val(wd, "user_id")),
             )
+            try:
+                _send_wd_notification(wd, tx)
+            except Exception as e:
+                logger.error(f"Failed to send withdrawal notification: {e}")
         elif action.action == "reject":
             cur.execute(f"UPDATE withdrawals SET status='rejected' WHERE id={ph()}", (action.id,))
             cur.execute(
@@ -1831,12 +1877,15 @@ def admin_group_members(request: Request):
 def admin_env_status(request: Request):
     require_admin(request)
     bt = os.getenv("BOT_TOKEN", "")
+    nc = os.getenv("NOTIFY_CHANNEL", "").strip()
     return {
         "has_bot_token": bool(bt),
         "BOT_TOKEN": f"...{bt[-6:]}" if len(bt) > 6 else "NOT SET",
         "GROUP_ID": os.getenv("GROUP_ID", "NOT SET"),
         "WEBAPP_URL": os.getenv("WEBAPP_URL", "NOT SET"),
         "ADMIN_SECRET": "SET" if ADMIN_SECRET else "NOT SET (open)",
+        "has_notify_channel": bool(nc),
+        "NOTIFY_CHANNEL": nc or "Not set",
     }
 
 

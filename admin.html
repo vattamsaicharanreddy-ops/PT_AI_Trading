@@ -691,12 +691,17 @@ document.body.appendChild(overlay);
 }
 async function actWd(id,action){
 let note='';
+let txHash='';
+if(action==='approve'){
+txHash=await showTxHashModal(id);
+if(txHash===false)return;
+}
 if(action==='reject'||action==='expire'){
 note=await showReasonModal('Reason for '+action);
 if(note===false)return;
 }
 try{
-let r=await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note:note||''})});
+let r=await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note:note||'',tx_hash:txHash||''})});
 let j=await r.json();
 if(j.ok){
 toast(action.charAt(0).toUpperCase()+action.slice(1)+' withdrawal #'+id,'success');
@@ -707,6 +712,19 @@ toast(j.error||'Action failed','error');
 }catch(e){
 toast('Request failed: '+e.message,'error');
 }
+}
+function showTxHashModal(id){
+return new Promise(resolve=>{
+let overlay=document.createElement('div');
+overlay.className='fixed inset-0 z-[9999] flex items-center justify-center p-4';
+overlay.style.background='rgba(0,0,0,0.8)';
+overlay.innerHTML=`<div class="card p-5 w-full max-w-[400px]" style="border-color:rgba(16,185,129,0.15)"><h3 class="font-black text-lg" style="color:#10b981">Approve Withdrawal #${id}</h3><p class="text-[11px] mt-1" style="color:var(--text2)">Paste the BSC transaction hash after sending USDT</p><div class="mt-4"><label class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">TX HASH (BEP-20)</label><input id="txHashInput" type="text" placeholder="0x..." class="w-full mt-1 p-3 rounded-xl text-[12px] mono border" style="background:var(--input);border-color:var(--border);color:var(--text)" autocomplete="off"></div><div class="mt-5 flex gap-2"><button id="txCancelBtn" class="flex-1 glass py-3 rounded-full text-sm font-bold">Cancel</button><button id="txConfirmBtn" class="flex-1 btn-gold py-3 rounded-full text-sm">Send & Approve</button></div></div>`;
+document.body.appendChild(overlay);
+overlay.querySelector('#txCancelBtn').onclick=()=>{overlay.remove();resolve(false);};
+overlay.querySelector('#txConfirmBtn').onclick=()=>{let v=overlay.querySelector('#txHashInput').value.trim();overlay.remove();resolve(v||'');};
+overlay.onclick=e=>{if(e.target===overlay){overlay.remove();resolve(false);}};
+setTimeout(()=>overlay.querySelector('#txHashInput').focus(),100);
+});
 }
 
 async function actDep(id,action){
@@ -942,7 +960,7 @@ alert('Message loaded into editor!');
 async function loadEnvStatus(){
 try{
 let s=await fetchJson('/api/admin/env/status');
-document.getElementById('envStatus').innerHTML=`<div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">BOT_TOKEN</p><p class="font-bold mt-0.5" style="color:${s.has_bot_token?'#10b981':'#ef4444'}">${s.BOT_TOKEN}</p></div><div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">ADMIN_AUTH</p><p class="mono text-[11px] mt-0.5">${s.ADMIN_SECRET}</p></div>`;
+document.getElementById('envStatus').innerHTML=`<div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">BOT_TOKEN</p><p class="font-bold mt-0.5" style="color:${s.has_bot_token?'#10b981':'#ef4444'}">${s.BOT_TOKEN}</p></div><div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">ADMIN_AUTH</p><p class="mono text-[11px] mt-0.5">${s.ADMIN_SECRET}</p></div><div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">NOTIFY_CHANNEL</p><p class="mono text-[11px] mt-0.5" style="color:${s.has_notify_channel?'#10b981':'#eab308'}">${s.NOTIFY_CHANNEL||'Not set (no wd notifications)'}</p></div>`;
 }catch(e){}
 }
 
