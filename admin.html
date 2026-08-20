@@ -87,11 +87,12 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 
 <!-- DASHBOARD -->
 <section id="sec-dashboard" class="space-y-5 fade-in">
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-<div class="card p-5"><p class="text-[9px] tracking-[2px] font-bold" style="color:var(--text3)">TOTAL USERS</p><p id="stat_users" class="text-[28px] font-black mt-1.5 tracking-tight">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">active users</p></div>
+<div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+<div class="card p-5"><p class="text-[9px] tracking-[2px] font-bold" style="color:var(--text3)">REGISTERED</p><p id="stat_users" class="text-[28px] font-black mt-1.5 tracking-tight">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">total users</p></div>
+<div class="card p-5" style="border-color:rgba(16,185,129,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-emerald-400">ACTIVE USERS</p><p id="stat_active" class="text-[28px] font-black mt-1.5 tracking-tight" style="color:#10b981">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">deposited & not banned</p></div>
 <div class="card p-5" style="border-color:rgba(255,214,10,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-[#FFD60A]">TOTAL BALANCE</p><p id="stat_bal" class="text-[28px] font-black mt-1.5">$0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">trading + wallet</p></div>
 <div class="card p-5" style="border-color:rgba(16,185,129,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-emerald-400">VERIFIED DEPOSITS</p><p id="total_dep" class="text-[28px] font-black mt-1.5">$0</p><p id="total_dep_cnt" class="text-[11px] mt-0.5" style="color:var(--text2)">0 verified</p></div>
-<div class="card p-5" style="border-color:rgba(249,115,22,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-orange-400">PENDING ACTIONS</p><p id="pend_all" class="text-[28px] font-black mt-1.5">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">need action</p></div>
+<div class="card p-5" style="border-color:rgba(124,77,255,0.15)"><p class="text-[9px] tracking-[2px] font-bold" style="color:#7C4DFF">ONLINE NOW</p><p id="stat_online" class="text-[28px] font-black mt-1.5 tracking-tight" style="color:#7C4DFF">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">active in last 5 min</p></div>
 </div>
 <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
 <div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">AWAITING</p><p id="pend_dep" class="text-xl font-black text-yellow-400 mt-0.5">0</p></div>
@@ -124,12 +125,68 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 <h2 class="text-lg font-black">Users Control</h2>
 <div class="flex gap-2">
 <input id="userSearch" oninput="filterUsers()" placeholder="Search ID or username..." class="rounded-full px-4 py-2 text-[11px] w-[200px] border outline-none focus:ring-1" style="background:var(--input);border-color:var(--border)">
-<select id="userFilter" onchange="filterUsers()" class="rounded-full px-3 py-2 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="all">All Users</option><option value="banned">Banned</option><option value="whale">Whales >$500</option></select>
+<select id="userFilter" onchange="filterUsers()" class="rounded-full px-3 py-2 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="all">All Users</option><option value="online">Online Now</option><option value="active">Active (Deposited)</option><option value="banned">Banned</option><option value="whale">Whales >$500</option><option value="no_tasks">No Tasks Done</option></select>
 <button onclick="bulkActionPrompt()" class="btn-gold px-4 py-2 rounded-full text-[11px]">Bulk Action</button>
 </div>
 </div>
-<div class="mt-4 overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">ID</th><th class="text-left p-2.5">User</th><th class="text-left p-2.5">Balance</th><th class="text-left p-2.5">Withdrawable</th><th class="text-left p-2.5">Deposit / Withdraw</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Actions</th></tr></thead><tbody id="users"></tbody></table></div>
+<div class="mt-4 overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">User</th><th class="text-left p-2.5">Joined</th><th class="text-left p-2.5">Balances</th><th class="text-left p-2.5">Tasks</th><th class="text-left p-2.5">Games</th><th class="text-left p-2.5">Streak</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Actions</th></tr></thead><tbody id="users"></tbody></table></div>
 </div>
+</section>
+
+<!-- USER DETAIL PAGE -->
+<section id="sec-user-detail" class="hidden space-y-5 fade-in">
+<div class="flex items-center gap-3">
+<button onclick="showTab('users')" class="glass px-3 py-2 rounded-full text-[11px] font-bold">← Back to Users</button>
+<p id="detailPageTitle" class="font-black text-lg"></p>
+</div>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+<div class="card p-4"><p class="text-[9px] tracking-[2px] font-bold" style="color:var(--text3)">BALANCE</p><p id="d_bal" class="text-[22px] font-black mt-1" style="color:#10b981">$0</p></div>
+<div class="card p-4" style="border-color:rgba(255,214,10,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-[#FFD60A]">WITHDRAWABLE</p><p id="d_wd" class="text-[22px] font-black mt-1" style="color:#FFD60A">$0</p></div>
+<div class="card p-4" style="border-color:rgba(124,77,255,0.15)"><p class="text-[9px] tracking-[2px] font-bold" style="color:#7C4DFF">PROFIT</p><p id="d_profit" class="text-[22px] font-black mt-1" style="color:#7C4DFF">$0</p></div>
+<div class="card p-4" style="border-color:rgba(96,165,250,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-blue-400">TIER</p><p id="d_tier" class="text-[22px] font-black mt-1" style="color:#60a5fa">0%</p></div>
+</div>
+<div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">DEPOSITED</p><p id="d_dep" class="text-xl font-black mt-0.5" style="color:#10b981">$0</p></div>
+<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">WITHDRAWN</p><p id="d_wdout" class="text-xl font-black mt-0.5" style="color:#f97316">$0</p></div>
+<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">REF EARNED</p><p id="d_ref" class="text-xl font-black mt-0.5" style="color:#A5A6F6">$0</p></div>
+<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">GAMES</p><p id="d_games" class="text-xl font-black mt-0.5" style="color:#FFD60A">0</p></div>
+<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">STREAK</p><p id="d_streak" class="text-xl font-black mt-0.5">0d</p></div>
+</div>
+<div class="flex gap-2 flex-wrap">
+<div class="glass rounded-xl px-4 py-2.5"><p class="text-[9px] tracking-widest font-bold" style="color:var(--text3)">JOINED</p><p id="d_joined" class="text-[13px] font-bold mt-0.5">-</p></div>
+<div class="glass rounded-xl px-4 py-2.5"><p class="text-[9px] tracking-widest font-bold" style="color:var(--text3)">LAST LOGIN</p><p id="d_lastlogin" class="text-[13px] font-bold mt-0.5">-</p></div>
+<div class="glass rounded-xl px-4 py-2.5"><p class="text-[9px] tracking-widest font-bold" style="color:var(--text3)">LAST SPIN</p><p id="d_lastspin" class="text-[13px] font-bold mt-0.5">-</p></div>
+<div class="glass rounded-xl px-4 py-2.5"><p class="text-[9px] tracking-widest font-bold" style="color:var(--text3)">REFERRED BY</p><p id="d_refby" class="text-[13px] font-bold mt-0.5">-</p></div>
+<div class="glass rounded-xl px-4 py-2.5"><p class="text-[9px] tracking-widest font-bold" style="color:var(--text3)">REFS COUNT</p><p id="d_refcount" class="text-[13px] font-bold mt-0.5">0</p></div>
+</div>
+
+<div class="flex gap-2 mt-2">
+<button onclick="userDetailTab('tasks')" data-udtab="tasks" class="ud-tab px-4 py-2 rounded-full text-[11px] font-bold" style="background:var(--text);color:var(--bg)">Tasks</button>
+<button onclick="userDetailTab('games')" data-udtab="games" class="ud-tab px-4 py-2 rounded-full text-[11px] font-bold" style="background:var(--hover)">Games</button>
+<button onclick="userDetailTab('refs')" data-udtab="refs" class="ud-tab px-4 py-2 rounded-full text-[11px] font-bold" style="background:var(--hover)">Referrals</button>
+<button onclick="userDetailTab('deposits')" data-udtab="deposits" class="ud-tab px-4 py-2 rounded-full text-[11px] font-bold" style="background:var(--hover)">Deposits</button>
+<button onclick="userDetailTab('withdrawals')" data-udtab="withdrawals" class="ud-tab px-4 py-2 rounded-full text-[11px] font-bold" style="background:var(--hover)">Withdrawals</button>
+</div>
+
+<div id="ud-tasks" class="card p-5"><h3 class="font-bold text-sm mb-3">Tasks Progress</h3><div class="overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">Task</th><th class="text-left p-2.5">Reward</th><th class="text-left p-2.5">Type</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Claimed</th></tr></thead><tbody id="ud_tasks_list"></tbody></table></div></div>
+
+<div id="ud-games" class="hidden card p-5"><h3 class="font-bold text-sm mb-3">Game History</h3><div id="ud_games_stats" class="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-4"></div><div class="overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">Game</th><th class="text-left p-2.5">Bet</th><th class="text-left p-2.5">Result</th><th class="text-left p-2.5">Payout</th><th class="text-left p-2.5">Choice</th><th class="text-left p-2.5">Details</th><th class="text-left p-2.5">Time</th></tr></thead><tbody id="ud_games_list"></tbody></table></div></div>
+
+<div id="ud-refs" class="hidden card p-5"><h3 class="font-bold text-sm mb-3">Referral Tree</h3><p class="text-[11px] mb-3" style="color:var(--text2)">Total earned from referrals: <span id="ud_ref_earned" class="font-bold" style="color:#FFD60A">$0</span></p><div class="overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">User ID</th><th class="text-left p-2.5">Username</th><th class="text-left p-2.5">Balance</th><th class="text-left p-2.5">Deposited</th><th class="text-left p-2.5">Joined</th></tr></thead><tbody id="ud_refs_list"></tbody></table></div></div>
+
+<div id="ud-deposits" class="hidden card p-5"><h3 class="font-bold text-sm mb-3">Deposit History</h3><div class="overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">ID</th><th class="text-left p-2.5">Amount</th><th class="text-left p-2.5">Network</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Time</th></tr></thead><tbody id="ud_deps_list"></tbody></table></div></div>
+
+<div id="ud-withdrawals" class="hidden card p-5"><h3 class="font-bold text-sm mb-3">Withdrawal History</h3><div class="overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">ID</th><th class="text-left p-2.5">Amount</th><th class="text-left p-2.5">Network</th><th class="text-left p-2.5">Address</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Time</th></tr></thead><tbody id="ud_wds_list"></tbody></table></div></div>
+
+<div class="card p-5"><h3 class="font-bold text-sm mb-3">Quick Actions</h3>
+<div class="flex flex-wrap gap-2">
+<button onclick="openAction(currentDetailUserId,'add_balance')" class="btn-emerald px-4 py-2 rounded-full text-[11px] font-bold">+ Add Balance</button>
+<button onclick="openAction(currentDetailUserId,'deduct_balance')" class="btn-red px-4 py-2 rounded-full text-[11px] font-bold">- Less Balance</button>
+<button onclick="openAction(currentDetailUserId,'add_withdrawable')" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(255,214,10,0.15);color:#FFD60A">+ Add Withdrawable</button>
+<button onclick="openAction(currentDetailUserId,'deduct_withdrawable')" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(249,115,22,0.15);color:#f97316">- Less Withdrawable</button>
+<button onclick="document.getElementById('dmUserId').value=currentDetailUserId;showTab('broadcast')" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Send DM</button>
+<button onclick="let u=allUsers.find(x=>x.user_id==currentDetailUserId);openAction(currentDetailUserId,u&&u.is_banned?'unban':'ban')" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Ban/Unban</button>
+</div></div>
 </section>
 
 <!-- DEPOSITS -->
@@ -209,7 +266,59 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 </div>
 </section>
 
-<section id="sec-broadcast" class="hidden space-y-5 fade-in"><div class="card p-5"><h2 class="text-lg font-black">Broadcast to All Users</h2><textarea id="broadcastMsg" placeholder="Message to all users..." class="mt-4 w-full h-32 rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)"></textarea><button onclick="sendBroadcast()" class="mt-3 btn-gold px-6 py-3 rounded-full text-sm">Send to All Users</button></div></section>
+<section id="sec-broadcast" class="hidden space-y-5 fade-in">
+<div class="card p-5">
+<h2 class="text-lg font-black">Broadcast to Telegram Groups</h2>
+<p class="text-[11px] mt-1" style="color:var(--text2)">Bot must be an admin in the selected groups. Supports HTML formatting and images.</p>
+<div id="groupCheckboxes" class="mt-4 space-y-2"></div>
+<input id="broadcastImgUrl" type="url" placeholder="Image URL (https://...)" class="mt-4 w-full rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)">
+<div class="mt-2 flex items-center gap-2">
+<label class="px-3 py-2 rounded-full text-[11px] font-bold cursor-pointer" style="background:var(--hover);border:1px solid var(--border2);color:var(--text2)">
+<input type="file" id="broadcastImgFile" accept="image/*" class="hidden" onchange="uploadBroadcastImage(this)">
+Upload Image
+</label>
+<span id="broadcastImgStatus" class="text-[10px]" style="color:var(--text3)"></span>
+</div>
+<img id="broadcastImgPreview" class="hidden mt-2 rounded-xl max-h-48 object-cover" style="border:1px solid var(--border2)">
+<textarea id="broadcastMsg" placeholder="Type your message... (HTML supported: <b>bold</b>, <i>italic</i>, <a href='url'>links</a>)" class="mt-3 w-full h-32 rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)"></textarea>
+<div class="mt-2 flex items-center gap-2">
+<input type="checkbox" id="broadcastParseHTML" checked class="accent-yellow-400">
+<label for="broadcastParseHTML" class="text-[11px]" style="color:var(--text2)">Parse HTML</label>
+</div>
+<button onclick="sendGroupBroadcast()" class="mt-3 btn-gold px-6 py-3 rounded-full text-sm">Send to Selected Groups</button>
+<pre id="broadcastLog" class="hidden mt-3 p-3 rounded-xl text-[10px] overflow-auto mono" style="background:var(--input);border:1px solid var(--border)"></pre>
+</div>
+<div class="card p-5">
+<div class="flex justify-between items-center">
+<h2 class="text-lg font-black">Saved Messages</h2>
+<button onclick="loadSavedMessages()" class="glass px-3 py-1.5 rounded-full text-[10px] font-bold">Refresh</button>
+</div>
+<p class="text-[11px] mt-1" style="color:var(--text2)">Save message templates. Click a message to load it into the broadcast editor.</p>
+<div class="mt-3 flex gap-2">
+<input id="savedMsgTitle" placeholder="Title" class="flex-1 rounded-xl p-2.5 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+<button onclick="saveMessage()" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">Save Current</button>
+</div>
+<div id="savedMessagesList" class="mt-3 space-y-2 max-h-64 overflow-y-auto"></div>
+</div>
+<div class="card p-5">
+<h2 class="text-lg font-black">Direct Message</h2>
+<p class="text-[11px] mt-1" style="color:var(--text2)">Send a private message to any user by their User ID.</p>
+<div class="mt-3 flex gap-2">
+<input id="dmUserId" type="number" placeholder="User ID" class="w-32 rounded-xl p-2.5 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+<input id="dmImgUrl" type="url" placeholder="Image URL (optional)" class="flex-1 rounded-xl p-2.5 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+</div>
+<textarea id="dmMsg" placeholder="Type your message..." class="mt-2 w-full h-24 rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)"></textarea>
+<div class="mt-2 flex items-center gap-3">
+<button onclick="sendDM()" class="btn-gold px-5 py-2 rounded-full text-[11px] font-bold">Send DM</button>
+<span id="dmStatus" class="text-[10px]" style="color:var(--text3)"></span>
+</div>
+</div>
+<div class="card p-5">
+<h2 class="text-lg font-black">Broadcast to All Bot Users</h2>
+<textarea id="broadcastMsgUsers" placeholder="Message to all users..." class="mt-4 w-full h-32 rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)"></textarea>
+<button onclick="sendBroadcast()" class="mt-3 btn-gold px-6 py-3 rounded-full text-sm">Send to All Users</button>
+</div>
+</section>
 
 <section id="sec-settings" class="hidden space-y-5 fade-in"><div class="card p-5"><h2 class="text-lg font-black">Settings</h2><div id="envStatus" class="mt-4 grid grid-cols-2 gap-2 text-[11px]"></div>
 <div class="mt-4 flex gap-2"><button onclick="loadEnvStatus()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh Status</button><button onclick="testBot()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Test Bot</button></div>
@@ -351,8 +460,10 @@ if(sec){sec.classList.remove('hidden');sec.classList.add('fade-in');}
 document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('nav-active');b.style.color='var(--text2)';});
 let btn=document.querySelector(`[data-tab="${tab}"]`);
 if(btn){btn.classList.add('nav-active');btn.style.color='';}
-document.getElementById('pageTitle').innerText=btn?btn.innerText.replace('NEW','').trim():tab;
+let title=tab==='user-detail'?'User Profile':btn?btn.innerText.replace('NEW','').trim():tab;
+document.getElementById('pageTitle').innerText=title;
 if(['deposits','users','dashboard','withdrawals','referrals','tasks'].includes(tab)) loadAll();
+if(tab==='broadcast') loadBroadcastTab();
 }
 
 async function fetchJson(url){
@@ -365,6 +476,8 @@ async function loadAll(){
 try{
 let stats=await fetchJson('/api/admin/stats');
 document.getElementById('stat_users').innerText=stats.total_users;
+document.getElementById('stat_active').innerText=stats.active_users||0;
+document.getElementById('stat_online').innerText=stats.online_users||0;
 document.getElementById('stat_bal').innerText='$'+Number(stats.total_balance).toFixed(2);
 document.getElementById('total_dep').innerText='$'+Number(stats.total_verified_deposits).toFixed(2);
 document.getElementById('total_dep_cnt').innerText=stats.verified_deposits+' verified';
@@ -374,7 +487,7 @@ document.getElementById('pend_wd').innerText=stats.pending_withdrawals;
 document.getElementById('pend_all').innerText=Number(stats.pending_deposits)+Number(stats.pending_withdrawals);
 document.getElementById('ref_paid').innerText='$'+Number(stats.total_ref_paid).toFixed(2);
 document.getElementById('stat_tasks').innerText=stats.completed_tasks+'/'+stats.active_tasks;
-document.getElementById('navUsers').innerText=stats.total_users;
+document.getElementById('navUsers').innerText=stats.active_users||stats.total_users;
 document.getElementById('navDeposits').innerText=stats.pending_deposits;
 document.getElementById('navWd').innerText=stats.pending_withdrawals;
 document.getElementById('navVol').innerText='$'+Number(stats.total_deposits_all||0).toFixed(0);
@@ -426,19 +539,147 @@ function renderUsers(users){
 let q=document.getElementById('userSearch')?.value?.toLowerCase()||'';
 let f=document.getElementById('userFilter')?.value||'all';
 let filtered=users;
+let now=new Date();
+let fiveMinAgo=new Date(now.getTime()-5*60000).toISOString();
 if(q) filtered=filtered.filter(u=>String(u.user_id).includes(q)||(u.username||'').toLowerCase().includes(q));
 if(f==='banned') filtered=filtered.filter(u=>u.is_banned);
+if(f==='online') filtered=filtered.filter(u=>!u.is_banned&&(u.last_webapp_open||'')>fiveMinAgo);
+if(f==='active') filtered=filtered.filter(u=>!u.is_banned&&Number(u.total_deposit)>0);
 if(f==='whale') filtered=filtered.filter(u=>Number(u.balance)>500);
-document.getElementById('users').innerHTML=filtered.slice(0,300).map(u=>`<tr class="border-t" style="border-color:var(--border2);${u.is_banned?'background:rgba(239,68,68,0.04)':''}">
-<td class="p-2.5 mono font-bold">${u.user_id}</td><td class="p-2.5"><p class="font-bold">${u.username||''}</p><p class="text-[9px] mono" style="color:var(--text3)">ref:${u.referred_by||'-'}</p></td>
-<td class="p-2.5 font-bold">$${Number(u.balance).toFixed(2)}<br><span class="text-[9px]" style="color:var(--text3)">$${Number(u.profit||0).toFixed(2)} profit</span></td>
-<td class="p-2.5 font-black" style="color:#FFD60A">$${Number(u.withdrawable).toFixed(2)}</td>
-<td class="p-2.5 text-[10px]"><span style="color:#10b981">dep $${Number(u.total_deposit||0).toFixed(0)}</span><br><span style="color:#f97316">wd $${Number(u.total_withdraw||0).toFixed(0)}</span></td>
-<td class="p-2.5">${u.is_banned?'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">BANNED</span>':'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">ACTIVE</span>'}</td>
-<td class="p-2.5"><div class="flex flex-wrap gap-1 max-w-[250px]"><button onclick="viewUserHistory(${u.user_id},'${u.username||''}')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(108,59,255,0.15);color:#A5A6F6">History</button><button onclick="openAction(${u.user_id},'add_balance')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981">+Bal</button><button onclick="openAction(${u.user_id},'deduct_balance')" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">-Bal</button><button onclick="openAction(${u.user_id},'add_withdrawable')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(255,214,10,0.15);color:#FFD60A">+WD</button><button onclick="openAction(${u.user_id},'deduct_withdrawable')" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(249,115,22,0.15);color:#f97316">-WD</button><button onclick="openAction(${u.user_id},'set_balance')" class="px-2 py-0.5 rounded-full text-[10px]" style="background:var(--hover)">Set Bal</button><button onclick="openAction(${u.user_id},${u.is_banned?'\'unban\'':'\'ban\''})" class="px-2 py-0.5 rounded-full text-[10px]" style="background:var(--hover)">${u.is_banned?'Unban':'Ban'}</button></div></td></tr>`).join('')||`<tr><td colspan="7" class="p-8 text-center" style="color:var(--text3)">No users found.</td></tr>`;
+if(f==='no_tasks') filtered=filtered.filter(u=>!u.tasks_completed||u.tasks_completed===0);
+document.getElementById('users').innerHTML=filtered.slice(0,300).map(u=>{
+let daysAgo=u.created_at?Math.floor((Date.now()-new Date(u.created_at).getTime())/(86400000)):'?';
+let joinedShort=u.created_at?(u.created_at.slice(5,10)):'-';
+let streak=u.login_streak||0;
+let isOnline=!u.is_banned&&(u.last_webapp_open||'')>fiveMinAgo;
+return`<tr class="border-t cursor-pointer" style="border-color:var(--border2);${u.is_banned?'background:rgba(239,68,68,0.04)':''}" onclick="openUserDetail(${u.user_id})">
+<td class="p-2.5"><p class="font-bold">${u.username||'@none'}</p><p class="text-[9px] mono" style="color:var(--text3)">#${u.user_id}</p></td>
+<td class="p-2.5"><p class="text-[11px]">${joinedShort}</p><p class="text-[9px]" style="color:var(--text3)">${daysAgo}d ago</p></td>
+<td class="p-2.5"><p class="font-bold" style="color:#10b981">$${Number(u.balance).toFixed(2)}</p><p class="text-[9px]" style="color:#FFD60A">$${Number(u.withdrawable).toFixed(2)} wd</p><p class="text-[9px]" style="color:var(--text3)">$${Number(u.profit||0).toFixed(2)} profit</p></td>
+<td class="p-2.5"><p class="text-[11px]">${u.tasks_completed||0} done</p><p class="text-[9px]" style="color:${u.mandatory_done?'#10b981':'#ef4444'}">${u.mandatory_done?'✓ All mandatory':'✗ Incomplete'}</p></td>
+<td class="p-2.5"><p class="text-[11px]">${u.total_games_played||0} plays</p><p class="text-[9px]" style="color:var(--text3)">${u.total_games_won||0} wins</p></td>
+<td class="p-2.5"><p class="text-[11px] font-bold" style="color:${streak>=7?'#FFD60A':streak>=3?'#10b981':'var(--text2)'}">${streak}d</p><p class="text-[9px]" style="color:var(--text3)">last: ${(u.last_login_date||'').slice(5,10)||'-'}</p></td>
+<td class="p-2.5">${u.is_banned?'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">BANNED</span>':isOnline?'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(124,77,255,0.15);color:#7C4DFF">● ONLINE</span>':'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">ACTIVE</span>'}</td>
+<td class="p-2.5"><div class="flex flex-wrap gap-1 max-w-[180px]"><button onclick="event.stopPropagation();openAction(${u.user_id},'add_balance')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981">+Bal</button><button onclick="event.stopPropagation();openAction(${u.user_id},'deduct_balance')" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">-Bal</button><button onclick="event.stopPropagation();openAction(${u.user_id},'add_withdrawable')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(255,214,10,0.15);color:#FFD60A">+WD</button><button onclick="event.stopPropagation();openAction(${u.user_id},${u.is_banned?'\'unban\'':'\'ban\''})" class="px-2 py-0.5 rounded-full text-[10px]" style="background:var(--hover)">${u.is_banned?'Unban':'Ban'}</button></div></td></tr>`;
+}).join('')||`<tr><td colspan="8" class="p-8 text-center" style="color:var(--text3)">No users found.</td></tr>`;
 }
 
 function filterUsers(){renderUsers(allUsers);}
+
+let currentDetailUserId=null;
+
+async function openUserDetail(userId){
+currentDetailUserId=userId;
+showTab('user-detail');
+try{
+let r=await fetch('/api/admin/user/'+userId+'/profile',{headers:apiHeaders()});
+let d=await r.json();
+if(!d.ok){toast(d.error||'User not found','error');return;}
+let u=d.user;
+document.getElementById('detailPageTitle').innerHTML=`@${u.username||'none'} <span class="text-[11px] font-normal" style="color:var(--text3)">#${u.user_id}</span>`;
+document.getElementById('d_bal').innerText='$'+Number(u.balance||0).toFixed(2);
+document.getElementById('d_wd').innerText='$'+Number(u.withdrawable||0).toFixed(2);
+document.getElementById('d_profit').innerText='$'+Number(u.profit||0).toFixed(2);
+document.getElementById('d_tier').innerText=Number(u.daily_percent||0).toFixed(1)+'%';
+document.getElementById('d_dep').innerText='$'+Number(u.total_deposit||0).toFixed(2);
+document.getElementById('d_wdout').innerText='$'+Number(u.total_withdraw||0).toFixed(2);
+document.getElementById('d_ref').innerText='$'+Number(u.referral_earnings||0).toFixed(2);
+document.getElementById('d_games').innerHTML=d.games_played+'<span class="text-[10px]" style="color:var(--text3)"> ('+d.games_won+'W)</span>';
+document.getElementById('d_streak').innerText=(u.login_streak||0)+'d';
+document.getElementById('d_joined').innerText=(u.created_at||'').slice(0,16);
+document.getElementById('d_lastlogin').innerText=u.last_login_date?(u.last_login_date).slice(0,16):'Never';
+document.getElementById('d_lastspin').innerText=u.last_spin_date?(u.last_spin_date).slice(0,16):'Never';
+document.getElementById('d_refby').innerText=u.referred_by?'#'+u.referred_by:'None';
+document.getElementById('d_refcount').innerText=d.ref_count;
+userDetailTab('tasks');
+}catch(e){toast('Failed to load user','error');}
+}
+
+async function userDetailTab(tab){
+document.querySelectorAll('.ud-tab').forEach(b=>{b.style.background='var(--hover)';b.style.color='var(--text2)';});
+let btn=document.querySelector(`[data-udtab="${tab}"]`);
+if(btn){btn.style.background='var(--text)';btn.style.color='var(--bg)';}
+['ud-tasks','ud-games','ud-refs','ud-deposits','ud-withdrawals'].forEach(id=>{document.getElementById(id).classList.add('hidden');});
+document.getElementById('ud-'+tab).classList.remove('hidden');
+if(tab==='tasks') await loadUserDetailTasks();
+if(tab==='games') await loadUserDetailGames();
+if(tab==='refs') await loadUserDetailRefs();
+if(tab==='deposits') await loadUserDetailDeps();
+if(tab==='withdrawals') await loadUserDetailWds();
+}
+
+async function loadUserDetailTasks(){
+if(!currentDetailUserId)return;
+try{
+let tasks=await fetchJson('/api/admin/user/'+currentDetailUserId+'/tasks');
+document.getElementById('ud_tasks_list').innerHTML=tasks.map(t=>{
+let isRef=t.task_type==='referral';
+let refCur=t.referral_current||0;
+let refTarget=t.referral_target||0;
+let statusColor=t.user_status==='verified'?'#10b981':t.user_status==='ready'?'#7C4DFF':t.user_status==='pending'?'#eab308':'var(--text3)';
+let statusText=t.user_status==='verified'?'Completed':t.user_status==='ready'?'Ready to Verify':t.user_status==='pending'?'Pending':'Not started';
+let extra='';
+if(isRef){
+extra=`<p class="text-[9px] mt-0.5" style="color:${refCur>=refTarget?'#10b981':'#eab308'}">${refCur}/${refTarget} referrals${t.min_deposit>0?' (≥'+t.min_deposit+' USDT each)':''}</p>`;
+}
+return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5"><p class="font-bold">${t.title}</p><p class="text-[9px]" style="color:var(--text3)">${t.description||''}</p>${extra}</td><td class="p-2.5 font-bold" style="color:#FFD60A">${Number(t.reward).toFixed(2)} USDT</td><td class="p-2.5"><span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:var(--hover)">${t.reward_type}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="color:${statusColor}">${statusText}</span></td><td class="p-2.5"><span class="text-[10px] font-bold" style="color:${t.reward_claimed?'#10b981':'var(--text3)'}">${t.reward_claimed?'Yes':'No'}</span></td></tr>`;
+}).join('')||`<tr><td colspan="5" class="p-6 text-center" style="color:var(--text3)">No tasks available</td></tr>`;
+}catch(e){}
+}
+
+async function loadUserDetailGames(){
+if(!currentDetailUserId)return;
+try{
+let d=await fetchJson('/api/admin/user/'+currentDetailUserId+'/games');
+document.getElementById('ud_games_stats').innerHTML=(d.breakdown||[]).map(g=>{
+let net=Number(g.total_payout||0)-Number(g.total_bet||0);
+return`<div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">${g.game_type.toUpperCase()}</p><p class="text-[13px] font-black mt-0.5">${g.plays} plays</p><p class="text-[10px]" style="color:${net>=0?'#10b981':'#ef4444'}">Net: ${net>=0?'+':''}${net.toFixed(2)}</p></div>`;
+}).join('')||'<p class="text-[11px]" style="color:var(--text3)">No games played</p>';
+document.getElementById('ud_games_list').innerHTML=(d.history||[]).map(g=>{
+let color=g.result==='won'?'#10b981':'#ef4444';
+let details=g.details||'';
+try{let parsed=JSON.parse(g.details);details=Object.entries(parsed).map(([k,v])=>k+':'+(Array.isArray(v)?v.join(','):v)).join(' ');}catch(e){}
+return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5"><span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:var(--hover)">${g.game_type}</span></td><td class="p-2.5 font-bold">$${Number(g.bet).toFixed(2)}</td><td class="p-2.5"><span class="font-bold text-[10px]" style="color:${color}">${g.result}</span></td><td class="p-2.5 font-bold" style="color:${g.result==='won'?'#FFD60A':'var(--text3)'}">$${Number(g.payout).toFixed(2)}</td><td class="p-2.5 text-[10px]">${g.choice||'-'}</td><td class="p-2.5 text-[9px] mono" style="color:var(--text3)">${details}</td><td class="p-2.5 text-[9px] mono" style="color:var(--text3)">${(g.created_at||'').slice(0,16)}</td></tr>`;
+}).join('')||`<tr><td colspan="7" class="p-6 text-center" style="color:var(--text3)">No game history</td></tr>`;
+}catch(e){}
+}
+
+async function loadUserDetailRefs(){
+if(!currentDetailUserId)return;
+try{
+let d=await fetchJson('/api/admin/user/'+currentDetailUserId+'/referrals');
+document.getElementById('ud_ref_earned').innerText='$'+Number(d.total_earned||0).toFixed(2);
+document.getElementById('ud_refs_list').innerHTML=(d.referred||[]).map(u=>{
+let daysAgo=u.created_at?Math.floor((Date.now()-new Date(u.created_at).getTime())/(86400000)):'?';
+return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono font-bold">${u.user_id}</td><td class="p-2.5">${u.username||'@none'}</td><td class="p-2.5 font-bold" style="color:#10b981">$${Number(u.balance).toFixed(2)}</td><td class="p-2.5">$${Number(u.total_deposit).toFixed(2)}</td><td class="p-2.5 text-[10px]" style="color:var(--text3)">${daysAgo}d ago</td></tr>`;
+}).join('')||`<tr><td colspan="5" class="p-6 text-center" style="color:var(--text3)">No referrals yet</td></tr>`;
+}catch(e){}
+}
+
+async function loadUserDetailDeps(){
+if(!currentDetailUserId)return;
+try{
+let allD=await fetchJson('/api/admin/deposits');
+let filtered=allD.filter(d=>d.user_id==currentDetailUserId);
+document.getElementById('ud_deps_list').innerHTML=filtered.map(d=>{
+let sc=d.status==='verified'?'color:#10b981':d.status==='awaiting_payment'?'color:#eab308':d.status==='rejected'?'color:#ef4444':'color:#f97316';
+return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono">${d.id}</td><td class="p-2.5 font-bold">$${Number(d.amount).toFixed(2)}</td><td class="p-2.5"><span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:var(--hover)">${d.network}</span></td><td class="p-2.5"><span class="font-bold text-[10px]" style="${sc}">${d.status}</span></td><td class="p-2.5 text-[9px] mono" style="color:var(--text3)">${(d.created_at||'').slice(0,16)}</td></tr>`;
+}).join('')||`<tr><td colspan="5" class="p-6 text-center" style="color:var(--text3)">No deposits</td></tr>`;
+}catch(e){}
+}
+
+async function loadUserDetailWds(){
+if(!currentDetailUserId)return;
+try{
+let allW=await fetchJson('/api/admin/withdrawals');
+let filtered=allW.filter(w=>w.user_id==currentDetailUserId);
+document.getElementById('ud_wds_list').innerHTML=filtered.map(w=>{
+let sc=w.status==='approved'?'color:#10b981':w.status==='pending'?'color:#eab308':'color:#ef4444';
+let addr=w.address||'';
+return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono">${w.id}</td><td class="p-2.5 font-bold">$${Number(w.amount).toFixed(2)}</td><td class="p-2.5"><span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:var(--hover)">${w.network}</span></td><td class="p-2.5 mono text-[9px]" style="color:var(--text3)">${addr.length>20?addr.slice(0,10)+'...'+addr.slice(-10):addr}</td><td class="p-2.5"><span class="font-bold text-[10px]" style="${sc}">${w.status}</span></td><td class="p-2.5 text-[9px] mono" style="color:var(--text3)">${(w.created_at||'').slice(0,16)}</td></tr>`;
+}).join('')||`<tr><td colspan="6" class="p-6 text-center" style="color:var(--text3)">No withdrawals</td></tr>`;
+}catch(e){}
+}
 
 function copyWdAddr(addr,btn){navigator.clipboard.writeText(addr).then(()=>{btn.innerText='Copied!';setTimeout(()=>{btn.innerText='Copy';},1500);}).catch(()=>{let ta=document.createElement('textarea');ta.value=addr;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.innerText='Copied!';setTimeout(()=>{btn.innerText='Copy';},1500);});}
 async function viewUserHistory(userId,username){
@@ -457,12 +698,17 @@ document.body.appendChild(overlay);
 }
 async function actWd(id,action){
 let note='';
+let txHash='';
+if(action==='approve'){
+txHash=await showTxHashModal(id);
+if(txHash===false)return;
+}
 if(action==='reject'||action==='expire'){
 note=await showReasonModal('Reason for '+action);
 if(note===false)return;
 }
 try{
-let r=await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note:note||''})});
+let r=await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action,note:note||'',tx_hash:txHash||''})});
 let j=await r.json();
 if(j.ok){
 toast(action.charAt(0).toUpperCase()+action.slice(1)+' withdrawal #'+id,'success');
@@ -473,6 +719,19 @@ toast(j.error||'Action failed','error');
 }catch(e){
 toast('Request failed: '+e.message,'error');
 }
+}
+function showTxHashModal(id){
+return new Promise(resolve=>{
+let overlay=document.createElement('div');
+overlay.className='fixed inset-0 z-[9999] flex items-center justify-center p-4';
+overlay.style.background='rgba(0,0,0,0.8)';
+overlay.innerHTML=`<div class="card p-5 w-full max-w-[400px]" style="border-color:rgba(16,185,129,0.15)"><h3 class="font-black text-lg" style="color:#10b981">Approve Withdrawal #${id}</h3><p class="text-[11px] mt-1" style="color:var(--text2)">Paste the BSC transaction hash after sending USDT</p><div class="mt-4"><label class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">TX HASH (BEP-20)</label><input id="txHashInput" type="text" placeholder="0x..." class="w-full mt-1 p-3 rounded-xl text-[12px] mono border" style="background:var(--input);border-color:var(--border);color:var(--text)" autocomplete="off"></div><div class="mt-5 flex gap-2"><button id="txCancelBtn" class="flex-1 glass py-3 rounded-full text-sm font-bold">Cancel</button><button id="txConfirmBtn" class="flex-1 btn-gold py-3 rounded-full text-sm">Send & Approve</button></div></div>`;
+document.body.appendChild(overlay);
+overlay.querySelector('#txCancelBtn').onclick=()=>{overlay.remove();resolve(false);};
+overlay.querySelector('#txConfirmBtn').onclick=()=>{let v=overlay.querySelector('#txHashInput').value.trim();overlay.remove();resolve(v||'');};
+overlay.onclick=e=>{if(e.target===overlay){overlay.remove();resolve(false);}};
+setTimeout(()=>overlay.querySelector('#txHashInput').focus(),100);
+});
 }
 
 async function actDep(id,action){
@@ -536,7 +795,12 @@ if(btn){btn.disabled=true;btn.style.opacity='0.5';}
 try{
 let res=await fetch('/api/admin/user/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({user_id:selectedUser,action:currentAction,amount,note})});
 let j=await res.json();
-if(j.ok){closeModal();toast('Action completed','success');loadAll();}else{toast(j.error||'Failed','error');}
+if(j.ok){
+closeModal();toast('Action completed','success');
+if(document.getElementById('sec-user-detail')&&!document.getElementById('sec-user-detail').classList.contains('hidden')&&currentDetailUserId){
+openUserDetail(currentDetailUserId);
+}else{loadAll();}
+}else{toast(j.error||'Failed','error');}
 }catch(e){toast('Request failed','error');}
 if(btn){btn.disabled=false;btn.style.opacity='1';}
 }
@@ -570,16 +834,140 @@ document.getElementById('groupMembers').innerHTML=m.map(x=>`<tr class="border-t"
 }
 
 async function sendBroadcast(){
-let msg=document.getElementById('broadcastMsg').value;
+let msg=document.getElementById('broadcastMsgUsers').value;
 if(!msg){alert('Enter message');return;}
 let r=await fetch('/api/admin/broadcast',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({message:msg})});
 let j=await r.json();alert('Sent to '+j.sent+' users');
 }
 
+async function loadGroups(){
+try{
+let r=await fetch('/api/admin/groups',{headers:apiHeaders()});
+let j=await r.json();
+let el=document.getElementById('groupCheckboxes');
+if(!j.groups||j.groups.length===0){el.innerHTML='<p class="text-[11px]" style="color:var(--text3)">No groups found. Create join tasks with group_id first.</p>';return;}
+el.innerHTML=j.groups.map(g=>`<label class="flex items-center gap-3 p-3 rounded-xl cursor-pointer" style="background:var(--hover);border:1px solid var(--border2)"><input type="checkbox" value="${g.group_id}" class="group-cb accent-yellow-400"><div><p class="font-bold text-[12px]">${g.group_username||'Unknown'}</p><p class="text-[10px] mono" style="color:var(--text3)">ID: ${g.group_id}</p></div></label>`).join('');
+}catch(e){console.error('loadGroups',e);}
+}
+
+async function sendGroupBroadcast(){
+let msg=document.getElementById('broadcastMsg').value;
+if(!msg){alert('Enter a message');return;}
+let cbs=document.querySelectorAll('.group-cb:checked');
+let ids=Array.from(cbs).map(c=>c.value);
+if(ids.length===0){alert('Select at least one group');return;}
+let parseHTML=document.getElementById('broadcastParseHTML').checked;
+let imgUrl=document.getElementById('broadcastImgUrl').value.trim();
+let log=document.getElementById('broadcastLog');
+log.classList.remove('hidden');
+log.innerHTML='Sending...';
+try{
+let r=await fetch('/api/admin/group/broadcast',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({message:msg,group_ids:ids,parse_mode:parseHTML?'HTML':'Markdown',photo_url:imgUrl})});
+let j=await r.json();
+let lines=(j.results||[]).map(r=>`${r.group_id}: ${r.ok?'OK':'FAIL - '+r.error}`);
+log.innerHTML=`Sent: ${j.sent}/${ids.length}<br>`+lines.join('<br>');
+if(j.ok)alert('Sent to '+j.sent+' group(s)');else alert('Failed. Check log.');
+}catch(e){log.innerHTML='Error: '+e;alert('Error: '+e);}
+}
+
+async function sendDM(){
+let userId=document.getElementById('dmUserId').value.trim();
+let msg=document.getElementById('dmMsg').value.trim();
+let imgUrl=document.getElementById('dmImgUrl').value.trim();
+let status=document.getElementById('dmStatus');
+if(!userId){alert('Enter User ID');return;}
+if(!msg){alert('Enter a message');return;}
+status.textContent='Sending...';status.style.color='var(--text3)';
+try{
+let r=await fetch('/api/admin/dm',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({user_id:parseInt(userId),message:msg,photo_url:imgUrl})});
+let j=await r.json();
+if(j.ok){status.textContent='Sent!';status.style.color='#10b981';document.getElementById('dmMsg').value='';}
+else{status.textContent=j.error||'Failed';status.style.color='#ef4444';}
+}catch(e){status.textContent='Error: '+e;status.style.color='#ef4444';}
+}
+
+document.getElementById('broadcastImgUrl').addEventListener('input',function(){
+let preview=document.getElementById('broadcastImgPreview');
+if(this.value.trim()){preview.src=this.value.trim();preview.classList.remove('hidden');preview.onerror=()=>preview.classList.add('hidden');}
+else{preview.classList.add('hidden');}
+});
+
+async function uploadBroadcastImage(input){
+let file=input.files[0];
+if(!file)return;
+let status=document.getElementById('broadcastImgStatus');
+status.textContent='Uploading...';
+status.style.color='var(--text3)';
+try{
+let fd=new FormData();
+fd.append('file',file);
+let r=await fetch('/api/admin/upload',{method:'POST',headers:apiHeaders(),body:fd});
+let j=await r.json();
+if(j.ok){
+document.getElementById('broadcastImgUrl').value=j.url;
+document.getElementById('broadcastImgUrl').dispatchEvent(new Event('input'));
+status.textContent='Uploaded!';
+status.style.color='#10b981';
+}else{status.textContent=j.error||'Upload failed';status.style.color='#ef4444';}
+}catch(e){status.textContent='Error: '+e;status.style.color='#ef4444';}
+}
+
+async function loadBroadcastTab(){
+loadGroups();
+loadSavedMessages();
+}
+
+async function loadSavedMessages(){
+try{
+let r=await fetch('/api/admin/saved-messages',{headers:apiHeaders()});
+let msgs=await r.json();
+let el=document.getElementById('savedMessagesList');
+if(!msgs.length){el.innerHTML='<p class="text-[11px]" style="color:var(--text3)">No saved messages yet.</p>';return;}
+el.innerHTML=msgs.map(m=>`<div class="p-3 rounded-xl cursor-pointer" style="background:var(--hover);border:1px solid var(--border2)" onclick="loadSavedMessage(${m.id})">
+<div class="flex justify-between items-start"><p class="font-bold text-[11px]">${m.title}</p><button onclick="event.stopPropagation();deleteSavedMessage(${m.id})" class="px-2 py-0.5 rounded-full text-[9px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Del</button></div>
+<p class="text-[10px] mt-1 line-clamp-2" style="color:var(--text3)">${m.message.slice(0,120)}${m.message.length>120?'...':''}</p>
+${m.photo_url?'<p class="text-[9px] mt-0.5" style="color:#10b981">Has image</p>':''}
+</div>`).join('');
+}catch(e){console.error('loadSavedMessages',e);}
+}
+
+async function saveMessage(){
+let title=document.getElementById('savedMsgTitle').value.trim();
+let message=document.getElementById('broadcastMsg').value.trim();
+let photo_url=document.getElementById('broadcastImgUrl').value.trim();
+if(!title){alert('Enter a title');return;}
+if(!message){alert('Enter a message first');return;}
+try{
+let r=await fetch('/api/admin/saved-messages',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({title,message,photo_url})});
+let j=await r.json();
+if(j.ok){document.getElementById('savedMsgTitle').value='';loadSavedMessages();alert('Saved!');}
+else alert('Failed');
+}catch(e){alert('Error: '+e);}
+}
+
+async function deleteSavedMessage(id){
+if(!confirm('Delete this message?'))return;
+try{
+await fetch('/api/admin/saved-messages/'+id,{method:'DELETE',headers:apiHeaders()});
+loadSavedMessages();
+}catch(e){alert('Error: '+e);}
+}
+
+async function loadSavedMessage(id){
+try{
+let msgs=await fetch('/api/admin/saved-messages',{headers:apiHeaders()}).then(r=>r.json());
+let m=msgs.find(x=>x.id===id);
+if(!m)return;
+document.getElementById('broadcastMsg').value=m.message;
+if(m.photo_url){document.getElementById('broadcastImgUrl').value=m.photo_url;document.getElementById('broadcastImgUrl').dispatchEvent(new Event('input'));}
+alert('Message loaded into editor!');
+}catch(e){alert('Error: '+e);}
+}
+
 async function loadEnvStatus(){
 try{
 let s=await fetchJson('/api/admin/env/status');
-document.getElementById('envStatus').innerHTML=`<div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">BOT_TOKEN</p><p class="font-bold mt-0.5" style="color:${s.has_bot_token?'#10b981':'#ef4444'}">${s.BOT_TOKEN}</p></div><div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">ADMIN_AUTH</p><p class="mono text-[11px] mt-0.5">${s.ADMIN_SECRET}</p></div>`;
+document.getElementById('envStatus').innerHTML=`<div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">BOT_TOKEN</p><p class="font-bold mt-0.5" style="color:${s.has_bot_token?'#10b981':'#ef4444'}">${s.BOT_TOKEN}</p></div><div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">ADMIN_AUTH</p><p class="mono text-[11px] mt-0.5">${s.ADMIN_SECRET}</p></div><div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">NOTIFY_CHANNEL</p><p class="mono text-[11px] mt-0.5" style="color:${s.has_notify_channel?'#10b981':'#eab308'}">${s.NOTIFY_CHANNEL||'Not set (no wd notifications)'}</p></div>`;
 }catch(e){}
 }
 

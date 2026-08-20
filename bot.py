@@ -8,6 +8,8 @@ logger = logging.getLogger("bot")
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 WEBAPP_URL = os.getenv("WEBAPP_URL", "https://example.com")
+FORCE_CHANNEL_LINK = os.getenv("FORCE_CHANNEL_LINK", "").strip()
+FORCE_GROUP_LINK = os.getenv("FORCE_GROUP_LINK", "").strip()
 
 _bot_username_cache = None
 
@@ -67,6 +69,24 @@ def _inline_kb(rows):
 
 def _btn(text, **kwargs):
     return {"text": text, **kwargs}
+
+
+INVITE_TEXT = (
+    "\U0001f4e2 <b>Join Our Community!</b>\n\n"
+    "\U0001f449 Tap below to join our channel & group.\n"
+    "Get <b>signals, updates & support</b> \u2014 <b>1 tap to join!</b>"
+)
+
+
+def _invite_kb():
+    rows = []
+    if FORCE_CHANNEL_LINK:
+        rows.append([_btn("\U0001f4e2  Join Channel", url=FORCE_CHANNEL_LINK)])
+    if FORCE_GROUP_LINK:
+        rows.append([_btn("\U0001f465  Join Group", url=FORCE_GROUP_LINK)])
+    if rows:
+        return _inline_kb(rows)
+    return None
 
 
 def _make_kb():
@@ -139,6 +159,14 @@ async def handle_start(token, chat_id, user, args):
         logger.info(f"Sent /start reply to {chat_id}")
     except Exception as e:
         logger.error(f"Failed to send /start reply to {chat_id}: {e}", exc_info=True)
+
+    invite_kb = _invite_kb()
+    if invite_kb:
+        try:
+            _send_message(token, chat_id, INVITE_TEXT, reply_markup=invite_kb)
+            logger.info(f"Sent invite links to {chat_id}")
+        except Exception as e:
+            logger.error(f"Failed to send invite to {chat_id}: {e}")
 
 
 async def handle_callback(token, chat_id, message_id, user, cb_data, cb_query_id=""):

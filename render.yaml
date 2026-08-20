@@ -18,9 +18,11 @@ services:
         sync: false
       - key: WEBAPP_URL
         sync: false
-      - key: ADMIN_SECRET
+      - key: FORCE_CHANNEL_LINK
         sync: false
-      - key: BOT_USERNAME
+      - key: FORCE_GROUP_LINK
+        sync: false
+      - key: NOTIFY_CHANNEL
         sync: false
 
 databases:

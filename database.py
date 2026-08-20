@@ -203,12 +203,43 @@ def init_db():
                 "ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS admin_note TEXT",
                 "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_type TEXT DEFAULT 'join'",
                 "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_config TEXT DEFAULT ''",
+                "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_date TEXT DEFAULT ''",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS login_streak INTEGER DEFAULT 0",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_spin_date TEXT DEFAULT ''",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS total_games_played INTEGER DEFAULT 0",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS total_games_won INTEGER DEFAULT 0",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_webapp_open TEXT DEFAULT ''",
             ]
             for m in migrations:
                 try:
                     cur.execute(m)
                 except Exception:
                     pass
+
+            cur.execute("""CREATE TABLE IF NOT EXISTS game_history (
+                id SERIAL PRIMARY KEY,
+                user_id BIGINT,
+                game_type TEXT,
+                bet DOUBLE PRECISION DEFAULT 0,
+                result TEXT DEFAULT 'lost',
+                payout DOUBLE PRECISION DEFAULT 0,
+                choice TEXT DEFAULT '',
+                details TEXT DEFAULT '',
+                created_at TEXT DEFAULT NOW()
+            )""")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_game_history_user ON game_history(user_id)")
+
+            try:
+                cur.execute("""CREATE TABLE IF NOT EXISTS saved_messages (
+                    id SERIAL PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    photo_url TEXT DEFAULT '',
+                    created_at TEXT
+                )""")
+            except Exception:
+                pass
 
             conn.commit()
             cur.close()
@@ -266,6 +297,13 @@ def init_db():
                 verified_at TEXT, reward_claimed INTEGER DEFAULT 0,
                 UNIQUE(user_id, task_id)
             )""")
+            conn.execute("""CREATE TABLE IF NOT EXISTS saved_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                message TEXT NOT NULL,
+                photo_url TEXT DEFAULT '',
+                created_at TEXT
+            )""")
 
             for stmt in [
                 "CREATE INDEX IF NOT EXISTS idx_deposits_status ON deposits(status)",
@@ -298,6 +336,37 @@ def init_db():
                 conn.execute("ALTER TABLE tasks ADD COLUMN task_config TEXT DEFAULT ''")
             except Exception:
                 pass
+            for stmt in [
+                "ALTER TABLE users ADD COLUMN last_login_date TEXT DEFAULT ''",
+                "ALTER TABLE users ADD COLUMN login_streak INTEGER DEFAULT 0",
+                "ALTER TABLE users ADD COLUMN last_spin_date TEXT DEFAULT ''",
+            ]:
+                try:
+                    conn.execute(stmt)
+                except Exception:
+                    pass
+
+            conn.execute("""CREATE TABLE IF NOT EXISTS game_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                game_type TEXT,
+                bet REAL DEFAULT 0,
+                result TEXT DEFAULT 'lost',
+                payout REAL DEFAULT 0,
+                choice TEXT DEFAULT '',
+                details TEXT DEFAULT '',
+                created_at TEXT DEFAULT (datetime('now'))
+            )""")
+
+            for stmt in [
+                "ALTER TABLE users ADD COLUMN total_games_played INTEGER DEFAULT 0",
+                "ALTER TABLE users ADD COLUMN total_games_won INTEGER DEFAULT 0",
+                "ALTER TABLE users ADD COLUMN last_webapp_open TEXT DEFAULT ''",
+            ]:
+                try:
+                    conn.execute(stmt)
+                except Exception:
+                    pass
 
             conn.commit()
         logger.info(f"Database ready: {'POSTGRES' if USE_POSTGRES else 'SQLITE at ' + SQLITE_PATH}")

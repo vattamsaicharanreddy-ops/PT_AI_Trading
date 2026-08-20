@@ -111,16 +111,30 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <div id='mandatoryGate' class='hidden mx-4 mt-3 rounded-2xl p-4' style='background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(249,115,22,0.08));border:1px solid rgba(239,68,68,0.2)'><div class="flex gap-3"><div class="text-xl">&#128274;</div><div><p class='font-bold text-sm text-red-300'>Withdrawal Locked</p><p id='gateText' class='text-xs mt-1' style='color:var(--text2)'>Complete mandatory tasks to unlock.</p><button onclick="switchTab('tasks')" class='mt-2 px-4 py-2 rounded-full text-xs font-bold' style='background:var(--text);color:var(--bg)'>Go to Tasks</button></div></div></div>
 
 <div id='tab-home' class='tab-content'>
-<div class='mx-4 mt-4 rounded-2xl p-4' style='background:var(--surface);border:1px solid rgba(255,214,10,0.15)'>
-<div class="flex justify-between items-center"><h3 class='font-bold text-sm'>Tasks Quick</h3><span id='tasksQuickCount' class="text-[10px] px-2 py-0.5 rounded-full" style="background:rgba(255,214,10,0.15);color:#FFD60A">0/0 done</span></div>
-<div id='tasksQuick' class='mt-3 space-y-2'></div>
-<button onclick="switchTab('tasks')" class='mt-3 w-full py-2.5 rounded-xl text-xs font-bold' style='background:rgba(108,59,255,0.15);border:1px solid rgba(108,59,255,0.2)'>View All Tasks</button>
-</div>
 <div class='mt-5 mx-4 rounded-3xl p-5' style='background:linear-gradient(135deg,#6C3BFF,#8A5CFF,#A5A6F6)'>
 <p class='text-white/70 text-sm'>Daily AI Profit <span id='dailyPct'>0%</span></p>
 <h1 class='text-[32px] font-extrabold leading-none mt-2 flex items-center gap-2'><span class='text-[18px] bg-white/20 w-9 h-9 rounded-full flex items-center justify-center'>$</span> <span id='profitVal'>0.00</span> <span class='text-sm opacity-60'>USDT</span></h1>
 <p class='text-sm text-white/80 mt-2'>+<span id='perHour'>0.00</span> USDT/hr</p>
 <div class='mt-4 flex gap-2 flex-wrap'><button onclick='openDeposit()' class='bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm'>Deposit</button><button onclick='openWithdraw()' class='px-5 py-2.5 rounded-full font-bold text-sm' style='background:#FFD60A;color:#000'>Withdraw</button></div>
+</div>
+<div class='mx-4 mt-4 rounded-2xl p-4' style='background:var(--surface);border:1px solid rgba(255,214,10,0.15)'>
+<div class="flex justify-between items-center"><h3 class='font-bold text-sm'>Tasks Quick</h3><span id='tasksQuickCount' class="text-[10px] px-2 py-0.5 rounded-full" style="background:rgba(255,214,10,0.15);color:#FFD60A">0/0 done</span></div>
+<div id='tasksQuick' class='mt-3 space-y-2'></div>
+<button onclick="switchTab('tasks')" class='mt-3 w-full py-2.5 rounded-xl text-xs font-bold' style='background:rgba(108,59,255,0.15);border:1px solid rgba(108,59,255,0.2)'>View All Tasks</button>
+</div>
+<div class='mx-4 mt-3 rounded-2xl p-4' style='background:linear-gradient(135deg,rgba(239,68,68,0.08),rgba(255,214,10,0.12));border:1px solid rgba(255,214,10,0.2)'>
+<div class='flex justify-between items-center'>
+<div><h3 class='font-bold text-sm'>🔥 Daily Streak</h3><p id='streakInfo' class='text-[11px] mt-0.5' style='color:var(--text2)'>Open daily to earn rewards</p></div>
+<div class='text-right'><span id='streakBadge' class='text-2xl font-extrabold' style='color:#FFD60A'>0</span><p class='text-[9px]' style='color:var(--text3)'>DAYS</p></div>
+</div>
+<div id='streakMilestones' class='mt-3 flex gap-1.5'></div>
+<button id='dailyBonusBtn' onclick="claimDailyBonus()" class='mt-3 w-full py-2.5 rounded-xl text-xs font-bold btn-gold'>Claim Daily +0.10 USDT</button>
+</div>
+<div class='mx-4 mt-3 rounded-2xl p-4' style='background:linear-gradient(135deg,rgba(108,59,255,0.15),rgba(255,214,10,0.1));border:1px solid rgba(108,59,255,0.15)'>
+<div class='flex justify-between items-center'>
+<div><h3 class='font-bold text-sm'>🎰 Lucky Spin</h3><p id='spinInfo' class='text-[11px] mt-0.5' style='color:var(--text2)'>Free spin every 24 hours</p></div>
+<button id='spinBtn' onclick="openSpinWheel()" class='px-4 py-2 rounded-full text-xs font-bold' style='background:#FFD60A;color:#000'>SPIN NOW</button>
+</div>
 </div>
 <div class='mx-4 mt-4 rounded-2xl p-4' style='background:var(--surface);border:1px solid rgba(255,214,10,0.15)'>
 <div class='flex justify-between items-center mb-3'><h3 class='font-bold text-sm'>Quick Stats</h3><span class='text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400'>Live</span></div>
@@ -131,6 +145,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 </div>
 
 <div id='tab-tasks' class='tab-content hidden'>
+<div class='mx-4 mt-4 flex gap-2'>
+<button onclick='openDeposit()' class='flex-1 py-3 rounded-2xl font-bold text-sm' style='background:rgba(38,161,123,0.15);border:1px solid rgba(38,161,123,0.2);color:#26A17B'>Deposit USDT</button>
+<button onclick='openWithdraw()' class='flex-1 py-3 rounded-2xl font-bold text-sm' style='background:rgba(255,214,10,0.15);border:1px solid rgba(255,214,10,0.2);color:#FFD60A'>Withdraw USDT</button>
+</div>
 <div class='mx-4 mt-4 rounded-3xl p-5' style='background:linear-gradient(135deg,rgba(108,59,255,0.15),var(--surface),rgba(255,214,10,0.06));border:1px solid rgba(108,59,255,0.15)'>
 <h2 class='text-lg font-black'>Join-to-Earn Tasks</h2><p class='text-[11px] mt-1.5 leading-relaxed' style='color:var(--text2)'>Join groups, refer friends & earn <b style="color:#FFD60A">USDT</b>. Mandatory tasks block withdrawal.</p>
 <div class='mt-3 grid grid-cols-3 gap-2 text-center'><div class='rounded-xl p-2.5' style='background:var(--border)'><p id='t_total' class='font-black text-lg'>0</p><p class='text-[9px]' style='color:var(--text3)'>TOTAL</p></div><div class='rounded-xl p-2.5' style='background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.15)'><p id='t_done' class='font-black text-lg text-emerald-400'>0</p><p class='text-[9px]' style='color:var(--text3)'>DONE</p></div><div class='rounded-xl p-2.5' style='background:rgba(255,214,10,0.1);border:1px solid rgba(255,214,10,0.15)'><p id='t_earn' class='font-black text-lg' style='color:#FFD60A'>0</p><p class='text-[9px]' style='color:var(--text3)'>USDT EARNED</p></div></div>
@@ -139,7 +157,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 </div>
 
 <div id='tab-trades' class='tab-content hidden'>
-<div class='mx-4 mt-4'><div class='flex justify-between items-center'><h3 class='font-bold text-sm'>Live AI Trades</h3><span id='todayTrades' class='text-[11px]' style='color:var(--text3)'>0 trades</span></div><p class='text-[10px] mt-0.5' style='color:var(--text3)'>Times in IST</p><div class='mt-3 rounded-2xl overflow-hidden' style='background:var(--surface);border:1px solid var(--border)'><div class='overflow-x-auto'><table class='w-full text-[10px]'><thead><tr style='color:var(--text3)'><th class='text-left p-2.5'>Time</th><th class='text-left p-2.5'>Pair</th><th class='text-left p-2.5'>Side</th><th class='text-right p-2.5'>Entry</th><th class='text-right p-2.5'>Exit</th><th class='text-right p-2.5'>Lev</th><th class='text-right p-2.5'>PNL</th></tr></thead><tbody id='tradesTableBody'></tbody></table></div></div></div>
+<div class='mx-4 mt-4 space-y-3'>
+<div class='flex items-center justify-between'><div class='flex items-center gap-2'><div class='w-2 h-2 rounded-full animate-pulse' style='background:#10b981'></div><h3 class='font-bold text-sm'>AI Trading Engine</h3></div><span class='text-[10px] px-2 py-0.5 rounded-full font-bold' style='background:rgba(16,185,129,0.15);color:#10b981'>v3.2 ACTIVE</span></div>
+<div id='marketPrices' class='grid grid-cols-2 gap-2'></div>
+<div id='activePositions' class='space-y-2'></div>
+<div id='aiSignals' class='rounded-2xl p-3' style='background:var(--surface);border:1px solid var(--border)'></div>
+<div id='portfolioChart' class='rounded-2xl p-3' style='background:var(--surface);border:1px solid var(--border)'></div>
+<div class='flex justify-between items-center'><h4 class='font-bold text-xs'>Today's Completed Trades</h4><span id='todayTrades' class='text-[10px]' style='color:var(--text3)'>0/0</span></div>
+<div class='rounded-2xl overflow-hidden' style='background:var(--surface);border:1px solid var(--border)'><div class='overflow-x-auto'><table class='w-full text-[10px]'><thead><tr style='color:var(--text3)'><th class='text-left p-2.5'>Time</th><th class='text-left p-2.5'>Pair</th><th class='text-left p-2.5'>Side</th><th class='text-right p-2.5'>Entry</th><th class='text-right p-2.5'>Exit</th><th class='text-right p-2.5'>Lev</th><th class='text-right p-2.5'>PNL</th></tr></thead><tbody id='tradesTableBody'></tbody></table></div></div>
+</div>
 </div>
 
 <div id='tab-referral' class='tab-content hidden'>
@@ -147,6 +173,43 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <div class='mx-4 mt-4'><h4 class='font-bold text-sm'>Direct Referrals</h4><div id='directList' class='mt-2 space-y-2'></div></div>
 <div class='mx-4 mt-4'><h4 class='font-bold text-sm'>Earnings History</h4><div id='refHistory' class='mt-2 space-y-2'></div></div>
 </div>
+<div id='tab-games' class='tab-content hidden'>
+<div class='mx-4 mt-4 rounded-2xl p-4' style='background:linear-gradient(135deg,rgba(255,214,10,0.1),rgba(108,59,255,0.1));border:1px solid rgba(255,214,10,0.15)'>
+<h3 class='font-black text-base'>Play & Win</h3>
+<p class='text-[11px] mt-1' style='color:var(--text2)'>Bet from withdrawable. Profits go to deposit — trade to unlock!</p>
+<div class='mt-2 grid grid-cols-2 gap-2 text-[11px]'>
+<div class='p-2.5 rounded-xl text-center' style='background:rgba(38,161,123,0.08);border:1px solid rgba(38,161,123,0.12)'><p style='color:var(--text3)'>Balance</p><p id='gameBal' class='font-bold mt-0.5' style='color:#26A17B'>0.00 USDT</p></div>
+<div class='p-2.5 rounded-xl text-center' style='background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.12)'><p style='color:var(--text3)'>Withdrawable</p><p id='gameWdBal' class='font-bold mt-0.5' style='color:#FFD60A'>0.00 USDT</p></div>
+</div>
+</div>
+<div class='mx-4 mt-3 grid grid-cols-2 gap-3'>
+<div onclick="openGame('coinflip')" class='rounded-2xl p-4 text-center cursor-pointer' style='background:var(--surface);border:1px solid var(--border);transition:transform 0.2s' ontouchstart="this.style.transform='scale(0.95)'" ontouchend="this.style.transform='scale(1)'">
+<div class='text-3xl mb-2'>&#129352;</div>
+<p class='font-bold text-sm'>Coin Flip</p>
+<p class='text-[10px] mt-1' style='color:var(--text3)'>2x payout</p>
+</div>
+<div onclick="openGame('dice')" class='rounded-2xl p-4 text-center cursor-pointer' style='background:var(--surface);border:1px solid var(--border);transition:transform 0.2s' ontouchstart="this.style.transform='scale(0.95)'" ontouchend="this.style.transform='scale(1)'">
+<div class='text-3xl mb-2'>&#127922;</div>
+<p class='font-bold text-sm'>Dice Roll</p>
+<p class='text-[10px] mt-1' style='color:var(--text3)'>2x payout</p>
+</div>
+<div onclick="openGame('crash')" class='rounded-2xl p-4 text-center cursor-pointer' style='background:var(--surface);border:1px solid var(--border);transition:transform 0.2s' ontouchstart="this.style.transform='scale(0.95)'" ontouchend="this.style.transform='scale(1)'">
+<div class='text-3xl mb-2'>&#128640;</div>
+<p class='font-bold text-sm'>Crash</p>
+<p class='text-[10px] mt-1' style='color:var(--text3)'>Cash out anytime</p>
+</div>
+<div onclick="openGame('highlow')" class='rounded-2xl p-4 text-center cursor-pointer' style='background:var(--surface);border:1px solid var(--border);transition:transform 0.2s' ontouchstart="this.style.transform='scale(0.95)'" ontouchend="this.style.transform='scale(1)'">
+<div class='text-3xl mb-2'>&#127183;</div>
+<p class='font-bold text-sm'>Higher/Lower</p>
+<p class='text-[10px] mt-1' style='color:var(--text3)'>1.8x payout</p>
+</div>
+</div>
+<div id='gameHistory' class='mx-4 mt-4 rounded-2xl p-4' style='background:var(--surface);border:1px solid var(--border)'>
+<h4 class='font-bold text-sm mb-2'>Recent Plays</h4>
+<div id='gameHistoryList' class='text-[11px]' style='color:var(--text3)'>No games played yet</div>
+</div>
+</div>
+
 <div id='tab-history' class='tab-content hidden'><div class='mx-4 mt-4'><h3 class='font-bold'>History</h3><div id='history' class='mt-3 space-y-2'></div></div></div>
 
 <div id='tab-portfolio' class='tab-content hidden'>
@@ -252,6 +315,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <button onclick="switchTab('portfolio')" data-bottom="portfolio" class='bottom-tab flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px]' style='opacity:0.5'><span class="text-base">&#128176;</span>Portfolio</button>
 <button onclick="switchTab('trades')" data-bottom="trades" class='bottom-tab flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px]' style='opacity:0.5'><span class="text-base">&#128200;</span>Trades</button>
 <button onclick="switchTab('referral')" data-bottom="referral" class='bottom-tab flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px]' style='opacity:0.5'><span class="text-base">&#128101;</span>Referral</button>
+<button onclick="switchTab('games')" data-bottom="games" class='bottom-tab flex flex-col items-center px-3 py-1.5 rounded-xl text-[10px]' style='opacity:0.5'><span class="text-base">&#127920;</span>Games</button>
 </div>
 
 <div id='depositModal' class='hidden fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100] p-4'><div class='rounded-3xl p-5 w-full max-w-[380px] max-h-[90vh] overflow-y-auto' style='background:var(--surface);border:1px solid var(--border)'><h3 class='font-black text-lg'>Deposit USDT</h3><p class='text-[10px] mt-0.5' style='color:var(--text2)'>5 networks supported</p>
@@ -301,12 +365,13 @@ function switchTab(tab){
 document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
 let el=$('tab-'+tab);if(el)el.classList.remove('hidden');
 document.querySelectorAll('.bottom-tab').forEach(b=>{b.classList.remove('tab-active');b.style.opacity='0.5';});
-let active=document.querySelector(`[data-bottom="${tab}"]`);if(active){active.classList.add('tab-active');active.style.opacity='1';}
+let active=document.querySelector('[data-bottom="'+tab+'"]');if(active){active.classList.add('tab-active');active.style.opacity='1';}
 if(tab==='tasks')loadTasks();
 if(tab==='trades')loadTrades();
 if(tab==='referral')loadReferral();
 if(tab==='history')loadHistory();
 if(tab==='portfolio')loadPortfolio();
+if(tab==='games')loadGamesTab();
 }
 function userToast(msg,type){
 let t=document.createElement('div');
@@ -623,19 +688,109 @@ if(j.ok){userToast('Withdrawal requested!');closeWithdraw();init();}else userToa
 }catch(e){userToast('Request failed','error');}
 if(btn){btn.disabled=false;btn.style.opacity='1';}
 }
+let _livePrices={BTC:0,ETH:0,SOL:0,XRP:0,DOGE:0};let _priceInterval=null;
+let _aiReasons=['Breaking resistance level','RSI oversold, bounce likely','Volume spike detected','EMA crossover bullish','MACD momentum shift','Support level tested','Bollinger squeeze breakout','Order flow imbalance detected','Accumulation pattern forming','Funding rate flip signal'];
+function _fmtPrice(p){return p>=1000?'$'+p.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):p>=1?'$'+p.toFixed(2):'$'+p.toFixed(4);}
+function _sparkline(data,w,h,color){
+if(!data||data.length<2)return'';
+let mn=Math.min(...data),mx=Math.max(...data),rng=mx-mn||1;
+let pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-mn)/rng)*h*0.8-h*0.1}`).join(' ');
+return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+async function _fetchLivePrices(){
+try{
+let r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple,dogecoin&vs_currencies=usd&include_24hr_change=true');
+let d=await r.json();
+if(d.bitcoin){_livePrices.BTC=d.bitcoin.usd;_livePrices.BTC_CHG=d.bitcoin.usd_24h_change||0;}
+if(d.ethereum){_livePrices.ETH=d.ethereum.usd;_livePrices.ETH_CHG=d.ethereum.usd_24h_change||0;}
+if(d.solana){_livePrices.SOL=d.solana.usd;_livePrices.SOL_CHG=d.solana.usd_24h_change||0;}
+if(d.ripple){_livePrices.XRP=d.ripple.usd;_livePrices.XRP_CHG=d.ripple.usd_24h_change||0;}
+if(d.dogecoin){_livePrices.DOGE=d.dogecoin.usd;_livePrices.DOGE_CHG=d.dogecoin.usd_24h_change||0;}
+}catch(e){}
+}
+function _renderMarketPrices(){
+let pairs=[
+{sym:'BTC',name:'Bitcoin',price:_livePrices.BTC,chg:_livePrices.BTC_CHG||0,color:'#F7931A'},
+{sym:'ETH',name:'Ethereum',price:_livePrices.ETH,chg:_livePrices.ETH_CHG||0,color:'#627EEA'},
+{sym:'SOL',name:'Solana',price:_livePrices.SOL,chg:_livePrices.SOL_CHG||0,color:'#00FFA3'},
+{sym:'XRP',name:'Ripple',price:_livePrices.XRP,chg:_livePrices.XRP_CHG||0,color:'#00AAE4'}
+];
+let el=document.getElementById('marketPrices');
+if(!el)return;
+el.innerHTML=pairs.map(p=>{
+let isUp=p.chg>=0;
+let chgColor=isUp?'#10b981':'#ef4444';
+let barW=Math.min(100,Math.abs(p.chg)*8);
+let bar=isUp?`<div class="h-1 rounded-full" style="width:${barW}%;background:#10b981"></div>`:`<div class="h-1 rounded-full" style="width:${barW}%;background:#ef4444"></div>`;
+return`<div class="p-3 rounded-xl" style="background:var(--surface);border:1px solid var(--border)"><div class="flex justify-between items-start"><div><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">${p.name}</p><p class="text-[14px] font-black mt-0.5">${_fmtPrice(p.price)}</p></div><span class="text-[10px] font-bold" style="color:${chgColor}">${isUp?'+':''}${p.chg.toFixed(2)}%</span></div><div class="mt-1.5">${bar}</div></div>`;
+}).join('');
+}
+function _renderActivePositions(trades){
+let el=document.getElementById('activePositions');
+if(!el)return;
+let openTrades=trades.slice(-2).reverse();
+if(!openTrades.length){el.innerHTML='';return;}
+let now=Date.now();
+el.innerHTML=`<div class="flex items-center gap-2 mb-1"><div class="w-1.5 h-1.5 rounded-full animate-pulse" style="background:#FFD60A"></div><p class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">ACTIVE POSITIONS</p></div>`+openTrades.map((t,i)=>{
+let sideColor=t.side==='LONG'?'#3b82f6':'#ef4444';
+let bgGrad=t.is_profit?'rgba(16,185,129,0.06)':'rgba(239,68,68,0.06)';
+let entry=parseFloat(t.entry_price.replace(/,/g,''));let exit=parseFloat(t.exit_price.replace(/,/g,''));
+let fakePnl=(Math.sin((now+i*5000)/8000)*2+3).toFixed(2);
+let barPct=Math.min(95,Math.max(5,50+parseFloat(fakePnl)*5));
+return`<div class="p-3 rounded-xl" style="background:linear-gradient(135deg,${bgGrad},var(--surface));border:1px solid ${t.is_profit?'rgba(16,185,129,0.15)':'rgba(239,68,68,0.15)'}"><div class="flex justify-between items-center"><div><p class="text-[10px] font-bold" style="color:var(--text3)">${t.pair} · ${t.leverage}x</p><p class="text-[13px] font-black mt-0.5" style="color:${sideColor}">${t.side} <span class="text-[10px]" style="color:var(--text3)">$${t.usdt_amount}</span></p></div><div class="text-right"><p class="text-[16px] font-black" style="color:${t.is_profit?'#10b981':'#ef4444'}">${t.pnl_percent>0?'+':''}${t.pnl_percent}%</p><p class="text-[10px]" style="color:var(--text3)">+$${Math.abs(t.pnl_usdt).toFixed(2)}</p></div></div><div class="mt-2 h-1 rounded-full" style="background:var(--border2)"><div class="h-1 rounded-full transition-all" style="width:${barPct}%;background:${t.is_profit?'#10b981':'#ef4444'}"></div></div></div>`;
+}).join('');
+}
+function _renderAISignals(trades){
+let el=document.getElementById('aiSignals');
+if(!el)return;
+let last3=trades.slice(-3).reverse();
+let uptimeH=22+Math.floor(Math.random()*3);
+let latency=8+Math.floor(Math.random()*12);
+let html=`<div class="flex items-center justify-between mb-2"><p class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">AI DECISIONS</p><span class="text-[9px] px-2 py-0.5 rounded-full" style="background:rgba(16,185,129,0.1);color:#10b981">Latency: ${latency}ms</span></div>`;
+last3.forEach((t,i)=>{
+let conf=78+Math.floor(Math.random()*17);
+let reason=_aiReasons[(parseInt(t.time.replace(':',''))+i)%_aiReasons.length];
+let sideColor=t.side==='LONG'?'#3b82f6':'#ef4444';
+html+=`<div class="py-2 ${i<last3.length-1?'border-b':''}" style="border-color:var(--border2)"><div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="text-[10px] font-bold" style="color:var(--text3)">${t.time}</span><span class="font-bold text-[11px]">${t.pair}</span><span class="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style="background:${sideColor}22;color:${sideColor}">${t.side}</span></div><span class="text-[9px] font-bold" style="color:${conf>=85?'#10b981':'#eab308'}">${conf}% conf</span></div><p class="text-[10px] mt-1" style="color:var(--text2)">"${reason}" → ${t.leverage}x leverage</p></div>`;
+});
+el.innerHTML=html;
+}
+function _renderPortfolioChart(trades){
+let el=document.getElementById('portfolioChart');
+if(!el)return;
+let cumPnl=[];let running=0;
+trades.forEach(t=>{running+=t.pnl_percent;cumPnl.push(running);});
+let totalPnl=running;
+let winCount=trades.filter(t=>t.is_profit).length;
+let totalPct=trades.length?Math.round(winCount/trades.length*100):0;
+let svg=_sparkline(cumPnl,300,60,totalPnl>=0?'#10b981':'#ef4444');
+let isUp=totalPnl>=0;
+el.innerHTML=`<div class="flex items-center justify-between mb-2"><p class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">PORTFOLIO GROWTH</p><span class="text-[9px] font-bold" style="color:${isUp?'#10b981':'#ef4444'}">${isUp?'+':''}${totalPnl.toFixed(2)}%</span></div><div class="rounded-xl overflow-hidden p-2" style="background:var(--bg)">${svg}</div><div class="mt-2 flex justify-between text-[10px]"><span style="color:var(--text3)">Win Rate: <b style="color:#10b981">${totalPct}%</b></span><span style="color:var(--text3)">Trades: <b>${trades.length}</b></span><span style="color:var(--text3)">PnL: <b style="color:${isUp?'#10b981':'#ef4444'}">${isUp?'+':''}${totalPnl.toFixed(2)}%</b></span></div>`;
+}
 async function loadTrades(){
+await _fetchLivePrices();
+_renderMarketPrices();
 let d=await apiFetch('/api/binance/trades');
 if(!d)return;
-let totalVisible=d.summary.total_trades;let expected=d.all_trades_count||16;let winRate=d.summary.win_rate||0;let nextTrade=d.summary.next_trade_in||'';let currentIST=d.summary.current_ist||'';
-safeSet('todayTrades',`${totalVisible}/${expected} trades | ${winRate}% win | ${currentIST}`);
+let trades=d.trades||[];
+let totalVisible=d.summary.total_trades;let expected=d.all_trades_count||16;
+let winRate=d.summary.win_rate||0;let currentIST=d.summary.current_ist||'';
+let accumPnl=d.summary.daily_accumulated_pnl||0;
+safeSet('todayTrades',`${totalVisible}/${expected} trades · ${winRate}% win · ${currentIST}`);
+_renderActivePositions(trades);
+_renderAISignals(trades);
+_renderPortfolioChart(trades);
 let html='';
-if(totalVisible===0){html=`<tr><td colspan="7" class="p-6 text-center"><p class="text-xl">&#127769;</p><p class="font-bold mt-2">Day just started</p><p class="text-[11px] mt-1" style="color:var(--text2)">First trade at 00:05 IST. Now: ${currentIST}</p></td></tr>`;}else{
-(d.trades||[]).forEach((t,idx)=>{
-let sideColor=t.side==='LONG'?'#3b82f6':'#ef4444';let pnlColor=t.is_profit?'#10b981':'#ef4444';
-let isLatest=idx===(d.trades.length-1);
-html+=`<tr class="border-t" style="border-color:var(--border)"><td class="p-2.5">${t.time} ${isLatest?'<span class="text-[8px] px-1 py-0.5 rounded-full font-black" style="background:#FFD60A;color:#000">LATEST</span>':''}</td><td class="p-2.5 font-bold">${t.pair}</td><td class="p-2.5"><span class="px-1.5 py-0.5 rounded-full text-[10px]" style="background:${sideColor}22;color:${sideColor}">${t.side} ${t.leverage}x</span></td><td class="p-2.5 text-right">${t.entry_price}</td><td class="p-2.5 text-right mono">${t.exit_price}</td><td class="p-2.5 text-right">${t.leverage}x</td><td class="p-2.5 text-right font-bold" style="color:${pnlColor}">${t.pnl_percent>0?'+':''}${t.pnl_percent}%</td></tr>`;
+if(totalVisible===0){
+html=`<tr><td colspan="7" class="p-6 text-center"><div class="w-10 h-10 mx-auto rounded-full flex items-center justify-center" style="background:var(--border)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 16L10 4L16 16" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round"/></svg></div><p class="font-bold mt-2 text-[12px]">Market scanning...</p><p class="text-[11px] mt-1" style="color:var(--text2)">First trade at 00:05 IST. Now: ${currentIST}</p></td></tr>`;
+}else{
+trades.forEach((t,idx)=>{
+let sideColor=t.side==='LONG'?'#3b82f6':'#ef4444';
+let pnlColor=t.is_profit?'#10b981':'#ef4444';
+let isLatest=idx===(trades.length-1);
+let conf=82+Math.floor(Math.random()*13);
+html+=`<tr class="border-t" style="border-color:var(--border)"><td class="p-2.5">${t.time} ${isLatest?'<span class="text-[8px] px-1 py-0.5 rounded-full font-black" style="background:#FFD60A;color:#000">LIVE</span>':''}</td><td class="p-2.5 font-bold">${t.pair}</td><td class="p-2.5"><span class="px-1.5 py-0.5 rounded-full text-[10px]" style="background:${sideColor}22;color:${sideColor}">${t.side} ${t.leverage}x</span></td><td class="p-2.5 text-right">${t.entry_price}</td><td class="p-2.5 text-right mono">${t.exit_price}</td><td class="p-2.5 text-right">${t.leverage}x</td><td class="p-2.5 text-right font-bold" style="color:${pnlColor}">${t.pnl_percent>0?'+':''}${t.pnl_percent}%</td></tr>`;
 });
-html+=`<tr><td colspan="7" class="p-2.5 text-center text-[10px]" style="color:var(--text3)">Next: ${nextTrade} | Total: ${expected}</td></tr>`;
 }
 safeHTML('tradesTableBody',html);
 }
@@ -729,10 +884,12 @@ document.querySelectorAll('.bottom-tab').forEach(b=>{b.classList.remove('tab-act
 let active=document.querySelector('[data-bottom="'+tab+'"]');
 if(active){active.classList.add('tab-active');active.style.opacity='1';}
 if(tab==='tasks')loadTasks();
-if(tab==='trades')loadTrades();
+if(tab==='trades'){loadTrades();if(!_priceInterval)_priceInterval=setInterval(()=>{if(_prevTab==='trades')loadTrades();},30000);}
+else{if(_priceInterval){clearInterval(_priceInterval);_priceInterval=null;}}
 if(tab==='referral')loadReferral();
 if(tab==='history')loadHistory();
 if(tab==='portfolio')loadPortfolio();
+if(tab==='games')loadGamesTab();
 _prevTab=tab;
 };
 
@@ -855,6 +1012,12 @@ let oldMe=window._lastMe;
 window._lastMe=me;
 if(me.is_banned){$('bannedOverlay').classList.remove('hidden');return;}
 checkTierUpgrade(me.tier||7);
+loadTasks(true);
+updateStreakUI(me);
+if(me.can_spin){$('spinBtn').innerText='SPIN NOW';$('spinBtn').style.background='#FFD60A';$('spinInfo').innerText='Free spin available!';}
+else{$('spinBtn').innerText='Come Back Tomorrow';$('spinBtn').style.background='var(--hover)';$('spinBtn').style.color='var(--text3)';$('spinInfo').innerText='Already spun today';}
+let today=new Date().toISOString().slice(0,10);
+if(me.last_login_date!==today){claimDailyBonus();}
 let depCount=me.verified_deposits_count||0;
 if(_lastVerifiedDeposits>0&&depCount>_lastVerifiedDeposits){
 let lastDepAmt=me.last_deposit_amount||20;
@@ -893,5 +1056,428 @@ $('wdGate').classList.remove('hidden');safeSet('wdGateText',`Done: ${me.mandator
 init().then(()=>{hideInitialLoader();}).catch(()=>{hideInitialLoader();});
 setTimeout(hideInitialLoader,2500);
 setInterval(init,15000);
+
+// === DAILY BONUS ===
+async function claimDailyBonus(){
+let btn=$('dailyBonusBtn');
+btn.disabled=true;btn.innerText='Claiming...';
+try{
+let r=await fetch('/api/daily-bonus/'+userId,{method:'POST'});
+let j=await r.json();
+if(j.ok){userToast(j.message);btn.innerText='Claimed! Come back tomorrow';btn.style.background='rgba(16,185,129,0.2)';btn.style.color='#10b981';init();}
+else{btn.innerText=j.error||'Already claimed';btn.style.opacity='0.5';}
+}catch(e){btn.innerText='Error';btn.disabled=false;}
+}
+
+function updateStreakUI(me){
+let streak=me.login_streak||0;
+safeSet('streakInfo',streak>0?`Day ${streak} streak — keep it going!`:'Open the bot daily to build your streak');
+$('streakBadge').innerText=streak;
+let milestones=[3,7,14,30];
+let html=milestones.map(d=>{let reward=d<=3?0.5:d<=7?2:d<=14?5:10;let done=streak>=d;return`<div class="flex-1 text-center py-1.5 rounded-lg text-[9px] font-bold" style="background:${done?'rgba(16,185,129,0.2)':'var(--hover)'};color:${done?'#10b981':'var(--text3)'};border:1px solid ${done?'rgba(16,185,129,0.3)':'var(--border2)'}">${d}d<br>${reward} USDT</div>`}).join('');
+$('streakMilestones').innerHTML=html;
+let today=new Date().toISOString().slice(0,10);
+if(me.last_login_date===today){$('dailyBonusBtn').innerText='Claimed today ✓';$('dailyBonusBtn').style.background='rgba(16,185,129,0.2)';$('dailyBonusBtn').style.color='#10b981';$('dailyBonusBtn').disabled=true;}
+}
+
+// === SPIN WHEEL 3D ===
+const SPIN_PRIZES=[0.05,0.10,0.15,0.20,0.50,1.00,2.00,5.00];
+const SPIN_COLORS=['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#6C3BFF','#ec4899','#FFD60A'];
+const SPIN_COUNT=8;
+
+function openSpinWheel(){
+let canSpin=true;
+let info=$('spinInfo');
+if(info&&info.innerText.includes('Come back'))canSpin=false;
+if(!canSpin){userToast('Already spun today! Come back tomorrow.');return;}
+showSpinOverlay();
+}
+
+function spawnConfetti(container){
+for(let i=0;i<40;i++){
+let c=document.createElement('div');
+c.style.cssText=`position:absolute;width:${4+Math.random()*6}px;height:${4+Math.random()*6}px;background:${['#FFD60A','#6C3BFF','#22c55e','#ef4444','#ec4899','#06b6d4'][Math.floor(Math.random()*6)]};left:${40+Math.random()*20}%;top:${20+Math.random()*20}%;border-radius:${Math.random()>0.5?'50%':'2px'};pointer-events:none;z-index:300;opacity:1;animation:confettiFall ${1.5+Math.random()*1.5}s ease-out forwards;transform:rotate(${Math.random()*360}deg)`;
+container.appendChild(c);
+}
+}
+
+function showSpinOverlay(){
+let ov=document.createElement('div');
+ov.id='spinOverlay';
+ov.className='fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[200] p-4';
+ov.innerHTML=`
+<style>
+@keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0deg) scale(1)}100%{opacity:0;transform:translateY(300px) rotate(720deg) scale(0.3)}}
+@keyframes wheelGlow{0%,100%{filter:drop-shadow(0 0 12px rgba(255,214,10,0.3))}50%{filter:drop-shadow(0 0 25px rgba(255,214,10,0.6))}}
+@keyframes pointerBounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+@keyframes pulseRing{0%{transform:scale(0.95);opacity:0.6}50%{transform:scale(1.05);opacity:1}100%{transform:scale(0.95);opacity:0.6}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes spinBtnPulse{0%,100%{box-shadow:0 0 20px rgba(255,214,10,0.3)}50%{box-shadow:0 0 40px rgba(255,214,10,0.7)}}
+</style>
+<div class="text-center w-full max-w-[360px]" style="perspective:800px">
+<h2 class="font-extrabold text-2xl mb-1" style="background:linear-gradient(135deg,#FFD60A,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Lucky Spin</h2>
+<p class="text-white/50 text-[11px] mb-4">Free spin every 24 hours</p>
+<div class="relative mx-auto" style="width:290px;height:290px;transform:rotateX(8deg);transform-style:preserve-3d">
+<div id="spinPointer" style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);z-index:10;animation:pointerBounce 1s ease-in-out infinite">
+<div style="width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:22px solid #FFD60A;filter:drop-shadow(0 2px 6px rgba(255,214,10,0.5))"></div>
+</div>
+<div style="position:absolute;inset:-6px;border-radius:50%;background:conic-gradient(from 0deg,#FFD60A,#f97316,#ef4444,#6C3BFF,#06b6d4,#22c55e,#eab308,#FFD60A);animation:pulseRing 2s ease-in-out infinite;opacity:0.5"></div>
+<div style="position:absolute;inset:0;border-radius:50%;border:3px solid rgba(255,214,10,0.4);box-shadow:0 0 30px rgba(255,214,10,0.15),inset 0 0 30px rgba(0,0,0,0.3)"></div>
+<svg id="spinWheel" viewBox="0 0 200 200" width="290" height="290" style="border-radius:50%;animation:wheelGlow 3s ease-in-out infinite;transition:transform 4.5s cubic-bezier(0.17,0.67,0.12,0.99);position:relative;z-index:2">
+<defs><filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+${Array.from({length:SPIN_COUNT},(_,i)=>{
+let angle=360/SPIN_COUNT;let start=angle*i-90;let end=start+angle;
+let s=(start*Math.PI)/180;let e=(end*Math.PI)/180;
+let x1=100+88*Math.cos(s);let y1=100+88*Math.sin(s);
+let x2=100+88*Math.cos(e);let y2=100+88*Math.sin(e);
+let mid=(start+end)/2;let tx=100+58*Math.cos(mid*Math.PI/180);let ty=100+58*Math.sin(mid*Math.PI/180);
+return`<path d="M100,100 L${x1},${y1} A88,88 0 0,1 ${x2},${y2} Z" fill="${SPIN_COLORS[i]}" stroke="rgba(0,0,0,0.4)" stroke-width="1" filter="url(#glow)"/>
+<path d="M100,100 L${x1},${y1} A88,88 0 0,1 ${x2},${y2} Z" fill="url(#shine${i})" opacity="0.3"/>
+<text x="${tx}" y="${ty}" fill="#fff" font-size="10" font-weight="900" text-anchor="middle" dominant-baseline="central" transform="rotate(${(start+end)/2},${tx},${ty})" style="text-shadow:0 1px 3px rgba(0,0,0,0.5)">${SPIN_PRIZES[i]}</text>`;
+}).join('')}
+<circle cx="100" cy="100" r="22" fill="#1a1a2e" stroke="#FFD60A" stroke-width="2"/>
+<circle cx="100" cy="100" r="14" fill="#FFD60A" opacity="0.15"/>
+<text x="100" y="103" fill="#FFD60A" font-size="9" font-weight="900" text-anchor="middle" dominant-baseline="middle">PT</text>
+</svg>
+</div>
+<div id="spinConfetti" class="absolute inset-0 pointer-events-none overflow-hidden z-[250]"></div>
+<div id="spinResult" class="mt-4 text-white font-bold text-sm h-6"></div>
+<button id="spinGoBtn" onclick="doSpin()" class="mt-2 px-12 py-3 rounded-full font-black text-sm tracking-wider" style="background:linear-gradient(135deg,#FFD60A,#f97316);color:#000;animation:spinBtnPulse 2s ease-in-out infinite">SPIN NOW</button>
+<button onclick="document.getElementById('spinOverlay').remove()" class="mt-3 block mx-auto px-6 py-2 rounded-full text-[11px] font-bold text-white/40 hover:text-white/70">Close</button>
+</div>`;
+document.body.appendChild(ov);
+}
+
+async function doSpin(){
+let btn=$('spinGoBtn');
+btn.disabled=true;btn.innerText='SPINNING...';btn.style.animation='none';
+try{
+let r=await fetch('/api/spin/'+userId,{method:'POST'});
+let j=await r.json();
+if(!j.ok){$('spinResult').innerText=j.error||'Failed';btn.disabled=false;btn.innerText='SPIN NOW';btn.style.animation='spinBtnPulse 2s ease-in-out infinite';return;}
+let prize=j.prize;
+let idx=SPIN_PRIZES.indexOf(prize);
+if(idx===-1)idx=0;
+let wheel=$('spinWheel');
+let segAngle=360/SPIN_COUNT;
+let target=360-(idx*segAngle+segAngle/2);
+let spins=6+Math.floor(Math.random()*3);
+let final=spins*360+target;
+wheel.style.transition='transform 4.5s cubic-bezier(0.17,0.67,0.12,0.99)';
+wheel.style.animation='none';
+wheel.style.transform=`rotate(${final}deg)`;
+setTimeout(()=>{
+if(prize>=1.0)spawnConfetti($('spinConfetti'));
+$('spinResult').innerHTML='<span style="background:linear-gradient(135deg,#FFD60A,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:22px">+'+prize.toFixed(2)+' USDT</span>';
+btn.innerText='WON!';
+init();
+},4700);
+}catch(e){$('spinResult').innerText='Error: '+e;btn.disabled=false;btn.innerText='SPIN NOW';btn.style.animation='spinBtnPulse 2s ease-in-out infinite';}
+}
+
+// === MINI GAMES ===
+let _gameHistory=[];
+const CARD_NAMES=['','A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const CARD_SUITS=['\u2665','\u2666','\u2663','\u2660'];
+const CARD_COLORS_HL=['#ef4444','#ef4444','#1e293b','#1e293b'];
+function loadGamesTab(){if(window._lastMe){let e1=$('gameWdBal');if(e1)e1.innerText=(window._lastMe.withdrawable||0).toFixed(2)+' USDT';let e2=$('gameBal');if(e2)e2.innerText=(window._lastMe.balance||0).toFixed(2)+' USDT';}}
+function closeGame(){let o=$('gameOverlay');if(o)o.remove();if(_crashInterval){clearInterval(_crashInterval);_crashInterval=null;}}
+function getBet(){return parseFloat($('betInput').value)||0;}
+function getWd(){return window._lastMe?window._lastMe.withdrawable||0:0;}
+function getBal(){return window._lastMe?window._lastMe.balance||0:0;}
+function updateBalUI(bal,wd){if(window._lastMe){window._lastMe.balance=bal;window._lastMe.withdrawable=wd;}let a=$('gameWdShow');if(a)a.innerText=wd.toFixed(2)+' USDT';let b=$('gameWdBal');if(b)b.innerText=wd.toFixed(2)+' USDT';let c=$('gameBal');if(c)c.innerText=bal.toFixed(2)+' USDT';}
+function setBet(amt){let i=$('betInput');if(i)i.value=amt;}
+function addGameHistory(game,won,amount,bet){_gameHistory.unshift({game,won,amount,bet,time:new Date().toLocaleTimeString()});if(_gameHistory.length>10)_gameHistory.pop();let el=$('gameHistoryList');if(!el)return;el.innerHTML=_gameHistory.map(function(h){return '<div class="flex justify-between items-center py-1.5" style="border-bottom:1px solid var(--border)"><span>'+h.game+'</span><span style="color:'+(h.won?'#22c55e':'#ef4444')+'">'+(h.won?'+':'-')+h.amount.toFixed(2)+' USDT</span></div>';}).join('');}
+
+function gameShell(title,bodyHTML){
+var me=window._lastMe||{};
+return '<div class="w-full max-w-[380px] rounded-3xl p-5" style="background:var(--surface);border:1px solid var(--border)">'+
+'<div class="flex justify-between items-center"><h3 class="font-black text-lg">'+title+'</h3><button onclick="closeGame()" class="w-8 h-8 rounded-full flex items-center justify-center text-sm" style="background:var(--border)">&times;</button></div>'+
+'<div class="mt-2 grid grid-cols-2 gap-2 text-[11px]">'+
+'<div class="p-2.5 rounded-xl text-center" style="background:rgba(38,161,123,0.08);border:1px solid rgba(38,161,123,0.12)"><p style="color:var(--text3)">Balance</p><p id="gameBalShow" class="font-bold mt-0.5" style="color:#26A17B">'+(me.balance||0).toFixed(2)+' USDT</p></div>'+
+'<div class="p-2.5 rounded-xl text-center" style="background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.12)"><p style="color:var(--text3)">Withdrawable</p><p id="gameWdShow" class="font-bold mt-0.5" style="color:#FFD60A">'+(me.withdrawable||0).toFixed(2)+' USDT</p></div>'+
+'</div>'+
+'<div class="mt-3 flex gap-1.5">'+
+'<button onclick="setBet(0.5)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--border)">0.5</button>'+
+'<button onclick="setBet(1)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--text);color:var(--bg)">1</button>'+
+'<button onclick="setBet(2)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--border)">2</button>'+
+'<button onclick="setBet(5)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--border)">5</button>'+
+'<button onclick="setBet(10)" class="flex-1 py-2 rounded-xl text-[11px] font-bold bet-pick" style="background:var(--border)">10</button>'+
+'</div>'+
+'<div class="mt-2 flex items-center gap-2"><input id="betInput" type="number" min="0.5" step="0.1" value="1" class="flex-1 p-2.5 text-sm rounded-xl border outline-none" style="background:var(--input);border-color:var(--border)"><span class="text-[11px] font-bold" style="color:var(--text3)">USDT</span></div>'+
+bodyHTML+'</div>';
+}
+
+function updateGameWd(bal,wd){updateBalUI(bal,wd);var a=$('gameBalShow');if(a)a.innerText=bal.toFixed(2)+' USDT';}
+
+// ====== COIN FLIP ======
+var _cfBusy=false;
+function openGame(type){
+if(_cfBusy||_hlBusy)return;
+var ov=document.createElement('div');ov.id='gameOverlay';
+ov.className='fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[200] p-4';
+var html='';
+if(type==='coinflip'){
+html=gameShell('Coin Flip','<div class="flex flex-col items-center mt-4">'+
+'<div id="cfCoinWrap" style="width:120px;height:120px;perspective:800px;margin:0 auto">'+
+'<div id="cfCoinInner" style="width:120px;height:120px;border-radius:50%;position:relative;transition:transform 0.15s;transform-style:preserve-3d">'+
+'<div style="position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:900;background:linear-gradient(145deg,#FFD60A,#f59e0b);color:#000;border:4px solid rgba(255,255,255,0.4);box-shadow:0 8px 32px rgba(255,214,10,0.4),inset 0 -4px 12px rgba(0,0,0,0.2)">H</div>'+
+'<div style="position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:900;background:linear-gradient(145deg,#8A5CFF,#6C3BFF);color:#fff;border:4px solid rgba(255,255,255,0.3);box-shadow:0 8px 32px rgba(108,59,255,0.4),inset 0 -4px 12px rgba(0,0,0,0.2);transform:rotateX(180deg)">T</div>'+
+'</div></div>'+
+'<p id="cfStatus" class="mt-4 text-sm font-bold" style="color:var(--text3)">Pick a side</p>'+
+'<div class="flex gap-3 mt-4 w-full">'+
+'<button onclick="playCoinflip(\'heads\')" id="cfHeads" class="flex-1 py-4 rounded-2xl font-black text-base active:scale-95 transition-transform" style="background:linear-gradient(135deg,rgba(255,214,10,0.15),rgba(249,115,22,0.08));border:2px solid rgba(255,214,10,0.3);color:#FFD60A">HEADS</button>'+
+'<button onclick="playCoinflip(\'tails\')" id="cfTails" class="flex-1 py-4 rounded-2xl font-black text-base active:scale-95 transition-transform" style="background:linear-gradient(135deg,rgba(108,59,255,0.15),rgba(165,166,246,0.08));border:2px solid rgba(108,59,255,0.3);color:#A5A6F6">TAILS</button>'+
+'</div>'+
+'<div id="cfResult" class="mt-3 text-center text-sm font-bold min-h-[24px]"></div>'+
+'</div>');
+}else if(type==='dice'){
+html=gameShell('Dice Roll','<div class="flex flex-col items-center mt-4">'+
+'<p class="text-[11px] mb-4" style="color:var(--text2)">Predict the total of 2 dice</p>'+
+'<div class="flex gap-5 items-center" id="diceContainer">'+
+'<div id="diceA" style="width:80px;height:80px;border-radius:16px;background:#fff;display:grid;place-items:center;font-size:36px;box-shadow:0 6px 24px rgba(0,0,0,0.4),inset 0 2px 0 rgba(255,255,255,0.6);border:2px solid #e5e7eb;transition:transform 0.2s">?</div>'+
+'<div id="diceB" style="width:80px;height:80px;border-radius:16px;background:#fff;display:grid;place-items:center;font-size:36px;box-shadow:0 6px 24px rgba(0,0,0,0.4),inset 0 2px 0 rgba(255,255,255,0.6);border:2px solid #e5e7eb;transition:transform 0.2s">?</div>'+
+'</div>'+
+'<p id="diceTotal" class="mt-3 text-xl font-black" style="color:var(--text3)">?</p>'+
+'<div class="flex gap-3 mt-4 w-full">'+
+'<button onclick="playDice(\'over\')" id="diceOver" class="flex-1 py-4 rounded-2xl font-black text-sm active:scale-95 transition-transform" style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(16,185,129,0.08));border:2px solid rgba(34,197,94,0.3);color:#22c55e">OVER 7</button>'+
+'<button onclick="playDice(\'under\')" id="diceUnder" class="flex-1 py-4 rounded-2xl font-black text-sm active:scale-95 transition-transform" style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(249,115,22,0.08));border:2px solid rgba(239,68,68,0.3);color:#ef4444">UNDER 7</button>'+
+'</div>'+
+'<div id="diceResult" class="mt-3 text-center text-sm font-bold min-h-[24px]"></div>'+
+'</div>');
+}else if(type==='crash'){
+html=gameShell('Crash','<div class="mt-4 rounded-2xl overflow-hidden relative" style="background:#0a0e1a;border:1px solid rgba(34,197,94,0.15);height:200px">'+
+'<canvas id="crashCanvas" style="width:100%;height:100%"></canvas>'+
+'<div class="absolute inset-0 flex flex-col items-center justify-center" style="pointer-events:none"><p id="crashMult" class="text-5xl font-black" style="color:#22c55e;text-shadow:0 0 20px rgba(34,197,94,0.5)">1.00x</p><p id="crashSub" class="text-[11px] mt-1" style="color:rgba(255,255,255,0.4)">Place your bet</p></div>'+
+'</div>'+
+'<button id="crashBetBtn" onclick="startCrash()" class="mt-4 w-full py-4 rounded-2xl font-black text-base active:scale-95 transition-transform" style="background:linear-gradient(135deg,#FFD60A,#f59e0b);color:#000;box-shadow:0 4px 20px rgba(255,214,10,0.3)">BET & FLY</button>'+
+'<button id="crashCashBtn" onclick="cashoutCrash()" class="mt-2 w-full py-4 rounded-2xl font-black text-base hidden active:scale-95 transition-transform" style="background:linear-gradient(135deg,#22c55e,#10b981);color:#fff;box-shadow:0 4px 20px rgba(34,197,94,0.3)">CASH OUT</button>'+
+'<div id="crashResult" class="mt-3 text-center text-sm font-bold min-h-[24px]"></div>');
+}else if(type==='highlow'){
+html=gameShell('Higher / Lower','<div class="flex flex-col items-center mt-4">'+
+'<div class="flex items-center gap-5" style="perspective:800px">'+
+'<div id="hlCard1" style="width:90px;height:130px;border-radius:12px;background:linear-gradient(145deg,#1e293b,#334155);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--text3);border:2px solid var(--border2);box-shadow:0 8px 24px rgba(0,0,0,0.4);transition:transform 0.5s cubic-bezier(0.4,0,0.2,1)">?</div>'+
+'<div style="font-size:22px;font-weight:900" id="hlArrow">?</div>'+
+'<div id="hlCard2" style="width:90px;height:130px;border-radius:12px;background:linear-gradient(145deg,#1e293b,#334155);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--text3);border:2px solid var(--border2);box-shadow:0 8px 24px rgba(0,0,0,0.4);transition:transform 0.5s cubic-bezier(0.4,0,0.2,1)">?</div>'+
+'</div>'+
+'<div class="flex gap-3 mt-4 w-full">'+
+'<button onclick="playHighlow(\'high\')" class="flex-1 py-4 rounded-2xl font-black text-sm active:scale-95 transition-transform" style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(16,185,129,0.08));border:2px solid rgba(34,197,94,0.3);color:#22c55e">HIGHER</button>'+
+'<button onclick="playHighlow(\'low\')" class="flex-1 py-4 rounded-2xl font-black text-sm active:scale-95 transition-transform" style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(249,115,22,0.08));border:2px solid rgba(239,68,68,0.3);color:#ef4444">LOWER</button>'+
+'</div>'+
+'<div id="hlResult" class="mt-3 text-center text-sm font-bold min-h-[24px]"></div>'+
+'</div>');
+}
+ov.innerHTML=html;document.body.appendChild(ov);
+}
+
+// ====== COIN FLIP PLAY ======
+async function playCoinflip(choice){
+if(_cfBusy)return;
+var bet=getBet();if(bet<0.5){userToast('Min bet 0.50 USDT');return;}
+if(getWd()<bet){userToast('Insufficient withdrawable balance');return;}
+_cfBusy=true;
+var hBtn=$('cfHeads'),tBtn=$('cfTails');
+hBtn.disabled=true;tBtn.disabled=true;hBtn.style.opacity='0.4';tBtn.style.opacity='0.4';
+var coin=$('cfCoinInner');
+$('cfStatus').innerText='Flipping...';$('cfStatus').style.color='#FFD60A';$('cfResult').innerHTML='';
+try{
+var r=await fetch('/api/game/coinflip/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet:bet,choice:choice})});
+var j=await r.json();
+if(!j.ok){$('cfStatus').innerText=j.error;$('cfStatus').style.color='#ef4444';hBtn.disabled=false;tBtn.disabled=false;hBtn.style.opacity='1';tBtn.style.opacity='1';_cfBusy=false;return;}
+var landed=j.result;
+var rotations=8+Math.floor(Math.random()*4);
+var finalAngle=landed==='tails'?180:0;
+var total=rotations*360+finalAngle;
+coin.style.transition='transform 2s cubic-bezier(0.17,0.67,0.12,0.99)';
+coin.style.transform='rotateX('+total+'deg)';
+setTimeout(function(){
+coin.style.transition='none';coin.style.transform='rotateX('+finalAngle+'deg)';
+$('cfStatus').innerText=landed.toUpperCase()+'!';
+$('cfStatus').style.color=j.won?'#22c55e':'#ef4444';
+if(j.won){$('cfResult').innerHTML='<span style="color:#22c55e;font-size:18px">+'+j.profit.toFixed(2)+' USDT</span>';}
+else{$('cfResult').innerHTML='<span style="color:#ef4444;font-size:14px">-'+bet.toFixed(2)+' USDT</span>';}
+updateGameWd(j.balance,j.withdrawable);addGameHistory('Coin Flip',j.won,j.won?j.profit:bet,bet);init();
+hBtn.disabled=false;tBtn.disabled=false;hBtn.style.opacity='1';tBtn.style.opacity='1';_cfBusy=false;
+},2100);
+}catch(e){$('cfStatus').innerText='Error';$('cfStatus').style.color='#ef4444';hBtn.disabled=false;tBtn.disabled=false;hBtn.style.opacity='1';tBtn.style.opacity='1';_cfBusy=false;}
+}
+
+// ====== DICE PLAY ======
+var _diceBusy=false;
+var DICE_DOT_PATTERNS={1:[[1,1]],2:[[0,2],[2,0]],3:[[0,2],[1,1],[2,0]],4:[[0,0],[0,2],[2,0],[2,2]],5:[[0,0],[0,2],[1,1],[2,0],[2,2]],6:[[0,0],[0,2],[1,0],[1,2],[2,0],[2,2]]};
+function renderDiceDots(el,num){
+var p=DICE_DOT_PATTERNS[num]||[];
+var html='<svg viewBox="0 0 3 3" width="48" height="48">';
+p.forEach(function(dot){html+='<circle cx="'+(dot[1]+0.5)+'" cy="'+(dot[0]+0.5)+'" r="0.35" fill="#1a1a2e"/>';});
+html+='</svg>';el.innerHTML=html;
+}
+async function playDice(prediction){
+if(_diceBusy)return;
+var bet=getBet();if(bet<0.5){userToast('Min bet 0.50 USDT');return;}
+if(getWd()<bet){userToast('Insufficient withdrawable balance');return;}
+_diceBusy=true;
+var oBtn=$('diceOver'),uBtn=$('diceUnder');
+oBtn.style.opacity='0.4';uBtn.style.opacity='0.4';
+$('diceResult').innerHTML='';$('diceTotal').innerText='...';
+var dA=$('diceA'),dB=$('diceB');
+var rollCount=0;
+var rollInterval=setInterval(function(){
+renderDiceDots(dA,Math.floor(Math.random()*6)+1);
+renderDiceDots(dB,Math.floor(Math.random()*6)+1);
+dA.style.transform='rotate('+((rollCount*37)%360)+'deg) scale(1.05)';
+dB.style.transform='rotate('+((rollCount*-29)%360)+'deg) scale(1.05)';
+rollCount++;
+},80);
+try{
+var r=await fetch('/api/game/dice/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet:bet,choice:prediction})});
+var j=await r.json();
+if(!j.ok){$('diceResult').innerHTML='<span style="color:#ef4444">'+j.error+'</span>';clearInterval(rollInterval);oBtn.style.opacity='1';uBtn.style.opacity='1';_diceBusy=false;return;}
+setTimeout(function(){
+clearInterval(rollInterval);
+renderDiceDots(dA,j.dice[0]);renderDiceDots(dB,j.dice[1]);
+dA.style.transform='rotate(0deg) scale(1.15)';dB.style.transform='rotate(0deg) scale(1.15)';
+dA.style.boxShadow=j.won?'0 0 24px rgba(34,197,94,0.5)':'0 0 24px rgba(239,68,68,0.5)';
+dB.style.boxShadow=j.won?'0 0 24px rgba(34,197,94,0.5)':'0 0 24px rgba(239,68,68,0.5)';
+$('diceTotal').innerText=j.total;$('diceTotal').style.color=j.won?'#22c55e':'#ef4444';
+if(j.won){$('diceResult').innerHTML='<span style="color:#22c55e;font-size:18px">+'+j.profit.toFixed(2)+' USDT</span>';}
+else{$('diceResult').innerHTML='<span style="color:#ef4444;font-size:14px">-'+bet.toFixed(2)+' USDT</span>';}
+updateGameWd(j.balance,j.withdrawable);addGameHistory('Dice Roll',j.won,j.won?j.profit:bet,bet);init();
+oBtn.style.opacity='1';uBtn.style.opacity='1';_diceBusy=false;
+},1500);
+}catch(e){$('diceResult').innerHTML='<span style="color:#ef4444">Error</span>';clearInterval(rollInterval);oBtn.style.opacity='1';uBtn.style.opacity='1';_diceBusy=false;}
+}
+
+// ====== CRASH (Aviator Style) ======
+var _crashInterval=null,_crashMult=1,_crashBet=0,_crashCrashPt=0,_crashActive=false,_crashStartTime=0,_crashCanvasCtx=null,_crashPoints=[];
+function initCrashCanvas(){
+var c=$('crashCanvas');if(!c)return;
+c.width=c.offsetWidth*2;c.height=c.offsetHeight*2;
+_crashCanvasCtx=c.getContext('2d');_crashCanvasCtx.scale(2,2);_crashPoints=[];
+}
+function drawCrashGraph(){
+var ctx=_crashCanvasCtx;if(!ctx)return;
+var c=$('crashCanvas');var w=c.offsetWidth,h=c.offsetHeight;
+ctx.clearRect(0,0,w,h);
+var elapsed=(Date.now()-_crashStartTime)/1000;
+var x=Math.min(elapsed/15*w*0.9+w*0.05,w*0.95);
+var y=h-(_crashMult/10)*h*0.8-h*0.1;
+y=Math.max(h*0.05,Math.min(h*0.9,y));
+_crashPoints.push({x:x,y:y});
+if(_crashPoints.length>300)_crashPoints.shift();
+if(_crashPoints.length>1){
+ctx.beginPath();
+var grd=ctx.createLinearGradient(0,0,0,h);
+grd.addColorStop(0,'rgba(34,197,94,0.35)');grd.addColorStop(1,'rgba(34,197,94,0.01)');
+ctx.moveTo(_crashPoints[0].x,h);
+for(var i=0;i<_crashPoints.length;i++)ctx.lineTo(_crashPoints[i].x,_crashPoints[i].y);
+ctx.lineTo(_crashPoints[_crashPoints.length-1].x,h);
+ctx.fillStyle=grd;ctx.fill();
+ctx.beginPath();
+ctx.moveTo(_crashPoints[0].x,_crashPoints[0].y);
+for(var i=0;i<_crashPoints.length;i++)ctx.lineTo(_crashPoints[i].x,_crashPoints[i].y);
+ctx.strokeStyle='#22c55e';ctx.lineWidth=2.5;ctx.stroke();
+var last=_crashPoints[_crashPoints.length-1];
+ctx.beginPath();ctx.arc(last.x,last.y,5,0,Math.PI*2);ctx.fillStyle='#22c55e';ctx.fill();
+ctx.beginPath();ctx.arc(last.x,last.y,12,0,Math.PI*2);ctx.fillStyle='rgba(34,197,94,0.15)';ctx.fill();
+}
+}
+
+function crashFrame(){
+if(!_crashActive)return;
+var elapsed=(Date.now()-_crashStartTime)/1000;
+_crashMult=parseFloat(Math.pow(Math.E,0.06*elapsed).toFixed(2));
+var el=$('crashMult');if(!el){_crashActive=false;return;}
+el.innerText=_crashMult.toFixed(2)+'x';
+var danger=_crashMult>=_crashCrashPt*0.6;
+el.style.color=danger?'#ef4444':_crashMult>=2?'#FFD60A':'#22c55e';
+el.style.textShadow='0 0 20px '+(danger?'rgba(239,68,68,0.5)':'rgba(34,197,94,0.5)');
+$('crashSub').innerText='Cash out anytime!';
+drawCrashGraph();
+if(_crashMult>=_crashCrashPt){
+_crashActive=false;
+el.innerText='CRASHED @ '+_crashCrashPt.toFixed(2)+'x';
+el.style.color='#ef4444';el.style.textShadow='0 0 20px rgba(239,68,68,0.5)';
+$('crashSub').innerText='Too late!';
+$('crashCashBtn').classList.add('hidden');$('crashBetBtn').classList.remove('hidden');
+$('crashResult').innerHTML='<span style="color:#ef4444;font-size:16px">-'+_crashBet.toFixed(2)+' USDT</span>';
+addGameHistory('Crash',false,_crashBet,_crashBet);init();
+return;
+}
+_crashInterval=requestAnimationFrame(crashFrame);
+}
+
+async function startCrash(){
+var bet=getBet();if(bet<0.5){userToast('Min bet 0.50 USDT');return;}
+if(getWd()<bet){userToast('Insufficient withdrawable balance');return;}
+$('crashBetBtn').classList.add('hidden');$('crashCashBtn').classList.remove('hidden');
+$('crashResult').innerHTML='';$('crashSub').innerText='Starting...';
+try{
+var r=await fetch('/api/game/crash/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet:bet})});
+var j=await r.json();
+if(!j.ok){$('crashResult').innerHTML='<span style="color:#ef4444">'+j.error+'</span>';$('crashBetBtn').classList.remove('hidden');$('crashCashBtn').classList.add('hidden');return;}
+_crashCrashPt=j.crash_point;_crashBet=bet;_crashMult=1;_crashActive=true;_crashStartTime=Date.now();
+updateGameWd(j.balance,j.withdrawable);
+initCrashCanvas();
+_crashInterval=requestAnimationFrame(crashFrame);
+}catch(e){$('crashResult').innerHTML='<span style="color:#ef4444">Error</span>';$('crashBetBtn').classList.remove('hidden');$('crashCashBtn').classList.add('hidden');}
+}
+
+function cashoutCrash(){
+if(!_crashActive)return;
+_crashActive=false;
+if(_crashInterval)cancelAnimationFrame(_crashInterval);
+var payout=parseFloat((_crashBet*_crashMult).toFixed(2));
+var el=$('crashMult');
+el.innerText=_crashMult.toFixed(2)+'x — CASHED OUT!';
+el.style.color='#FFD60A';el.style.textShadow='0 0 20px rgba(255,214,10,0.5)';
+$('crashSub').innerText='+'+payout.toFixed(2)+' USDT';
+$('crashCashBtn').classList.add('hidden');$('crashBetBtn').classList.remove('hidden');
+$('crashResult').innerHTML='<span style="color:#22c55e;font-size:18px">+'+payout.toFixed(2)+' USDT!</span>';
+addGameHistory('Crash',true,payout,_crashBet);
+fetch('/api/game/crash/cashout/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet:payout})}).then(function(res){return res.json();}).then(function(j){
+if(j.balance!==undefined)updateGameWd(j.balance,j.withdrawable);
+init();
+});
+}
+
+// ====== HIGHER / LOWER ======
+var _hlBusy=false;
+async function playHighlow(prediction){
+if(_hlBusy)return;
+var bet=getBet();if(bet<0.5){userToast('Min bet 0.50 USDT');return;}
+if(getWd()<bet){userToast('Insufficient withdrawable balance');return;}
+_hlBusy=true;
+$('hlResult').innerHTML='';
+var c1=$('hlCard1'),c2=$('hlCard2'),ar=$('hlArrow');
+c1.style.transform='rotateY(0)';c2.style.transform='rotateY(0)';
+c1.style.background='linear-gradient(145deg,#1e293b,#334155)';c1.style.color='var(--text3)';c1.innerText='?';c1.style.borderColor='var(--border2)';c1.style.boxShadow='0 8px 24px rgba(0,0,0,0.4)';
+c2.style.background='linear-gradient(145deg,#1e293b,#334155)';c2.style.color='var(--text3)';c2.innerText='?';c2.style.borderColor='var(--border2)';c2.style.boxShadow='0 8px 24px rgba(0,0,0,0.4)';
+ar.innerText=prediction==='high'?'\u25B2':'\u25BC';ar.style.color=prediction==='high'?'#22c55e':'#ef4444';
+try{
+var r=await fetch('/api/game/highlow/'+userId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet:bet,choice:prediction})});
+var j=await r.json();
+if(!j.ok){$('hlResult').innerHTML='<span style="color:#ef4444">'+j.error+'</span>';_hlBusy=false;return;}
+var suit1=Math.floor(Math.random()*4),suit2=Math.floor(Math.random()*4);
+setTimeout(function(){
+c1.innerText=CARD_NAMES[j.card1]+'\n'+CARD_SUITS[suit1];
+c1.style.background='#fff';c1.style.color=CARD_COLORS_HL[suit1];
+c1.style.transform='rotateY(360deg)';
+},200);
+setTimeout(function(){
+c2.style.transform='rotateY(360deg)';
+setTimeout(function(){
+c2.innerText=CARD_NAMES[j.card2]+'\n'+CARD_SUITS[suit2];
+c2.style.background='#fff';
+c2.style.color=j.won?'#22c55e':'#ef4444';
+c2.style.borderColor=j.won?'#22c55e':'#ef4444';
+c2.style.boxShadow='0 0 24px '+(j.won?'rgba(34,197,94,0.5)':'rgba(239,68,68,0.5)');
+if(j.won){$('hlResult').innerHTML='<span style="color:#22c55e;font-size:18px">+'+j.profit.toFixed(2)+' USDT</span>';}
+else{$('hlResult').innerHTML='<span style="color:#ef4444;font-size:14px">-'+bet.toFixed(2)+' USDT</span>';}
+updateGameWd(j.balance,j.withdrawable);addGameHistory('Higher/Lower',j.won,j.won?j.profit:bet,bet);init();
+_hlBusy=false;
+},350);
+},500);
+}catch(e){$('hlResult').innerHTML='<span style="color:#ef4444">Error</span>';_hlBusy=false;}
+}
 </script>
 </body></html>
