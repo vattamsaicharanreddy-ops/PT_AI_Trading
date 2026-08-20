@@ -1950,11 +1950,36 @@ def admin_user_tasks(user_id: int, request: Request):
     conn = get_conn()
     try:
         cur = cursor(conn)
-        cur.execute(f"""SELECT t.id, t.title, t.description, t.reward, t.reward_type, t.is_mandatory, t.task_type,
+        cur.execute(f"""SELECT t.id, t.title, t.description, t.reward, t.reward_type, t.is_mandatory, t.task_type, t.task_config,
             COALESCE(ut.status,'pending') as user_status, COALESCE(ut.reward_claimed,0) as reward_claimed, ut.verified_at
             FROM tasks t LEFT JOIN user_tasks ut ON t.id=ut.task_id AND ut.user_id={ph()}
             WHERE t.is_active=1 ORDER BY t.sort_order, t.id""", (user_id,))
-        return rows_as_dicts(cur.fetchall())
+        tasks = rows_as_dicts(cur.fetchall())
+        cur.execute(f"SELECT COUNT(*) as cnt FROM users WHERE referred_by={ph()}", (user_id,))
+        ref_count = val(cur.fetchone(), "cnt", 0) or 0
+        for t in tasks:
+            tt = val(t, "task_type", "join") or "join"
+            if tt == "referral":
+                cfg_str = val(t, "task_config", "") or ""
+                try:
+                    cfg = json.loads(cfg_str) if cfg_str else {}
+                except Exception:
+                    cfg = {}
+                ref_target = int(cfg.get("ref_count", 0))
+                min_dep = float(cfg.get("min_deposit", 0) or 0)
+                if min_dep > 0:
+                    cur.execute(
+                        f"SELECT COUNT(*) as cnt FROM users WHERE referred_by={ph()} AND total_deposit>={ph()}",
+                        (user_id, min_dep),
+                    )
+                    actual = val(cur.fetchone(), "cnt", 0) or 0
+                else:
+                    actual = ref_count
+                t["referral_current"] = actual
+                t["referral_target"] = ref_target
+                if actual >= ref_target and t["user_status"] == "pending":
+                    t["user_status"] = "ready"
+        return tasks
     except Exception:
         return []
     finally:

@@ -613,9 +613,16 @@ if(!currentDetailUserId)return;
 try{
 let tasks=await fetchJson('/api/admin/user/'+currentDetailUserId+'/tasks');
 document.getElementById('ud_tasks_list').innerHTML=tasks.map(t=>{
-let statusColor=t.user_status==='verified'?'#10b981':t.user_status==='pending'?'#eab308':'var(--text3)';
-let statusText=t.user_status==='verified'?'Completed':t.user_status==='pending'?'Pending':'Not started';
-return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5"><p class="font-bold">${t.title}</p><p class="text-[9px]" style="color:var(--text3)">${t.description||''}</p></td><td class="p-2.5 font-bold" style="color:#FFD60A">${Number(t.reward).toFixed(2)} USDT</td><td class="p-2.5"><span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:var(--hover)">${t.reward_type}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="color:${statusColor}">${statusText}</span></td><td class="p-2.5"><span class="text-[10px] font-bold" style="color:${t.reward_claimed?'#10b981':'var(--text3)'}">${t.reward_claimed?'Yes':'No'}</span></td></tr>`;
+let isRef=t.task_type==='referral';
+let refCur=t.referral_current||0;
+let refTarget=t.referral_target||0;
+let statusColor=t.user_status==='verified'?'#10b981':t.user_status==='ready'?'#7C4DFF':t.user_status==='pending'?'#eab308':'var(--text3)';
+let statusText=t.user_status==='verified'?'Completed':t.user_status==='ready'?'Ready to Verify':t.user_status==='pending'?'Pending':'Not started';
+let extra='';
+if(isRef){
+extra=`<p class="text-[9px] mt-0.5" style="color:${refCur>=refTarget?'#10b981':'#eab308'}">${refCur}/${refTarget} referrals${t.min_deposit>0?' (≥'+t.min_deposit+' USDT each)':''}</p>`;
+}
+return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5"><p class="font-bold">${t.title}</p><p class="text-[9px]" style="color:var(--text3)">${t.description||''}</p>${extra}</td><td class="p-2.5 font-bold" style="color:#FFD60A">${Number(t.reward).toFixed(2)} USDT</td><td class="p-2.5"><span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:var(--hover)">${t.reward_type}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="color:${statusColor}">${statusText}</span></td><td class="p-2.5"><span class="text-[10px] font-bold" style="color:${t.reward_claimed?'#10b981':'var(--text3)'}">${t.reward_claimed?'Yes':'No'}</span></td></tr>`;
 }).join('')||`<tr><td colspan="5" class="p-6 text-center" style="color:var(--text3)">No tasks available</td></tr>`;
 }catch(e){}
 }
