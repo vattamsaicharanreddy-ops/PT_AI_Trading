@@ -159,7 +159,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <div id='tab-trades' class='tab-content hidden'>
 <div class='mx-4 mt-4 space-y-3'>
 <div class='flex items-center justify-between'><div class='flex items-center gap-2'><div class='w-2 h-2 rounded-full animate-pulse' style='background:#10b981'></div><h3 class='font-bold text-sm'>AI Trading Engine</h3></div><span class='text-[10px] px-2 py-0.5 rounded-full font-bold' style='background:rgba(16,185,129,0.15);color:#10b981'>● ACTIVE</span></div>
-<div id='marketPrices' class='grid grid-cols-2 gap-2'></div>
 <div id='activePositions' class='space-y-2'></div>
 <div id='aiSignals' class='rounded-2xl p-3' style='background:var(--surface);border:1px solid var(--border)'></div>
 <div id='portfolioChart' class='rounded-2xl p-3' style='background:var(--surface);border:1px solid var(--border)'></div>
@@ -688,106 +687,105 @@ if(j.ok){userToast('Withdrawal requested!');closeWithdraw();init();}else userToa
 }catch(e){userToast('Request failed','error');}
 if(btn){btn.disabled=false;btn.style.opacity='1';}
 }
-let _livePrices={BTC:0,ETH:0,SOL:0,XRP:0,DOGE:0};let _priceInterval=null;
-let _aiReasons=['Breaking resistance level','RSI oversold, bounce likely','Volume spike detected','EMA crossover bullish','MACD momentum shift','Support level tested','Bollinger squeeze breakout','Order flow imbalance detected','Accumulation pattern forming','Funding rate flip signal'];
-function _fmtPrice(p){return p>=1000?'$'+p.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):p>=1?'$'+p.toFixed(2):'$'+p.toFixed(4);}
+let _priceInterval=null;
+let _aiReasons=['Breaking resistance level','RSI oversold bounce likely','Volume spike detected','EMA crossover bullish','MACD momentum shift','Support level tested','Bollinger squeeze breakout','Order flow imbalance','Accumulation pattern forming','Funding rate flip signal'];
 function _sparkline(data,w,h,color){
 if(!data||data.length<2)return'';
-let mn=Math.min(...data),mx=Math.max(...data),rng=mx-mn||1;
-let pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-mn)/rng)*h*0.8-h*0.1}`).join(' ');
-return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+let mn=data[0],mx=data[0];
+for(let i=1;i<data.length;i++){if(data[i]<mn)mn=data[i];if(data[i]>mx)mx=data[i];}
+let rng=mx-mn;if(rng===0)rng=1;
+let pts=[];for(let i=0;i<data.length;i++){let x=(i/(data.length-1))*w;let y=h-((data[i]-mn)/rng)*h*0.8-h*0.1;pts.push(x.toFixed(1)+','+y.toFixed(1));}
+return'<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'"><polyline points="'+pts.join(' ')+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 }
-async function _fetchLivePrices(){
-try{
-let r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple,dogecoin&vs_currencies=usd&include_24hr_change=true');
-let d=await r.json();
-if(d.bitcoin){_livePrices.BTC=d.bitcoin.usd;_livePrices.BTC_CHG=d.bitcoin.usd_24h_change||0;}
-if(d.ethereum){_livePrices.ETH=d.ethereum.usd;_livePrices.ETH_CHG=d.ethereum.usd_24h_change||0;}
-if(d.solana){_livePrices.SOL=d.solana.usd;_livePrices.SOL_CHG=d.solana.usd_24h_change||0;}
-if(d.ripple){_livePrices.XRP=d.ripple.usd;_livePrices.XRP_CHG=d.ripple.usd_24h_change||0;}
-if(d.dogecoin){_livePrices.DOGE=d.dogecoin.usd;_livePrices.DOGE_CHG=d.dogecoin.usd_24h_change||0;}
-}catch(e){}
+function _renderPositions(trades){
+var el=document.getElementById('activePositions');if(!el)return;
+var last=trades.slice(-2).reverse();if(!last.length){el.innerHTML='';return;}
+var now=Date.now();
+var h='<div class="flex items-center gap-2 mb-2"><div class="w-1.5 h-1.5 rounded-full animate-pulse" style="background:#FFD60A"></div><p class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">ACTIVE POSITIONS</p></div>';
+for(var i=0;i<last.length;i++){
+var t=last[i];var sc=t.side==='LONG'?'#3b82f6':'#ef4444';
+var bg=t.is_profit?'rgba(16,185,129,0.06)':'rgba(239,68,68,0.06)';
+var fpnl=(Math.sin((now+i*5000)/8000)*2+3).toFixed(2);
+var bpct=Math.min(95,Math.max(5,50+parseFloat(fpnl)*5));
+var borderC=t.is_profit?'rgba(16,185,129,0.15)':'rgba(239,68,68,0.15)';
+var pnlC=t.is_profit?'#10b981':'#ef4444';
+h+='<div class="p-3 rounded-xl" style="background:linear-gradient(135deg,'+bg+',var(--surface));border:1px solid '+borderC+'">';
+h+='<div class="flex justify-between items-center"><div><p class="text-[10px] font-bold" style="color:var(--text3)">'+t.pair+' · '+t.leverage+'x</p>';
+h+='<p class="text-[13px] font-black mt-0.5" style="color:'+sc+'">'+t.side+' <span class="text-[10px]" style="color:var(--text3)">$'+t.usdt_amount+'</span></p></div>';
+h+='<div class="text-right"><p class="text-[16px] font-black" style="color:'+pnlC+'">'+(t.pnl_percent>0?'+':'')+t.pnl_percent+'%</p>';
+h+='<p class="text-[10px]" style="color:var(--text3)">+$'+Math.abs(t.pnl_usdt).toFixed(2)+'</p></div></div>';
+h+='<div class="mt-2 h-1 rounded-full" style="background:var(--border2)"><div class="h-1 rounded-full" style="width:'+bpct+'%;background:'+pnlC+'"></div></div></div>';
 }
-function _renderMarketPrices(){
-let pairs=[
-{sym:'BTC',name:'Bitcoin',price:_livePrices.BTC,chg:_livePrices.BTC_CHG||0,color:'#F7931A'},
-{sym:'ETH',name:'Ethereum',price:_livePrices.ETH,chg:_livePrices.ETH_CHG||0,color:'#627EEA'},
-{sym:'SOL',name:'Solana',price:_livePrices.SOL,chg:_livePrices.SOL_CHG||0,color:'#00FFA3'},
-{sym:'XRP',name:'Ripple',price:_livePrices.XRP,chg:_livePrices.XRP_CHG||0,color:'#00AAE4'}
-];
-let el=document.getElementById('marketPrices');
-if(!el)return;
-el.innerHTML=pairs.map(p=>{
-let isUp=p.chg>=0;
-let chgColor=isUp?'#10b981':'#ef4444';
-let barW=Math.min(100,Math.abs(p.chg)*8);
-let bar=isUp?`<div class="h-1 rounded-full" style="width:${barW}%;background:#10b981"></div>`:`<div class="h-1 rounded-full" style="width:${barW}%;background:#ef4444"></div>`;
-return`<div class="p-3 rounded-xl" style="background:var(--surface);border:1px solid var(--border)"><div class="flex justify-between items-start"><div><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">${p.name}</p><p class="text-[14px] font-black mt-0.5">${_fmtPrice(p.price)}</p></div><span class="text-[10px] font-bold" style="color:${chgColor}">${isUp?'+':''}${p.chg.toFixed(2)}%</span></div><div class="mt-1.5">${bar}</div></div>`;
-}).join('');
+el.innerHTML=h;
 }
-function _renderActivePositions(trades){
-let el=document.getElementById('activePositions');
-if(!el)return;
-let openTrades=trades.slice(-2).reverse();
-if(!openTrades.length){el.innerHTML='';return;}
-let now=Date.now();
-el.innerHTML=`<div class="flex items-center gap-2 mb-1"><div class="w-1.5 h-1.5 rounded-full animate-pulse" style="background:#FFD60A"></div><p class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">ACTIVE POSITIONS</p></div>`+openTrades.map((t,i)=>{
-let sideColor=t.side==='LONG'?'#3b82f6':'#ef4444';
-let bgGrad=t.is_profit?'rgba(16,185,129,0.06)':'rgba(239,68,68,0.06)';
-let entry=parseFloat(t.entry_price.replace(/,/g,''));let exit=parseFloat(t.exit_price.replace(/,/g,''));
-let fakePnl=(Math.sin((now+i*5000)/8000)*2+3).toFixed(2);
-let barPct=Math.min(95,Math.max(5,50+parseFloat(fakePnl)*5));
-return`<div class="p-3 rounded-xl" style="background:linear-gradient(135deg,${bgGrad},var(--surface));border:1px solid ${t.is_profit?'rgba(16,185,129,0.15)':'rgba(239,68,68,0.15)'}"><div class="flex justify-between items-center"><div><p class="text-[10px] font-bold" style="color:var(--text3)">${t.pair} · ${t.leverage}x</p><p class="text-[13px] font-black mt-0.5" style="color:${sideColor}">${t.side} <span class="text-[10px]" style="color:var(--text3)">$${t.usdt_amount}</span></p></div><div class="text-right"><p class="text-[16px] font-black" style="color:${t.is_profit?'#10b981':'#ef4444'}">${t.pnl_percent>0?'+':''}${t.pnl_percent}%</p><p class="text-[10px]" style="color:var(--text3)">+$${Math.abs(t.pnl_usdt).toFixed(2)}</p></div></div><div class="mt-2 h-1 rounded-full" style="background:var(--border2)"><div class="h-1 rounded-full transition-all" style="width:${barPct}%;background:${t.is_profit?'#10b981':'#ef4444'}"></div></div></div>`;
-}).join('');
+function _renderSignals(trades){
+var el=document.getElementById('aiSignals');if(!el)return;
+var last3=trades.slice(-3).reverse();if(!last3.length){el.innerHTML='';return;}
+var lat=8+Math.floor(Math.random()*12);
+var h='<div class="flex items-center justify-between mb-2"><p class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">AI DECISIONS</p><span class="text-[9px] px-2 py-0.5 rounded-full" style="background:rgba(16,185,129,0.1);color:#10b981">Latency: '+lat+'ms</span></div>';
+for(var i=0;i<last3.length;i++){
+var t=last3[i];var conf=78+Math.floor(Math.random()*17);
+var reason=_aiReasons[(parseInt(t.time.replace(':',''))+i)%_aiReasons.length];
+var sc=t.side==='LONG'?'#3b82f6':'#ef4444';
+var confC=conf>=85?'#10b981':'#eab308';
+var brd=i<last3.length-1?'border-b':'';
+h+='<div class="py-2 '+brd+'" style="border-color:var(--border2)">';
+h+='<div class="flex items-center justify-between"><div class="flex items-center gap-2">';
+h+='<span class="text-[10px] font-bold" style="color:var(--text3)">'+t.time+'</span>';
+h+='<span class="font-bold text-[11px]">'+t.pair+'</span>';
+h+='<span class="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style="background:'+sc+'22;color:'+sc+'">'+t.side+'</span></div>';
+h+='<span class="text-[9px] font-bold" style="color:'+confC+'">'+conf+'% conf</span></div>';
+h+='<p class="text-[10px] mt-1" style="color:var(--text2)">"'+reason+'" → '+t.leverage+'x leverage</p></div>';
 }
-function _renderAISignals(trades){
-let el=document.getElementById('aiSignals');
-if(!el)return;
-let last3=trades.slice(-3).reverse();
-let uptimeH=22+Math.floor(Math.random()*3);
-let latency=8+Math.floor(Math.random()*12);
-let html=`<div class="flex items-center justify-between mb-2"><p class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">AI DECISIONS</p><span class="text-[9px] px-2 py-0.5 rounded-full" style="background:rgba(16,185,129,0.1);color:#10b981">Latency: ${latency}ms</span></div>`;
-last3.forEach((t,i)=>{
-let conf=78+Math.floor(Math.random()*17);
-let reason=_aiReasons[(parseInt(t.time.replace(':',''))+i)%_aiReasons.length];
-let sideColor=t.side==='LONG'?'#3b82f6':'#ef4444';
-html+=`<div class="py-2 ${i<last3.length-1?'border-b':''}" style="border-color:var(--border2)"><div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="text-[10px] font-bold" style="color:var(--text3)">${t.time}</span><span class="font-bold text-[11px]">${t.pair}</span><span class="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style="background:${sideColor}22;color:${sideColor}">${t.side}</span></div><span class="text-[9px] font-bold" style="color:${conf>=85?'#10b981':'#eab308'}">${conf}% conf</span></div><p class="text-[10px] mt-1" style="color:var(--text2)">"${reason}" → ${t.leverage}x leverage</p></div>`;
-});
-el.innerHTML=html;
+el.innerHTML=h;
 }
-function _renderPortfolioChart(trades){
-let el=document.getElementById('portfolioChart');
-if(!el)return;
-let cumPnl=[];let running=0;
-trades.forEach(t=>{running+=t.pnl_percent;cumPnl.push(running);});
-let totalPnl=running;
-let winCount=trades.filter(t=>t.is_profit).length;
-let totalPct=trades.length?Math.round(winCount/trades.length*100):0;
-let svg=_sparkline(cumPnl,300,60,totalPnl>=0?'#10b981':'#ef4444');
-let isUp=totalPnl>=0;
-el.innerHTML=`<div class="flex items-center justify-between mb-2"><p class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">PORTFOLIO GROWTH</p><span class="text-[9px] font-bold" style="color:${isUp?'#10b981':'#ef4444'}">${isUp?'+':''}${totalPnl.toFixed(2)}%</span></div><div class="rounded-xl overflow-hidden p-2" style="background:var(--bg)">${svg}</div><div class="mt-2 flex justify-between text-[10px]"><span style="color:var(--text3)">Win Rate: <b style="color:#10b981">${totalPct}%</b></span><span style="color:var(--text3)">Trades: <b>${trades.length}</b></span><span style="color:var(--text3)">PnL: <b style="color:${isUp?'#10b981':'#ef4444'}">${isUp?'+':''}${totalPnl.toFixed(2)}%</b></span></div>`;
+function _renderChart(trades){
+var el=document.getElementById('portfolioChart');if(!el)return;
+if(!trades.length){el.innerHTML='';return;}
+var cum=[];var r=0;for(var i=0;i<trades.length;i++){r+=trades[i].pnl_percent;cum.push(r);}
+var total=r;var wins=0;for(var i=0;i<trades.length;i++){if(trades[i].is_profit)wins++;}
+var wr=trades.length?Math.round(wins/trades.length*100):0;
+var svg=_sparkline(cum,300,60,total>=0?'#10b981':'#ef4444');
+var up=total>=0;
+var upC=up?'#10b981':'#ef4444';
+var h='<div class="flex items-center justify-between mb-2"><p class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">PORTFOLIO GROWTH</p><span class="text-[9px] font-bold" style="color:'+upC+'">'+(up?'+':'')+total.toFixed(2)+'%</span></div>';
+h+='<div class="rounded-xl overflow-hidden p-2" style="background:var(--bg)">'+svg+'</div>';
+h+='<div class="mt-2 flex justify-between text-[10px]">';
+h+='<span style="color:var(--text3)">Win Rate: <b style="color:#10b981">'+wr+'%</b></span>';
+h+='<span style="color:var(--text3)">Trades: <b>'+trades.length+'</b></span>';
+h+='<span style="color:var(--text3)">PnL: <b style="color:'+upC+'">'+(up?'+':'')+total.toFixed(2)+'%</b></span></div>';
+el.innerHTML=h;
 }
 async function loadTrades(){
-_fetchLivePrices().then(()=>_renderMarketPrices()).catch(()=>{});
-let d=await apiFetch('/api/binance/trades');
+var d=null;
+try{d=await apiFetch('/api/binance/trades');}catch(e){}
 if(!d){safeHTML('tradesTableBody','<tr><td colspan="7" class="p-6 text-center" style="color:var(--text3)">Loading trades...</td></tr>');return;}
-let trades=d.trades||[];
-let totalVisible=d.summary.total_trades;let expected=d.all_trades_count||16;
-let winRate=d.summary.win_rate||0;let currentIST=d.summary.current_ist||'';
-safeSet('todayTrades',`${totalVisible}/${expected} trades · ${winRate}% win · ${currentIST}`);
-_renderActivePositions(trades);
-_renderAISignals(trades);
-_renderPortfolioChart(trades);
-let html='';
+var trades=d.trades||[];
+var totalVisible=d.summary.total_trades;var expected=d.all_trades_count||16;
+var winRate=d.summary.win_rate||0;var currentIST=d.summary.current_ist||'';
+safeSet('todayTrades',totalVisible+'/'+expected+' trades · '+winRate+'% win · '+currentIST);
+try{_renderPositions(trades);}catch(e){}
+try{_renderSignals(trades);}catch(e){}
+try{_renderChart(trades);}catch(e){}
+var html='';
 if(totalVisible===0){
-html=`<tr><td colspan="7" class="p-6 text-center"><div class="w-10 h-10 mx-auto rounded-full flex items-center justify-center" style="background:var(--border)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 16L10 4L16 16" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round"/></svg></div><p class="font-bold mt-2 text-[12px]">Market scanning...</p><p class="text-[11px] mt-1" style="color:var(--text2)">First trade at 00:05 IST. Now: ${currentIST}</p></td></tr>`;
+html='<tr><td colspan="7" class="p-6 text-center"><p class="font-bold mt-2 text-[12px]">Market scanning...</p><p class="text-[11px] mt-1" style="color:var(--text2)">First trade at 00:05 IST. Now: '+currentIST+'</p></td></tr>';
 }else{
-trades.forEach((t,idx)=>{
-let sideColor=t.side==='LONG'?'#3b82f6':'#ef4444';
-let pnlColor=t.is_profit?'#10b981':'#ef4444';
-let isLatest=idx===(trades.length-1);
-html+=`<tr class="border-t" style="border-color:var(--border)"><td class="p-2.5">${t.time} ${isLatest?'<span class="text-[8px] px-1 py-0.5 rounded-full font-black" style="background:#FFD60A;color:#000">LIVE</span>':''}</td><td class="p-2.5 font-bold">${t.pair}</td><td class="p-2.5"><span class="px-1.5 py-0.5 rounded-full text-[10px]" style="background:${sideColor}22;color:${sideColor}">${t.side} ${t.leverage}x</span></td><td class="p-2.5 text-right">${t.entry_price}</td><td class="p-2.5 text-right mono">${t.exit_price}</td><td class="p-2.5 text-right">${t.leverage}x</td><td class="p-2.5 text-right font-bold" style="color:${pnlColor}">${t.pnl_percent>0?'+':''}${t.pnl_percent}%</td></tr>`;
-});
+for(var i=0;i<trades.length;i++){
+var t=trades[i];var idx=i;
+var sideColor=t.side==='LONG'?'#3b82f6':'#ef4444';
+var pnlColor=t.is_profit?'#10b981':'#ef4444';
+var isLatest=idx===(trades.length-1);
+html+='<tr class="border-t" style="border-color:var(--border)">';
+html+='<td class="p-2.5">'+t.time+(isLatest?' <span class="text-[8px] px-1 py-0.5 rounded-full font-black" style="background:#FFD60A;color:#000">LIVE</span>':'')+'</td>';
+html+='<td class="p-2.5 font-bold">'+t.pair+'</td>';
+html+='<td class="p-2.5"><span class="px-1.5 py-0.5 rounded-full text-[10px]" style="background:'+sideColor+'22;color:'+sideColor+'">'+t.side+' '+t.leverage+'x</span></td>';
+html+='<td class="p-2.5 text-right">'+t.entry_price+'</td>';
+html+='<td class="p-2.5 text-right mono">'+t.exit_price+'</td>';
+html+='<td class="p-2.5 text-right">'+t.leverage+'x</td>';
+html+='<td class="p-2.5 text-right font-bold" style="color:'+pnlColor+'">'+(t.pnl_percent>0?'+':'')+t.pnl_percent+'%</td>';
+html+='</tr>';
+}
 }
 safeHTML('tradesTableBody',html);
 }
