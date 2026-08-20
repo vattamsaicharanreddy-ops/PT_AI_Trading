@@ -757,6 +757,7 @@ h+='<span style="color:var(--text3)">Trades: <b>'+trades.length+'</b></span>';
 h+='<span style="color:var(--text3)">PnL: <b style="color:'+upC+'">'+(up?'+':'')+total.toFixed(2)+'%</b></span></div>';
 el.innerHTML=h;
 }
+var _actInterval=null;
 function _renderActivityFeed(){
 var el=document.getElementById('activityFeed');if(!el)return;
 apiFetch('/api/display/activity').then(function(d){
@@ -775,6 +776,7 @@ h+='<span class="text-[9px] flex-shrink-0" style="color:var(--text3)">'+a.time+'
 }
 el.innerHTML=h;
 }).catch(function(){el.innerHTML='';});
+if(!_actInterval){_actInterval=setInterval(function(){var tab=document.querySelector('[data-tab=trades]');if(tab&&getComputedStyle(tab).opacity==='1')_renderActivityFeed();},300000);}
 }
 async function loadTrades(){
 var d=null;
