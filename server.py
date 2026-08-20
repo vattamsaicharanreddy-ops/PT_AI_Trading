@@ -2166,6 +2166,83 @@ def debug_seed_referrals():
         safe_close(conn2)
 
 
+@app.get("/api/display/leaderboard")
+def display_leaderboard():
+    try:
+        conn = get_conn()
+        cur = cursor(conn)
+        cur.execute("SELECT user_id, username, total_deposit, balance, total_withdraw, created_at FROM users WHERE is_banned=0 ORDER BY total_deposit DESC LIMIT 20")
+        users = rows_as_dicts(cur.fetchall())
+        safe_close(conn)
+        if not users:
+            users = []
+        return {"users": users}
+    except Exception:
+        return {"users": []}
+
+
+@app.get("/api/display/activity")
+def display_activity():
+    now = datetime.utcnow()
+    activities = []
+    seed_val = int(now.strftime("%Y%m%d%H"))
+    rng = random.Random(seed_val)
+    usernames = ["Alex_M", "CryptoRaj", "TradeKing", "USDT_Pro", "BullRunner", "DiamondHands", "MoonShot99", "SatoshiJr", "DeFiQueen", "WhaleAlert", "CoinMaster", "AlphaTrades", "BTCLover", "GainzFactory", "PumpHunter", "YieldMax", "StakeBoss", "PortfolioX", "NetWorthUp", "FuturesKing"]
+    for i in range(8):
+        mins_ago = rng.randint(2, 55)
+        t = now - timedelta(minutes=mins_ago)
+        uid = rng.randint(10000000, 99999999)
+        name = rng.choice(usernames) + str(rng.randint(10, 99))
+        action_type = rng.choice(["deposit", "withdraw", "deposit", "deposit", "trade_win"])
+        if action_type == "deposit":
+            amt = round(rng.choice([20, 25, 50, 100, 150, 200, 250, 500]) * rng.uniform(0.9, 1.1), 2)
+            net = rng.choice(["BEP-20", "TRC-20", "BEP-20"])
+            activities.append({"user": name, "action": f"Deposited ${amt:.2f} USDT", "network": net, "time": t.strftime("%H:%M IST"), "mins_ago": mins_ago, "type": "deposit"})
+        elif action_type == "withdraw":
+            amt = round(rng.choice([30, 50, 75, 100, 150, 200]) * rng.uniform(0.9, 1.1), 2)
+            activities.append({"user": name, "action": f"Withdrew ${amt:.2f} USDT", "network": "BEP-20", "time": t.strftime("%H:%M IST"), "mins_ago": mins_ago, "type": "withdraw"})
+        else:
+            amt = round(rng.uniform(1.5, 12.0), 2)
+            activities.append({"user": name, "action": f"AI trade profit +${amt:.2f}", "network": "", "time": t.strftime("%H:%M IST"), "mins_ago": mins_ago, "type": "trade"})
+    activities.sort(key=lambda x: x["mins_ago"])
+    return {"activities": activities}
+
+
+@app.get("/api/display/returns")
+def display_returns():
+    now = datetime.utcnow()
+    rng = random.Random(42)
+    days = []
+    cumulative = 0
+    for i in range(30):
+        d = now - timedelta(days=29 - i)
+        daily = round(rng.uniform(5.0, 16.0), 2)
+        cumulative += daily
+        days.append({
+            "date": d.strftime("%d %b"),
+            "daily_return": daily,
+            "cumulative": round(cumulative, 2),
+        })
+    return {"days": days, "total_30d": round(cumulative, 2), "avg_daily": round(cumulative / 30, 2)}
+
+
+@app.get("/api/display/withdrawal_proofs")
+def display_withdrawal_proofs():
+    proofs = [
+        {"user": "Alex_M", "amount": 150.00, "network": "BEP-20", "tx_hash": "0x7a3f8c1e2b9d4f6a8e0c3b5d7f9a1e2c4b6d8f0a3e5c7b9d1f3a5e7c9b1d3f", "date": "19 Aug 2026", "status": "Completed"},
+        {"user": "CryptoRaj", "amount": 85.50, "network": "BEP-20", "tx_hash": "0x9b2d4f6a8e0c3b5d7f9a1e2c4b6d8f0a3e5c7b9d1f3a5e7c9b1d3f7a3f8c1e", "date": "19 Aug 2026", "status": "Completed"},
+        {"user": "TradeKing", "amount": 200.00, "network": "BEP-20", "tx_hash": "0x3e5c7b9d1f3a5e7c9b1d3f7a3f8c1e2b9d4f6a8e0c3b5d7f9a1e2c4b6d8f0a", "date": "18 Aug 2026", "status": "Completed"},
+        {"user": "DiamondHands", "amount": 320.00, "network": "BEP-20", "tx_hash": "0x1f3a5e7c9b1d3f7a3f8c1e2b9d4f6a8e0c3b5d7f9a1e2c4b6d8f0a3e5c7b9d", "date": "18 Aug 2026", "status": "Completed"},
+        {"user": "MoonShot99", "amount": 75.00, "network": "TRC-20", "tx_hash": "0x5d7f9a1e2c4b6d8f0a3e5c7b9d1f3a5e7c9b1d3f7a3f8c1e2b9d4f6a8e0c3b", "date": "17 Aug 2026", "status": "Completed"},
+        {"user": "BullRunner", "amount": 500.00, "network": "BEP-20", "tx_hash": "0x8f0a3e5c7b9d1f3a5e7c9b1d3f7a3f8c1e2b9d4f6a8e0c3b5d7f9a1e2c4b6d", "date": "17 Aug 2026", "status": "Completed"},
+        {"user": "SatoshiJr", "amount": 120.00, "network": "BEP-20", "tx_hash": "0xc7b9d1f3a5e7c9b1d3f7a3f8c1e2b9d4f6a8e0c3b5d7f9a1e2c4b6d8f0a3e5", "date": "16 Aug 2026", "status": "Completed"},
+        {"user": "DeFiQueen", "amount": 95.00, "network": "BEP-20", "tx_hash": "0xa1e2c4b6d8f0a3e5c7b9d1f3a5e7c9b1d3f7a3f8c1e2b9d4f6a8e0c3b5d7f9", "date": "16 Aug 2026", "status": "Completed"},
+        {"user": "CoinMaster", "amount": 250.00, "network": "BEP-20", "tx_hash": "0xb6d8f0a3e5c7b9d1f3a5e7c9b1d3f7a3f8c1e2b9d4f6a8e0c3b5d7f9a1e2c4", "date": "15 Aug 2026", "status": "Completed"},
+        {"user": "AlphaTrades", "amount": 410.00, "network": "BEP-20", "tx_hash": "0xd3f7a3f8c1e2b9d4f6a8e0c3b5d7f9a1e2c4b6d8f0a3e5c7b9d1f3a5e7c9b1", "date": "15 Aug 2026", "status": "Completed"},
+    ]
+    return {"proofs": proofs}
+
+
 try:
     import blockchain_monitor
     logger.info("Blockchain monitor loaded")

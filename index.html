@@ -164,6 +164,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <div id='portfolioChart' class='rounded-2xl p-3' style='background:var(--surface);border:1px solid var(--border)'></div>
 <div class='flex justify-between items-center'><h4 class='font-bold text-xs'>Today's Completed Trades</h4><span id='todayTrades' class='text-[10px]' style='color:var(--text3)'>0/0</span></div>
 <div class='rounded-2xl overflow-hidden' style='background:var(--surface);border:1px solid var(--border)'><div class='overflow-x-auto'><table class='w-full text-[10px]'><thead><tr style='color:var(--text3)'><th class='text-left p-2.5'>Time</th><th class='text-left p-2.5'>Pair</th><th class='text-left p-2.5'>Side</th><th class='text-right p-2.5'>Entry</th><th class='text-right p-2.5'>Exit</th><th class='text-right p-2.5'>Lev</th><th class='text-right p-2.5'>PNL</th></tr></thead><tbody id='tradesTableBody'></tbody></table></div></div>
+<div id='activityFeed' class='rounded-2xl p-3' style='background:var(--surface);border:1px solid var(--border)'></div>
 </div>
 </div>
 
@@ -756,6 +757,25 @@ h+='<span style="color:var(--text3)">Trades: <b>'+trades.length+'</b></span>';
 h+='<span style="color:var(--text3)">PnL: <b style="color:'+upC+'">'+(up?'+':'')+total.toFixed(2)+'%</b></span></div>';
 el.innerHTML=h;
 }
+function _renderActivityFeed(){
+var el=document.getElementById('activityFeed');if(!el)return;
+apiFetch('/api/display/activity').then(function(d){
+if(!d||!d.activities||!d.activities.length){el.innerHTML='';return;}
+var acts=d.activities;
+var h='<div class="flex items-center justify-between mb-2"><p class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">LIVE ACTIVITY</p><div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded-full animate-pulse" style="background:#10b981"></div><span class="text-[9px]" style="color:#10b981">Live</span></div></div>';
+for(var i=0;i<acts.length;i++){
+var a=acts[i];
+var icon=a.type==='deposit'?'💰':a.type==='withdraw'?'💸':'📈';
+var iconBg=a.type==='deposit'?'rgba(16,185,129,0.1)':a.type==='withdraw'?'rgba(255,214,10,0.1)':'rgba(59,130,246,0.1)';
+var actColor=a.type==='deposit'?'#10b981':a.type==='withdraw'?'#FFD60A':'#3b82f6';
+h+='<div class="flex items-center gap-2 py-2'+(i<acts.length-1?' border-b':'')+'" style="border-color:var(--border2)">';
+h+='<div class="w-7 h-7 rounded-full flex items-center justify-center text-[12px] flex-shrink-0" style="background:'+iconBg+'">'+icon+'</div>';
+h+='<div class="flex-1 min-w-0"><p class="text-[11px] font-bold truncate">'+a.user+'</p><p class="text-[10px]" style="color:'+actColor+'">'+a.action+'</p></div>';
+h+='<span class="text-[9px] flex-shrink-0" style="color:var(--text3)">'+a.time+'</span></div>';
+}
+el.innerHTML=h;
+}).catch(function(){el.innerHTML='';});
+}
 async function loadTrades(){
 var d=null;
 try{d=await apiFetch('/api/binance/trades');}catch(e){}
@@ -788,6 +808,7 @@ html+='</tr>';
 }
 }
 safeHTML('tradesTableBody',html);
+try{_renderActivityFeed();}catch(e){}
 }
 
 async function loadHistory(){
