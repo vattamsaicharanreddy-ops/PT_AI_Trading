@@ -361,7 +361,9 @@ document.body.setAttribute('data-theme',s);
 setTimeout(()=>{let b=$('themeBtn');if(b)b.innerHTML=s==='dark'?'&#9788;':'&#9790;';},50);
 })();
 
+let _activeTab='home';
 function switchTab(tab){
+_activeTab=tab;
 document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
 let el=$('tab-'+tab);if(el)el.classList.remove('hidden');
 document.querySelectorAll('.bottom-tab').forEach(b=>{b.classList.remove('tab-active');b.style.opacity='0.5';});
@@ -1071,9 +1073,10 @@ safeSet('gateText',`Complete ${me.mandatory_tasks_total-me.mandatory_tasks_done}
 $('wdGate').classList.remove('hidden');safeSet('wdGateText',`Done: ${me.mandatory_tasks_done}/${me.mandatory_tasks_total}`);
 }else{$('mandatoryGate').classList.add('hidden');$('taskBadge').classList.add('hidden');$('bottomTaskDot').classList.add('hidden');$('wdGate').classList.add('hidden');}
 };
-init().then(()=>{hideInitialLoader();}).catch(()=>{hideInitialLoader();});
+init().then(()=>{hideInitialLoader();if(_activeTab==='portfolio')loadPortfolio();}).catch(()=>{hideInitialLoader();});
 setTimeout(hideInitialLoader,2500);
 setInterval(init,15000);
+setInterval(()=>{if(window._lastMe&&_activeTab==='portfolio')loadPortfolio();},15000);
 
 // === DAILY BONUS ===
 async function claimDailyBonus(){
