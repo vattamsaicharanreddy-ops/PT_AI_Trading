@@ -97,6 +97,21 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <div id='ptrIndicator' class='ptr-indicator hidden'><span class='ptr-spinner'></span>Refreshing...</div>
 <div id='celebrationOverlay' class='celebration-overlay hidden'></div>
 <div id='tierUpOverlay' class='celebration-overlay hidden'></div>
+<div id='tierInfoPopup' class='hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[200] p-4'>
+<div class='rounded-3xl p-5 w-full max-w-[360px] max-h-[85vh] overflow-y-auto' style='background:var(--surface);border:1px solid var(--border)'>
+<div class='text-center mb-4'>
+<div class='w-14 h-14 mx-auto rounded-full flex items-center justify-center text-2xl' style='background:linear-gradient(135deg,#FFD60A22,#6C3BFF22);border:1px solid rgba(255,214,10,0.2)'>💰</div>
+<h2 class='font-black text-lg mt-2'>Earn Daily with AI Trading</h2>
+<p class='text-[11px] mt-1' style='color:var(--text2)'>Higher deposit = Higher daily earnings</p>
+</div>
+<div id='tierInfoList' class='space-y-2'></div>
+<div id='tierInfoMyTier' class='mt-4 p-3 rounded-xl text-center' style='background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2)'></div>
+<div class='mt-4 space-y-2'>
+<button onclick="closeTierInfo();openDeposit();" class='w-full py-3 rounded-full font-bold text-sm' style='background:#FFD60A;color:#000'>Deposit Now & Start Earning</button>
+<button onclick='closeTierInfo()' class='w-full py-2.5 rounded-full text-xs font-bold' style='background:var(--border);color:var(--text3)'>Maybe Later</button>
+</div>
+</div>
+</div>
 <div id='initialLoader' style='position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.4s'><div style='width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#6C3BFF,#FFD60A);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:28px;color:#fff'>PT</div><p style='margin-top:16px;font-weight:800;letter-spacing:4px;font-size:13px'>PT_AI TRADING</p><p style='margin-top:6px;font-size:11px;opacity:0.5;letter-spacing:2px'>ULTRA V5</p><div style='margin-top:20px;width:100px;height:3px;background:var(--border);border-radius:999px;overflow:hidden'><div style='height:100%;width:40%;background:#FFD60A;border-radius:999px;animation:loaderSlide 1.2s infinite'></div></div></div>
 <style>@keyframes loaderSlide{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}</style>
 
@@ -502,6 +517,49 @@ const TIER_DATA=[
 {min:0,rate:0.0,name:'FREE',color:'var(--text3)',glow:'transparent'}
 ];
 let pfTimerInterval=null;
+let _tierPopupShown=false;
+
+function showTierInfo(){
+if(_tierPopupShown)return;
+_tierPopupShown=true;
+let list=$('tierInfoList');if(!list)return;
+let tiers=[
+{min:20,rate:7.6,name:'STARTER',color:'#10b981',icon:'🌱'},
+{min:120,rate:8.9,name:'BRONZE',color:'#f97316',icon:'🥉'},
+{min:500,rate:9.6,name:'SILVER',color:'#A5A6F6',icon:'🥈'},
+{min:1200,rate:10.9,name:'PLATINUM',color:'#C0C0C0',icon:'💎'},
+{min:2500,rate:11.8,name:'GOLD',color:'#FFD60A',icon:'🏆'},
+{min:6000,rate:13.6,name:'DIAMOND',color:'#A5A6F6',icon:'💠'},
+{min:15000,rate:14.9,name:'PLATINUM',color:'#FFD60A',icon:'⭐'},
+];
+let me=window._lastMe||{};
+let bal=parseFloat(me.balance||0);
+let curTier=me.tier||7;
+let h='';
+for(let i=tiers.length-1;i>=0;i--){
+let t=tiers[i];
+let isCur=(curTier<=i);
+let dailyEarn=(bal*t.rate/100).toFixed(2);
+h+='<div class="flex items-center gap-3 p-2.5 rounded-xl'+(isCur?'':' opacity-60')+'" style="background:'+(isCur?t.color+'11':'var(--bg)')+';border:1px solid '+(isCur?t.color+'33':'var(--border)')+'">';
+h+='<span class="text-lg">'+t.icon+'</span>';
+h+='<div class="flex-1"><div class="flex justify-between items-center"><p class="text-[11px] font-bold" style="color:'+t.color+'">'+t.name+'</p><span class="text-[10px] font-black" style="color:'+t.color+'">'+t.rate+'%/day</span></div>';
+h+='<p class="text-[9px] mt-0.5" style="color:var(--text3)">Min deposit: $'+t.min.toLocaleString()+'</p>';
+if(isCur&&bal>0){h+='<p class="text-[9px] mt-0.5 font-bold" style="color:'+t.color+'">Your earnings: ~$'+dailyEarn+'/day</p>';}
+h+='</div></div>';
+}
+list.innerHTML=h;
+let myTierEl=$('tierInfoMyTier');
+if(myTierEl){
+if(bal>0){
+let t=tiers[curTier]||tiers[6];
+myTierEl.innerHTML='<p class="text-[10px] font-bold" style="color:var(--text2)">Your current tier</p><p class="font-black text-sm mt-0.5" style="color:'+t.color+'">'+t.icon+' '+t.name+' — '+t.rate+'%/day</p><p class="text-[10px] mt-0.5" style="color:var(--text3)">Deposit more to unlock higher tiers</p>';
+}else{
+myTierEl.innerHTML='<p class="text-[10px] font-bold" style="color:var(--text2)">Your current tier</p><p class="font-black text-sm mt-0.5" style="color:var(--text3)">FREE — 0%/day</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">Deposit min $20 to start earning 7.6% daily</p>';
+}
+}
+$('tierInfoPopup').classList.remove('hidden');
+}
+function closeTierInfo(){$('tierInfoPopup').classList.add('hidden');}
 
 function loadPortfolio(){
 if(pfTimerInterval){clearInterval(pfTimerInterval);pfTimerInterval=null;}
@@ -1073,7 +1131,7 @@ safeSet('gateText',`Complete ${me.mandatory_tasks_total-me.mandatory_tasks_done}
 $('wdGate').classList.remove('hidden');safeSet('wdGateText',`Done: ${me.mandatory_tasks_done}/${me.mandatory_tasks_total}`);
 }else{$('mandatoryGate').classList.add('hidden');$('taskBadge').classList.add('hidden');$('bottomTaskDot').classList.add('hidden');$('wdGate').classList.add('hidden');}
 };
-init().then(()=>{hideInitialLoader();if(_activeTab==='portfolio')loadPortfolio();}).catch(()=>{hideInitialLoader();});
+init().then(()=>{hideInitialLoader();if(_activeTab==='portfolio')loadPortfolio();setTimeout(showTierInfo,800);}).catch(()=>{hideInitialLoader();});
 setTimeout(hideInitialLoader,2500);
 setInterval(init,15000);
 setInterval(()=>{if(window._lastMe&&_activeTab==='portfolio')loadPortfolio();},15000);
