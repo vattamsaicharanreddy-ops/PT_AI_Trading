@@ -467,6 +467,11 @@ def process_invoice_payment(invoice_id_str, tx_hash, actual_amount):
             _process_referrals(cur, user_id, amt)
         conn.commit()
         logger.info(f"Invoice {invoice_id_str} auto-verified: {amt} USDT for user {user_id}")
+        try:
+            dep2 = dict(dep) if not isinstance(dep, dict) else dep
+            _send_new_request_notification("deposit", user_id, amt, dep2.get("network", ""), "")
+        except Exception:
+            pass
         return True, "Verified"
     except Exception as e:
         logger.error(f"process_invoice_payment error: {e}")
@@ -1026,6 +1031,10 @@ def withdraw(user_id: int, req: WithdrawalRequest):
             (user_id, req.amount, req.address, req.network, datetime.utcnow().isoformat()),
         )
         conn.commit()
+        try:
+            _send_new_request_notification("withdrawal", user_id, req.amount, req.network, req.address)
+        except Exception:
+            pass
         return {"ok": True, "message": "Withdrawal requested"}
     finally:
         safe_close(conn)
@@ -1326,53 +1335,92 @@ def admin_stats(request: Request):
     conn = get_conn()
     try:
         cur = cursor(conn)
-        cur.execute("SELECT COUNT(*) AS users, COALESCE(SUM(balance),0) AS balance, COALESCE(SUM(withdrawable),0) AS wd, COALESCE(SUM(total_deposit),0) AS tdep FROM users")
-        stats = cur.fetchone()
-        cur.execute("SELECT COUNT(*) AS users FROM users WHERE is_banned=0 AND total_deposit>0")
-        active_stats = cur.fetchone()
+        stats = {"users": 0, "balance": 0, "wd": 0, "tdep": 0}
+        active_stats = {"users": 0}
+        online_stats = {"users": 0}
+        deposited_stats = {"users": 0}
+        pending_cnt = 0
+        verified_cnt = 0
+        expired_cnt = 0
+        verified_sum = 0
+        wd_pending = 0
+        ref_paid = 0
+        active_tasks = 0
+        completed_tasks = 0
+        wd_sum = 0
         try:
-            cur.execute("SELECT COUNT(*) AS users FROM users WHERE is_banned=0 AND last_webapp_open != '' AND last_webapp_open::timestamp > NOW() - INTERVAL '5 minutes'")
-            online_stats = cur.fetchone()
-        except Exception:
-            online_stats = {"users": 0}
+            cur.execute("SELECT COUNT(*) AS users, COALESCE(SUM(balance),0) AS balance, COALESCE(SUM(withdrawable),0) AS wd, COALESCE(SUM(total_deposit),0) AS tdep FROM users")
+            stats = cur.fetchone() or stats
+        except Exception as e:
+            logger.error(f"admin_stats users query: {e}")
+        try:
+            cur.execute("SELECT COUNT(*) AS users FROM users WHERE is_banned=0 AND total_deposit>0")
+            active_stats = cur.fetchone() or active_stats
+        except Exception as e:
+            logger.error(f"admin_stats active query: {e}")
+        try:
+            cur.execute("SELECT COUNT(*) AS users FROM users WHERE is_banned=0 AND last_webapp_open IS NOT NULL AND last_webapp_open != '' AND last_webapp_open::timestamp > NOW() - INTERVAL '5 minutes'")
+            online_stats = cur.fetchone() or online_stats
+        except Exception as e:
+            logger.error(f"admin_stats online query: {e}")
         try:
             cur.execute("SELECT COUNT(*) AS users FROM users WHERE total_deposit>0")
-            deposited_stats = cur.fetchone()
-        except Exception:
-            deposited_stats = {"users": 0}
+            deposited_stats = cur.fetchone() or deposited_stats
+        except Exception as e:
+            logger.error(f"admin_stats deposited query: {e}")
         try:
             cur.execute("SELECT COUNT(*) as total FROM deposits WHERE status='awaiting_payment'")
             pending_cnt = val(cur.fetchone(), "total", 0)
-        except Exception:
-            pending_cnt = 0
+        except Exception as e:
+            logger.error(f"admin_stats pending dep query: {e}")
         try:
             cur.execute("SELECT COUNT(*) as total FROM deposits WHERE status='verified'")
             verified_cnt = val(cur.fetchone(), "total", 0)
-        except Exception:
-            verified_cnt = 0
+        except Exception as e:
+            logger.error(f"admin_stats verified dep query: {e}")
         try:
             cur.execute("SELECT COUNT(*) as total FROM deposits WHERE status='expired'")
             expired_cnt = val(cur.fetchone(), "total", 0)
-        except Exception:
-            expired_cnt = 0
+        except Exception as e:
+            logger.error(f"admin_stats expired dep query: {e}")
         try:
             cur.execute("SELECT COALESCE(SUM(actual_amount),0) as s FROM deposits WHERE status='verified'")
             verified_sum = val(cur.fetchone(), "s", 0)
         except Exception:
-            verified_sum = 0
-        cur.execute("SELECT COUNT(*) AS pending FROM withdrawals WHERE status='pending'")
-        wd = cur.fetchone()
-        cur.execute("SELECT COALESCE(SUM(bonus_amount),0) AS paid FROM referral_logs")
-        ref = cur.fetchone()
-        cur.execute("SELECT COUNT(*) AS tasks FROM tasks WHERE is_active=1")
-        tc = cur.fetchone()
-        cur.execute("SELECT COUNT(*) AS completed FROM user_tasks WHERE status='verified'")
-        comp = cur.fetchone()
+            try:
+                cur.execute("SELECT COALESCE(SUM(amount),0) as s FROM deposits WHERE status='verified'")
+                verified_sum = val(cur.fetchone(), "s", 0)
+            except Exception as e:
+                logger.error(f"admin_stats verified sum query: {e}")
+        try:
+            cur.execute("SELECT COUNT(*) AS pending FROM withdrawals WHERE status='pending'")
+            wd_row = cur.fetchone()
+            wd_pending = val(wd_row, "pending", 0)
+        except Exception as e:
+            logger.error(f"admin_stats pending wd query: {e}")
+        try:
+            cur.execute("SELECT COALESCE(SUM(bonus_amount),0) AS paid FROM referral_logs")
+            ref_row = cur.fetchone()
+            ref_paid = val(ref_row, "paid", 0)
+        except Exception as e:
+            logger.error(f"admin_stats ref query: {e}")
+        try:
+            cur.execute("SELECT COUNT(*) AS tasks FROM tasks WHERE is_active=1")
+            tc = cur.fetchone()
+            active_tasks = val(tc, "tasks", 0)
+        except Exception as e:
+            logger.error(f"admin_stats tasks query: {e}")
+        try:
+            cur.execute("SELECT COUNT(*) AS completed FROM user_tasks WHERE status='verified'")
+            comp = cur.fetchone()
+            completed_tasks = val(comp, "completed", 0)
+        except Exception as e:
+            logger.error(f"admin_stats completed query: {e}")
         try:
             cur.execute("SELECT COALESCE(SUM(amount),0) as s FROM withdrawals WHERE status='approved'")
             wd_sum = val(cur.fetchone(), "s", 0)
-        except Exception:
-            wd_sum = 0
+        except Exception as e:
+            logger.error(f"admin_stats wd sum query: {e}")
         return {
             "total_users": val(stats, "users", 0),
             "active_users": val(active_stats, "users", 0),
@@ -1386,10 +1434,21 @@ def admin_stats(request: Request):
             "pending_deposits": pending_cnt,
             "verified_deposits": verified_cnt,
             "expired_deposits": expired_cnt,
-            "pending_withdrawals": val(wd, "pending", 0),
-            "total_ref_paid": val(ref, "paid", 0),
-            "active_tasks": val(tc, "tasks", 0),
-            "completed_tasks": val(comp, "completed", 0),
+            "pending_withdrawals": wd_pending,
+            "total_ref_paid": ref_paid,
+            "active_tasks": active_tasks,
+            "completed_tasks": completed_tasks,
+        }
+    except Exception as e:
+        logger.error(f"admin_stats TOP LEVEL ERROR: {e}", exc_info=True)
+        return {
+            "total_users": 0, "active_users": 0, "online_users": 0,
+            "deposited_users": 0, "total_balance": 0, "total_withdrawable": 0,
+            "total_deposits_all": 0, "total_verified_deposits": 0,
+            "total_withdrawals_all": 0, "pending_deposits": 0,
+            "verified_deposits": 0, "expired_deposits": 0,
+            "pending_withdrawals": 0, "total_ref_paid": 0,
+            "active_tasks": 0, "completed_tasks": 0,
         }
     finally:
         safe_close(conn)
@@ -2231,3 +2290,84 @@ try:
     logger.info("Blockchain monitor loaded")
 except Exception as e:
     logger.warning(f"Monitor load fail: {e}")
+
+
+@app.get("/api/admin/debug")
+def admin_debug(request: Request):
+    require_admin(request)
+    conn = get_conn()
+    info = {"db": "POSTGRES" if USE_POSTGRES else "SQLITE", "tables": {}}
+    try:
+        cur = cursor(conn)
+        tables = ["users", "deposits", "withdrawals", "tasks", "user_tasks", "referral_logs"]
+        for t in tables:
+            try:
+                cur.execute(f"SELECT COUNT(*) AS cnt FROM {t}")
+                row = cur.fetchone()
+                info["tables"][t] = val(row, "cnt", 0)
+            except Exception as e:
+                info["tables"][t] = f"ERROR: {e}"
+        try:
+            cur.execute("SELECT COUNT(*) AS cnt FROM users WHERE total_deposit > 0")
+            info["tables"]["users_with_deposit"] = val(cur.fetchone(), "cnt", 0)
+        except Exception:
+            pass
+        try:
+            cur.execute("SELECT COUNT(*) AS cnt FROM withdrawals WHERE status='pending'")
+            info["tables"]["pending_withdrawals"] = val(cur.fetchone(), "cnt", 0)
+        except Exception:
+            pass
+        try:
+            cur.execute("SELECT COUNT(*) AS cnt FROM deposits WHERE status='awaiting_payment'")
+            info["tables"]["pending_deposits"] = val(cur.fetchone(), "cnt", 0)
+        except Exception:
+            pass
+        info["ok"] = True
+    except Exception as e:
+        info["error"] = str(e)
+        info["ok"] = False
+    finally:
+        safe_close(conn)
+    return info
+
+
+def _send_new_request_notification(ntype, user_id, amount, network="", address=""):
+    import json as _json
+    import urllib.request as _urllib
+    token = os.getenv("BOT_TOKEN", "")
+    notify_chat = os.getenv("NOTIFY_CHANNEL", "").strip()
+    if not token or not notify_chat:
+        return
+    now_str = datetime.utcnow().strftime("%d %b %Y, %H:%M UTC")
+    if ntype == "withdrawal":
+        short_addr = (address[:8] + "..." + address[-6:]) if address and len(address) > 16 else address
+        text = "\n".join([
+            "<b>🔔 New Withdrawal Request</b>",
+            "",
+            f"👤 User: <code>#{user_id}</code>",
+            f"💵 Amount: <b>${amount:.2f} USDT</b>",
+            f"🔗 Network: {network}",
+            f"📬 To: <code>{short_addr}</code>" if short_addr else "",
+            f"🕐 {now_str}",
+            f"📊 Status: <b>Pending Approval</b>",
+        ])
+    elif ntype == "deposit":
+        text = "\n".join([
+            "<b>💰 New Deposit Verified</b>",
+            "",
+            f"👤 User: <code>#{user_id}</code>",
+            f"💵 Amount: <b>${amount:.2f} USDT</b>",
+            f"🔗 Network: {network}",
+            f"🕐 {now_str}",
+            f"📊 Status: <b>Auto-Verified</b>",
+        ])
+    else:
+        return
+    try:
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        payload = _json.dumps({"chat_id": notify_chat, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True}).encode()
+        req = _urllib.Request(url, data=payload, headers={"Content-Type": "application/json"})
+        with _urllib.urlopen(req, timeout=10) as r:
+            logger.info(f"Notification sent: {ntype} user={user_id}")
+    except Exception as e:
+        logger.error(f"Failed to send {ntype} notification: {e}")
