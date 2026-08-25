@@ -1330,10 +1330,16 @@ def admin_stats(request: Request):
         stats = cur.fetchone()
         cur.execute("SELECT COUNT(*) AS users FROM users WHERE is_banned=0 AND total_deposit>0")
         active_stats = cur.fetchone()
-        cur.execute("SELECT COUNT(*) AS users FROM users WHERE is_banned=0 AND last_webapp_open != '' AND last_webapp_open::timestamp > NOW() - INTERVAL '5 minutes'")
-        online_stats = cur.fetchone()
-        cur.execute("SELECT COUNT(*) AS users FROM users WHERE total_deposit>0")
-        deposited_stats = cur.fetchone()
+        try:
+            cur.execute("SELECT COUNT(*) AS users FROM users WHERE is_banned=0 AND last_webapp_open != '' AND last_webapp_open::timestamp > NOW() - INTERVAL '5 minutes'")
+            online_stats = cur.fetchone()
+        except Exception:
+            online_stats = {"users": 0}
+        try:
+            cur.execute("SELECT COUNT(*) AS users FROM users WHERE total_deposit>0")
+            deposited_stats = cur.fetchone()
+        except Exception:
+            deposited_stats = {"users": 0}
         try:
             cur.execute("SELECT COUNT(*) as total FROM deposits WHERE status='awaiting_payment'")
             pending_cnt = val(cur.fetchone(), "total", 0)
