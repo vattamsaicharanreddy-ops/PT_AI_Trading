@@ -1332,103 +1332,94 @@ def binance_trades():
 @app.get("/api/admin/stats")
 def admin_stats(request: Request):
     require_admin(request)
+    stats = {"users": 0, "balance": 0, "wd": 0, "tdep": 0}
+    active_stats = {"users": 0}
+    deposited_stats = {"users": 0}
+    pending_cnt = 0
+    verified_cnt = 0
+    expired_cnt = 0
+    verified_sum = 0
+    wd_pending = 0
+    ref_paid = 0
+    active_tasks = 0
+    completed_tasks = 0
+    wd_sum = 0
+
+    def safe_query(conn, label, sql, args=None):
+        try:
+            cur = cursor(conn)
+            cur.execute(sql, args or ())
+            result = cur.fetchone()
+            conn.commit()
+            return result
+        except Exception as e:
+            logger.error(f"stats {label}: {e}")
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            return None
+
     conn = get_conn()
     try:
-        cur = cursor(conn)
-        stats = {"users": 0, "balance": 0, "wd": 0, "tdep": 0}
-        active_stats = {"users": 0}
-        online_stats = {"users": 0}
-        deposited_stats = {"users": 0}
-        pending_cnt = 0
-        verified_cnt = 0
-        expired_cnt = 0
-        verified_sum = 0
-        wd_pending = 0
-        ref_paid = 0
-        active_tasks = 0
-        completed_tasks = 0
-        wd_sum = 0
-        try:
-            cur.execute("SELECT COUNT(*) AS users, COALESCE(SUM(balance),0) AS balance, COALESCE(SUM(withdrawable),0) AS wd, COALESCE(SUM(total_deposit),0) AS tdep FROM users")
-            stats = cur.fetchone() or stats
-        except Exception as e:
-            logger.error(f"admin_stats users query: {e}")
-        try:
-            cur.execute("SELECT COUNT(*) AS users FROM users WHERE is_banned=0 AND total_deposit>0")
-            active_stats = cur.fetchone() or active_stats
-        except Exception as e:
-            logger.error(f"admin_stats active query: {e}")
-        try:
-            cur.execute("SELECT COUNT(*) AS users FROM users WHERE is_banned=0 AND last_webapp_open IS NOT NULL AND last_webapp_open != '' AND last_webapp_open::timestamp > NOW() - INTERVAL '5 minutes'")
-            online_stats = cur.fetchone() or online_stats
-        except Exception as e:
-            logger.error(f"admin_stats online query: {e}")
-        try:
-            cur.execute("SELECT COUNT(*) AS users FROM users WHERE total_deposit>0")
-            deposited_stats = cur.fetchone() or deposited_stats
-        except Exception as e:
-            logger.error(f"admin_stats deposited query: {e}")
-        try:
-            cur.execute("SELECT COUNT(*) as total FROM deposits WHERE status='awaiting_payment'")
-            pending_cnt = val(cur.fetchone(), "total", 0)
-        except Exception as e:
-            logger.error(f"admin_stats pending dep query: {e}")
-        try:
-            cur.execute("SELECT COUNT(*) as total FROM deposits WHERE status='verified'")
-            verified_cnt = val(cur.fetchone(), "total", 0)
-        except Exception as e:
-            logger.error(f"admin_stats verified dep query: {e}")
-        try:
-            cur.execute("SELECT COUNT(*) as total FROM deposits WHERE status='expired'")
-            expired_cnt = val(cur.fetchone(), "total", 0)
-        except Exception as e:
-            logger.error(f"admin_stats expired dep query: {e}")
-        try:
-            cur.execute("SELECT COALESCE(SUM(actual_amount),0) as s FROM deposits WHERE status='verified'")
-            verified_sum = val(cur.fetchone(), "s", 0)
-        except Exception:
-            try:
-                cur.execute("SELECT COALESCE(SUM(amount),0) as s FROM deposits WHERE status='verified'")
-                verified_sum = val(cur.fetchone(), "s", 0)
-            except Exception as e:
-                logger.error(f"admin_stats verified sum query: {e}")
-        try:
-            cur.execute("SELECT COUNT(*) AS pending FROM withdrawals WHERE status='pending'")
-            wd_row = cur.fetchone()
-            wd_pending = val(wd_row, "pending", 0)
-        except Exception as e:
-            logger.error(f"admin_stats pending wd query: {e}")
-        try:
-            cur.execute("SELECT COALESCE(SUM(bonus_amount),0) AS paid FROM referral_logs")
-            ref_row = cur.fetchone()
-            ref_paid = val(ref_row, "paid", 0)
-        except Exception as e:
-            logger.error(f"admin_stats ref query: {e}")
-        try:
-            cur.execute("SELECT COUNT(*) AS tasks FROM tasks WHERE is_active=1")
-            tc = cur.fetchone()
-            active_tasks = val(tc, "tasks", 0)
-        except Exception as e:
-            logger.error(f"admin_stats tasks query: {e}")
-        try:
-            cur.execute("SELECT COUNT(*) AS completed FROM user_tasks WHERE status='verified'")
-            comp = cur.fetchone()
-            completed_tasks = val(comp, "completed", 0)
-        except Exception as e:
-            logger.error(f"admin_stats completed query: {e}")
-        try:
-            cur.execute("SELECT COALESCE(SUM(amount),0) as s FROM withdrawals WHERE status='approved'")
-            wd_sum = val(cur.fetchone(), "s", 0)
-        except Exception as e:
-            logger.error(f"admin_stats wd sum query: {e}")
-        return {
-            "total_users": val(stats, "users", 0),
-            "active_users": val(active_stats, "users", 0),
-            "online_users": val(online_stats, "users", 0),
-            "deposited_users": val(deposited_stats, "users", 0),
-            "total_balance": val(stats, "balance", 0),
-            "total_withdrawable": val(stats, "wd", 0),
-            "total_deposits_all": val(stats, "tdep", 0),
+        row = safe_query(conn, "users", "SELECT COUNT(*) AS users, COALESCE(SUM(balance),0) AS balance, COALESCE(SUM(withdrawable),0) AS wd, COALESCE(SUM(total_deposit),0) AS tdep FROM users")
+        if row:
+            stats = row if isinstance(row, dict) else {"users": row[0], "balance": row[1], "wd": row[2], "tdep": row[3]}
+
+        row = safe_query(conn, "active", "SELECT COUNT(*) AS users FROM users WHERE is_banned=0 AND total_deposit>0")
+        if row:
+            active_stats = row if isinstance(row, dict) else {"users": row[0]}
+
+        row = safe_query(conn, "deposited", "SELECT COUNT(*) AS users FROM users WHERE total_deposit>0")
+        if row:
+            deposited_stats = row if isinstance(row, dict) else {"users": row[0]}
+
+        row = safe_query(conn, "pending_dep", "SELECT COUNT(*) as total FROM deposits WHERE status='awaiting_payment'")
+        if row:
+            pending_cnt = val(row, "total", 0) if isinstance(row, dict) else row[0]
+
+        row = safe_query(conn, "verified_dep", "SELECT COUNT(*) as total FROM deposits WHERE status='verified'")
+        if row:
+            verified_cnt = val(row, "total", 0) if isinstance(row, dict) else row[0]
+
+        row = safe_query(conn, "expired_dep", "SELECT COUNT(*) as total FROM deposits WHERE status='expired'")
+        if row:
+            expired_cnt = val(row, "total", 0) if isinstance(row, dict) else row[0]
+
+        row = safe_query(conn, "verified_sum", "SELECT COALESCE(SUM(actual_amount),0) as s FROM deposits WHERE status='verified'")
+        if not row:
+            row = safe_query(conn, "verified_sum2", "SELECT COALESCE(SUM(amount),0) as s FROM deposits WHERE status='verified'")
+        if row:
+            verified_sum = val(row, "s", 0) if isinstance(row, dict) else row[0]
+
+        row = safe_query(conn, "pending_wd", "SELECT COUNT(*) AS pending FROM withdrawals WHERE status='pending'")
+        if row:
+            wd_pending = val(row, "pending", 0) if isinstance(row, dict) else row[0]
+
+        row = safe_query(conn, "ref", "SELECT COALESCE(SUM(bonus_amount),0) AS paid FROM referral_logs")
+        if row:
+            ref_paid = val(row, "paid", 0) if isinstance(row, dict) else row[0]
+
+        row = safe_query(conn, "tasks", "SELECT COUNT(*) AS tasks FROM tasks WHERE is_active=1")
+        if row:
+            active_tasks = val(row, "tasks", 0) if isinstance(row, dict) else row[0]
+
+        row = safe_query(conn, "completed", "SELECT COUNT(*) AS completed FROM user_tasks WHERE status='verified'")
+        if row:
+            completed_tasks = val(row, "completed", 0) if isinstance(row, dict) else row[0]
+
+        row = safe_query(conn, "wd_sum", "SELECT COALESCE(SUM(amount),0) as s FROM withdrawals WHERE status='approved'")
+        if row:
+            wd_sum = val(row, "s", 0) if isinstance(row, dict) else row[0]
+
+        result = {
+            "total_users": val(stats, "users", 0) if isinstance(stats, dict) else stats[0],
+            "active_users": val(active_stats, "users", 0) if isinstance(active_stats, dict) else active_stats[0],
+            "online_users": 0,
+            "deposited_users": val(deposited_stats, "users", 0) if isinstance(deposited_stats, dict) else deposited_stats[0],
+            "total_balance": val(stats, "balance", 0) if isinstance(stats, dict) else stats[1],
+            "total_withdrawable": val(stats, "wd", 0) if isinstance(stats, dict) else stats[2],
+            "total_deposits_all": val(stats, "tdep", 0) if isinstance(stats, dict) else stats[3],
             "total_verified_deposits": verified_sum,
             "total_withdrawals_all": wd_sum,
             "pending_deposits": pending_cnt,
@@ -1439,8 +1430,10 @@ def admin_stats(request: Request):
             "active_tasks": active_tasks,
             "completed_tasks": completed_tasks,
         }
+        logger.info(f"admin_stats: {result}")
+        return result
     except Exception as e:
-        logger.error(f"admin_stats TOP LEVEL ERROR: {e}", exc_info=True)
+        logger.error(f"admin_stats TOP LEVEL: {e}", exc_info=True)
         return {
             "total_users": 0, "active_users": 0, "online_users": 0,
             "deposited_users": 0, "total_balance": 0, "total_withdrawable": 0,
