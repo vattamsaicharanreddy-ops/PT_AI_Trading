@@ -71,47 +71,47 @@ def _btn(text, **kwargs):
     return {"text": text, **kwargs}
 
 
-INVITE_TEXT = (
-    "\U0001f4e2 <b>Join Our Community!</b>\n\n"
-    "\U0001f449 Tap below to join our channel & group.\n"
-    "Get <b>signals, updates & support</b> \u2014 <b>1 tap to join!</b>"
+WELCOME_TEXT = (
+    "\u2728 <b>Welcome, {name}!</b>\n\n"
+    "\U0001f3af <b>PT_AI Trading</b> \u2014 AI earns you USDT daily\n\n"
+    "\u2022 Deposit min <b>$5 USDT</b> \u2192 earn <b>7.6% \u2013 14.9%</b> daily\n"
+    "\u2022 <b>Withdraw anytime</b> to your wallet\n"
+    "\u2022 Complete tasks \u2192 earn <b>1+ USDT</b> free\n\n"
+    "\u2b50 <b>Join our groups first</b> to get started:\n"
+    "\u2022 Signals, updates & support\n"
+    "\u2022 Required to unlock withdrawals{ref_line}"
 )
 
+DASHBOARD_KB = _inline_kb([
+    [
+        _btn("\U0001f4e2  Join Channel", url=FORCE_CHANNEL_LINK) if FORCE_CHANNEL_LINK else None,
+        _btn("\U0001f465  Join Group", url=FORCE_GROUP_LINK) if FORCE_GROUP_LINK else None,
+    ],
+    [_btn("\u2705  I Joined \u2014 Open Dashboard", web_app={"url": WEBAPP_URL})],
+])
 
-def _invite_kb():
-    rows = []
-    if FORCE_CHANNEL_LINK:
-        rows.append([_btn("\U0001f4e2  Join Channel", url=FORCE_CHANNEL_LINK)])
-    if FORCE_GROUP_LINK:
-        rows.append([_btn("\U0001f465  Join Group", url=FORCE_GROUP_LINK)])
-    if rows:
-        return _inline_kb(rows)
-    return None
+FULL_KB = _inline_kb([
+    [_btn("\U0001f4b0  Open Trading Dashboard", web_app={"url": WEBAPP_URL})],
+    [
+        _btn("\U0001f465  Join Group", url=FORCE_GROUP_LINK or "https://t.me/PT_AI_Trading_Group"),
+        _btn("\U0001f4e2  Join Channel", url=FORCE_CHANNEL_LINK or "https://t.me/PT_AI_Trading"),
+    ],
+    [
+        _btn("\U0001f4b3  Deposit", callback_data="deposit_info"),
+        _btn("\U0001f4b5  Withdraw", callback_data="withdraw_info"),
+    ],
+    [
+        _btn("\U0001f3af  Tasks & Earn", callback_data="tasks_info"),
+        _btn("\U0001f91d  Refer & Earn", callback_data="referral_info"),
+    ],
+    [_btn("\U0001f527  Support", url="https://t.me/PT_AI_Support")],
+])
 
-
-def _make_kb():
-    return _inline_kb([
-        [_btn("\U0001f4b0  Open Trading Dashboard", web_app={"url": WEBAPP_URL})],
-        [
-            _btn("\U0001f465  Join Group", url="https://t.me/PT_AI_Trading_Group"),
-            _btn("\U0001f4e2  Join Channel", url="https://t.me/PT_AI_Trading"),
-        ],
-        [
-            _btn("\U0001f527  Support", url="https://t.me/PT_AI_Support"),
-            _btn("\U0001f464  Profile", callback_data="profile"),
-        ],
-        [
-            _btn("\U0001f4b3  Deposit", callback_data="deposit_info"),
-            _btn("\U0001f4b5  Withdraw", callback_data="withdraw_info"),
-        ],
-        [
-            _btn("\U0001f3af  Tasks & Earn", callback_data="tasks_info"),
-            _btn("\U0001f91d  Refer & Earn", callback_data="referral_info"),
-        ],
-    ])
-
-
-WELCOME_TEXT_TEMPLATE = "\u2728 <b>Welcome, {name}!</b>\n\n\U0001f3af <b>PT_AI Trading</b> \u2014 AI-Powered Crypto Trading Platform\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n\U0001f4ca <b>How It Works</b>\n\u2022 Complete <b>tasks</b> \u2192 Earn <b>1+ USDT</b> each\n\u2022 <b>Deposit</b> min <b>$20 USDT</b> \u2192 AI earns <b>7.6% \u2013 14.9%</b> daily\n\u2022 <b>Auto-compound</b> profits for 30 days\n\u2022 <b>Withdraw</b> anytime to your wallet\n\n\U0001f3e6 <b>Supported Networks</b>\nTRC20 \u2022 BEP20 \u2022 ERC20 \u2022 TON \u2022 SOL\n\n\U0001f48e <b>Tier System</b> \u2014 Higher balance = Higher returns\n\U0001f7e2 Starter: 7.6% | \U0001f7e1 Bronze: 8.9% | \U0001f535 Silver: 9.6%\n\U0001f7e3 Platinum: 10.9% | \U0001f48e Gold: 11.8% | \U0001f48e Diamond: 13.6%\n\U0001f451 Platinum+: 14.9%\n\n\u26a0\ufe0f <b>Important</b>\n\u2022 Complete <b>mandatory tasks</b> to unlock withdrawal\n\u2022 Refer friends to earn <b>7% bonus</b> on deposits\n\u2022 Minimum deposit: <b>20 USDT</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\U0001f680 <b>Tap a button below to get started!</b>{ref_line}"
+ALL_TASKS_KB = _inline_kb([
+    [_btn("\U0001f3af  View All Tasks", callback_data="open_tasks")],
+    [_btn("\U0001f91d  Refer & Earn", callback_data="referral_info")],
+    [_btn("\U0001f4b0  Open Dashboard", web_app={"url": WEBAPP_URL})],
+])
 
 
 def _ensure_user(user_id, username="", referred_by=None):
@@ -151,22 +151,21 @@ async def handle_start(token, chat_id, user, args):
     if ref:
         ref_line = f"\n\n\U0001f517 <b>Referred by:</b> User #{ref}"
 
-    text = WELCOME_TEXT_TEMPLATE.format(name=first_name, ref_line=ref_line)
-    kb = _make_kb()
+    text = WELCOME_TEXT.format(name=first_name, ref_line=ref_line)
+    kb = _inline_kb([
+        [
+            _btn("\U0001f4e2  Join Channel", url=FORCE_CHANNEL_LINK) if FORCE_CHANNEL_LINK else None,
+            _btn("\U0001f465  Join Group", url=FORCE_GROUP_LINK) if FORCE_GROUP_LINK else None,
+        ],
+        [_btn("\u2705  I Joined \u2014 Open Dashboard", web_app={"url": WEBAPP_URL})],
+    ])
+    kb["inline_keyboard"] = [row for row in kb["inline_keyboard"] if any(row)]
 
     try:
         _send_message(token, chat_id, text, reply_markup=kb)
         logger.info(f"Sent /start reply to {chat_id}")
     except Exception as e:
         logger.error(f"Failed to send /start reply to {chat_id}: {e}", exc_info=True)
-
-    invite_kb = _invite_kb()
-    if invite_kb:
-        try:
-            _send_message(token, chat_id, INVITE_TEXT, reply_markup=invite_kb)
-            logger.info(f"Sent invite links to {chat_id}")
-        except Exception as e:
-            logger.error(f"Failed to send invite to {chat_id}: {e}")
 
 
 async def handle_callback(token, chat_id, message_id, user, cb_data, cb_query_id=""):
@@ -202,17 +201,13 @@ async def handle_callback(token, chat_id, message_id, user, cb_data, cb_query_id
         elif cb_data == "deposit_info":
             text = (
                 f"\U0001f4b3 <b>Deposit USDT</b>\n\n"
-                f"\u2022 Minimum deposit: <b>20 USDT</b>\n"
+                f"\u2022 Minimum deposit: <b>5 USDT</b> (first time)\n"
                 f"\u2022 Invoice valid for <b>15 minutes</b>\n"
                 f"\u2022 Auto-verified within <b>15 seconds</b>\n\n"
                 f"\U0001f3e6 <b>Supported Networks:</b>\n"
-                f"\u2022 TRC20 (Tron)\n"
-                f"\u2022 BEP20 (BSC)\n"
-                f"\u2022 ERC20 (Ethereum)\n"
-                f"\u2022 TON\n"
-                f"\u2022 SOL (Solana)\n\n"
+                f"TRC20 \u2022 BEP20 \u2022 ERC20 \u2022 TON \u2022 SOL\n\n"
                 f"\u26a0\ufe0f Send <b>exact amount</b> to the address shown.\n"
-                f"After deposit, AI contract starts automatically for <b>30 days</b>.\n\n"
+                f"After deposit, AI starts earning for <b>30 days</b>.\n\n"
                 f"\U0001f449 Tap below to create an invoice"
             )
             kb = _inline_kb([
@@ -277,8 +272,21 @@ async def handle_callback(token, chat_id, message_id, user, cb_data, cb_query_id
 
         elif cb_data == "back_start":
             first_name = user.get("first_name", "Trader")
-            text = WELCOME_TEXT_TEMPLATE.format(name=first_name, ref_line="")
-            kb = _make_kb()
+            text = WELCOME_TEXT.format(name=first_name, ref_line="")
+            kb = FULL_KB
+            _edit_message(token, chat_id, message_id, text, reply_markup=kb)
+
+        elif cb_data == "open_tasks":
+            text = (
+                "\U0001f3af <b>Tasks & Earn USDT</b>\n\n"
+                "Join our groups & refer friends to earn.\n"
+                "Complete mandatory tasks to unlock withdrawal.\n\n"
+                "\U0001f449 Tap below to see all tasks"
+            )
+            kb = _inline_kb([
+                [_btn("\U0001f3af  Open Tasks", web_app={"url": WEBAPP_URL})],
+                [_btn("\u2b05\ufe0f  Back", callback_data="back_start")],
+            ])
             _edit_message(token, chat_id, message_id, text, reply_markup=kb)
 
     except Exception as e:

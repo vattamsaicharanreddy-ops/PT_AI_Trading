@@ -156,7 +156,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <div class='grid grid-cols-2 gap-2.5'><div class='p-3.5 rounded-2xl' style='background:rgba(38,161,123,0.1);border:1px solid rgba(38,161,123,0.15)'><p class='text-[11px]' style='color:var(--text2)'>Total Deposited</p><p id='totalDep' class='font-extrabold text-base mt-1' style='color:#26A17B'>0.00 USDT</p></div><div class='p-3.5 rounded-2xl' style='background:rgba(255,214,10,0.1);border:1px solid rgba(255,214,10,0.15)'><p class='text-[11px]' style='color:var(--text2)'>Total Withdrawn</p><p id='totalWd' class='font-extrabold text-base mt-1' style='color:#FFD60A'>0.00 USDT</p></div></div>
 <div class='mt-2.5 grid grid-cols-2 gap-2.5 text-[11px]'><div class='p-2.5 rounded-xl flex justify-between' style='background:var(--border)'><span style='color:var(--text2)'>Balance:</span><span id='quickBal' class='font-bold'>0 USDT</span></div><div class='p-2.5 rounded-xl flex justify-between' style='background:var(--border)'><span style='color:var(--text2)'>Withdrawable:</span><span id='quickWd' class='font-bold' style='color:#FFD60A'>0 USDT</span></div></div>
 </div>
-<div class='mx-4 mt-4 rounded-2xl p-4' style='background:var(--surface);border:1px solid var(--border)'><h3 class='font-bold text-sm mb-3'>Community</h3><div class='grid grid-cols-3 gap-2'><button onclick='openPTGroup()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>PT-Group</button><button onclick='openPTChannel()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>PT-Channel</button><button onclick='openPTSupport()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>Support</button></div></div>
+<div id='homeActivity' class='mx-4 mt-3 rounded-2xl p-4' style='background:var(--surface);border:1px solid var(--border)'>
+<div class='flex justify-between items-center mb-3'><h3 class='font-bold text-sm'>Live Activity</h3><span class='text-[10px] px-2 py-0.5 rounded-full animate-pulse' style='background:rgba(16,185,129,0.15);color:#10b981'>● LIVE</span></div>
+<div id='homeActivityList' class='space-y-2'></div>
+</div>
+<div class='mx-4 mt-3 rounded-2xl p-4' style='background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(255,214,10,0.08));border:1px solid rgba(16,185,129,0.15)'>
+<div class='text-center'><p id='socialProofText' class='text-xs font-bold' style='color:var(--text2)'>Loading...</p></div>
+</div>
+<div class='mx-4 mt-3 rounded-2xl p-4' style='background:var(--surface);border:1px solid var(--border)'><h3 class='font-bold text-sm mb-3'>Community</h3><div class='grid grid-cols-3 gap-2'><button onclick='openPTGroup()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>PT-Group</button><button onclick='openPTChannel()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>PT-Channel</button><button onclick='openPTSupport()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>Support</button></div></div>
 </div>
 
 <div id='tab-tasks' class='tab-content hidden'>
@@ -343,7 +350,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 </div>
 <div class='mt-3 p-2.5 rounded-xl text-[10px]' style='background:var(--border)'><div class='flex justify-between items-center'><p style='color:var(--text2)'>Address for <span id='netLabel'>TRC20</span>:</p><span class='copy-btn' onclick="copyAddress('netAddr',this)">COPY</span></div><p id='netAddr' class='mono font-bold break-all mt-0.5 text-[11px]'>TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC</p></div>
 <div class='qr-box' id='qrBox'></div>
-<div class='mt-3'><label class='text-[10px] font-bold' style='color:var(--text3)'>Amount (min 20 USDT)</label><input id='depAmount' type='number' value='100' class='mt-1 w-full p-3 text-sm rounded-xl border outline-none' style='background:var(--input);border-color:var(--border)'></div>
+<div class='mt-3'><label class='text-[10px] font-bold' style='color:var(--text3)'>Amount (min 5 USDT)</label><input id='depAmount' type='number' value='50' class='mt-1 w-full p-3 text-sm rounded-xl border outline-none' style='background:var(--input);border-color:var(--border)'></div>
 <button onclick='createDeposit()' class='mt-3 w-full py-3 rounded-full font-bold text-sm' style='background:#FFD60A;color:#000'>Create Invoice (15 min)</button>
 <div id='invoiceBox' class='hidden mt-3 p-3 rounded-xl text-[11px]' style='background:var(--border);border:1px solid rgba(255,214,10,0.15)'><p style='color:var(--text2)'>Send exactly to:</p><div class='flex justify-between items-start gap-2'><p id='invAddr' class='mono font-bold break-all mt-0.5 text-[11px] flex-1'></p><span class='copy-btn shrink-0' onclick="copyAddress('invAddr',this)">COPY</span></div><div class='qr-box mt-2' id='invQrBox'></div><p class='mt-1'>Amount: <span id='invAmount' class='font-bold'></span> <span id='invNet'></span></p><p class='mt-0.5' style='color:var(--text3)'>Invoice: <span id='invId' class='mono'></span></p><div id='invTimerBox' class='inv-timer hidden'>Expires in <span id='invCountdown'>15:00</span></div><div id='checkStatus' class='hidden mt-2 p-2.5 rounded-lg text-[11px] font-bold text-center'></div><button id='checkPayBtn' onclick="checkPaymentStatus()" class='mt-2 w-full py-2.5 rounded-full text-[11px] font-bold' style='background:rgba(108,59,255,0.15);border:1px solid rgba(108,59,255,0.2);color:#A5A6F6'>Check Payment Status</button><p class='mt-1.5' style='color:#FFD60A'>Auto verified every 15 sec</p></div>
 <button onclick="closeDeposit()" class='mt-2 w-full py-3 rounded-full text-xs font-bold' style='background:var(--border)'>Close</button></div></div>
@@ -513,7 +520,7 @@ const TIER_DATA=[
 {min:1200,rate:10.9,name:'PLATINUM',color:'#C0C0C0',glow:'rgba(192,192,192,0.3)'},
 {min:500,rate:9.6,name:'SILVER',color:'#A5A6F6',glow:'rgba(165,166,246,0.3)'},
 {min:120,rate:8.9,name:'BRONZE',color:'#f97316',glow:'rgba(249,115,22,0.3)'},
-{min:20,rate:7.6,name:'STARTER',color:'#10b981',glow:'rgba(16,185,129,0.3)'},
+{min:5,rate:7.6,name:'STARTER',color:'#10b981',glow:'rgba(16,185,129,0.3)'},
 {min:0,rate:0.0,name:'FREE',color:'var(--text3)',glow:'transparent'}
 ];
 let pfTimerInterval=null;
@@ -524,7 +531,7 @@ if(_tierPopupShown)return;
 _tierPopupShown=true;
 let list=$('tierInfoList');if(!list)return;
 let tiers=[
-{min:20,rate:7.6,name:'STARTER',color:'#10b981',icon:'🌱'},
+{min:5,rate:7.6,name:'STARTER',color:'#10b981',icon:'🌱'},
 {min:120,rate:8.9,name:'BRONZE',color:'#f97316',icon:'🥉'},
 {min:500,rate:9.6,name:'SILVER',color:'#A5A6F6',icon:'🥈'},
 {min:1200,rate:10.9,name:'PLATINUM',color:'#C0C0C0',icon:'💎'},
@@ -555,7 +562,7 @@ let myTier=tiers[0];
 for(let i=tiers.length-1;i>=0;i--){if(bal>=tiers[i].min){myTier=tiers[i];break;}}
 myTierEl.innerHTML='<p class="text-[10px] font-bold" style="color:var(--text2)">Your current tier</p><p class="font-black text-sm mt-0.5" style="color:'+myTier.color+'">'+myTier.icon+' '+myTier.name+' — '+myTier.rate+'%/day</p><p class="text-[10px] mt-0.5" style="color:var(--text3)">Deposit more to unlock higher tiers</p>';
 }else{
-myTierEl.innerHTML='<p class="text-[10px] font-bold" style="color:var(--text2)">Your current tier</p><p class="font-black text-sm mt-0.5" style="color:var(--text3)">FREE — 0%/day</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">Deposit min $20 to start earning 7.6% daily</p>';
+myTierEl.innerHTML='<p class="text-[10px] font-bold" style="color:var(--text2)">Your current tier</p><p class="font-black text-sm mt-0.5" style="color:var(--text3)">FREE — 0%/day</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">Deposit min $5 to start earning 7.6% daily</p>';
 }
 }
 $('tierInfoPopup').classList.remove('hidden');
@@ -710,11 +717,18 @@ return `<div class="task-card task-card-${cardType}"><div class="flex items-star
 }).join('');if(!fullHtml)fullHtml=`<div class="rounded-2xl p-5 text-center" style="background:var(--surface);border:1px solid var(--border)"><p class="text-2xl">&#127919;</p><p class="font-bold mt-2">No Tasks Yet</p><p class="text-[11px] mt-1" style="color:var(--text2)">Admin needs to create tasks.</p></div>`;safeHTML('tasksListFull',fullHtml);
 }catch(e){console.error('loadTasks error:',e);safeHTML('tasksQuick','<p class="text-[11px]" style="color:var(--text3)">No tasks yet.</p>');safeHTML('tasksListFull',`<div class="rounded-2xl p-5 text-center" style="background:var(--surface);border:1px solid var(--border)"><p class="font-bold">No Tasks Yet</p><p class="text-[11px] mt-1" style="color:var(--text2)">Admin needs to create tasks.</p></div>`);}
 }
-async function joinTask(taskId,link){try{await fetch('/api/tasks/join/'+userId+'/'+taskId,{method:'POST'});}catch(e){}if(link)window.open(link,'_blank');}
+async function joinTask(taskId,link){
+try{await fetch('/api/tasks/join/'+userId+'/'+taskId,{method:'POST'});}catch(e){}
+if(link)window.open(link,'_blank');
+setTimeout(function(){
+verifyTask(taskId);
+},60000);
+userToast('Joined! Verifying in 60s...');
+}
 async function verifyTask(taskId){let r=await fetch('/api/tasks/verify/'+userId+'/'+taskId,{method:'POST'});let j=await r.json();if(j.ok){userToast(j.message||'Verified! +1 USDT');await loadTasks();await init();}else{userToast(j.error||'Failed to verify','error');}}
 async function createDeposit(){
 let amt=parseFloat($('depAmount').value||0);
-if(amt<20){userToast('Min 20 USDT','error');return;}
+if(amt<5){userToast('Min 5 USDT','error');return;}
 let btn=event?.target;
 if(btn){btn.disabled=true;btn.style.opacity='0.6';btn.innerText='Creating...';}
 let checkBox=$('checkStatus');if(checkBox){checkBox.classList.add('hidden');checkBox.innerText='';}
@@ -1115,7 +1129,7 @@ if(aiTimerInterval)clearInterval(aiTimerInterval);aiTimerInterval=null;
 function tick(){
 try{
 let timerEl=$('aiTimer');
-if(!endStr){if(timerEl)timerEl.innerText='Deposit 20 USDT to start';safeSet('aiStatus','INACTIVE');return;}
+if(!endStr){if(timerEl)timerEl.innerText='Deposit 5 USDT to start';safeSet('aiStatus','INACTIVE');return;}
 let end=parseUTC(endStr);let now=new Date();let diff=end-now;
 if(diff<=0){if(timerEl){timerEl.innerText='EXPIRED';timerEl.style.background='rgba(239,68,68,0.2)';timerEl.style.color='#ef4444';}safeSet('aiStatus','EXPIRED');clearInterval(aiTimerInterval);aiTimerInterval=null;return;}
 let days=Math.floor(diff/(1000*60*60*24));let hours=Math.floor((diff%(1000*60*60*24))/(1000*60*60));let mins=Math.floor((diff%(1000*60*60))/(1000*60));let secs=Math.floor((diff%(1000*60))/1000);
@@ -1132,10 +1146,33 @@ safeSet('gateText',`Complete ${me.mandatory_tasks_total-me.mandatory_tasks_done}
 $('wdGate').classList.remove('hidden');safeSet('wdGateText',`Done: ${me.mandatory_tasks_done}/${me.mandatory_tasks_total}`);
 }else{$('mandatoryGate').classList.add('hidden');$('taskBadge').classList.add('hidden');$('bottomTaskDot').classList.add('hidden');$('wdGate').classList.add('hidden');}
 };
+loadHomeActivity();
 init().then(()=>{hideInitialLoader();if(_activeTab==='portfolio')loadPortfolio();setTimeout(showTierInfo,800);}).catch(()=>{hideInitialLoader();});
 setTimeout(hideInitialLoader,2500);
 setInterval(init,15000);
 setInterval(()=>{if(window._lastMe&&_activeTab==='portfolio')loadPortfolio();},15000);
+setInterval(loadHomeActivity,60000);
+
+// === HOME ACTIVITY FEED ===
+function loadHomeActivity(){
+fetch('/api/display/activity').then(function(r){return r.json();}).then(function(d){
+var items=d.activities||[];
+var el=$('homeActivityList');
+if(!el)return;
+if(!items.length){el.innerHTML='<p class="text-[10px] text-center" style="color:var(--text3)">No recent activity</p>';return;}
+el.innerHTML=items.slice(0,5).map(function(a){
+var icon=a.type==='deposit'?'\U0001f4b3':a.type==='withdrawal'?'\U0001f4b5':'\U0001f4c8';
+var color=a.type==='deposit'?'#26A17B':a.type==='withdrawal'?'#FFD60A':'#10b981';
+return '<div class="flex items-center gap-2 p-2 rounded-xl" style="background:var(--border)">'+icon+'<span class="text-[10px] font-bold" style="color:'+color+'">'+a.user+'</span><span class="text-[10px]" style="color:var(--text3)">'+a.action+'</span><span class="ml-auto text-[9px]" style="color:var(--text3)">'+a.time+'</span></div>';
+}).join('');
+var totalU=d.total_users||0;
+var totalDep=d.total_verified_deposits||0;
+var activeU=d.active_users||0;
+if($('socialProofText')){
+$('socialProofText').innerText=totalU+' users joined \u2022 '+activeU+' active traders \u2022 $'+Number(totalDep).toFixed(0)+' deposited';
+}
+}).catch(function(){});
+}
 
 // === DAILY BONUS ===
 async function claimDailyBonus(){

@@ -128,7 +128,7 @@ DEPOSIT_ADDR = {
     "TON": os.getenv("ADDR_TON", "UQBlNeJ90El3LxBhikC2HUG3mqS16k1q177AjcNAaURVa_zw"),
     "SOL": os.getenv("ADDR_SOL", "87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7"),
 }
-TIERS = [(15000, 14.9), (6000, 13.6), (2500, 11.8), (1200, 10.9), (500, 9.6), (120, 8.9), (20, 7.6), (0, 0.0)]
+TIERS = [(15000, 14.9), (6000, 13.6), (2500, 11.8), (1200, 10.9), (500, 9.6), (120, 8.9), (5, 7.6), (0, 0.0)]
 REF_BONUS = {1: 7, **{level: 1 for level in range(2, 11)}}
 SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT", "AVAXUSDT", "LINKUSDT", "LTCUSDT", "ADAUSDT", "PEPEUSDT", "SHIBUSDT", "MATICUSDT", "DOTUSDT", "ARBUSDT"]
 BASE_PRICES = {"BTCUSDT": 67200, "ETHUSDT": 3400, "SOLUSDT": 178, "BNBUSDT": 610, "XRPUSDT": .62, "DOGEUSDT": .16, "AVAXUSDT": 42, "LINKUSDT": 18.5, "LTCUSDT": 84, "ADAUSDT": .48, "PEPEUSDT": .000009, "SHIBUSDT": .000027, "MATICUSDT": .89, "DOTUSDT": 7.2, "ARBUSDT": 1.12}
@@ -2203,7 +2203,22 @@ def display_activity():
             amt = rng2.choice(trade_profits)
             activities.append({"user": name, "action": f"AI trade profit +${amt:.2f}", "network": "", "time": t.strftime("%H:%M IST"), "mins_ago": mins_ago, "type": "trade"})
     activities.sort(key=lambda x: x["mins_ago"])
-    return {"activities": activities}
+
+    stats_data = {}
+    try:
+        conn2 = get_conn()
+        cur2 = cursor(conn2)
+        cur2.execute("SELECT COUNT(*) as cnt FROM users")
+        stats_data["total_users"] = val(cur2.fetchone(), "cnt", 0)
+        cur2.execute("SELECT COUNT(*) as cnt FROM users WHERE is_banned=0 AND total_deposit>0")
+        stats_data["active_users"] = val(cur2.fetchone(), "cnt", 0)
+        cur2.execute("SELECT COALESCE(SUM(actual_amount),0) as s FROM deposits WHERE status='verified'")
+        stats_data["total_verified_deposits"] = val(cur2.fetchone(), "s", 0)
+        safe_close(conn2)
+    except Exception:
+        stats_data = {"total_users": 0, "active_users": 0, "total_verified_deposits": 0}
+
+    return {"activities": activities, **stats_data}
 
 
 try:
