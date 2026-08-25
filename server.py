@@ -1362,6 +1362,11 @@ def admin_stats(request: Request):
         tc = cur.fetchone()
         cur.execute("SELECT COUNT(*) AS completed FROM user_tasks WHERE status='verified'")
         comp = cur.fetchone()
+        try:
+            cur.execute("SELECT COALESCE(SUM(amount),0) as s FROM withdrawals WHERE status='approved'")
+            wd_sum = val(cur.fetchone(), "s", 0)
+        except Exception:
+            wd_sum = 0
         return {
             "total_users": val(stats, "users", 0),
             "active_users": val(active_stats, "users", 0),
@@ -1371,6 +1376,7 @@ def admin_stats(request: Request):
             "total_withdrawable": val(stats, "wd", 0),
             "total_deposits_all": val(stats, "tdep", 0),
             "total_verified_deposits": verified_sum,
+            "total_withdrawals_all": wd_sum,
             "pending_deposits": pending_cnt,
             "verified_deposits": verified_cnt,
             "expired_deposits": expired_cnt,

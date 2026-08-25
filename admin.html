@@ -31,6 +31,10 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 .theme-toggle:hover{transform:scale(1.1)}
 .hidden{display:none!important}
 .toast{position:fixed;top:20px;right:20px;z-index:99999;padding:12px 20px;border-radius:12px;font-size:12px;font-weight:700;opacity:0;transform:translateY(-10px);transition:all 0.3s;pointer-events:none;max-width:320px;word-wrap:break-word}
+.notif-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:8px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 4px;animation:pulse-badge 2s infinite}
+@keyframes pulse-badge{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.glow-approve{animation:glow-pulse 1.5s infinite}
+@keyframes glow-pulse{0%,100%{box-shadow:0 0 4px rgba(16,185,129,0.3)}50%{box-shadow:0 0 16px rgba(16,185,129,0.6)}}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast-success{background:rgba(16,185,129,0.95);color:#fff}
 .toast-error{background:rgba(239,68,68,0.95);color:#fff}
@@ -76,6 +80,10 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 <header class="h-16 border-b flex items-center px-6 justify-between sticky top-0 backdrop-blur-xl z-20" style="background:color-mix(in srgb, var(--bg) 80%, transparent);border-color:var(--border2)">
 <div><h1 id="pageTitle" class="font-black text-[17px] tracking-tight">Dashboard</h1><p class="text-[10px]" style="color:var(--text3)">Auto refresh 10s</p></div>
 <div class="flex gap-2 items-center">
+<div id="notifBell" class="theme-toggle relative hidden" onclick="clearNotifications()" title="New items! Click to dismiss">
+<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+<span id="notifBadge" class="notif-badge hidden">0</span>
+</div>
 <div class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><span id="themeIcon"></span></div>
 <button onclick="loadAll()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh</button>
 <button onclick="exportData()" class="btn-gold px-4 py-2 rounded-full text-[11px]">Export CSV</button>
@@ -94,12 +102,18 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 <div class="card p-5" style="border-color:rgba(16,185,129,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-emerald-400">VERIFIED DEPOSITS</p><p id="total_dep" class="text-[28px] font-black mt-1.5">$0</p><p id="total_dep_cnt" class="text-[11px] mt-0.5" style="color:var(--text2)">0 verified</p></div>
 <div class="card p-5" style="border-color:rgba(124,77,255,0.15)"><p class="text-[9px] tracking-[2px] font-bold" style="color:#7C4DFF">ONLINE NOW</p><p id="stat_online" class="text-[28px] font-black mt-1.5 tracking-tight" style="color:#7C4DFF">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">active in last 5 min</p></div>
 </div>
-<div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
 <div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">AWAITING</p><p id="pend_dep" class="text-xl font-black text-yellow-400 mt-0.5">0</p></div>
 <div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">EXPIRED</p><p id="stat_expired" class="text-xl font-black text-red-400 mt-0.5">0</p></div>
 <div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">PEND WD</p><p id="pend_wd" class="text-xl font-black text-orange-400 mt-0.5">0</p></div>
 <div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">REF PAID</p><p id="ref_paid" class="text-xl font-black mt-0.5" style="color:#A5A6F6">$0</p></div>
 <div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">TASKS DONE</p><p id="stat_tasks" class="text-xl font-black mt-0.5" style="color:#7C4DFF">0</p></div>
+</div>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+<div class="card p-4" style="border-color:rgba(16,185,129,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-emerald-400">CONVERSION RATE</p><p id="kpi_conversion" class="text-[22px] font-black mt-1" style="color:#10b981">0%</p><p class="text-[10px] mt-0.5" style="color:var(--text3)">registered → deposited</p></div>
+<div class="card p-4" style="border-color:rgba(255,214,10,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-[#FFD60A]">AVG DEPOSIT</p><p id="kpi_avg_dep" class="text-[22px] font-black mt-1" style="color:#FFD60A">$0</p><p class="text-[10px] mt-0.5" style="color:var(--text3)">per depositor</p></div>
+<div class="card p-4" style="border-color:rgba(124,77,255,0.15)"><p class="text-[9px] tracking-[2px] font-bold" style="color:#7C4DFF">DEP / WD RATIO</p><p id="kpi_ratio" class="text-[22px] font-black mt-1" style="color:#7C4DFF">0%</p><p class="text-[10px] mt-0.5" style="color:var(--text3)">money out vs in</p></div>
+<div class="card p-4" style="border-color:rgba(96,165,250,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-blue-400">REVENUE / USER</p><p id="kpi_rev_user" class="text-[22px] font-black mt-1" style="color:#60a5fa">$0</p><p class="text-[10px] mt-0.5" style="color:var(--text3)">per active user</p></div>
 </div>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 <div class="lg:col-span-2 card p-6"><div class="flex justify-between"><h3 class="font-bold text-sm">Revenue Chart</h3><span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">Live</span></div><canvas id="revChart" height="120" class="mt-3"></canvas></div>
@@ -336,6 +350,49 @@ Upload Image
 let ADMIN_TOKEN=localStorage.getItem('admin_token')||'';
 let selectedUser=null,currentAction=null,allUsers=[],allDeposits=[];
 let chartInstance=null;
+let prevPendingDeps=0,prevPendingWds=0,notifSound=null;
+
+function playNotifSound(){
+try{
+if(!notifSound){
+let ac=new(window.AudioContext||window.webkitAudioContext)();
+let osc=ac.createOscillator();
+let gain=ac.createGain();
+osc.connect(gain);
+gain.connect(ac.destination);
+osc.type='sine';
+osc.frequency.value=880;
+gain.gain.value=0.15;
+osc.start();
+osc.frequency.setValueAtTime(880,ac.currentTime);
+osc.frequency.setValueAtTime(1100,ac.currentTime+0.1);
+gain.gain.exponentialRampToValueAtTime(0.01,ac.currentTime+0.3);
+osc.stop(ac.currentTime+0.3);
+notifSound=ac;
+setTimeout(()=>{notifSound=null;},400);
+}
+}catch(e){}
+}
+
+function updateNotifBadge(){
+let total=prevPendingDeps+prevPendingWds;
+let bell=document.getElementById('notifBell');
+let badge=document.getElementById('notifBadge');
+if(total>0){
+bell.classList.remove('hidden');
+badge.classList.remove('hidden');
+badge.innerText=total;
+}else{
+bell.classList.add('hidden');
+badge.classList.add('hidden');
+}
+}
+
+function clearNotifications(){
+prevPendingDeps=0;
+prevPendingWds=0;
+updateNotifBadge();
+}
 
 function apiHeaders(){return ADMIN_TOKEN&&ADMIN_TOKEN!=='__no_auth__'?{'X-Admin-Token':ADMIN_TOKEN}:{};}
 
@@ -473,8 +530,9 @@ return r.json();
 }
 
 async function loadAll(){
+let stats;
 try{
-let stats=await fetchJson('/api/admin/stats');
+stats=await fetchJson('/api/admin/stats');
 document.getElementById('stat_users').innerText=stats.total_users;
 document.getElementById('stat_active').innerText=stats.active_users||0;
 document.getElementById('stat_online').innerText=stats.online_users||0;
@@ -491,6 +549,33 @@ document.getElementById('navUsers').innerText=stats.active_users||stats.total_us
 document.getElementById('navDeposits').innerText=stats.pending_deposits;
 document.getElementById('navWd').innerText=stats.pending_withdrawals;
 document.getElementById('navVol').innerText='$'+Number(stats.total_deposits_all||0).toFixed(0);
+let curPendWd=Number(stats.pending_withdrawals||0);
+let curPendDep=Number(stats.pending_deposits||0);
+if(prevPendingWds>0&&curPendWd>prevPendingWds){
+let diff=curPendWd-prevPendingWds;
+toast('New withdrawal request'+(diff>1?'s':'')+'! ('+diff+')','info');
+playNotifSound();
+}
+if(prevPendingDeps>0&&curPendDep>prevPendingDeps){
+let diff=curPendDep-prevPendingDeps;
+toast('New deposit'+(diff>1?'s':'')+'! ('+diff+')','info');
+playNotifSound();
+}
+prevPendingDeps=curPendDep;
+prevPendingWds=curPendWd;
+updateNotifBadge();
+let totalU=Number(stats.total_users||0);
+let activeU=Number(stats.active_users||0);
+let totalDep=Number(stats.total_verified_deposits||0);
+let totalWd=Number(stats.total_withdrawals_all||0);
+let conv=totalU>0?((activeU/totalU)*100).toFixed(1):'0';
+let avgDep=activeU>0?(totalDep/activeU).toFixed(2):'0';
+let ratio=totalDep>0?((totalWd/totalDep)*100).toFixed(1):'0';
+let revUser=activeU>0?(totalDep/activeU).toFixed(2):'0';
+document.getElementById('kpi_conversion').innerText=conv+'%';
+document.getElementById('kpi_avg_dep').innerText='$'+avgDep;
+document.getElementById('kpi_ratio').innerText=ratio+'%';
+document.getElementById('kpi_rev_user').innerText='$'+revUser;
 }catch(e){console.error('stats',e);}
 
 try{
