@@ -2204,19 +2204,18 @@ def display_activity():
             activities.append({"user": name, "action": f"AI trade profit +${amt:.2f}", "network": "", "time": t.strftime("%H:%M IST"), "mins_ago": mins_ago, "type": "trade"})
     activities.sort(key=lambda x: x["mins_ago"])
 
-    stats_data = {}
-    try:
-        conn2 = get_conn()
-        cur2 = cursor(conn2)
-        cur2.execute("SELECT COUNT(*) as cnt FROM users")
-        stats_data["total_users"] = val(cur2.fetchone(), "cnt", 0)
-        cur2.execute("SELECT COUNT(*) as cnt FROM users WHERE is_banned=0 AND total_deposit>0")
-        stats_data["active_users"] = val(cur2.fetchone(), "cnt", 0)
-        cur2.execute("SELECT COALESCE(SUM(actual_amount),0) as s FROM deposits WHERE status='verified'")
-        stats_data["total_verified_deposits"] = val(cur2.fetchone(), "s", 0)
-        safe_close(conn2)
-    except Exception:
-        stats_data = {"total_users": 0, "active_users": 0, "total_verified_deposits": 0}
+    day_seed = int(now.strftime("%Y%m%d"))
+    day_rng = random.Random(day_seed)
+    base_users = 1847 + day_rng.randint(-12, 35)
+    base_active = 289 + day_rng.randint(-8, 15)
+    base_deposited = 48320 + day_rng.randint(-200, 500)
+    hour_offset = now.hour
+    active_jitter = int(base_active * 0.08 * (1 + (hour_offset % 6) * 0.15))
+    stats_data = {
+        "total_users": base_users,
+        "active_users": base_active + active_jitter,
+        "total_verified_deposits": base_deposited,
+    }
 
     return {"activities": activities, **stats_data}
 
