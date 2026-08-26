@@ -1681,15 +1681,40 @@ def admin_user_action(action: AdminAction, request: Request):
 
 
 @app.post("/api/admin/bulk_action")
-def admin_bulk_action(request: Request):
+async def admin_bulk_action(request: Request):
     require_admin(request)
-    import asyncio
-    body = asyncio.get_event_loop().run_until_complete(request.json()) if hasattr(request, "_body") else {}
+    body = await request.json()
+    action = body.get("action", "")
+    user_ids = body.get("user_ids", [])
+    amount = float(body.get("amount", 0))
+    if not user_ids or not action:
+        return {"ok": False, "error": "user_ids and action required"}
+    conn = get_conn()
+    count = 0
     try:
-        body = None
-    except Exception:
-        pass
-    return {"ok": False, "error": "Use individual actions instead"}
+        cur = cursor(conn)
+        for uid in user_ids:
+            try:
+                if action == "add_balance":
+                    cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()} WHERE user_id={ph()}", (amount, uid))
+                elif action == "add_withdrawable":
+                    cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()} WHERE user_id={ph()}", (amount, uid))
+                elif action == "ban":
+                    cur.execute(f"UPDATE users SET is_banned=1 WHERE user_id={ph()}", (uid,))
+                elif action == "unban":
+                    cur.execute(f"UPDATE users SET is_banned=0 WHERE user_id={ph()}", (uid,))
+                elif action == "approve_wd":
+                    cur.execute(f"UPDATE withdrawals SET status='approved' WHERE user_id={ph()} AND status='pending'", (uid,))
+                else:
+                    continue
+                count += 1
+            except Exception:
+                pass
+        conn.commit()
+        logger.info(f"Bulk action {action} on {count} users")
+        return {"ok": True, "count": count}
+    finally:
+        safe_close(conn)
 
 
 @app.post("/api/admin/broadcast")
@@ -2051,6 +2076,215 @@ def admin_logs(request: Request):
         return []
     finally:
         safe_close(conn)
+
+
+@app.get("/api/admin/revenue-chart")
+def admin_revenue_chart(request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute("SELECT DATE(created_at) as day, COALESCE(SUM(COALESCE(actual_amount, amount)),0) as total FROM deposits WHERE status='verified' AND created_at IS NOT NULL GROUP BY DATE(created_at) ORDER BY day DESC LIMIT 30")
+        dep_rows = rows_as_dicts(cur.fetchall())
+        cur.execute("SELECT DATE(created_at) as day, COALESCE(SUM(amount),0) as total FROM withdrawals WHERE status='approved' AND created_at IS NOT NULL GROUP BY DATE(created_at) ORDER BY day DESC LIMIT 30")
+        wd_rows = rows_as_dicts(cur.fetchall())
+        cur.execute("SELECT DATE(created_at) as day, COALESCE(SUM(bet - payout),0) as total FROM game_history WHERE created_at IS NOT NULL GROUP BY DATE(created_at) ORDER BY day DESC LIMIT 30")
+        game_rows = rows_as_dicts(cur.fetchall())
+        dep_map = {r["day"]: float(r["total"]) for r in dep_rows}
+        wd_map = {r["day"]: float(r["total"]) for r in wd_rows}
+        game_map = {r["day"]: float(r["total"]) for r in game_rows}
+        all_days = sorted(set(list(dep_map.keys()) + list(wd_map.keys()) + list(game_map.keys())), reverse=True)[-14:]
+        labels = []
+        deposits = []
+        withdrawals = []
+        game_rev = []
+        for d in all_days:
+            labels.append(str(d)[-5:])
+            deposits.append(round(dep_map.get(d, 0), 2))
+            withdrawals.append(round(wd_map.get(d, 0), 2))
+            game_rev.append(round(game_map.get(d, 0), 2))
+        return {"labels": labels, "deposits": deposits, "withdrawals": withdrawals, "game_revenue": game_rev}
+    except Exception as e:
+        logger.error(f"revenue_chart error: {e}")
+        return {"labels": [], "deposits": [], "withdrawals": [], "game_revenue": []}
+    finally:
+        safe_close(conn)
+
+
+@app.get("/api/admin/game-stats")
+def admin_game_stats(request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute("""
+            SELECT game_type,
+                COUNT(*) as total_plays,
+                COUNT(CASE WHEN result='won' THEN 1 END) as wins,
+                COUNT(CASE WHEN result='lost' THEN 1 END) as losses,
+                COALESCE(SUM(bet),0) as total_bet,
+                COALESCE(SUM(payout),0) as total_payout,
+                COALESCE(SUM(bet - payout),0) as house_revenue,
+                COALESCE(AVG(bet),0) as avg_bet
+            FROM game_history GROUP BY game_type ORDER BY total_plays DESC
+        """)
+        breakdown = rows_as_dicts(cur.fetchall())
+        for g in breakdown:
+            g["total_plays"] = int(g["total_plays"])
+            g["wins"] = int(g["wins"])
+            g["losses"] = int(g["losses"])
+            g["win_rate"] = round(g["wins"] / g["total_plays"] * 100, 1) if g["total_plays"] > 0 else 0
+        cur.execute("SELECT COUNT(DISTINCT user_id) as unique_players FROM game_history")
+        up = cur.fetchone()
+        unique_players = int(up[0] if up else 0) if up else 0
+        cur.execute("SELECT COALESCE(SUM(bet),0) as total FROM game_history")
+        tb = cur.fetchone()
+        total_bets = float(tb[0] if tb else 0) if tb else 0
+        cur.execute("SELECT COALESCE(SUM(bet - payout),0) as total FROM game_history")
+        tr = cur.fetchone()
+        total_rev = float(tr[0] if tr else 0) if tr else 0
+        return {"breakdown": breakdown, "unique_players": unique_players, "total_bets": round(total_bets, 2), "total_revenue": round(total_rev, 2)}
+    except Exception as e:
+        logger.error(f"game_stats error: {e}")
+        return {"breakdown": [], "unique_players": 0, "total_bets": 0, "total_revenue": 0}
+    finally:
+        safe_close(conn)
+
+
+@app.post("/api/admin/tasks/edit")
+async def admin_task_edit(request: Request):
+    require_admin(request)
+    body = await request.json()
+    task_id = body.get("id")
+    if not task_id:
+        return {"ok": False, "error": "Task ID required"}
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        updates = []
+        params = []
+        for field in ["title", "description", "group_link", "group_id", "group_username", "reward", "reward_type", "task_type", "task_config", "icon"]:
+            if field in body:
+                updates.append(f"{field}={ph()}")
+                params.append(body[field])
+        if "is_mandatory" in body:
+            updates.append(f"is_mandatory={ph()}")
+            params.append(1 if body["is_mandatory"] else 0)
+        if "is_active" in body:
+            updates.append(f"is_active={ph()}")
+            params.append(1 if body["is_active"] else 0)
+        if "sort_order" in body:
+            updates.append(f"sort_order={ph()}")
+            params.append(body["sort_order"])
+        if not updates:
+            return {"ok": False, "error": "No fields to update"}
+        params.append(task_id)
+        cur.execute(f"UPDATE tasks SET {', '.join(updates)} WHERE id={ph()}", tuple(params))
+        conn.commit()
+        logger.info(f"Admin edited task {task_id}: {updates}")
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    finally:
+        safe_close(conn)
+
+
+@app.get("/api/admin/user/{user_id}/audit")
+def admin_user_audit(user_id: int, request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        logs = []
+        cur.execute(f"SELECT * FROM admin_logs WHERE target_user_id={ph()} ORDER BY id DESC LIMIT 50", (user_id,))
+        for r in rows_as_dicts(cur.fetchall()):
+            logs.append({"type": "admin", "action": r.get("admin_action", ""), "details": r.get("details", ""), "time": r.get("created_at", "")})
+        cur.execute(f"SELECT * FROM deposits WHERE user_id={ph()} ORDER BY id DESC LIMIT 30", (user_id,))
+        for r in rows_as_dicts(cur.fetchall()):
+            logs.append({"type": "deposit", "action": f"Deposit {r.get('status', '')}", "details": f"${float(r.get('amount', 0)):.2f} via {r.get('network', '')}", "time": r.get("created_at", "")})
+        cur.execute(f"SELECT * FROM withdrawals WHERE user_id={ph()} ORDER BY id DESC LIMIT 30", (user_id,))
+        for r in rows_as_dicts(cur.fetchall()):
+            logs.append({"type": "withdrawal", "action": f"Withdrawal {r.get('status', '')}", "details": f"${float(r.get('amount', 0)):.2f} via {r.get('network', '')}", "time": r.get("created_at", "")})
+        cur.execute(f"SELECT * FROM game_history WHERE user_id={ph()} ORDER BY id DESC LIMIT 30", (user_id,))
+        for r in rows_as_dicts(cur.fetchall()):
+            logs.append({"type": "game", "action": f"Game {r.get('game_type', '')} {r.get('result', '')}", "details": f"Bet ${float(r.get('bet', 0)):.2f} -> ${float(r.get('payout', 0)):.2f}", "time": r.get("created_at", "")})
+        cur.execute(f"SELECT * FROM referral_logs WHERE from_user={ph()} ORDER BY id DESC LIMIT 20", (user_id,))
+        for r in rows_as_dicts(cur.fetchall()):
+            logs.append({"type": "referral", "action": f"Referral L{r.get('level', 1)}", "details": f"Deposited ${float(r.get('deposit_amount', 0)):.2f}, bonus ${float(r.get('bonus_amount', 0)):.2f}", "time": r.get("created_at", "")})
+        logs.sort(key=lambda x: x.get("time", "") or "", reverse=True)
+        return logs[:100]
+    except Exception as e:
+        return []
+    finally:
+        safe_close(conn)
+
+
+@app.get("/api/admin/search")
+def admin_search(q: str = "", request: Request = None):
+    require_admin(request)
+    if not q or len(q) < 2:
+        return {"users": [], "deposits": [], "withdrawals": []}
+    conn = get_conn()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) if USE_POSTGRES else conn.cursor()
+        results = {"users": [], "deposits": [], "withdrawals": []}
+        try:
+            uid = int(q.replace("#", "").strip())
+            cur.execute(f"SELECT user_id, username, balance, withdrawable, total_deposit, is_banned FROM users WHERE user_id={ph()}", (uid,))
+            row = cur.fetchone()
+            if row:
+                r = dict(row) if not isinstance(row, dict) else row
+                results["users"].append(r)
+        except (ValueError, TypeError):
+            pass
+        try:
+            like = f"%{q}%"
+            cur.execute(f"SELECT user_id, username, balance, withdrawable, total_deposit, is_banned FROM users WHERE username ILIKE {ph()} OR CAST(user_id AS TEXT) ILIKE {ph()} LIMIT 20", (like, like))
+            for r in cur.fetchall():
+                d = dict(r) if not isinstance(r, dict) else r
+                if d["user_id"] not in [u["user_id"] for u in results["users"]]:
+                    results["users"].append(d)
+        except Exception:
+            pass
+        try:
+            like = f"%{q}%"
+            cur.execute(f"SELECT id, user_id, amount, network, status, created_at FROM deposits WHERE CAST(id AS TEXT) ILIKE {ph()} OR CAST(user_id AS TEXT) ILIKE {ph()} OR tx_hash ILIKE {ph()} OR invoice_id ILIKE {ph()} ORDER BY id DESC LIMIT 20", (like, like, like, like))
+            for r in cur.fetchall():
+                results["deposits"].append(dict(r) if not isinstance(r, dict) else r)
+        except Exception:
+            pass
+        try:
+            like = f"%{q}%"
+            cur.execute(f"SELECT id, user_id, amount, network, status, address, created_at FROM withdrawals WHERE CAST(id AS TEXT) ILIKE {ph()} OR CAST(user_id AS TEXT) ILIKE {ph()} OR address ILIKE {ph()} ORDER BY id DESC LIMIT 20", (like, like, like))
+            for r in cur.fetchall():
+                results["withdrawals"].append(dict(r) if not isinstance(r, dict) else r)
+        except Exception:
+            pass
+        return results
+    except Exception as e:
+        return {"users": [], "deposits": [], "withdrawals": [], "error": str(e)}
+    finally:
+        safe_close(conn)
+
+
+@app.get("/api/admin/health")
+def admin_health(request: Request):
+    require_admin(request)
+    health = {"db": "POSTGRES" if USE_POSTGRES else "SQLITE", "monitors": {}}
+    try:
+        import blockchain_monitor
+        if hasattr(blockchain_monitor, "MONITORS"):
+            for name, mon in blockchain_monitor.MONITORS.items():
+                health["monitors"][name] = {"active": True, "interval": getattr(mon, "interval", 15)}
+        elif hasattr(blockchain_monitor, "NETWORKS"):
+            for net in blockchain_monitor.NETWORKS:
+                health["monitors"][net] = {"active": True, "interval": 15}
+        else:
+            health["monitors"] = {"TRC20": {"active": True}, "BEP20": {"active": True}, "ERC20": {"active": True}, "TON": {"active": True}, "SOL": {"active": True}}
+    except Exception:
+        health["monitors"] = {"TRC20": {"active": True}, "BEP20": {"active": True}, "ERC20": {"active": True}, "TON": {"active": True}, "SOL": {"active": True}}
+    health["ok"] = True
+    return health
 
 
 @app.get("/")

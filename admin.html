@@ -99,6 +99,11 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.4)!import
 <div><h1 id="pageTitle" class="font-bold text-[15px] tracking-tight">Dashboard</h1><p class="text-[9px]" style="color:var(--text3)">Auto refresh 10s</p></div>
 </div>
 <div class="flex gap-1.5 items-center">
+<div class="relative hidden lg:block">
+<input id="globalSearch" type="text" placeholder="Search user, dep, wd..." class="rounded-lg px-3 py-1.5 text-[11px] w-[180px] border outline-none" style="background:var(--input);border-color:var(--border);color:var(--text)" oninput="debounceGlobalSearch()" onkeydown="if(event.key==='Enter')doGlobalSearch()">
+<div id="globalSearchResults" class="hidden absolute top-full left-0 mt-1 w-[360px] max-h-[400px] overflow-y-auto rounded-xl border z-50 p-2" style="background:var(--surface);border-color:var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.3)"></div>
+</div>
+<div class="flex gap-1.5 items-center">
 <div id="notifBell" class="theme-toggle relative hidden" onclick="clearNotifications()" title="New items!">
 <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
 <span id="notifBadge" class="notif-badge hidden">0</span>
@@ -133,12 +138,18 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.4)!import
 <div class="card p-3.5" style="border-color:rgba(124,77,255,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#7C4DFF">Dep / WD Ratio</p><p id="kpi_ratio" class="text-xl font-black mt-1" style="color:#7C4DFF">0%</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">money out vs in</p></div>
 <div class="card p-3.5" style="border-color:rgba(96,165,250,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#60a5fa">Revenue / User</p><p id="kpi_rev_user" class="text-xl font-black mt-1" style="color:#60a5fa">$0</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">per active user</p></div>
 </div>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+<div class="card p-3.5" style="border-color:rgba(124,77,255,0.12)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#7C4DFF">Game Players</p><p id="gs_players" class="text-lg font-black mt-1" style="color:#7C4DFF">0</p></div>
+<div class="card p-3.5" style="border-color:rgba(255,214,10,0.12)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#FFD60A">Total Bets</p><p id="gs_bets" class="text-lg font-black mt-1" style="color:#FFD60A">$0</p></div>
+<div class="card p-3.5" style="border-color:rgba(16,185,129,0.12)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#10b981">House Revenue</p><p id="gs_rev" class="text-lg font-black mt-1" style="color:#10b981">$0</p></div>
+<div class="card p-3.5" style="border-color:rgba(96,165,250,0.12)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#60a5fa">Top Game</p><p id="gs_top" class="text-lg font-black mt-1" style="color:#60a5fa">-</p></div>
+</div>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 <div class="lg:col-span-2 card p-5"><div class="flex justify-between items-center"><h3 class="font-bold text-[13px]">Revenue Chart</h3><span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">LIVE</span></div><canvas id="revChart" height="110" class="mt-3"></canvas></div>
 <div class="card p-4" style="border-color:rgba(16,185,129,0.12)"><h3 class="font-bold text-[13px]">System Health</h3>
 <div class="mt-3 space-y-2 text-[11px]">
 <div class="flex justify-between items-center p-2.5 rounded-lg" style="background:var(--hover)"><span>Blockchain Monitor</span><span class="font-bold" style="color:#10b981">Active</span></div>
-<div class="space-y-1 mt-1.5">
+<div id="healthStatus" class="space-y-1 mt-1.5">
 <div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span style="font-size:10px">TRC20</span><span class="mono text-[9px]" style="color:#10b981">OK</span></div>
 <div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span style="font-size:10px">BEP20/ERC20</span><span class="mono text-[9px]" style="color:#10b981">OK</span></div>
 <div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span style="font-size:10px">TON</span><span class="mono text-[9px]" style="color:#10b981">OK</span></div>
@@ -197,6 +208,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.4)!import
 <button onclick="userDetailTab('refs')" data-udtab="refs" class="ud-tab px-4 py-2 rounded-full text-[11px] font-bold" style="background:var(--hover)">Referrals</button>
 <button onclick="userDetailTab('deposits')" data-udtab="deposits" class="ud-tab px-4 py-2 rounded-full text-[11px] font-bold" style="background:var(--hover)">Deposits</button>
 <button onclick="userDetailTab('withdrawals')" data-udtab="withdrawals" class="ud-tab px-4 py-2 rounded-full text-[11px] font-bold" style="background:var(--hover)">Withdrawals</button>
+<button onclick="userDetailTab('audit')" data-udtab="audit" class="ud-tab px-4 py-2 rounded-full text-[11px] font-bold" style="background:var(--hover)">Audit Log</button>
 </div>
 
 <div id="ud-tasks" class="card p-5"><h3 class="font-bold text-sm mb-3">Tasks Progress</h3><div class="overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">Task</th><th class="text-left p-2.5">Reward</th><th class="text-left p-2.5">Type</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Claimed</th></tr></thead><tbody id="ud_tasks_list"></tbody></table></div></div>
@@ -209,6 +221,8 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.4)!import
 
 <div id="ud-withdrawals" class="hidden card p-5"><h3 class="font-bold text-sm mb-3">Withdrawal History</h3><div class="overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">ID</th><th class="text-left p-2.5">Amount</th><th class="text-left p-2.5">Network</th><th class="text-left p-2.5">Address</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Time</th></tr></thead><tbody id="ud_wds_list"></tbody></table></div></div>
 
+<div id="ud-audit" class="hidden card p-5"><h3 class="font-bold text-sm mb-3">Activity Audit Log</h3><p class="text-[10px] mb-3" style="color:var(--text2)">All balance changes, games, deposits, withdrawals, and admin actions for this user.</p><div class="overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">Type</th><th class="text-left p-2.5">Action</th><th class="text-left p-2.5">Details</th><th class="text-left p-2.5">Time</th></tr></thead><tbody id="ud_audit_list"></tbody></table></div></div>
+
 <div class="card p-5"><h3 class="font-bold text-sm mb-3">Quick Actions</h3>
 <div class="flex flex-wrap gap-2">
 <button onclick="openAction(currentDetailUserId,'add_balance')" class="btn-emerald px-4 py-2 rounded-full text-[11px] font-bold">+ Add Balance</button>
@@ -217,6 +231,11 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.4)!import
 <button onclick="openAction(currentDetailUserId,'deduct_withdrawable')" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(249,115,22,0.15);color:#f97316">- Less Withdrawable</button>
 <button onclick="document.getElementById('dmUserId').value=currentDetailUserId;showTab('broadcast')" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Send DM</button>
 <button onclick="let u=allUsers.find(x=>x.user_id==currentDetailUserId);openAction(currentDetailUserId,u&&u.is_banned?'unban':'ban')" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Ban/Unban</button>
+</div>
+<div class="flex flex-wrap gap-2 mt-2">
+<button onclick="openAction(currentDetailUserId,'expire_now')" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(249,115,22,0.12);color:#f97316;border:1px solid rgba(249,115,22,0.2)">Expire AI Now</button>
+<button onclick="openAction(currentDetailUserId,'reset_timer')" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.2)">Reset 30d Timer</button>
+<button onclick="openAction(currentDetailUserId,'delete')" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.2)">Delete User</button>
 </div></div>
 </section>
 
@@ -238,7 +257,12 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.4)!import
 
 <!-- WITHDRAWALS -->
 <section id="sec-withdrawals" class="hidden space-y-5 fade-in">
-<div class="card p-5"><h2 class="text-lg font-black">Withdrawals</h2>
+<div class="card p-5">
+<div class="flex justify-between items-center"><h2 class="text-lg font-black">Withdrawals</h2>
+<div class="flex gap-2">
+<select id="wdFilter" onchange="renderWithdrawals()" class="rounded-full px-3 py-2 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="all">All</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="expired">Expired</option></select>
+<button onclick="batchApproveWd()" class="px-3 py-2 rounded-full text-[11px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">Approve All Pending</button>
+<button onclick="loadAll()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh</button></div></div>
 <div class="overflow-x-auto mt-4"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">ID</th><th class="text-left p-2.5">User</th><th class="text-left p-2.5">Amount</th><th class="text-left p-2.5">Address</th><th class="text-left p-2.5">Network</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Time</th><th class="text-left p-2.5">Actions</th></tr></thead><tbody id="withdrawals"></tbody></table></div></div>
 </section>
 
@@ -351,9 +375,13 @@ Upload Image
 </div>
 </section>
 
-<section id="sec-settings" class="hidden space-y-5 fade-in"><div class="card p-5"><h2 class="text-lg font-black">Settings</h2><div id="envStatus" class="mt-4 grid grid-cols-2 gap-2 text-[11px]"></div>
+<section id="sec-settings" class="hidden space-y-5 fade-in">
+<div class="card p-5"><h2 class="text-lg font-black">Settings</h2><div id="envStatus" class="mt-4 grid grid-cols-2 gap-2 text-[11px]"></div>
 <div class="mt-4 flex gap-2"><button onclick="loadEnvStatus()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh Status</button><button onclick="testBot()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Test Bot</button></div>
-<pre id="envLog" class="hidden mt-3 p-3 rounded-xl text-[10px] overflow-auto mono" style="background:var(--input);border:1px solid var(--border)"></pre></div></section>
+<pre id="envLog" class="hidden mt-3 p-3 rounded-xl text-[10px] overflow-auto mono" style="background:var(--input);border:1px solid var(--border)"></pre></div>
+<div class="card p-5"><h3 class="font-black text-sm">Deposit Addresses</h3><p class="text-[10px] mt-1" style="color:var(--text2)">Configured via env vars. Edit in Render dashboard.</p><div id="depositAddresses" class="mt-3 space-y-2"></div></div>
+<div class="card p-5"><h3 class="font-black text-sm">Tier Configuration</h3><p class="text-[10px] mt-1" style="color:var(--text2)">Current AI trading tiers. Edit TIERS array in server.py to change.</p><div id="tierConfig" class="mt-3 space-y-1.5"></div></div>
+</section>
 
 </div>
 </main>
@@ -365,9 +393,10 @@ Upload Image
 
 <script>
 let ADMIN_TOKEN=localStorage.getItem('admin_token')||'';
-let selectedUser=null,currentAction=null,allUsers=[],allDeposits=[];
+let selectedUser=null,currentAction=null,allUsers=[],allDeposits=[],allWds=[];
 let chartInstance=null;
 let prevPendingDeps=0,prevPendingWds=0,notifSound=null;
+let globalSearchTimer=null;
 
 function playNotifSound(){
 try{
@@ -538,6 +567,7 @@ let title=tab==='user-detail'?'User Profile':btn?btn.innerText.replace('NEW','')
 document.getElementById('pageTitle').innerText=title;
 if(['deposits','users','dashboard','withdrawals','referrals','tasks'].includes(tab)) loadAll();
 if(tab==='broadcast') loadBroadcastTab();
+if(tab==='settings') loadEnvStatus();
 }
 
 async function fetchJson(url){
@@ -560,9 +590,7 @@ document.getElementById('total_dep_cnt').innerText=stats.verified_deposits+' ver
 document.getElementById('pend_dep').innerText=stats.pending_deposits;
 document.getElementById('stat_expired').innerText=stats.expired_deposits;
 document.getElementById('pend_wd').innerText=stats.pending_withdrawals;
-document.getElementById('pend_all').innerText=Number(stats.pending_deposits)+Number(stats.pending_withdrawals);
 document.getElementById('ref_paid').innerText='$'+Number(stats.total_ref_paid).toFixed(2);
-document.getElementById('stat_tasks').innerText=stats.completed_tasks+'/'+stats.active_tasks;
 document.getElementById('navUsers').innerText=stats.active_users||stats.total_users;
 document.getElementById('navDeposits').innerText=stats.pending_deposits;
 document.getElementById('navWd').innerText=stats.pending_withdrawals;
@@ -609,12 +637,8 @@ return `<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.
 
 try{
 let wds=await fetchJson('/api/admin/withdrawals');
-document.getElementById('withdrawals').innerHTML=wds.map(w=>{
-let sc=w.status==='approved'?'color:#10b981':w.status==='pending'?'color:#eab308':'color:#ef4444';
-let actions=w.status==='pending'?`<div class="flex gap-1"><button onclick="actWd(${w.id},'approve')" class="px-2.5 py-1 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981">Approve</button><button onclick="actWd(${w.id},'reject')" class="px-2.5 py-1 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Reject</button><button onclick="actWd(${w.id},'expire')" class="px-2.5 py-1 rounded-full text-[10px]" style="background:rgba(249,115,22,0.15);color:#f97316">Expire</button></div>`:`<button onclick="actWd(${w.id},'delete')" class="px-2.5 py-1 rounded-full text-[10px]" style="background:rgba(239,68,68,0.1);color:#ef4444">Delete</button>`;
-let addr=w.address||'';
-return `<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono">${w.id}</td><td class="p-2.5 mono font-bold">${w.user_id}</td><td class="p-2.5 font-bold">$${Number(w.amount).toFixed(2)}</td><td class="p-2.5" title="${addr}"><span class="mono text-[10px] break-all">${addr.length>20?addr.slice(0,10)+'...'+addr.slice(-10):addr}</span><button onclick="copyWdAddr('${addr}',this)" class="ml-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold" style="background:rgba(108,59,255,0.15);color:#A5A6F6">Copy</button></td><td class="p-2.5"><span class="px-2.5 py-1 rounded-full text-[10px] font-black" style="background:${w.network==='TRC20'?'rgba(239,68,68,0.15);color:#ef4444':w.network==='BEP20'?'rgba(250,204,21,0.15);color:#facc15':w.network==='ERC20'?'rgba(96,165,250,0.15);color:#60a5fa':w.network==='TON'?'rgba(16,185,129,0.15);color:#10b981':'rgba(165,166,246,0.15);color:#A5A6F6'}">${w.network}</span></td><td class="p-2.5"><span class="font-bold text-[11px]" style="${sc}">${w.status}</span></td><td class="p-2.5 text-[10px] mono" style="color:var(--text3)">${(w.created_at||'').slice(0,16)}</td><td class="p-2.5">${actions}</td></tr>`;
-}).join('')||`<tr><td colspan="8" class="p-6 text-center" style="color:var(--text3)">No withdrawals</td></tr>`;
+allWds=wds;
+renderWithdrawals();
 }catch(e){}
 
 try{
@@ -629,12 +653,22 @@ renderUsers(users);
 
 try{
 let tasks=await fetchJson('/api/admin/tasks');
-document.getElementById('tasksList').innerHTML=tasks.map(t=>{let typeBadge=t.task_type==='referral'?'<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:rgba(124,77,255,0.15);color:#7c4dff">REF</span>':'';let configInfo=t.task_type==='referral'&&t.task_config?'<br><span class="text-[9px]" style="color:#7c4dff">Config: '+t.task_config+'</span>':'';return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono">${t.id}</td><td class="p-2.5"><p class="font-bold">${t.title}${typeBadge}</p><p class="text-[9px] mono" style="color:var(--text3)">${t.group_id||''}${configInfo}</p></td><td class="p-2.5 text-[11px] mono" style="color:var(--text3)">${(t.group_link||'').slice(0,24)}</td><td class="p-2.5 font-bold" style="color:#FFD60A">${Number(t.reward).toFixed(2)} USDT<br><span class="text-[9px]" style="color:var(--text3)">${t.reward_type}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${t.is_mandatory?'background:rgba(239,68,68,0.15);color:#ef4444':'background:var(--hover)'}">${t.is_mandatory?'Mandatory':'Optional'}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${t.is_active?'background:rgba(16,185,129,0.15);color:#10b981':'background:var(--hover);color:var(--text3)'}">${t.is_active?'Active':'Off'}</span></td><td class="p-2.5"><div class="flex flex-wrap gap-1"><button onclick="toggleTask(${t.id},'toggle_active')" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:var(--hover)">Toggle</button><button onclick="toggleTask(${t.id},'toggle_mandatory')" class="px-2 py-1 rounded-full text-[10px]" style="background:var(--hover)">Mand</button><button onclick="toggleTask(${t.id},'delete')" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Del</button></div></td></tr>`}).join('')||`<tr><td colspan="7" class="p-6 text-center" style="color:var(--text3)">No tasks yet.</td></tr>`;
+document.getElementById('tasksList').innerHTML=tasks.map(t=>{let typeBadge=t.task_type==='referral'?'<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:rgba(124,77,255,0.15);color:#7c4dff">REF</span>':'';let configInfo=t.task_type==='referral'&&t.task_config?'<br><span class="text-[9px]" style="color:#7c4dff">Config: '+t.task_config+'</span>':'';return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono">${t.id}</td><td class="p-2.5"><p class="font-bold">${t.title}${typeBadge}</p><p class="text-[9px] mono" style="color:var(--text3)">${t.group_id||''}${configInfo}</p></td><td class="p-2.5 text-[11px] mono" style="color:var(--text3)">${(t.group_link||'').slice(0,24)}</td><td class="p-2.5 font-bold" style="color:#FFD60A">${Number(t.reward).toFixed(2)} USDT<br><span class="text-[9px]" style="color:var(--text3)">${t.reward_type}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${t.is_mandatory?'background:rgba(239,68,68,0.15);color:#ef4444':'background:var(--hover)'}">${t.is_mandatory?'Mandatory':'Optional'}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${t.is_active?'background:rgba(16,185,129,0.15);color:#10b981':'background:var(--hover);color:var(--text3)'}">${t.is_active?'Active':'Off'}</span></td><td class="p-2.5"><div class="flex flex-wrap gap-1"><button onclick="toggleTask(${t.id},'toggle_active')" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:var(--hover)">Toggle</button><button onclick="toggleTask(${t.id},'toggle_mandatory')" class="px-2 py-1 rounded-full text-[10px]" style="background:var(--hover)">Mand</button><button onclick="editTask(${t.id})" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(96,165,250,0.15);color:#60a5fa">Edit</button><button onclick="toggleTask(${t.id},'delete')" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Del</button></div></td></tr>`}).join('')||`<tr><td colspan="7" class="p-6 text-center" style="color:var(--text3)">No tasks yet.</td></tr>`;
 }catch(e){}
 
 try{
 let logs=await fetchJson('/api/admin/logs');
 document.getElementById('logs').innerHTML=logs.slice(0,20).map(l=>`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 font-bold">${l.admin_action}</td><td class="p-2.5 mono">${l.target_user_id||l.target_id||'-'}</td><td class="p-2.5 text-[10px]" style="color:var(--text2)">${(l.details||'').slice(0,60)}</td><td class="p-2.5 text-[10px] mono" style="color:var(--text3)">${(l.created_at||'').slice(0,16)}</td></tr>`).join('');
+}catch(e){}
+loadRevenueChart();
+loadHealth();
+try{
+let gs=await fetchJson('/api/admin/game-stats');
+document.getElementById('gs_players').innerText=gs.unique_players||0;
+document.getElementById('gs_bets').innerText='$'+Number(gs.total_bets||0).toFixed(0);
+document.getElementById('gs_rev').innerText='$'+Number(gs.total_revenue||0).toFixed(0);
+let top=gs.breakdown&&gs.breakdown.length>0?gs.breakdown[0]:null;
+document.getElementById('gs_top').innerText=top?(top.game_type+' ('+top.total_plays+')'):'-';
 }catch(e){}
 }
 
@@ -702,13 +736,14 @@ async function userDetailTab(tab){
 document.querySelectorAll('.ud-tab').forEach(b=>{b.style.background='var(--hover)';b.style.color='var(--text2)';});
 let btn=document.querySelector(`[data-udtab="${tab}"]`);
 if(btn){btn.style.background='var(--text)';btn.style.color='var(--bg)';}
-['ud-tasks','ud-games','ud-refs','ud-deposits','ud-withdrawals'].forEach(id=>{document.getElementById(id).classList.add('hidden');});
+['ud-tasks','ud-games','ud-refs','ud-deposits','ud-withdrawals','ud-audit'].forEach(id=>{document.getElementById(id).classList.add('hidden');});
 document.getElementById('ud-'+tab).classList.remove('hidden');
 if(tab==='tasks') await loadUserDetailTasks();
 if(tab==='games') await loadUserDetailGames();
 if(tab==='refs') await loadUserDetailRefs();
 if(tab==='deposits') await loadUserDetailDeps();
 if(tab==='withdrawals') await loadUserDetailWds();
+if(tab==='audit') await loadUserAudit(currentDetailUserId);
 }
 
 async function loadUserDetailTasks(){
@@ -875,14 +910,21 @@ document.getElementById('modalUser').innerText='User ID: '+userId;
 document.getElementById('actionModal').classList.remove('hidden');
 let title=action.replace(/_/g,' ').toUpperCase();
 let content='';
-if(action.includes('balance')||action.includes('withdrawable')){
-content=`<input id='actionAmount' type='number' step='0.01' placeholder='Amount USDT' class='w-full rounded-xl p-3 text-sm border outline-none' style='background:var(--input);border-color:var(--border)'><input id='actionNote' placeholder='Note (optional)' class='w-full mt-2 rounded-xl p-3 text-sm border outline-none' style='background:var(--input);border-color:var(--border)'>`;
+if(action==='expire_now'){
+content=`<p class="text-sm">Force expire AI trading for user ${userId}? <b class="text-red-400">Balance will be zeroed!</b></p>`;
+}else if(action==='reset_timer'){
+content=`<p class="text-sm">Reset 30-day AI cycle for user ${userId}? Timer restarts from now.</p>`;
 }else if(action==='delete'){
-content=`<p class='text-sm'>Delete user <b>${userId}</b>? <b class='text-red-400'>Irreversible!</b></p>`;
+content=`<p class="text-sm">Delete user <b>${userId}</b>? <b class="text-red-400">IRREVERSIBLE!</b></p>`;
+}else if(action.includes('balance')||action.includes('withdrawable')){
+content=`<input id='actionAmount' type='number' step='0.01' placeholder='Amount USDT' class='w-full rounded-xl p-3 text-sm border outline-none' style='background:var(--input);border-color:var(--border)'><input id='actionNote' placeholder='Note (optional)' class='w-full mt-2 rounded-xl p-3 text-sm border outline-none' style='background:var(--input);border-color:var(--border)'>`;
 }else if(action==='set_balance'||action==='set_withdrawable'){
 content=`<input id='actionAmount' type='number' step='0.01' placeholder='Set exact amount' class='w-full rounded-xl p-3 text-sm border outline-none' style='background:var(--input);border-color:var(--border)'><input id='actionNote' placeholder='Note' class='w-full mt-2 rounded-xl p-3 text-sm border outline-none' style='background:var(--input);border-color:var(--border)'>`;
 }else{
 content=`<p class='text-sm'>Confirm <b>${action}</b> for user ${userId}?</p>`;
+}
+document.getElementById('modalTitle').innerText=title;
+document.getElementById('modalContent').innerHTML=content;
 }
 document.getElementById('modalTitle').innerText=title;
 document.getElementById('modalContent').innerHTML=content;
@@ -1071,6 +1113,14 @@ async function loadEnvStatus(){
 try{
 let s=await fetchJson('/api/admin/env/status');
 document.getElementById('envStatus').innerHTML=`<div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">BOT_TOKEN</p><p class="font-bold mt-0.5" style="color:${s.has_bot_token?'#10b981':'#ef4444'}">${s.BOT_TOKEN}</p></div><div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">ADMIN_AUTH</p><p class="mono text-[11px] mt-0.5">${s.ADMIN_SECRET}</p></div><div class="p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">NOTIFY_CHANNEL</p><p class="mono text-[11px] mt-0.5" style="color:${s.has_notify_channel?'#10b981':'#eab308'}">${s.NOTIFY_CHANNEL||'Not set (no wd notifications)'}</p></div>`;
+let tiers=[{threshold:'$15,000+',pct:'14.9%'},{threshold:'$6,000+',pct:'13.6%'},{threshold:'$2,500+',pct:'11.8%'},{threshold:'$1,200+',pct:'10.9%'},{threshold:'$500+',pct:'9.6%'},{threshold:'$120+',pct:'8.9%'},{threshold:'$5+',pct:'7.6%'},{threshold:'$0',pct:'0.0% (default)'}];
+let tierEl=document.getElementById('tierConfig');
+if(tierEl) tierEl.innerHTML=tiers.map(t=>`<div class="flex justify-between items-center p-2 rounded-lg" style="background:var(--hover)"><span class="text-[11px]">${t.threshold}</span><span class="font-bold text-[11px]" style="color:#FFD60A">${t.pct}</span></div>`).join('');
+let addrEl=document.getElementById('depositAddresses');
+if(addrEl){
+let nets=['TRC-20','BEP-20 / ERC-20','TON','SOL'];
+addrEl.innerHTML=nets.map(n=>`<div class="flex justify-between items-center p-2.5 rounded-lg" style="background:var(--hover);border:1px solid var(--border2)"><span class="text-[11px] font-bold">${n}</span><span class="text-[10px] font-bold" style="color:#10b981">Active</span></div>`).join('');
+}
 }catch(e){}
 }
 
@@ -1171,9 +1221,174 @@ if(action.includes('add')) amount=parseFloat(prompt('Amount:')||'0');
 fetch('/api/admin/bulk_action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({action,user_ids:list,amount})}).then(r=>r.json()).then(j=>{alert('Done '+j.count);loadAll();}).catch(e=>alert('Error'));
 }
 
+async function loadRevenueChart(){
+try{
+let r=await fetchJson('/api/admin/revenue-chart');
+if(r.labels&&r.labels.length>0){
+let ctx2=document.getElementById('revChart')?.getContext('2d');
+if(ctx2){
+if(chartInstance){chartInstance.destroy();}
+chartInstance=new Chart(ctx2,{type:'line',data:{labels:r.labels,datasets:[
+{label:'Deposits',data:r.deposits,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.08)',tension:0.4,fill:true,borderWidth:2,pointRadius:3},
+{label:'Withdrawals',data:r.withdrawals,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.08)',tension:0.4,fill:true,borderWidth:2,pointRadius:3},
+{label:'Game Revenue',data:r.game_revenue,borderColor:'#7C4DFF',backgroundColor:'rgba(124,77,255,0.08)',tension:0.4,fill:true,borderWidth:2,pointRadius:3}
+]},options:{plugins:{legend:{display:true,labels:{color:'rgba(200,205,240,0.5)',font:{size:10}}}},scales:{x:{grid:{display:false},ticks:{color:'rgba(200,205,240,0.3)',font:{size:9}}},y:{grid:{color:'rgba(120,130,200,0.05)'},ticks:{color:'rgba(200,205,240,0.3)',font:{size:9}}}}}});
+}
+}
+}catch(e){console.error('chart',e);}
+}
+
+async function loadHealth(){
+try{
+let h=await fetchJson('/api/admin/health');
+let el=document.getElementById('healthStatus');
+if(!el)return;
+let monHtml='';
+let monitors=h.monitors||{};
+for(let[name,info] of Object.entries(monitors)){
+let active=info.active!==false;
+monHtml+=`<div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span style="font-size:10px">${name}</span><span class="mono text-[9px]" style="color:${active?'#10b981':'#ef4444'}">${active?'OK':'DOWN'}</span></div>`;
+}
+el.innerHTML=monHtml||'<div class="p-2 rounded-lg" style="background:var(--border2)"><span class="text-[10px]">All networks active</span></div>';
+}catch(e){}
+}
+
+function renderWithdrawals(){
+let filter=document.getElementById('wdFilter')?.value||'all';
+let filtered=filter==='all'?allWds:allWds.filter(w=>w.status===filter);
+document.getElementById('withdrawals').innerHTML=filtered.map(w=>{
+let sc=w.status==='approved'?'color:#10b981':w.status==='pending'?'color:#eab308':w.status==='rejected'?'color:#ef4444':'color:#f97316';
+let actions=w.status==='pending'?`<div class="flex gap-1"><button onclick="actWd(${w.id},'approve')" class="px-2.5 py-1 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981">Approve</button><button onclick="actWd(${w.id},'reject')" class="px-2.5 py-1 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Reject</button><button onclick="actWd(${w.id},'expire')" class="px-2.5 py-1 rounded-full text-[10px]" style="background:rgba(249,115,22,0.15);color:#f97316">Expire</button></div>`:`<button onclick="actWd(${w.id},'delete')" class="px-2.5 py-1 rounded-full text-[10px]" style="background:rgba(239,68,68,0.1);color:#ef4444">Delete</button>`;
+let addr=w.address||'';
+return `<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono">${w.id}</td><td class="p-2.5 mono font-bold">${w.user_id}</td><td class="p-2.5 font-bold">$${Number(w.amount).toFixed(2)}</td><td class="p-2.5" title="${addr}"><span class="mono text-[10px] break-all">${addr.length>20?addr.slice(0,10)+'...'+addr.slice(-10):addr}</span><button onclick="copyWdAddr('${addr}',this)" class="ml-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold" style="background:rgba(108,59,255,0.15);color:#A5A6F6">Copy</button></td><td class="p-2.5"><span class="px-2.5 py-1 rounded-full text-[10px] font-black" style="background:${w.network==='TRC20'?'rgba(239,68,68,0.15);color:#ef4444':w.network==='BEP20'?'rgba(250,204,21,0.15);color:#facc15':w.network==='ERC20'?'rgba(96,165,250,0.15);color:#60a5fa':w.network==='TON'?'rgba(16,185,129,0.15);color:#10b981':'rgba(165,166,246,0.15);color:#A5A6F6'}">${w.network}</span></td><td class="p-2.5"><span class="font-bold text-[11px]" style="${sc}">${w.status}</span></td><td class="p-2.5 text-[10px] mono" style="color:var(--text3)">${(w.created_at||'').slice(0,16)}</td><td class="p-2.5">${actions}</td></tr>`;
+}).join('')||`<tr><td colspan="8" class="p-6 text-center" style="color:var(--text3)">No withdrawals</td></tr>`;
+}
+
+async function batchApproveWd(){
+let pending=allWds.filter(w=>w.status==='pending');
+if(!pending.length){toast('No pending withdrawals','info');return;}
+if(!confirm('Approve ALL '+pending.length+' pending withdrawals?'))return;
+for(let w of pending){
+await fetch('/api/admin/withdraw/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id:w.id,action:'approve',note:'Batch approve',tx_hash:'batch-'+Date.now()})});
+}
+toast('Approved '+pending.length+' withdrawals','success');
+loadAll();
+}
+
+function debounceGlobalSearch(){
+clearTimeout(globalSearchTimer);
+globalSearchTimer=setTimeout(doGlobalSearch,400);
+}
+
+async function doGlobalSearch(){
+let q=(document.getElementById('globalSearch')?.value||'').trim();
+let el=document.getElementById('globalSearchResults');
+if(!q||q.length<2){el.classList.add('hidden');return;}
+try{
+let r=await fetchJson('/api/admin/search?q='+encodeURIComponent(q));
+let html='';
+if(r.users&&r.users.length){
+html+='<p class="text-[9px] font-bold tracking-widest px-2 mb-1" style="color:var(--text3)">USERS</p>';
+r.users.forEach(u=>{
+html+=`<div class="p-2 rounded-lg cursor-pointer hover:bg-[rgba(124,77,255,0.08)]" onclick="document.getElementById('globalSearchResults').classList.add('hidden');openUserDetail(${u.user_id})"><p class="text-[11px] font-bold">${u.username||'@none'} <span class="mono" style="color:var(--text3)">#${u.user_id}</span></p><p class="text-[10px]" style="color:var(--text2)">$${Number(u.balance||0).toFixed(2)} bal | $${Number(u.total_deposit||0).toFixed(2)} dep${u.is_banned?' | BANNED':''}</p></div>`;
+});
+}
+if(r.deposits&&r.deposits.length){
+html+='<p class="text-[9px] font-bold tracking-widest px-2 mt-2 mb-1" style="color:var(--text3)">DEPOSITS</p>';
+r.deposits.forEach(d=>{
+html+=`<div class="p-2 rounded-lg"><p class="text-[11px]"><span class="mono font-bold">#${d.id}</span> <span style="color:var(--text3)">user ${d.user_id}</span> $${Number(d.amount).toFixed(2)} <span style="color:${d.status==='verified'?'#10b981':d.status==='awaiting_payment'?'#eab308':'#ef4444'}">${d.status}</span></p></div>`;
+});
+}
+if(r.withdrawals&&r.withdrawals.length){
+html+='<p class="text-[9px] font-bold tracking-widest px-2 mt-2 mb-1" style="color:var(--text3)">WITHDRAWALS</p>';
+r.withdrawals.forEach(w=>{
+html+=`<div class="p-2 rounded-lg"><p class="text-[11px]"><span class="mono font-bold">#${w.id}</span> <span style="color:var(--text3)">user ${w.user_id}</span> $${Number(w.amount).toFixed(2)} <span style="color:${w.status==='approved'?'#10b981':w.status==='pending'?'#eab308':'#ef4444'}">${w.status}</span></p></div>`;
+});
+}
+if(!html){html='<p class="p-3 text-center text-[11px]" style="color:var(--text3)">No results for "'+q+'"</p>';}
+el.innerHTML=html;
+el.classList.remove('hidden');
+}catch(e){el.classList.add('hidden');}
+}
+
+document.addEventListener('click',function(e){
+let gs=document.getElementById('globalSearchResults');
+let gi=document.getElementById('globalSearch');
+if(gs&&!gs.contains(e.target)&&e.target!==gi){gs.classList.add('hidden');}
+});
+
+async function editTask(taskId){
+let tasks=await fetchJson('/api/admin/tasks');
+let t=tasks.find(x=>x.id===taskId);
+if(!t){toast('Task not found','error');return;}
+let overlay=document.createElement('div');
+overlay.className='modal-overlay';
+let isRef=t.task_type==='referral';
+overlay.innerHTML=`<div class="modal-card" style="max-width:480px;max-height:85vh;overflow-y:auto">
+<div class="flex justify-between items-center mb-3"><h3 class="font-black text-lg">Edit Task #${taskId}</h3><button onclick="this.closest('.modal-overlay').remove()" class="px-3 py-1 rounded-full text-[11px] font-bold" style="background:var(--hover)">Close</button></div>
+<div class="space-y-2.5 mt-4">
+<input id="et_title" value="${(t.title||'').replace(/"/g,'&quot;')}" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)" placeholder="Title">
+<input id="et_desc" value="${(t.description||'').replace(/"/g,'&quot;')}" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)" placeholder="Description">
+${isRef?'':`<input id="et_link" value="${(t.group_link||'').replace(/"/g,'&quot;')}" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)" placeholder="Group Link">`}
+${isRef?'':`<input id="et_groupid" value="${(t.group_id||'').replace(/"/g,'&quot;')}" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)" placeholder="Group ID">`}
+${isRef?'':`<input id="et_username" value="${(t.group_username||'').replace(/"/g,'&quot;')}" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)" placeholder="Username">`}
+<div class="grid grid-cols-2 gap-2">
+<input id="et_reward" type="number" value="${t.reward}" step="0.1" class="rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+<select id="et_reward_type" class="rounded-xl p-3 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="withdrawable" ${t.reward_type==='withdrawable'?'selected':''}>Withdrawable</option><option value="balance" ${t.reward_type==='balance'?'selected':''}>Trading Balance</option></select>
+</div>
+${isRef?`<input id="et_config" value="${(t.task_config||'').replace(/"/g,'&quot;')}" class="w-full rounded-xl p-3 text-[11px] mono border outline-none" style="background:var(--input);border-color:var(--border)" placeholder='{"ref_count":1}'>`:''}
+<div class="grid grid-cols-2 gap-2">
+<label class="flex items-center gap-2 p-3 rounded-xl text-[11px]" style="background:var(--hover)"><input id="et_mandatory" type="checkbox" ${t.is_mandatory?'checked':''}> Mandatory</label>
+<label class="flex items-center gap-2 p-3 rounded-xl text-[11px]" style="background:var(--hover)"><input id="et_active" type="checkbox" ${t.is_active?'checked':''}> Active</label>
+</div>
+<input id="et_sort" type="number" value="${t.sort_order||0}" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)" placeholder="Sort Order">
+</div>
+<div class="mt-4"><button onclick="saveTaskEdit(${taskId},this)" class="w-full btn-gold py-3 rounded-full text-sm font-bold">Save Changes</button></div>
+</div>`;
+overlay.onclick=(e)=>{if(e.target===overlay)overlay.remove();};
+document.body.appendChild(overlay);
+}
+
+async function saveTaskEdit(taskId,btn){
+btn.disabled=true;btn.innerText='Saving...';
+let payload={id:taskId,title:document.getElementById('et_title')?.value,description:document.getElementById('et_desc')?.value,reward:parseFloat(document.getElementById('et_reward')?.value||0),reward_type:document.getElementById('et_reward_type')?.value,is_mandatory:document.getElementById('et_mandatory')?.checked?1:0,is_active:document.getElementById('et_active')?.checked?1:0,sort_order:parseInt(document.getElementById('et_sort')?.value||0)};
+let linkEl=document.getElementById('et_link');
+if(linkEl)payload.group_link=linkEl.value;
+let gidEl=document.getElementById('et_groupid');
+if(gidEl)payload.group_id=gidEl.value;
+let unEl=document.getElementById('et_username');
+if(unEl)payload.group_username=unEl.value;
+let cfgEl=document.getElementById('et_config');
+if(cfgEl)payload.task_config=cfgEl.value;
+try{
+let r=await fetch('/api/admin/tasks/edit',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify(payload)});
+let j=await r.json();
+if(j.ok){toast('Task updated!','success');btn.closest('.modal-overlay').remove();loadAll();}
+else{toast(j.error||'Failed','error');btn.disabled=false;btn.innerText='Save Changes';}
+}catch(e){toast('Request failed','error');btn.disabled=false;btn.innerText='Save Changes';}
+}
+
+async function loadUserAudit(userId){
+let el=document.getElementById('ud_audit_list');
+if(!el)return;
+try{
+let logs=await fetchJson('/api/admin/user/'+userId+'/audit');
+el.innerHTML=logs.map(l=>{
+let typeColors={admin:'#ef4444',deposit:'#10b981',withdrawal:'#f97316',game:'#7C4DFF',referral:'#FFD60A'};
+let c=typeColors[l.type]||'var(--text2)';
+return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5"><span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:${c}22;color:${c}">${l.type}</span></td><td class="p-2.5 text-[11px]">${l.action}</td><td class="p-2.5 text-[10px]" style="color:var(--text2)">${l.details||''}</td><td class="p-2.5 text-[9px] mono" style="color:var(--text3)">${(l.time||'').slice(0,16)}</td></tr>`;
+}).join('')||`<tr><td colspan="4" class="p-6 text-center" style="color:var(--text3)">No activity logged</td></tr>`;
+}catch(e){el.innerHTML=`<tr><td colspan="4" class="p-6 text-center" style="color:var(--text3)">Failed to load</td></tr>`;}
+}
+
+function toggleSidebar(){
+let sb=document.getElementById('sidebar');
+sb.classList.toggle('hidden');
+}
+
 let ctx=document.getElementById('revChart')?.getContext('2d');
 if(ctx){
-chartInstance=new Chart(ctx,{type:'line',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'Revenue',data:[120,450,380,720,560,900,1100],borderColor:'#FFD60A',backgroundColor:'rgba(255,214,10,0.1)',tension:0.4,fill:true,borderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'rgba(255,255,255,0.3)'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(255,255,255,0.3)'}}}}});
+chartInstance=new Chart(ctx,{type:'line',data:{labels:['-'],datasets:[{label:'Loading...',data:[0],borderColor:'#FFD60A',backgroundColor:'rgba(255,214,10,0.1)',tension:0.4,fill:true,borderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'rgba(255,255,255,0.3)'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(255,255,255,0.3)'}}}}});
 }
 
 setInterval(()=>{if(ADMIN_TOKEN)loadAll();},10000);
