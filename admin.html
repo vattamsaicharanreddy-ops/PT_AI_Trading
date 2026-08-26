@@ -446,27 +446,33 @@ async function doLogin(){
 let token=document.getElementById('authInput').value.trim();
 if(!token){document.getElementById('authError').innerText='Enter a code';document.getElementById('authError').classList.remove('hidden');setTimeout(()=>document.getElementById('authError').classList.add('hidden'),2000);return;}
 ADMIN_TOKEN=token;
+let btn=document.querySelector('#authGate button');
+if(btn){btn.disabled=true;btn.innerText='Connecting...';}
 try{
-let r=await fetch('/api/admin/stats',{headers:apiHeaders()});
+let r=await fetch('/api/admin/stats',{headers:apiHeaders(),cache:'no-store'});
+let body=null;try{body=await r.json();}catch(x){}
 if(r.status===401||!r.ok){
 ADMIN_TOKEN='';
 let errMsg='Invalid secret (HTTP '+r.status+')';
-try{let d=await r.json();if(d&&d.detail)errMsg=d.detail;}catch(x){}
+if(body&&body.detail)errMsg=body.detail;
+if(r.status===500)errMsg='Server error (500). Stats endpoint failed.';
 document.getElementById('authError').innerText=errMsg;
 document.getElementById('authError').classList.remove('hidden');
-setTimeout(()=>document.getElementById('authError').classList.add('hidden'),4000);
+setTimeout(()=>document.getElementById('authError').classList.add('hidden'),6000);
+if(btn){btn.disabled=false;btn.innerText='Unlock';}
 return;
 }
 localStorage.setItem('admin_token',token);
 document.getElementById('authGate').classList.add('hidden');
 document.getElementById('sidebar').classList.remove('hidden');
 document.getElementById('mainContent').classList.remove('hidden');
-loadAll();
+loadAll().catch(e=>console.error('loadAll after login:',e));
 }catch(e){
 ADMIN_TOKEN='';
 document.getElementById('authError').innerText='Cannot reach server: '+e.message;
 document.getElementById('authError').classList.remove('hidden');
 setTimeout(()=>document.getElementById('authError').classList.remove('hidden'),5000);
+if(btn){btn.disabled=false;btn.innerText='Unlock';}
 }
 }
 
@@ -581,7 +587,7 @@ async function loadAll(){
 let stats;
 try{
 stats=await fetchJson('/api/admin/stats');
-document.getElementById('stat_users').innerText=stats.total_users;
+document.getElementById('stat_users').innerText=stats.total_users||0;
 document.getElementById('stat_active').innerText=stats.active_users||0;
 document.getElementById('stat_online').innerText=stats.online_users||0;
 document.getElementById('stat_bal').innerText='$'+Number(stats.total_balance).toFixed(2);

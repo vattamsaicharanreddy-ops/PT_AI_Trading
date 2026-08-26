@@ -2226,7 +2226,7 @@ def admin_search(q: str = "", request: Request = None):
         return {"users": [], "deposits": [], "withdrawals": []}
     conn = get_conn()
     try:
-        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) if USE_POSTGRES else conn.cursor()
+        cur = cursor(conn)
         results = {"users": [], "deposits": [], "withdrawals": []}
         try:
             uid = int(q.replace("#", "").strip())
