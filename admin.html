@@ -7,28 +7,39 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-*{font-family:'Inter',sans-serif}
+*{font-family:'Inter',sans-serif;box-sizing:border-box}
 .mono{font-family:'JetBrains Mono',monospace}
-:root{--bg:#06060a;--surface:#121214;--card:#1a1a25;--text:#ffffff;--text2:rgba(255,255,255,0.6);--text3:rgba(255,255,255,0.35);--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.04);--sidebar:#08080c;--hover:rgba(255,255,255,0.06);--input:#0a0a0f;--gold:#FFD60A;--emerald:#10b981;--red:#ef4444;--purple:#7C4DFF;--accent:rgba(124,77,255,0.12)}
-[data-theme="light"]{--bg:#f5f5f7;--surface:#ffffff;--card:#ffffff;--text:#1a1a2e;--text2:rgba(26,26,46,0.6);--text3:rgba(26,26,46,0.35);--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.04);--sidebar:#ffffff;--hover:rgba(0,0,0,0.04);--input:#f0f0f5;--accent:rgba(124,77,255,0.08)}
-body{background:var(--bg);color:var(--text)}
-.nav-active{background:var(--text)!important;color:var(--bg)!important;box-shadow:0 4px 20px rgba(0,0,0,0.15)!important;font-weight:900!important}
-.card{background:var(--card);border:1px solid var(--border);border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,0.08)}
-[data-theme="light"] .card{box-shadow:0 2px 12px rgba(0,0,0,0.06)}
-.glass{backdrop-filter:blur(16px);background:var(--hover);border:1px solid var(--border)}
-.btn-gold{background:linear-gradient(135deg,#FFD60A 0%,#FFB800 100%);color:#000;font-weight:900;box-shadow:0 4px 16px rgba(255,214,10,0.3)}
-.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(255,214,10,0.4)}
-.btn-emerald{background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800}
-.btn-red{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;font-weight:800}
-table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weight:700}
-::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+:root{--bg:#08090d;--surface:#10111a;--card:#161827;--text:#eef0ff;--text2:rgba(200,205,240,0.65);--text3:rgba(200,205,240,0.35);--border:rgba(120,130,200,0.1);--border2:rgba(120,130,200,0.05);--sidebar:#0b0c14;--hover:rgba(120,130,200,0.07);--input:#0d0e18;--gold:#FFD60A;--emerald:#10b981;--red:#ef4444;--purple:#7C4DFF;--accent:rgba(124,77,255,0.12);--card-hover:rgba(124,77,255,0.04)}
+[data-theme="light"]{--bg:#f0f1f6;--surface:#ffffff;--card:#ffffff;--text:#1a1a2e;--text2:rgba(26,26,46,0.6);--text3:rgba(26,26,46,0.35);--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.04);--sidebar:#ffffff;--hover:rgba(0,0,0,0.04);--input:#f0f0f5;--accent:rgba(124,77,255,0.08);--card-hover:rgba(124,77,255,0.03)}
+body{background:var(--bg);color:var(--text);transition:background 0.3s,color 0.3s}
+.nav-btn{transition:all 0.15s ease}
+.nav-btn:hover{transform:translateX(3px)}
+.nav-active{background:linear-gradient(135deg,rgba(124,77,255,0.25),rgba(255,214,10,0.15))!important;color:var(--text)!important;border:1px solid rgba(124,77,255,0.3)!important;font-weight:800!important;box-shadow:0 2px 12px rgba(124,77,255,0.15)!important}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,0.06);transition:all 0.2s ease}
+.card:hover{border-color:rgba(124,77,255,0.15);box-shadow:0 4px 24px rgba(0,0,0,0.1)}
+[data-theme="light"] .card{box-shadow:0 1px 8px rgba(0,0,0,0.04)}
+[data-theme="light"] .card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.08)}
+.glass{backdrop-filter:blur(16px);background:var(--hover);border:1px solid var(--border);border-radius:12px;transition:all 0.15s}
+.glass:hover{background:rgba(124,77,255,0.08);border-color:rgba(124,77,255,0.15)}
+.btn-gold{background:linear-gradient(135deg,#FFD60A 0%,#FFB800 100%);color:#000;font-weight:900;box-shadow:0 2px 12px rgba(255,214,10,0.25);transition:all 0.2s;border-radius:999px}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(255,214,10,0.4)}
+.btn-emerald{background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;border-radius:999px;transition:all 0.2s}
+.btn-emerald:hover{box-shadow:0 4px 16px rgba(16,185,129,0.3)}
+.btn-red{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;font-weight:800;border-radius:999px;transition:all 0.2s}
+.btn-red:hover{box-shadow:0 4px 16px rgba(239,68,68,0.3)}
+table{border-collapse:separate;border-spacing:0}
+table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--border)}
+table tbody tr{transition:background 0.15s}
+table tbody tr:hover{background:var(--hover)}
+table tbody td{padding:10px 12px;border-bottom:1px solid var(--border2)}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}::-webkit-scrollbar-track{background:transparent}
 #authGate{position:fixed;inset:0;z-index:10000;background:var(--bg);display:flex;align-items:center;justify-content:center}
-.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:48px;width:100%;max-width:400px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:48px;width:100%;max-width:400px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
 [data-theme="light"] .auth-card{box-shadow:0 8px 32px rgba(0,0,0,0.08)}
-.fade-in{animation:fadeIn 0.3s ease}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.theme-toggle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--border);background:var(--hover);transition:all 0.2s}
-.theme-toggle:hover{transform:scale(1.1)}
+.fade-in{animation:fadeIn 0.25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.theme-toggle{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--border);background:var(--hover);transition:all 0.2s}
+.theme-toggle:hover{transform:scale(1.05);background:rgba(124,77,255,0.1);border-color:rgba(124,77,255,0.2)}
 .hidden{display:none!important}
 .toast{position:fixed;top:20px;right:20px;z-index:99999;padding:12px 20px;border-radius:12px;font-size:12px;font-weight:700;opacity:0;transform:translateY(-10px);transition:all 0.3s;pointer-events:none;max-width:320px;word-wrap:break-word}
 .notif-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:8px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 4px;animation:pulse-badge 2s infinite}
@@ -41,95 +52,101 @@ table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weigh
 .toast-info{background:rgba(124,77,255,0.95);color:#fff}
 .modal-overlay{position:fixed;inset:0;z-index:90000;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px}
 .modal-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:360px}
+input,select,textarea{transition:border-color 0.2s,box-shadow 0.2s}
+input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.4)!important;box-shadow:0 0 0 3px rgba(124,77,255,0.1)!important;outline:none}
 </style>
 </head>
 <body class="min-h-screen flex" data-theme="dark">
 
 <div id="authGate">
 <div class="auth-card">
-<div class="w-16 h-16 mx-auto rounded-[18px] bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black text-[22px] shadow-lg mb-6">PT</div>
-<h2 class="font-black text-xl tracking-tight">Admin Access</h2>
-<p class="text-xs mt-2" style="color:var(--text2)">Enter admin secret to continue</p>
+<div class="w-14 h-14 mx-auto rounded-[14px] bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black text-[20px] shadow-lg mb-5">PT</div>
+<h2 class="font-bold text-lg tracking-tight">Admin Access</h2>
+<p class="text-[11px] mt-1.5" style="color:var(--text2)">Enter admin secret to continue</p>
 <p id="authHint" class="text-[10px] mt-1 hidden" style="color:var(--emerald)">No secret configured. Any code works.</p>
-<input id="authInput" type="password" placeholder="Admin Secret" class="mt-4 w-full p-3.5 rounded-xl text-sm border outline-none" style="background:var(--input);border-color:var(--border)" onkeydown="if(event.key==='Enter')doLogin()">
-<button onclick="doLogin()" class="mt-3 w-full btn-gold py-3 rounded-full text-sm font-black">Unlock</button>
-<p id="authError" class="text-red-400 text-xs mt-3 hidden">Invalid secret</p>
+<input id="authInput" type="password" placeholder="Admin Secret" class="mt-4 w-full p-3 rounded-xl text-[13px] border outline-none" style="background:var(--input);border-color:var(--border)" onkeydown="if(event.key==='Enter')doLogin()">
+<button onclick="doLogin()" class="mt-3 w-full btn-gold py-2.5 rounded-xl text-[13px] font-black">Unlock</button>
+<p id="authError" class="text-red-400 text-[11px] mt-2 hidden">Invalid secret</p>
 </div>
 </div>
 
-<aside id="sidebar" class="hidden w-[280px] shrink-0 border-r flex flex-col h-screen sticky top-0" style="background:var(--sidebar);border-color:var(--border)">
-<div class="p-5 border-b" style="border-color:var(--border2)">
-<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black text-[15px] shadow-md">PT</div><div><p class="font-black tracking-[0.3px] text-[14px]">PT_AI ULTRA</p><p class="text-[9px] tracking-[3px] font-bold" style="color:var(--text3)">COMMAND V5</p></div></div>
-<div class="mt-4 grid grid-cols-2 gap-2"><div class="rounded-xl p-2.5 text-center" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.15)"><p class="text-[8px] tracking-widest font-bold" style="color:var(--text3)">VOLUME</p><p id="navVol" class="font-black text-[12px] mt-0.5">$0</p></div><div class="rounded-xl p-2.5 text-center" style="background:rgba(255,214,10,0.1);border:1px solid rgba(255,214,10,0.15)"><p class="text-[8px] tracking-widest font-bold" style="color:var(--text3)">STATUS</p><p class="font-black text-[12px] mt-0.5 text-[#FFD60A]">LIVE</p></div></div>
+<aside id="sidebar" class="hidden w-[260px] shrink-0 border-r flex flex-col h-screen sticky top-0" style="background:var(--sidebar);border-color:var(--border)">
+<div class="p-4 border-b" style="border-color:var(--border2)">
+<div class="flex items-center gap-3"><div class="w-9 h-9 rounded-[10px] bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black text-[13px] shadow-md">PT</div><div><p class="font-black tracking-[0.3px] text-[13px]">PT_AI</p><p class="text-[8px] tracking-[3px] font-bold" style="color:var(--text3)">COMMAND V5</p></div></div>
+<div class="mt-3 grid grid-cols-2 gap-1.5"><div class="rounded-lg p-2 text-center" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.12)"><p class="text-[7px] tracking-widest font-bold" style="color:var(--text3)">VOLUME</p><p id="navVol" class="font-black text-[11px] mt-0.5">$0</p></div><div class="rounded-lg p-2 text-center" style="background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.12)"><p class="text-[7px] tracking-widest font-bold" style="color:var(--text3)">STATUS</p><p class="font-black text-[11px] mt-0.5" style="color:#FFD60A">LIVE</p></div></div>
 </div>
-<nav class="flex-1 p-3 space-y-1 overflow-y-auto">
-<button onclick="showTab('dashboard')" data-tab="dashboard" class="nav-btn nav-active w-full text-left px-3 py-3 rounded-xl text-[12px] flex justify-between items-center"><span>Dashboard</span><span class="text-[9px] opacity-50">1</span></button>
-<button onclick="showTab('users')" data-tab="users" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px] flex justify-between" style="color:var(--text2)"><span>Users</span><span id="navUsers" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:var(--hover)">0</span></button>
-<button onclick="showTab('deposits')" data-tab="deposits" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px] flex justify-between" style="color:var(--text2)"><span>Deposits</span><span id="navDeposits" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(255,214,10,0.15);color:#FFD60A">0</span></button>
-<button onclick="showTab('withdrawals')" data-tab="withdrawals" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px] flex justify-between" style="color:var(--text2)"><span>Withdrawals</span><span id="navWd" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(249,115,22,0.15);color:#fb923c">0</span></button>
-<button onclick="showTab('tasks')" data-tab="tasks" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px] flex justify-between" style="color:var(--text2)"><span>Tasks & Rewards</span><span class="text-[8px] px-1.5 py-0.5 rounded-full font-black" style="background:var(--gold);color:#000">NEW</span></button>
-<button onclick="showTab('groups')" data-tab="groups" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px]" style="color:var(--text2)">Groups Manager</button>
-<button onclick="showTab('referrals')" data-tab="referrals" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px]" style="color:var(--text2)">Referrals & Logs</button>
-<button onclick="showTab('extreme')" data-tab="extreme" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px] font-bold" style="color:#f87171;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15)">Extreme Tools</button>
-<button onclick="showTab('broadcast')" data-tab="broadcast" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px]" style="color:var(--text2)">Broadcast</button>
-<button onclick="showTab('settings')" data-tab="settings" class="nav-btn w-full text-left px-3 py-3 rounded-xl text-[12px]" style="color:var(--text2)">Settings</button>
+<nav class="flex-1 p-2.5 space-y-0.5 overflow-y-auto">
+<button onclick="showTab('dashboard')" data-tab="dashboard" class="nav-btn nav-active w-full text-left px-3 py-2.5 rounded-xl text-[12px] flex justify-between items-center"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</span></button>
+<button onclick="showTab('users')" data-tab="users" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px] flex justify-between" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Users</span><span id="navUsers" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:var(--hover)">0</span></button>
+<button onclick="showTab('deposits')" data-tab="deposits" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px] flex justify-between" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Deposits</span><span id="navDeposits" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(255,214,10,0.15);color:#FFD60A">0</span></button>
+<button onclick="showTab('withdrawals')" data-tab="withdrawals" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px] flex justify-between" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Withdrawals</span><span id="navWd" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(249,115,22,0.15);color:#fb923c">0</span></button>
+<button onclick="showTab('tasks')" data-tab="tasks" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px] flex justify-between" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Tasks & Rewards</span></button>
+<button onclick="showTab('groups')" data-tab="groups" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px]" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Groups Manager</span></button>
+<button onclick="showTab('referrals')" data-tab="referrals" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px]" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>Referrals</span></button>
+<div class="my-1.5 mx-3 border-t" style="border-color:var(--border2)"></div>
+<button onclick="showTab('extreme')" data-tab="extreme" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px] font-bold" style="color:#f87171;background:rgba(239,68,68,0.06)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Extreme Tools</span></button>
+<button onclick="showTab('broadcast')" data-tab="broadcast" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px]" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>Broadcast</span></button>
+<button onclick="showTab('settings')" data-tab="settings" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px]" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</span></button>
 </nav>
 </aside>
 
 <main id="mainContent" class="hidden flex-1 min-h-screen">
-<header class="h-16 border-b flex items-center px-6 justify-between sticky top-0 backdrop-blur-xl z-20" style="background:color-mix(in srgb, var(--bg) 80%, transparent);border-color:var(--border2)">
-<div><h1 id="pageTitle" class="font-black text-[17px] tracking-tight">Dashboard</h1><p class="text-[10px]" style="color:var(--text3)">Auto refresh 10s</p></div>
-<div class="flex gap-2 items-center">
-<div id="notifBell" class="theme-toggle relative hidden" onclick="clearNotifications()" title="New items! Click to dismiss">
-<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+<header class="h-14 border-b flex items-center px-5 justify-between sticky top-0 backdrop-blur-xl z-20" style="background:color-mix(in srgb, var(--bg) 80%, transparent);border-color:var(--border2)">
+<div class="flex items-center gap-3">
+<button onclick="toggleSidebar()" class="lg:hidden theme-toggle" id="menuBtn" style="display:none">
+<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+<div><h1 id="pageTitle" class="font-bold text-[15px] tracking-tight">Dashboard</h1><p class="text-[9px]" style="color:var(--text3)">Auto refresh 10s</p></div>
+</div>
+<div class="flex gap-1.5 items-center">
+<div id="notifBell" class="theme-toggle relative hidden" onclick="clearNotifications()" title="New items!">
+<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
 <span id="notifBadge" class="notif-badge hidden">0</span>
 </div>
 <div class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><span id="themeIcon"></span></div>
-<button onclick="loadAll()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh</button>
-<button onclick="exportData()" class="btn-gold px-4 py-2 rounded-full text-[11px]">Export CSV</button>
-<button onclick="doLogout()" class="px-3 py-2 rounded-full text-[11px] font-bold" style="background:var(--hover);color:var(--text2)">Logout</button>
+<button onclick="loadAll()" class="glass px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>Refresh</button>
+<button onclick="exportData()" class="btn-gold px-3 py-1.5 rounded-lg text-[11px]">Export</button>
+<button onclick="doLogout()" class="glass px-3 py-1.5 rounded-lg text-[11px] font-bold" style="color:var(--text2)">Logout</button>
 </div>
 </header>
 
-<div class="p-6 space-y-6">
+<div class="p-5 space-y-5">
 
 <!-- DASHBOARD -->
-<section id="sec-dashboard" class="space-y-5 fade-in">
-<div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-<div class="card p-5"><p class="text-[9px] tracking-[2px] font-bold" style="color:var(--text3)">REGISTERED</p><p id="stat_users" class="text-[28px] font-black mt-1.5 tracking-tight">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">total users</p></div>
-<div class="card p-5" style="border-color:rgba(16,185,129,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-emerald-400">ACTIVE USERS</p><p id="stat_active" class="text-[28px] font-black mt-1.5 tracking-tight" style="color:#10b981">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">deposited & not banned</p></div>
-<div class="card p-5" style="border-color:rgba(255,214,10,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-[#FFD60A]">TOTAL BALANCE</p><p id="stat_bal" class="text-[28px] font-black mt-1.5">$0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">trading + wallet</p></div>
-<div class="card p-5" style="border-color:rgba(16,185,129,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-emerald-400">VERIFIED DEPOSITS</p><p id="total_dep" class="text-[28px] font-black mt-1.5">$0</p><p id="total_dep_cnt" class="text-[11px] mt-0.5" style="color:var(--text2)">0 verified</p></div>
-<div class="card p-5" style="border-color:rgba(124,77,255,0.15)"><p class="text-[9px] tracking-[2px] font-bold" style="color:#7C4DFF">ONLINE NOW</p><p id="stat_online" class="text-[28px] font-black mt-1.5 tracking-tight" style="color:#7C4DFF">0</p><p class="text-[11px] mt-0.5" style="color:var(--text2)">active in last 5 min</p></div>
+<section id="sec-dashboard" class="space-y-4 fade-in">
+<div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+<div class="card p-4"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:var(--text3)">Registered</p><p id="stat_users" class="text-[26px] font-black mt-1 tracking-tight">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">total users</p></div>
+<div class="card p-4" style="border-color:rgba(16,185,129,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Active Users</p><p id="stat_active" class="text-[26px] font-black mt-1 tracking-tight" style="color:#10b981">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">deposited & not banned</p></div>
+<div class="card p-4" style="border-color:rgba(255,214,10,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Total Balance</p><p id="stat_bal" class="text-[26px] font-black mt-1">$0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">trading + wallet</p></div>
+<div class="card p-4" style="border-color:rgba(16,185,129,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Verified Deps</p><p id="total_dep" class="text-[26px] font-black mt-1">$0</p><p id="total_dep_cnt" class="text-[10px] mt-0.5" style="color:var(--text2)">0 verified</p></div>
+<div class="card p-4" style="border-color:rgba(124,77,255,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#7C4DFF">Online Now</p><p id="stat_online" class="text-[26px] font-black mt-1 tracking-tight" style="color:#7C4DFF">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">last 5 min</p></div>
 </div>
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">AWAITING</p><p id="pend_dep" class="text-xl font-black text-yellow-400 mt-0.5">0</p></div>
-<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">EXPIRED</p><p id="stat_expired" class="text-xl font-black text-red-400 mt-0.5">0</p></div>
-<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">PEND WD</p><p id="pend_wd" class="text-xl font-black text-orange-400 mt-0.5">0</p></div>
-<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">REF PAID</p><p id="ref_paid" class="text-xl font-black mt-0.5" style="color:#A5A6F6">$0</p></div>
-<div class="glass rounded-2xl p-3.5"><p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">TASKS DONE</p><p id="stat_tasks" class="text-xl font-black mt-0.5" style="color:#7C4DFF">0</p></div>
+<div class="card p-3.5"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Awaiting Dep</p><p id="pend_dep" class="text-lg font-black text-yellow-400 mt-1">0</p></div>
+<div class="card p-3.5"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Expired</p><p id="stat_expired" class="text-lg font-black text-red-400 mt-1">0</p></div>
+<div class="card p-3.5"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Pending WD</p><p id="pend_wd" class="text-lg font-black text-orange-400 mt-1">0</p></div>
+<div class="card p-3.5"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Ref Paid</p><p id="ref_paid" class="text-lg font-black mt-1" style="color:#A5A6F6">$0</p></div>
 </div>
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-<div class="card p-4" style="border-color:rgba(16,185,129,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-emerald-400">CONVERSION RATE</p><p id="kpi_conversion" class="text-[22px] font-black mt-1" style="color:#10b981">0%</p><p class="text-[10px] mt-0.5" style="color:var(--text3)">registered → deposited</p></div>
-<div class="card p-4" style="border-color:rgba(255,214,10,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-[#FFD60A]">AVG DEPOSIT</p><p id="kpi_avg_dep" class="text-[22px] font-black mt-1" style="color:#FFD60A">$0</p><p class="text-[10px] mt-0.5" style="color:var(--text3)">per depositor</p></div>
-<div class="card p-4" style="border-color:rgba(124,77,255,0.15)"><p class="text-[9px] tracking-[2px] font-bold" style="color:#7C4DFF">DEP / WD RATIO</p><p id="kpi_ratio" class="text-[22px] font-black mt-1" style="color:#7C4DFF">0%</p><p class="text-[10px] mt-0.5" style="color:var(--text3)">money out vs in</p></div>
-<div class="card p-4" style="border-color:rgba(96,165,250,0.15)"><p class="text-[9px] tracking-[2px] font-bold text-blue-400">REVENUE / USER</p><p id="kpi_rev_user" class="text-[22px] font-black mt-1" style="color:#60a5fa">$0</p><p class="text-[10px] mt-0.5" style="color:var(--text3)">per active user</p></div>
+<div class="card p-3.5" style="border-color:rgba(16,185,129,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Conversion</p><p id="kpi_conversion" class="text-xl font-black mt-1" style="color:#10b981">0%</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">registered &rarr; deposited</p></div>
+<div class="card p-3.5" style="border-color:rgba(255,214,10,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Avg Deposit</p><p id="kpi_avg_dep" class="text-xl font-black mt-1" style="color:#FFD60A">$0</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">per depositor</p></div>
+<div class="card p-3.5" style="border-color:rgba(124,77,255,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#7C4DFF">Dep / WD Ratio</p><p id="kpi_ratio" class="text-xl font-black mt-1" style="color:#7C4DFF">0%</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">money out vs in</p></div>
+<div class="card p-3.5" style="border-color:rgba(96,165,250,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#60a5fa">Revenue / User</p><p id="kpi_rev_user" class="text-xl font-black mt-1" style="color:#60a5fa">$0</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">per active user</p></div>
 </div>
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-<div class="lg:col-span-2 card p-6"><div class="flex justify-between"><h3 class="font-bold text-sm">Revenue Chart</h3><span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">Live</span></div><canvas id="revChart" height="120" class="mt-3"></canvas></div>
-<div class="card p-5" style="border-color:rgba(16,185,129,0.15)"><h3 class="font-bold text-sm">System Health</h3>
-<div class="mt-4 space-y-2 text-[11px]">
-<div class="flex justify-between items-center p-3 rounded-xl" style="background:var(--hover);border:1px solid var(--border2)"><span>Blockchain Monitor</span><span class="text-emerald-400 font-bold">Active 15s</span></div>
-<div class="space-y-1.5 mt-2">
-<div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span>TRC20</span><span class="mono text-[10px]">OK</span></div>
-<div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span>BEP20/ERC20</span><span class="mono text-[10px]">OK</span></div>
-<div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span>TON</span><span class="mono text-[10px]">OK</span></div>
-<div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span>SOL</span><span class="mono text-[10px]">OK</span></div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+<div class="lg:col-span-2 card p-5"><div class="flex justify-between items-center"><h3 class="font-bold text-[13px]">Revenue Chart</h3><span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">LIVE</span></div><canvas id="revChart" height="110" class="mt-3"></canvas></div>
+<div class="card p-4" style="border-color:rgba(16,185,129,0.12)"><h3 class="font-bold text-[13px]">System Health</h3>
+<div class="mt-3 space-y-2 text-[11px]">
+<div class="flex justify-between items-center p-2.5 rounded-lg" style="background:var(--hover)"><span>Blockchain Monitor</span><span class="font-bold" style="color:#10b981">Active</span></div>
+<div class="space-y-1 mt-1.5">
+<div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span style="font-size:10px">TRC20</span><span class="mono text-[9px]" style="color:#10b981">OK</span></div>
+<div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span style="font-size:10px">BEP20/ERC20</span><span class="mono text-[9px]" style="color:#10b981">OK</span></div>
+<div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span style="font-size:10px">TON</span><span class="mono text-[9px]" style="color:#10b981">OK</span></div>
+<div class="flex justify-between p-2 rounded-lg" style="background:var(--border2)"><span style="font-size:10px">SOL</span><span class="mono text-[9px]" style="color:#10b981">OK</span></div>
 </div>
-<div class="p-3 rounded-xl mt-2" style="background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.15)"><p class="font-black text-[10px] tracking-widest text-[#FFD60A]">V5 FIXES:</p><p class="mt-1.5 leading-relaxed text-[11px]" style="color:var(--text2)">5 networks enabled<br>Deposit: Approve/Reject/Expire/Edit/Delete<br>Users: Add/Deduct/Set Balance & WD<br>Tasks: 1 USDT join reward</p></div>
 </div></div>
 </div>
-<div class="card p-5"><h3 class="font-bold text-sm">Recent Admin Logs</h3><div class="overflow-x-auto mt-3"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">Action</th><th class="text-left p-2.5">User</th><th class="text-left p-2.5">Details</th><th class="text-left p-2.5">Time</th></tr></thead><tbody id="logs"></tbody></table></div></div>
+<div class="card p-4"><h3 class="font-bold text-[13px]">Recent Admin Logs</h3><div class="overflow-x-auto mt-3"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2">Action</th><th class="text-left p-2">User</th><th class="text-left p-2">Details</th><th class="text-left p-2">Time</th></tr></thead><tbody id="logs"></tbody></table></div></div>
 </section>
 
 <!-- USERS -->
