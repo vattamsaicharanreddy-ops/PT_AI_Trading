@@ -11,21 +11,19 @@
 .mono{font-family:'JetBrains Mono',monospace}
 :root{--bg:#07080d;--surface:#0d1018;--card:rgba(21,25,38,0.72);--text:#f2f4ff;--text2:rgba(200,210,255,0.62);--text3:rgba(200,210,255,0.32);--border:rgba(148,163,255,0.1);--border2:rgba(148,163,255,0.06);--sidebar:rgba(9,11,18,0.92);--hover:rgba(148,163,255,0.08);--input:#0b0e17;--gold:#FFD60A;--emerald:#10b981;--red:#ef4444;--purple:#7C4DFF;--blue:#60a5fa;--accent:rgba(124,77,255,0.14);--card-hover:rgba(124,77,255,0.05)}
 [data-theme="light"]{--bg:#eef0f7;--surface:#ffffff;--card:#ffffff;--text:#171a26;--text2:rgba(23,26,38,0.62);--text3:rgba(23,26,38,0.34);--border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.05);--sidebar:#ffffff;--hover:rgba(0,0,0,0.045);--input:#f4f5fa;--accent:rgba(124,77,255,0.09);--card-hover:rgba(124,77,255,0.04)}
-body{background:radial-gradient(900px 420px at 92% -8%,rgba(124,77,255,0.16),transparent 72%),radial-gradient(820px 420px at -8% 18%,rgba(16,185,129,0.10),transparent 70%),radial-gradient(860px 400px at 50% 118%,rgba(255,214,10,0.07),transparent 72%),var(--bg);background-attachment:fixed;color:var(--text);transition:background 0.3s,color 0.3s;-webkit-font-smoothing:antialiased}
-[data-theme="light"] body{background:radial-gradient(900px 420px at 92% -8%,rgba(124,77,255,0.10),transparent 70%),radial-gradient(820px 420px at -8% 18%,rgba(16,185,129,0.06),transparent 70%),var(--bg)}
+body{background:radial-gradient(1200px 640px at 88% -10%,rgba(124,77,255,0.32),transparent 60%),radial-gradient(1000px 540px at -12% 24%,rgba(16,185,129,0.18),transparent 60%),radial-gradient(920px 500px at 42% 122%,rgba(255,214,10,0.13),transparent 62%),radial-gradient(720px 460px at 50% -24%,rgba(96,165,250,0.16),transparent 65%),var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+[data-theme="light"] body{background:radial-gradient(1200px 640px at 88% -10%,rgba(124,77,255,0.15),transparent 62%),radial-gradient(1000px 540px at -12% 24%,rgba(16,185,129,0.09),transparent 62%),var(--bg)}
 ::selection{background:rgba(124,77,255,0.35);color:#fff}
 .nav-btn{transition:all 0.15s ease}
 .nav-btn:hover{transform:translateX(3px);color:var(--text)!important;background:var(--hover)}
 .nav-active{background:linear-gradient(135deg,rgba(124,77,255,0.30),rgba(255,214,10,0.14))!important;color:var(--text)!important;border:1px solid rgba(140,110,255,0.42)!important;font-weight:800!important;box-shadow:0 6px 20px rgba(124,77,255,0.28),inset 0 1px 0 rgba(255,255,255,0.08)!important}
-.card{background:linear-gradient(180deg,rgba(148,163,255,0.06),transparent 34%),linear-gradient(180deg,rgba(255,255,255,0.035),transparent 65%),var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 34px rgba(0,0,0,0.26),inset 0 1px 0 rgba(255,255,255,0.045);transition:all 0.22s ease;backdrop-filter:blur(12px)}
-.card:hover{border-color:rgba(124,77,255,0.3);box-shadow:0 16px 44px rgba(0,0,0,0.34),0 0 26px rgba(124,77,255,0.09),inset 0 1px 0 rgba(255,255,255,0.06)}
+.card{background:linear-gradient(180deg,rgba(148,163,255,0.07),transparent 34%),linear-gradient(180deg,rgba(255,255,255,0.045),transparent 65%),var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,0.28),inset 0 1px 0 rgba(255,255,255,0.05);transition:all 0.22s ease}
+.card:hover{border-color:rgba(124,77,255,0.42);box-shadow:0 18px 52px rgba(0,0,0,0.36),0 0 34px rgba(124,77,255,0.15),inset 0 1px 0 rgba(255,255,255,0.06)}
 [data-theme="light"] .card{background:#fff;box-shadow:0 2px 12px rgba(0,0,0,0.05),inset 0 1px 0 rgba(255,255,255,0.6)}
 [data-theme="light"] .card:hover{box-shadow:0 8px 28px rgba(0,0,0,0.1)}
-.stat-tile{position:relative;overflow:hidden;transition:all 0.22s ease}
-.stat-tile:hover{transform:translateY(-3px)}
-.stat-tile::after{content:'';position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;filter:blur(42px);opacity:0.5;background:var(--tile-glow,rgba(124,77,255,0.35));pointer-events:none;transition:opacity 0.25s}
-.stat-tile:hover::after{opacity:0.8}
-.glass{backdrop-filter:blur(16px);background:var(--hover);border:1px solid var(--border);border-radius:12px;transition:all 0.15s}
+.stat-tile{background:linear-gradient(135deg,var(--tile-glow,rgba(124,77,255,0.4)),rgba(0,0,0,0) 58%),linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0) 62%),var(--card);border-color:rgba(255,255,255,0.07);transition:all 0.22s ease}
+.stat-tile:hover{transform:translateY(-3px);border-color:rgba(124,77,255,0.4);box-shadow:0 14px 40px rgba(0,0,0,0.3),0 0 28px rgba(124,77,255,0.12)}
+.glass{background:var(--hover);border:1px solid var(--border);border-radius:12px;transition:all 0.15s}
 .glass:hover{background:rgba(124,77,255,0.1);border-color:rgba(124,77,255,0.22)}
 .btn-gold{background:linear-gradient(135deg,#FFD60A 0%,#FFB800 100%);color:#0a0a0a;font-weight:900;box-shadow:0 2px 14px rgba(255,214,10,0.3),inset 0 1px 0 rgba(255,255,255,0.45);transition:all 0.2s;border-radius:999px}
 .btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(255,214,10,0.45),inset 0 1px 0 rgba(255,255,255,0.5)}
@@ -36,6 +34,7 @@ body{background:radial-gradient(900px 420px at 92% -8%,rgba(124,77,255,0.16),tra
 table{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
 table thead th{font-size:10px;letter-spacing:1.2px;color:var(--text3);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,var(--hover),transparent);text-transform:uppercase}
 table tbody tr{transition:background 0.15s}
+table tbody tr:nth-child(even){background:rgba(148,163,255,0.02)}
 table tbody tr:hover{background:var(--hover)}
 table tbody td{padding:10px 12px;border-bottom:1px solid var(--border2)}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(124,77,255,0.4),rgba(124,77,255,0.15));border-radius:10px}::-webkit-scrollbar-track{background:transparent}
@@ -102,7 +101,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.45)!impor
 <button onclick="toggleSidebar()" class="lg:hidden theme-toggle" id="menuBtn" style="display:none">
 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
 </button>
-<div><h1 id="pageTitle" class="font-bold text-[15px] tracking-tight">Dashboard</h1><p class="text-[9px]" style="color:var(--text3)">Auto refresh 10s</p></div>
+<div><h1 id="pageTitle" class="font-bold text-[15px] tracking-tight">Dashboard</h1><p class="text-[9px]" style="color:var(--text3)">Auto refresh 12s</p></div>
 </div>
 <div class="flex gap-1.5 items-center">
 <div class="relative hidden lg:block">
@@ -126,29 +125,29 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.45)!impor
 <!-- DASHBOARD -->
 <section id="sec-dashboard" class="space-y-4 fade-in">
 <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
-<div class="card stat-tile p-4" style="--tile-glow:rgba(124,77,255,0.38)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:var(--text3)">Registered</p><p id="stat_users" class="text-[26px] font-black mt-1 tracking-tight">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">total users</p></div>
-<div class="card stat-tile p-4" style="--tile-glow:rgba(16,185,129,0.38)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Active Users</p><p id="stat_active" class="text-[26px] font-black mt-1 tracking-tight" style="color:#10b981">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">deposited & not banned</p></div>
-<div class="card stat-tile p-4" style="--tile-glow:rgba(255,214,10,0.30)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Total Balance</p><p id="stat_bal" class="text-[26px] font-black mt-1">$0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">trading + wallet</p></div>
-<div class="card stat-tile p-4" style="--tile-glow:rgba(59,130,246,0.36)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#60a5fa">Verified Deps</p><p id="total_dep" class="text-[26px] font-black mt-1">$0</p><p id="total_dep_cnt" class="text-[10px] mt-0.5" style="color:var(--text2)">0 verified</p></div>
-<div class="card stat-tile p-4" style="--tile-glow:rgba(124,77,255,0.38)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#7C4DFF">Online Now</p><p id="stat_online" class="text-[26px] font-black mt-1 tracking-tight" style="color:#7C4DFF">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">last 5 min</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(124,77,255,0.55)"><div class="flex items-start justify-between gap-2"><div><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:var(--text3)">Registered</p><p id="stat_users" class="text-[26px] font-black mt-1 tracking-tight">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">total users</p></div><div class="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0" style="background:rgba(124,77,255,0.16);color:#a78bfa;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div></div></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(16,185,129,0.55)"><div class="flex items-start justify-between gap-2"><div><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Active Users</p><p id="stat_active" class="text-[26px] font-black mt-1 tracking-tight" style="color:#10b981">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">deposited & not banned</p></div><div class="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0" style="background:rgba(16,185,129,0.16);color:#34d399;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div></div></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(255,214,10,0.45)"><div class="flex items-start justify-between gap-2"><div><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Total Balance</p><p id="stat_bal" class="text-[26px] font-black mt-1">$0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">trading + wallet</p></div><div class="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0" style="background:rgba(255,214,10,0.14);color:#FFD60A;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div></div></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(59,130,246,0.52)"><div class="flex items-start justify-between gap-2"><div><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#60a5fa">Verified Deps</p><p id="total_dep" class="text-[26px] font-black mt-1">$0</p><p id="total_dep_cnt" class="text-[10px] mt-0.5" style="color:var(--text2)">0 verified</p></div><div class="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0" style="background:rgba(59,130,246,0.16);color:#93c5fd;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div></div></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(124,77,255,0.55)"><div class="flex items-start justify-between gap-2"><div><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#7C4DFF">Online Now</p><p id="stat_online" class="text-[26px] font-black mt-1 tracking-tight" style="color:#7C4DFF">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">last 5 min</p></div><div class="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0" style="background:rgba(124,77,255,0.16);color:#a78bfa;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div></div></div>
 </div>
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-<div class="card stat-tile p-3.5" style="--tile-glow:rgba(255,214,10,0.28)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Awaiting Dep</p><p id="pend_dep" class="text-lg font-black text-yellow-400 mt-1">0</p></div>
-<div class="card stat-tile p-3.5" style="--tile-glow:rgba(239,68,68,0.3)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Expired</p><p id="stat_expired" class="text-lg font-black text-red-400 mt-1">0</p></div>
-<div class="card stat-tile p-3.5" style="--tile-glow:rgba(249,115,22,0.3)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Pending WD</p><p id="pend_wd" class="text-lg font-black text-orange-400 mt-1">0</p></div>
-<div class="card stat-tile p-3.5" style="--tile-glow:rgba(165,166,246,0.3)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Ref Paid</p><p id="ref_paid" class="text-lg font-black mt-1" style="color:#A5A6F6">$0</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(255,214,10,0.42)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Awaiting Dep</p><p id="pend_dep" class="text-lg font-black text-yellow-400 mt-1">0</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(239,68,68,0.45)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Expired</p><p id="stat_expired" class="text-lg font-black text-red-400 mt-1">0</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(249,115,22,0.45)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Pending WD</p><p id="pend_wd" class="text-lg font-black text-orange-400 mt-1">0</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(165,166,246,0.45)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Ref Paid</p><p id="ref_paid" class="text-lg font-black mt-1" style="color:#A5A6F6">$0</p></div>
 </div>
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-<div class="card stat-tile p-3.5" style="--tile-glow:rgba(16,185,129,0.35)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Conversion</p><p id="kpi_conversion" class="text-xl font-black mt-1" style="color:#10b981">0%</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">registered &rarr; deposited</p></div>
-<div class="card stat-tile p-3.5" style="--tile-glow:rgba(255,214,10,0.30)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Avg Deposit</p><p id="kpi_avg_dep" class="text-xl font-black mt-1" style="color:#FFD60A">$0</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">per depositor</p></div>
-<div class="card stat-tile p-3.5" style="--tile-glow:rgba(124,77,255,0.35)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#7C4DFF">Dep / WD Ratio</p><p id="kpi_ratio" class="text-xl font-black mt-1" style="color:#7C4DFF">0%</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">money out vs in</p></div>
-<div class="card stat-tile p-3.5" style="--tile-glow:rgba(96,165,250,0.35)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#60a5fa">Revenue / User</p><p id="kpi_rev_user" class="text-xl font-black mt-1" style="color:#60a5fa">$0</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">per active user</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(16,185,129,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Conversion</p><p id="kpi_conversion" class="text-xl font-black mt-1" style="color:#10b981">0%</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">registered &rarr; deposited</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(255,214,10,0.42)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Avg Deposit</p><p id="kpi_avg_dep" class="text-xl font-black mt-1" style="color:#FFD60A">$0</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">per depositor</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(124,77,255,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#7C4DFF">Dep / WD Ratio</p><p id="kpi_ratio" class="text-xl font-black mt-1" style="color:#7C4DFF">0%</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">money out vs in</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(96,165,250,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#60a5fa">Revenue / User</p><p id="kpi_rev_user" class="text-xl font-black mt-1" style="color:#60a5fa">$0</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">per active user</p></div>
 </div>
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-<div class="card stat-tile p-3.5" style="--tile-glow:rgba(124,77,255,0.32)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#7C4DFF">Game Players</p><p id="gs_players" class="text-lg font-black mt-1" style="color:#7C4DFF">0</p></div>
-<div class="card stat-tile p-3.5" style="--tile-glow:rgba(255,214,10,0.28)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#FFD60A">Total Bets</p><p id="gs_bets" class="text-lg font-black mt-1" style="color:#FFD60A">$0</p></div>
-<div class="card stat-tile p-3.5" style="--tile-glow:rgba(16,185,129,0.30)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#10b981">House Revenue</p><p id="gs_rev" class="text-lg font-black mt-1" style="color:#10b981">$0</p></div>
-<div class="card stat-tile p-3.5" style="--tile-glow:rgba(96,165,250,0.32)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#60a5fa">Top Game</p><p id="gs_top" class="text-lg font-black mt-1" style="color:#60a5fa">-</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(124,77,255,0.46)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#7C4DFF">Game Players</p><p id="gs_players" class="text-lg font-black mt-1" style="color:#7C4DFF">0</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(255,214,10,0.42)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#FFD60A">Total Bets</p><p id="gs_bets" class="text-lg font-black mt-1" style="color:#FFD60A">$0</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(16,185,129,0.46)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#10b981">House Revenue</p><p id="gs_rev" class="text-lg font-black mt-1" style="color:#10b981">$0</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(96,165,250,0.46)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#60a5fa">Top Game</p><p id="gs_top" class="text-lg font-black mt-1" style="color:#60a5fa">-</p></div>
 </div>
 <div class="card p-4"><div class="flex items-center justify-between mb-3"><h3 class="font-bold text-[13px]">Conversion Funnel</h3><div class="flex items-center gap-2"><span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(124,77,255,0.15);color:#7C4DFF">User Journey</span><span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">● LIVE</span></div></div><div id="funnelWrap" class="space-y-2"><p class="text-[11px] text-center py-4" style="color:var(--text3)">Loading...</p></div></div>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -1404,6 +1403,7 @@ fetch('/api/admin/bulk_action',{method:'POST',headers:{'Content-Type':'applicati
 
 async function loadRevenueChart(){
 try{
+if(document.getElementById('sec-dashboard')?.classList.contains('hidden'))return;
 let r=await fetchJson('/api/admin/revenue-chart');
 if(r.labels&&r.labels.length>0){
 let ctx2=document.getElementById('revChart')?.getContext('2d');
@@ -1578,7 +1578,7 @@ if(ctx){
 chartInstance=new Chart(ctx,{type:'line',data:{labels:['-'],datasets:[{label:'Loading...',data:[0],borderColor:'#FFD60A',backgroundColor:'rgba(255,214,10,0.1)',tension:0.4,fill:true,borderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'rgba(255,255,255,0.3)'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(255,255,255,0.3)'}}}}});
 }
 
-setInterval(()=>{if(ADMIN_TOKEN)loadAll();},10000);
+setInterval(()=>{if(ADMIN_TOKEN&&!document.hidden)loadAll();},12000);
 </script>
 </body>
 </html>
