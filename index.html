@@ -156,13 +156,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <div class='grid grid-cols-2 gap-2.5'><div class='p-3.5 rounded-2xl' style='background:rgba(38,161,123,0.1);border:1px solid rgba(38,161,123,0.15)'><p class='text-[11px]' style='color:var(--text2)'>Total Deposited</p><p id='totalDep' class='font-extrabold text-base mt-1' style='color:#26A17B'>0.00 USDT</p></div><div class='p-3.5 rounded-2xl' style='background:rgba(255,214,10,0.1);border:1px solid rgba(255,214,10,0.15)'><p class='text-[11px]' style='color:var(--text2)'>Total Withdrawn</p><p id='totalWd' class='font-extrabold text-base mt-1' style='color:#FFD60A'>0.00 USDT</p></div></div>
 <div class='mt-2.5 grid grid-cols-2 gap-2.5 text-[11px]'><div class='p-2.5 rounded-xl flex justify-between' style='background:var(--border)'><span style='color:var(--text2)'>Balance:</span><span id='quickBal' class='font-bold'>0 USDT</span></div><div class='p-2.5 rounded-xl flex justify-between' style='background:var(--border)'><span style='color:var(--text2)'>Withdrawable:</span><span id='quickWd' class='font-bold' style='color:#FFD60A'>0 USDT</span></div></div>
 </div>
-<div id='homeActivity' class='mx-4 mt-3 rounded-2xl p-4' style='background:var(--surface);border:1px solid var(--border)'>
-<div class='flex justify-between items-center mb-3'><h3 class='font-bold text-sm'>Live Activity</h3><span class='text-[10px] px-2 py-0.5 rounded-full animate-pulse' style='background:rgba(16,185,129,0.15);color:#10b981'>● LIVE</span></div>
-<div id='homeActivityList' class='space-y-2'></div>
-</div>
-<div class='mx-4 mt-3 rounded-2xl p-4' style='background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(255,214,10,0.08));border:1px solid rgba(16,185,129,0.15)'>
-<div class='text-center'><p id='socialProofText' class='text-xs font-bold' style='color:var(--text2)'>Loading...</p></div>
-</div>
 <div class='mx-4 mt-3 rounded-2xl p-4' style='background:var(--surface);border:1px solid var(--border)'><h3 class='font-bold text-sm mb-3'>Community</h3><div class='grid grid-cols-3 gap-2'><button onclick='openPTGroup()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>PT-Group</button><button onclick='openPTChannel()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>PT-Channel</button><button onclick='openPTSupport()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>Support</button></div></div>
 </div>
 
@@ -186,7 +179,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <div id='portfolioChart' class='rounded-2xl p-3' style='background:var(--surface);border:1px solid var(--border)'></div>
 <div class='flex justify-between items-center'><h4 class='font-bold text-xs'>Today's Completed Trades</h4><span id='todayTrades' class='text-[10px]' style='color:var(--text3)'>0/0</span></div>
 <div class='rounded-2xl overflow-hidden' style='background:var(--surface);border:1px solid var(--border)'><div class='overflow-x-auto'><table class='w-full text-[10px]'><thead><tr style='color:var(--text3)'><th class='text-left p-2.5'>Time</th><th class='text-left p-2.5'>Pair</th><th class='text-left p-2.5'>Side</th><th class='text-right p-2.5'>Entry</th><th class='text-right p-2.5'>Exit</th><th class='text-right p-2.5'>Lev</th><th class='text-right p-2.5'>PNL</th></tr></thead><tbody id='tradesTableBody'></tbody></table></div></div>
-<div id='activityFeed' class='rounded-2xl p-3' style='background:var(--surface);border:1px solid var(--border)'></div>
 </div>
 </div>
 
@@ -832,27 +824,6 @@ h+='<span style="color:var(--text3)">Trades: <b>'+trades.length+'</b></span>';
 h+='<span style="color:var(--text3)">PnL: <b style="color:'+upC+'">'+(up?'+':'')+total.toFixed(2)+'%</b></span></div>';
 el.innerHTML=h;
 }
-var _actInterval=null;
-function _renderActivityFeed(){
-var el=document.getElementById('activityFeed');if(!el)return;
-apiFetch('/api/display/activity').then(function(d){
-if(!d||!d.activities||!d.activities.length){el.innerHTML='';return;}
-var acts=d.activities;
-var h='<div class="flex items-center justify-between mb-2"><p class="text-[10px] font-bold tracking-widest" style="color:var(--text3)">LIVE ACTIVITY</p><div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded-full animate-pulse" style="background:#10b981"></div><span class="text-[9px]" style="color:#10b981">Live</span></div></div>';
-for(var i=0;i<acts.length;i++){
-var a=acts[i];
-var icon=a.type==='deposit'?'💰':a.type==='withdraw'?'💸':'📈';
-var iconBg=a.type==='deposit'?'rgba(16,185,129,0.1)':a.type==='withdraw'?'rgba(255,214,10,0.1)':'rgba(59,130,246,0.1)';
-var actColor=a.type==='deposit'?'#10b981':a.type==='withdraw'?'#FFD60A':'#3b82f6';
-h+='<div class="flex items-center gap-2 py-2'+(i<acts.length-1?' border-b':'')+'" style="border-color:var(--border2)">';
-h+='<div class="w-7 h-7 rounded-full flex items-center justify-center text-[12px] flex-shrink-0" style="background:'+iconBg+'">'+icon+'</div>';
-h+='<div class="flex-1 min-w-0"><p class="text-[11px] font-bold truncate">'+a.user+'</p><p class="text-[10px]" style="color:'+actColor+'">'+a.action+'</p></div>';
-h+='<span class="text-[9px] flex-shrink-0" style="color:var(--text3)">'+a.time+'</span></div>';
-}
-el.innerHTML=h;
-}).catch(function(){el.innerHTML='';});
-if(!_actInterval){_actInterval=setInterval(function(){var tab=document.querySelector('[data-tab=trades]');if(tab&&getComputedStyle(tab).opacity==='1')_renderActivityFeed();},300000);}
-}
 async function loadTrades(){
 var d=null;
 try{d=await apiFetch('/api/binance/trades');}catch(e){}
@@ -885,7 +856,6 @@ html+='</tr>';
 }
 }
 safeHTML('tradesTableBody',html);
-try{_renderActivityFeed();}catch(e){}
 }
 
 async function loadHistory(){
@@ -1146,33 +1116,10 @@ safeSet('gateText',`Complete ${me.mandatory_tasks_total-me.mandatory_tasks_done}
 $('wdGate').classList.remove('hidden');safeSet('wdGateText',`Done: ${me.mandatory_tasks_done}/${me.mandatory_tasks_total}`);
 }else{$('mandatoryGate').classList.add('hidden');$('taskBadge').classList.add('hidden');$('bottomTaskDot').classList.add('hidden');$('wdGate').classList.add('hidden');}
 };
-loadHomeActivity();
 init().then(()=>{hideInitialLoader();if(_activeTab==='portfolio')loadPortfolio();setTimeout(showTierInfo,800);}).catch(()=>{hideInitialLoader();});
 setTimeout(hideInitialLoader,2500);
 setInterval(init,15000);
 setInterval(()=>{if(window._lastMe&&_activeTab==='portfolio')loadPortfolio();},15000);
-setInterval(loadHomeActivity,60000);
-
-// === HOME ACTIVITY FEED ===
-function loadHomeActivity(){
-fetch('/api/display/activity').then(function(r){return r.json();}).then(function(d){
-var items=d.activities||[];
-var el=$('homeActivityList');
-if(!el)return;
-if(!items.length){el.innerHTML='<p class="text-[10px] text-center" style="color:var(--text3)">No recent activity</p>';return;}
-el.innerHTML=items.slice(0,5).map(function(a){
-var icon=a.type==='deposit'?'\U0001f4b3':a.type==='withdrawal'?'\U0001f4b5':'\U0001f4c8';
-var color=a.type==='deposit'?'#26A17B':a.type==='withdrawal'?'#FFD60A':'#10b981';
-return '<div class="flex items-center gap-2 p-2 rounded-xl" style="background:var(--border)">'+icon+'<span class="text-[10px] font-bold" style="color:'+color+'">'+a.user+'</span><span class="text-[10px]" style="color:var(--text3)">'+a.action+'</span><span class="ml-auto text-[9px]" style="color:var(--text3)">'+a.time+'</span></div>';
-}).join('');
-var totalU=d.total_users||1847;
-var totalDep=d.total_verified_deposits||48320;
-var activeU=d.active_users||289;
-if($('socialProofText')){
-$('socialProofText').innerText=totalU.toLocaleString()+' users joined \u2022 '+activeU.toLocaleString()+' active traders \u2022 $'+Number(totalDep).toLocaleString()+' deposited';
-}
-}).catch(function(){});
-}
 
 // === DAILY BONUS ===
 async function claimDailyBonus(){
