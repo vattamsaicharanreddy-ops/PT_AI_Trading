@@ -246,11 +246,88 @@ class NudgeRequest(BaseModel):
     template: str = "deposit"
 
 
+def _nudge_message(u, template):
+    bal = float(val(u, "balance", 0) or 0)
+    total_dep = float(val(u, "total_deposit", 0) or 0)
+    name = val(u, "username", "") or f"user #{val(u, 'user_id', '')}"
+    template = (template or "deposit").strip().lower()
+    if template == "deposit":
+        text = "\n".join([
+            f"Hey <b>{name}</b>! 👋",
+            "",
+            f"Your <b>PT_AI</b> account is <b>ready to earn</b> — all you need is a first deposit.",
+            "",
+            "🚀 Deposit as little as <b>$5 USDT</b>",
+            "⚡ AI trades automatically — no experience needed",
+            "💎 Earn <b>7.6% – 14.9%</b> daily returns",
+            "",
+            "🔗 Open the app and tap <b>Deposit</b>:",
+            "👉 t.me/PT_Minebot",
+            "",
+            "Your friends are already earning. The only loss is doing nothing. 💰",
+        ])
+    elif template == "tasks":
+        text = "\n".join([
+            f"Hi <b>{name}</b>! 👋",
+            "",
+            "Quick heads-up: there are still <b>simple tasks</b> waiting for you.",
+            "",
+            "✅ Join groups & channels → earn <b>$1 each</b>",
+            "🎁 Complete them to <b>unlock withdrawals</b>",
+            "",
+            "Takes 2 minutes: 👉 t.me/PT_Minebot",
+            "",
+            "These tasks also unlock your ability to withdraw your earnings. Don't skip free money! 💸",
+        ])
+    elif template == "reinvest":
+        text = "\n".join([
+            f"Hey <b>{name}</b>! 📈",
+            "",
+            "Capital at work beats idle balance.",
+            "",
+            "💵 Current AI balance: <b>${:.2f}</b>".format(bal),
+            "💰 Total deposited: <b>${:.2f}</b>".format(total_dep),
+            "",
+            "Top up today and upgrade your trading tier for a <b>higher daily rate</b>.",
+            "",
+            "👉 t.me/PT_Minebot",
+            "",
+            "Consistent deposits = consistently bigger returns. 🚀",
+        ])
+    elif template == "returning":
+        text = "\n".join([
+            f"Hey <b>{name}</b>! ⏰",
+            "",
+            "We noticed you haven't been around — your AI balance is still working for you!",
+            "",
+            "💵 Live balance: <b>${:.2f}</b>".format(bal),
+            "",
+            "Log back in, check your profit, and grow it further:",
+            "👉 t.me/PT_Minebot",
+            "",
+            "See you on the dashboard! 🎯",
+        ])
+    else:
+        return None, f"Unknown template: {template}"
+    return text, None
+
+
+def _telegram_send(token, chat_id, text):
+    import json as _json
+    import urllib.request as _urllib
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = _json.dumps({"chat_id": chat_id, "text": text, "parse_mode": "HTML"}).encode()
+    req = _urllib.Request(url, data=payload, headers={"Content-Type": "application/json"})
+    with _urllib.urlopen(req, timeout=15) as r:
+        resp = _json.loads(r.read().decode())
+        if resp.get("ok"):
+            return True, None
+        return False, resp.get("description", "Unknown error")
+
+
 @app.post("/api/admin/user/{user_id}/nudge")
 def admin_send_nudge(user_id: int, req: NudgeRequest, request: Request):
     require_admin(request)
-    import json as _json
-    import urllib.request as _urllib
     conn = get_conn()
     try:
         cur = cursor(conn)
@@ -262,85 +339,19 @@ def admin_send_nudge(user_id: int, req: NudgeRequest, request: Request):
         token = os.getenv("BOT_TOKEN", "")
         if not token:
             return {"ok": False, "error": "BOT_TOKEN not set"}
-        bal = float(val(u, "balance", 0) or 0)
-        total_dep = float(val(u, "total_deposit", 0) or 0)
-        name = val(u, "username", "") or f"user #{user_id}"
-        template = req.template or "deposit"
-
-        if template == "deposit":
-            text = "\n".join([
-                f"Hey <b>{name}</b>! 👋",
-                "",
-                f"Your <b>PT_AI</b> account is <b>ready to earn</b> — all you need is a first deposit.",
-                "",
-                "🚀 Deposit as little as <b>$5 USDT</b>",
-                "⚡ AI trades automatically — no experience needed",
-                "💎 Earn <b>7.6% – 14.9%</b> daily returns",
-                "",
-                "🔗 Open the app and tap <b>Deposit</b>:",
-                "👉 t.me/PT_Minebot",
-                "",
-                "Your friends are already earning. The only loss is doing nothing. 💰",
-            ])
-        elif template == "tasks":
-            text = "\n".join([
-                f"Hi <b>{name}</b>! 👋",
-                "",
-                "Quick heads-up: there are still <b>simple tasks</b> waiting for you.",
-                "",
-                "✅ Join groups & channels → earn <b>$1 each</b>",
-                "🎁 Complete them to <b>unlock withdrawals</b>",
-                "",
-                "Takes 2 minutes: 👉 t.me/PT_Minebot",
-                "",
-                "These tasks also unlock your ability to withdraw your earnings. Don't skip free money! 💸",
-            ])
-        elif template == "reinvest":
-            text = "\n".join([
-                f"Hey <b>{name}</b>! 📈",
-                "",
-                "Capital at work beats idle balance.",
-                "",
-                "💵 Current AI balance: <b>${:.2f}</b>".format(bal),
-                "💰 Total deposited: <b>${:.2f}</b>".format(total_dep),
-                "",
-                "Top up today and upgrade your trading tier for a <b>higher daily rate</b>.",
-                "",
-                "👉 t.me/PT_Minebot",
-                "",
-                "Consistent deposits = consistently bigger returns. 🚀",
-            ])
-        elif template == "returning":
-            text = "\n".join([
-                f"Hey <b>{name}</b>! ⏰",
-                "",
-                "We noticed you haven't been around — your AI balance is still working for you!",
-                "",
-                "💵 Live balance: <b>${:.2f}</b>".format(bal),
-                "",
-                "Log back in, check your profit, and grow it further:",
-                "👉 t.me/PT_Minebot",
-                "",
-                "See you on the dashboard! 🎯",
-            ])
-        else:
-            return {"ok": False, "error": f"Unknown template: {template}"}
-
-        url = f"https://api.telegram.org/bot{token}/sendMessage"
-        payload = _json.dumps({"chat_id": user_id, "text": text, "parse_mode": "HTML"}).encode()
-        req_url = _urllib.Request(url, data=payload, headers={"Content-Type": "application/json"})
-        with _urllib.urlopen(req_url, timeout=15) as r:
-            resp = _json.loads(r.read().decode())
-            if resp.get("ok"):
-                try:
-                    cur.execute(f"INSERT INTO admin_logs (admin_user_id, admin_action, target_user_id, details, created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()})",
-                        (0, "nudge", user_id, f"template={template}", datetime.utcnow().isoformat()))
-                    conn.commit()
-                except Exception as elog:
-                    logger.error(f"nudge log failed: {elog}")
-                return {"ok": True, "message": f"Nudge sent to #{user_id}"}
-            else:
-                return {"ok": False, "error": resp.get("description", "Unknown error")}
+        text, err = _nudge_message(u, req.template)
+        if err:
+            return {"ok": False, "error": err}
+        ok, err = _telegram_send(token, user_id, text)
+        if not ok:
+            return {"ok": False, "error": err}
+        try:
+            cur.execute(f"INSERT INTO admin_logs (admin_action,target_user_id,details) VALUES ('nudge',{ph()},{ph()})",
+                (user_id, f"template={req.template}"))
+            conn.commit()
+        except Exception as elog:
+            logger.error(f"nudge log failed: {elog}")
+        return {"ok": True, "message": f"Nudge sent to #{user_id}"}
     except Exception as e:
         logger.error(f"nudge failed: {e}", exc_info=True)
         return {"ok": False, "error": str(e)}
@@ -1832,6 +1843,21 @@ def admin_user_action(action: AdminAction, request: Request):
             cur.execute(f"DELETE FROM user_tasks WHERE user_id={ph()}", (action.user_id,))
         elif act == "reset_profit":
             cur.execute(f"UPDATE users SET profit=0 WHERE user_id={ph()}", (action.user_id,))
+        elif act == "nudge":
+            token = os.getenv("BOT_TOKEN", "")
+            if not token:
+                return {"ok": False, "error": "BOT_TOKEN not set"}
+            text, err = _nudge_message(u, action.note or "deposit")
+            if err:
+                return {"ok": False, "error": err}
+            ok, err = _telegram_send(token, action.user_id, text)
+            if not ok:
+                return {"ok": False, "error": err}
+            try:
+                cur.execute(f"INSERT INTO admin_logs (admin_action,target_user_id,details) VALUES ('nudge',{ph()},{ph()})",
+                    (action.user_id, f"template={action.note or 'deposit'}"))
+            except Exception as elog:
+                logger.error(f"nudge log failed: {elog}")
         else:
             return {"ok": False, "error": f"Unknown action: {act}"}
         conn.commit()

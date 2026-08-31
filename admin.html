@@ -622,6 +622,8 @@ if(!r.ok) throw new Error(url+' '+r.status);
 return r.json();
 }
 
+function tabVisible(id){let el=document.getElementById(id);return el?!el.classList.contains('hidden'):false;}
+
 async function loadAll(){
 let stats;
 try{
@@ -671,6 +673,7 @@ document.getElementById('kpi_rev_user').innerText='$'+revUser;
 
 try{
 let deposits=await fetchJson('/api/admin/deposits');allDeposits=deposits;
+if(tabVisible('sec-deposits')){
 let filter=document.getElementById('depFilter')?.value||'all';
 let filtered=filter==='all'?deposits:deposits.filter(d=>d.status===filter);
 document.getElementById('deposits').innerHTML=filtered.map(d=>{
@@ -678,27 +681,28 @@ let sc=d.status==='verified'?'color:#10b981':d.status==='awaiting_payment'?'colo
 let actions=d.status==='awaiting_payment'?`<div class="flex flex-wrap gap-1"><button onclick="actDep(${d.id},'approve')" class="px-2.5 py-1 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981">Approve</button><button onclick="actDep(${d.id},'reject')" class="px-2.5 py-1 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Reject</button><button onclick="actDep(${d.id},'expire')" class="px-2.5 py-1 rounded-full text-[10px] font-bold" style="background:rgba(249,115,22,0.15);color:#f97316">Expire</button><button onclick="editDepAmount(${d.id},${d.expected||d.amount})" class="px-2.5 py-1 rounded-full text-[10px] font-bold" style="background:var(--hover)">Edit</button></div>`:d.status!=='verified'?`<button onclick="actDep(${d.id},'delete')" class="px-2.5 py-1 rounded-full text-[10px]" style="background:rgba(239,68,68,0.1);color:#ef4444">Delete</button>`:`<span class="mono text-[10px]" style="color:var(--text3)">${d.tx_hash?d.tx_hash.slice(0,10)+'...':''}</span>`;
 return `<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5"><p class="mono font-bold">${d.id}</p><p class="mono text-[9px]" style="color:var(--text3)">${d.invoice_id||''}</p></td><td class="p-2.5 mono font-bold">${d.user_id}</td><td class="p-2.5"><p class="font-bold">$${Number(d.amount).toFixed(2)}</p><p class="text-[9px]" style="color:var(--text3)">exp $${Number(d.expected||d.amount).toFixed(2)}</p></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:var(--hover);border:1px solid var(--border)">${d.network}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${sc};opacity:0.9">${d.status}</span></td><td class="p-2.5 text-[10px] mono" style="color:var(--text3)">${(d.created_at||'').slice(0,16)}</td><td class="p-2.5">${actions}</td></tr>`;
 }).join('')||`<tr><td colspan="7" class="p-6 text-center" style="color:var(--text3)">No deposits yet.</td></tr>`;
+}
 }catch(e){console.error('deps',e);}
 
 try{
 let wds=await fetchJson('/api/admin/withdrawals');
 allWds=wds;
-renderWithdrawals();
+if(tabVisible('sec-withdrawals'))renderWithdrawals();
 }catch(e){}
 
 try{
 let refs=await fetchJson('/api/admin/referrals');
-document.getElementById('refs').innerHTML=refs.map(r=>`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5">${r.from_user}</td><td class="p-2.5">${r.to_user}</td><td class="p-2.5">L${r.level}</td><td class="p-2.5">$${Number(r.deposit).toFixed(2)}</td><td class="p-2.5 font-bold" style="color:#FFD60A">$${Number(r.bonus).toFixed(2)} (${r.percent}%)</td></tr>`).join('')||`<tr><td colspan="5" class="p-6 text-center" style="color:var(--text3)">No referrals</td></tr>`;
+if(tabVisible('sec-referrals'))document.getElementById('refs').innerHTML=refs.map(r=>`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5">${r.from_user}</td><td class="p-2.5">${r.to_user}</td><td class="p-2.5">L${r.level}</td><td class="p-2.5">$${Number(r.deposit).toFixed(2)}</td><td class="p-2.5 font-bold" style="color:#FFD60A">$${Number(r.bonus).toFixed(2)} (${r.percent}%)</td></tr>`).join('')||`<tr><td colspan="5" class="p-6 text-center" style="color:var(--text3)">No referrals</td></tr>`;
 }catch(e){}
 
 try{
 let users=await fetchJson('/api/admin/users');allUsers=users;
-renderUsers(users);
+if(tabVisible('sec-users'))renderUsers(users);
 }catch(e){console.error('users',e);}
 
 try{
 let tasks=await fetchJson('/api/admin/tasks');
-document.getElementById('tasksList').innerHTML=tasks.map(t=>{let typeBadge=t.task_type==='referral'?'<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:rgba(124,77,255,0.15);color:#7c4dff">REF</span>':'';let configInfo=t.task_type==='referral'&&t.task_config?'<br><span class="text-[9px]" style="color:#7c4dff">Config: '+t.task_config+'</span>':'';return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono">${t.id}</td><td class="p-2.5"><p class="font-bold">${t.title}${typeBadge}</p><p class="text-[9px] mono" style="color:var(--text3)">${t.group_id||''}${configInfo}</p></td><td class="p-2.5 text-[11px] mono" style="color:var(--text3)">${(t.group_link||'').slice(0,24)}</td><td class="p-2.5 font-bold" style="color:#FFD60A">${Number(t.reward).toFixed(2)} USDT<br><span class="text-[9px]" style="color:var(--text3)">${t.reward_type}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${t.is_mandatory?'background:rgba(239,68,68,0.15);color:#ef4444':'background:var(--hover)'}">${t.is_mandatory?'Mandatory':'Optional'}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${t.is_active?'background:rgba(16,185,129,0.15);color:#10b981':'background:var(--hover);color:var(--text3)'}">${t.is_active?'Active':'Off'}</span></td><td class="p-2.5"><div class="flex flex-wrap gap-1"><button onclick="toggleTask(${t.id},'toggle_active')" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:var(--hover)">Toggle</button><button onclick="toggleTask(${t.id},'toggle_mandatory')" class="px-2 py-1 rounded-full text-[10px]" style="background:var(--hover)">Mand</button><button onclick="editTask(${t.id})" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(96,165,250,0.15);color:#60a5fa">Edit</button><button onclick="toggleTask(${t.id},'delete')" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Del</button></div></td></tr>`}).join('')||`<tr><td colspan="7" class="p-6 text-center" style="color:var(--text3)">No tasks yet.</td></tr>`;
+if(tabVisible('sec-tasks'))document.getElementById('tasksList').innerHTML=tasks.map(t=>{let typeBadge=t.task_type==='referral'?'<span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:rgba(124,77,255,0.15);color:#7c4dff">REF</span>':'';let configInfo=t.task_type==='referral'&&t.task_config?'<br><span class="text-[9px]" style="color:#7c4dff">Config: '+t.task_config+'</span>':'';return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono">${t.id}</td><td class="p-2.5"><p class="font-bold">${t.title}${typeBadge}</p><p class="text-[9px] mono" style="color:var(--text3)">${t.group_id||''}${configInfo}</p></td><td class="p-2.5 text-[11px] mono" style="color:var(--text3)">${(t.group_link||'').slice(0,24)}</td><td class="p-2.5 font-bold" style="color:#FFD60A">${Number(t.reward).toFixed(2)} USDT<br><span class="text-[9px]" style="color:var(--text3)">${t.reward_type}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${t.is_mandatory?'background:rgba(239,68,68,0.15);color:#ef4444':'background:var(--hover)'}">${t.is_mandatory?'Mandatory':'Optional'}</span></td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="${t.is_active?'background:rgba(16,185,129,0.15);color:#10b981':'background:var(--hover);color:var(--text3)'}">${t.is_active?'Active':'Off'}</span></td><td class="p-2.5"><div class="flex flex-wrap gap-1"><button onclick="toggleTask(${t.id},'toggle_active')" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:var(--hover)">Toggle</button><button onclick="toggleTask(${t.id},'toggle_mandatory')" class="px-2 py-1 rounded-full text-[10px]" style="background:var(--hover)">Mand</button><button onclick="editTask(${t.id})" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(96,165,250,0.15);color:#60a5fa">Edit</button><button onclick="toggleTask(${t.id},'delete')" class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">Del</button></div></td></tr>`}).join('')||`<tr><td colspan="7" class="p-6 text-center" style="color:var(--text3)">No tasks yet.</td></tr>`;
 }catch(e){}
 
 try{
@@ -1204,7 +1208,7 @@ deposit:'deposit',tasks:'tasks',reinvest:'reinvest',returning:'returning'
 let t=templates[template]||'deposit';
 if(!confirm('Send a personalized "'+(template==='reinvest'?'Top-up / reinvest':'Deposit')+'" nudge DM to #'+userId+'?'))return;
 try{
-let r=await fetch('/api/admin/user/'+userId+'/nudge',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({template:t})});
+let r=await fetch('/api/admin/user/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({user_id:userId,action:'nudge',note:t})});
 let j=await r.json();
 if(j.ok){toast('Nudge sent to #'+userId,'success');}
 else{toast(j.error||'Nudge failed','error');}
