@@ -9,39 +9,45 @@
 <style>
 *{font-family:'Inter',sans-serif;box-sizing:border-box}
 .mono{font-family:'JetBrains Mono',monospace}
-:root{--bg:#08090d;--surface:#10111a;--card:#161827;--text:#eef0ff;--text2:rgba(200,205,240,0.65);--text3:rgba(200,205,240,0.35);--border:rgba(120,130,200,0.1);--border2:rgba(120,130,200,0.05);--sidebar:#0b0c14;--hover:rgba(120,130,200,0.07);--input:#0d0e18;--gold:#FFD60A;--emerald:#10b981;--red:#ef4444;--purple:#7C4DFF;--accent:rgba(124,77,255,0.12);--card-hover:rgba(124,77,255,0.04)}
-[data-theme="light"]{--bg:#f0f1f6;--surface:#ffffff;--card:#ffffff;--text:#1a1a2e;--text2:rgba(26,26,46,0.6);--text3:rgba(26,26,46,0.35);--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.04);--sidebar:#ffffff;--hover:rgba(0,0,0,0.04);--input:#f0f0f5;--accent:rgba(124,77,255,0.08);--card-hover:rgba(124,77,255,0.03)}
-body{background:var(--bg);color:var(--text);transition:background 0.3s,color 0.3s}
+:root{--bg:#07080d;--surface:#0d1018;--card:rgba(21,25,38,0.72);--text:#f2f4ff;--text2:rgba(200,210,255,0.62);--text3:rgba(200,210,255,0.32);--border:rgba(148,163,255,0.1);--border2:rgba(148,163,255,0.06);--sidebar:rgba(9,11,18,0.92);--hover:rgba(148,163,255,0.08);--input:#0b0e17;--gold:#FFD60A;--emerald:#10b981;--red:#ef4444;--purple:#7C4DFF;--blue:#60a5fa;--accent:rgba(124,77,255,0.14);--card-hover:rgba(124,77,255,0.05)}
+[data-theme="light"]{--bg:#eef0f7;--surface:#ffffff;--card:#ffffff;--text:#171a26;--text2:rgba(23,26,38,0.62);--text3:rgba(23,26,38,0.34);--border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.05);--sidebar:#ffffff;--hover:rgba(0,0,0,0.045);--input:#f4f5fa;--accent:rgba(124,77,255,0.09);--card-hover:rgba(124,77,255,0.04)}
+body{background:radial-gradient(900px 420px at 92% -8%,rgba(124,77,255,0.16),transparent 72%),radial-gradient(820px 420px at -8% 18%,rgba(16,185,129,0.10),transparent 70%),radial-gradient(860px 400px at 50% 118%,rgba(255,214,10,0.07),transparent 72%),var(--bg);background-attachment:fixed;color:var(--text);transition:background 0.3s,color 0.3s;-webkit-font-smoothing:antialiased}
+[data-theme="light"] body{background:radial-gradient(900px 420px at 92% -8%,rgba(124,77,255,0.10),transparent 70%),radial-gradient(820px 420px at -8% 18%,rgba(16,185,129,0.06),transparent 70%),var(--bg)}
+::selection{background:rgba(124,77,255,0.35);color:#fff}
 .nav-btn{transition:all 0.15s ease}
-.nav-btn:hover{transform:translateX(3px)}
-.nav-active{background:linear-gradient(135deg,rgba(124,77,255,0.25),rgba(255,214,10,0.15))!important;color:var(--text)!important;border:1px solid rgba(124,77,255,0.3)!important;font-weight:800!important;box-shadow:0 2px 12px rgba(124,77,255,0.15)!important}
-.card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,0.06);transition:all 0.2s ease}
-.card:hover{border-color:rgba(124,77,255,0.15);box-shadow:0 4px 24px rgba(0,0,0,0.1)}
-[data-theme="light"] .card{box-shadow:0 1px 8px rgba(0,0,0,0.04)}
-[data-theme="light"] .card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.08)}
+.nav-btn:hover{transform:translateX(3px);color:var(--text)!important;background:var(--hover)}
+.nav-active{background:linear-gradient(135deg,rgba(124,77,255,0.30),rgba(255,214,10,0.14))!important;color:var(--text)!important;border:1px solid rgba(140,110,255,0.42)!important;font-weight:800!important;box-shadow:0 6px 20px rgba(124,77,255,0.28),inset 0 1px 0 rgba(255,255,255,0.08)!important}
+.card{background:linear-gradient(180deg,rgba(148,163,255,0.06),transparent 34%),linear-gradient(180deg,rgba(255,255,255,0.035),transparent 65%),var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 34px rgba(0,0,0,0.26),inset 0 1px 0 rgba(255,255,255,0.045);transition:all 0.22s ease;backdrop-filter:blur(12px)}
+.card:hover{border-color:rgba(124,77,255,0.3);box-shadow:0 16px 44px rgba(0,0,0,0.34),0 0 26px rgba(124,77,255,0.09),inset 0 1px 0 rgba(255,255,255,0.06)}
+[data-theme="light"] .card{background:#fff;box-shadow:0 2px 12px rgba(0,0,0,0.05),inset 0 1px 0 rgba(255,255,255,0.6)}
+[data-theme="light"] .card:hover{box-shadow:0 8px 28px rgba(0,0,0,0.1)}
+.stat-tile{position:relative;overflow:hidden;transition:all 0.22s ease}
+.stat-tile:hover{transform:translateY(-3px)}
+.stat-tile::after{content:'';position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;filter:blur(42px);opacity:0.5;background:var(--tile-glow,rgba(124,77,255,0.35));pointer-events:none;transition:opacity 0.25s}
+.stat-tile:hover::after{opacity:0.8}
 .glass{backdrop-filter:blur(16px);background:var(--hover);border:1px solid var(--border);border-radius:12px;transition:all 0.15s}
-.glass:hover{background:rgba(124,77,255,0.08);border-color:rgba(124,77,255,0.15)}
-.btn-gold{background:linear-gradient(135deg,#FFD60A 0%,#FFB800 100%);color:#000;font-weight:900;box-shadow:0 2px 12px rgba(255,214,10,0.25);transition:all 0.2s;border-radius:999px}
-.btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(255,214,10,0.4)}
-.btn-emerald{background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;border-radius:999px;transition:all 0.2s}
-.btn-emerald:hover{box-shadow:0 4px 16px rgba(16,185,129,0.3)}
-.btn-red{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;font-weight:800;border-radius:999px;transition:all 0.2s}
-.btn-red:hover{box-shadow:0 4px 16px rgba(239,68,68,0.3)}
-table{border-collapse:separate;border-spacing:0}
-table thead th{font-size:10px;letter-spacing:1.5px;color:var(--text3);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--border)}
+.glass:hover{background:rgba(124,77,255,0.1);border-color:rgba(124,77,255,0.22)}
+.btn-gold{background:linear-gradient(135deg,#FFD60A 0%,#FFB800 100%);color:#0a0a0a;font-weight:900;box-shadow:0 2px 14px rgba(255,214,10,0.3),inset 0 1px 0 rgba(255,255,255,0.45);transition:all 0.2s;border-radius:999px}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(255,214,10,0.45),inset 0 1px 0 rgba(255,255,255,0.5)}
+.btn-emerald{background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;border-radius:999px;box-shadow:0 2px 12px rgba(16,185,129,0.25),inset 0 1px 0 rgba(255,255,255,0.2);transition:all 0.2s}
+.btn-emerald:hover{box-shadow:0 6px 20px rgba(16,185,129,0.4),inset 0 1px 0 rgba(255,255,255,0.2)}
+.btn-red{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;font-weight:800;border-radius:999px;box-shadow:0 2px 12px rgba(239,68,68,0.25),inset 0 1px 0 rgba(255,255,255,0.15);transition:all 0.2s}
+.btn-red:hover{box-shadow:0 6px 20px rgba(239,68,68,0.4),inset 0 1px 0 rgba(255,255,255,0.15)}
+table{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
+table thead th{font-size:10px;letter-spacing:1.2px;color:var(--text3);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,var(--hover),transparent);text-transform:uppercase}
 table tbody tr{transition:background 0.15s}
 table tbody tr:hover{background:var(--hover)}
 table tbody td{padding:10px 12px;border-bottom:1px solid var(--border2)}
-::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}::-webkit-scrollbar-track{background:transparent}
-#authGate{position:fixed;inset:0;z-index:10000;background:var(--bg);display:flex;align-items:center;justify-content:center}
-.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:48px;width:100%;max-width:400px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
-[data-theme="light"] .auth-card{box-shadow:0 8px 32px rgba(0,0,0,0.08)}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(124,77,255,0.4),rgba(124,77,255,0.15));border-radius:10px}::-webkit-scrollbar-track{background:transparent}
+#authGate{position:fixed;inset:0;z-index:10000;background:radial-gradient(700px 400px at 50% 0%,rgba(124,77,255,0.2),transparent 70%),radial-gradient(700px 380px at 50% 115%,rgba(255,214,10,0.08),transparent 70%),var(--bg);display:flex;align-items:center;justify-content:center}
+.auth-card{background:linear-gradient(180deg,rgba(255,255,255,0.05),transparent),var(--surface);border:1px solid var(--border);border-radius:26px;padding:48px;width:100%;max-width:400px;text-align:center;box-shadow:0 28px 80px rgba(0,0,0,0.4),0 0 50px rgba(124,77,255,0.1),inset 0 1px 0 rgba(255,255,255,0.07)}
+[data-theme="light"] .auth-card{box-shadow:0 12px 40px rgba(0,0,0,0.1)}
 .fade-in{animation:fadeIn 0.25s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .theme-toggle{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--border);background:var(--hover);transition:all 0.2s}
-.theme-toggle:hover{transform:scale(1.05);background:rgba(124,77,255,0.1);border-color:rgba(124,77,255,0.2)}
+.theme-toggle:hover{transform:scale(1.05) translateY(-1px);background:rgba(124,77,255,0.12);border-color:rgba(124,77,255,0.25)}
 .hidden{display:none!important}
-.toast{position:fixed;top:20px;right:20px;z-index:99999;padding:12px 20px;border-radius:12px;font-size:12px;font-weight:700;opacity:0;transform:translateY(-10px);transition:all 0.3s;pointer-events:none;max-width:320px;word-wrap:break-word}
+.toast{position:fixed;top:20px;right:20px;z-index:99999;padding:12px 20px;border-radius:12px;font-size:12px;font-weight:700;opacity:0;transform:translateY(-10px);transition:all 0.3s;pointer-events:none;max-width:320px;word-wrap:break-word;box-shadow:0 8px 28px rgba(0,0,0,0.3)}
 .notif-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:8px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 4px;animation:pulse-badge 2s infinite}
 @keyframes pulse-badge{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 .glow-approve{animation:glow-pulse 1.5s infinite}
@@ -51,16 +57,16 @@ table tbody td{padding:10px 12px;border-bottom:1px solid var(--border2)}
 .toast-error{background:rgba(239,68,68,0.95);color:#fff}
 .toast-info{background:rgba(124,77,255,0.95);color:#fff}
 .modal-overlay{position:fixed;inset:0;z-index:90000;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px}
-.modal-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:360px}
-input,select,textarea{transition:border-color 0.2s,box-shadow 0.2s}
-input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.4)!important;box-shadow:0 0 0 3px rgba(124,77,255,0.1)!important;outline:none}
+.modal-card{background:linear-gradient(180deg,rgba(255,255,255,0.045),transparent),var(--surface);border:1px solid var(--border);border-radius:22px;padding:24px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.35)}
+input,select,textarea{transition:border-color 0.2s,box-shadow 0.2s;border-radius:10px}
+input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.45)!important;box-shadow:0 0 0 3px rgba(124,77,255,0.12),0 4px 16px rgba(124,77,255,0.08)!important;outline:none}
 </style>
 </head>
 <body class="min-h-screen flex" data-theme="dark">
 
 <div id="authGate">
 <div class="auth-card">
-<div class="w-14 h-14 mx-auto rounded-[14px] bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black text-[20px] shadow-lg mb-5">PT</div>
+<div class="w-14 h-14 mx-auto rounded-[14px] bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black text-[20px] shadow-lg mb-5" style="box-shadow:0 0 34px rgba(124,77,255,0.6),0 0 60px rgba(255,214,10,0.16)">PT</div>
 <h2 class="font-bold text-lg tracking-tight">Admin Access</h2>
 <p class="text-[11px] mt-1.5" style="color:var(--text2)">Enter admin secret to continue</p>
 <p id="authHint" class="text-[10px] mt-1 hidden" style="color:var(--emerald)">No secret configured. Any code works.</p>
@@ -70,10 +76,10 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.4)!import
 </div>
 </div>
 
-<aside id="sidebar" class="hidden w-[260px] shrink-0 border-r flex flex-col h-screen sticky top-0" style="background:var(--sidebar);border-color:var(--border)">
+<aside id="sidebar" class="hidden w-[260px] shrink-0 border-r flex flex-col h-screen sticky top-0" style="background:var(--sidebar);border-color:var(--border);backdrop-filter:blur(18px)">
 <div class="p-4 border-b" style="border-color:var(--border2)">
-<div class="flex items-center gap-3"><div class="w-9 h-9 rounded-[10px] bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black text-[13px] shadow-md">PT</div><div><p class="font-black tracking-[0.3px] text-[13px]">PT_AI</p><p class="text-[8px] tracking-[3px] font-bold" style="color:var(--text3)">COMMAND V5</p></div></div>
-<div class="mt-3 grid grid-cols-2 gap-1.5"><div class="rounded-lg p-2 text-center" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.12)"><p class="text-[7px] tracking-widest font-bold" style="color:var(--text3)">VOLUME</p><p id="navVol" class="font-black text-[11px] mt-0.5">$0</p></div><div class="rounded-lg p-2 text-center" style="background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.12)"><p class="text-[7px] tracking-widest font-bold" style="color:var(--text3)">STATUS</p><p class="font-black text-[11px] mt-0.5" style="color:#FFD60A">LIVE</p></div></div>
+<div class="flex items-center gap-3"><div class="w-9 h-9 rounded-[10px] bg-gradient-to-br from-[#7C4DFF] to-[#FFD60A] flex items-center justify-center font-black text-[13px] shadow-md" style="box-shadow:0 0 22px rgba(124,77,255,0.55),0 0 40px rgba(255,214,10,0.15)">PT</div><div><p class="font-black tracking-[0.3px] text-[13px]">PT_AI</p><p class="text-[8px] tracking-[3px] font-bold" style="color:var(--text3)">ULTRA COMMAND V5</p></div></div>
+<div class="mt-3 grid grid-cols-2 gap-1.5"><div class="rounded-lg p-2 text-center" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.14);box-shadow:inset 0 1px 0 rgba(16,185,129,0.1)"><p class="text-[7px] tracking-widest font-bold" style="color:var(--text3)">VOLUME</p><p id="navVol" class="font-black text-[11px] mt-0.5">$0</p></div><div class="rounded-lg p-2 text-center" style="background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.16);box-shadow:inset 0 1px 0 rgba(255,214,10,0.08)"><p class="text-[7px] tracking-widest font-bold" style="color:var(--text3)">STATUS</p><p class="font-black text-[11px] mt-0.5" style="color:#FFD60A">LIVE</p></div></div>
 </div>
 <nav class="flex-1 p-2.5 space-y-0.5 overflow-y-auto">
 <button onclick="showTab('dashboard')" data-tab="dashboard" class="nav-btn nav-active w-full text-left px-3 py-2.5 rounded-xl text-[12px] flex justify-between items-center"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</span></button>
@@ -120,31 +126,31 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.4)!import
 <!-- DASHBOARD -->
 <section id="sec-dashboard" class="space-y-4 fade-in">
 <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
-<div class="card p-4"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:var(--text3)">Registered</p><p id="stat_users" class="text-[26px] font-black mt-1 tracking-tight">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">total users</p></div>
-<div class="card p-4" style="border-color:rgba(16,185,129,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Active Users</p><p id="stat_active" class="text-[26px] font-black mt-1 tracking-tight" style="color:#10b981">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">deposited & not banned</p></div>
-<div class="card p-4" style="border-color:rgba(255,214,10,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Total Balance</p><p id="stat_bal" class="text-[26px] font-black mt-1">$0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">trading + wallet</p></div>
-<div class="card p-4" style="border-color:rgba(16,185,129,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Verified Deps</p><p id="total_dep" class="text-[26px] font-black mt-1">$0</p><p id="total_dep_cnt" class="text-[10px] mt-0.5" style="color:var(--text2)">0 verified</p></div>
-<div class="card p-4" style="border-color:rgba(124,77,255,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#7C4DFF">Online Now</p><p id="stat_online" class="text-[26px] font-black mt-1 tracking-tight" style="color:#7C4DFF">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">last 5 min</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(124,77,255,0.38)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:var(--text3)">Registered</p><p id="stat_users" class="text-[26px] font-black mt-1 tracking-tight">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">total users</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(16,185,129,0.38)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Active Users</p><p id="stat_active" class="text-[26px] font-black mt-1 tracking-tight" style="color:#10b981">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">deposited & not banned</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(255,214,10,0.30)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Total Balance</p><p id="stat_bal" class="text-[26px] font-black mt-1">$0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">trading + wallet</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(59,130,246,0.36)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#60a5fa">Verified Deps</p><p id="total_dep" class="text-[26px] font-black mt-1">$0</p><p id="total_dep_cnt" class="text-[10px] mt-0.5" style="color:var(--text2)">0 verified</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(124,77,255,0.38)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#7C4DFF">Online Now</p><p id="stat_online" class="text-[26px] font-black mt-1 tracking-tight" style="color:#7C4DFF">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">last 5 min</p></div>
 </div>
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-<div class="card p-3.5"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Awaiting Dep</p><p id="pend_dep" class="text-lg font-black text-yellow-400 mt-1">0</p></div>
-<div class="card p-3.5"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Expired</p><p id="stat_expired" class="text-lg font-black text-red-400 mt-1">0</p></div>
-<div class="card p-3.5"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Pending WD</p><p id="pend_wd" class="text-lg font-black text-orange-400 mt-1">0</p></div>
-<div class="card p-3.5"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Ref Paid</p><p id="ref_paid" class="text-lg font-black mt-1" style="color:#A5A6F6">$0</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(255,214,10,0.28)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Awaiting Dep</p><p id="pend_dep" class="text-lg font-black text-yellow-400 mt-1">0</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(239,68,68,0.3)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Expired</p><p id="stat_expired" class="text-lg font-black text-red-400 mt-1">0</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(249,115,22,0.3)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Pending WD</p><p id="pend_wd" class="text-lg font-black text-orange-400 mt-1">0</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(165,166,246,0.3)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:var(--text3)">Ref Paid</p><p id="ref_paid" class="text-lg font-black mt-1" style="color:#A5A6F6">$0</p></div>
 </div>
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-<div class="card p-3.5" style="border-color:rgba(16,185,129,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Conversion</p><p id="kpi_conversion" class="text-xl font-black mt-1" style="color:#10b981">0%</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">registered &rarr; deposited</p></div>
-<div class="card p-3.5" style="border-color:rgba(255,214,10,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Avg Deposit</p><p id="kpi_avg_dep" class="text-xl font-black mt-1" style="color:#FFD60A">$0</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">per depositor</p></div>
-<div class="card p-3.5" style="border-color:rgba(124,77,255,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#7C4DFF">Dep / WD Ratio</p><p id="kpi_ratio" class="text-xl font-black mt-1" style="color:#7C4DFF">0%</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">money out vs in</p></div>
-<div class="card p-3.5" style="border-color:rgba(96,165,250,0.15)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#60a5fa">Revenue / User</p><p id="kpi_rev_user" class="text-xl font-black mt-1" style="color:#60a5fa">$0</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">per active user</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(16,185,129,0.35)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Conversion</p><p id="kpi_conversion" class="text-xl font-black mt-1" style="color:#10b981">0%</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">registered &rarr; deposited</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(255,214,10,0.30)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Avg Deposit</p><p id="kpi_avg_dep" class="text-xl font-black mt-1" style="color:#FFD60A">$0</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">per depositor</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(124,77,255,0.35)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#7C4DFF">Dep / WD Ratio</p><p id="kpi_ratio" class="text-xl font-black mt-1" style="color:#7C4DFF">0%</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">money out vs in</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(96,165,250,0.35)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#60a5fa">Revenue / User</p><p id="kpi_rev_user" class="text-xl font-black mt-1" style="color:#60a5fa">$0</p><p class="text-[9px] mt-0.5" style="color:var(--text3)">per active user</p></div>
 </div>
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-<div class="card p-3.5" style="border-color:rgba(124,77,255,0.12)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#7C4DFF">Game Players</p><p id="gs_players" class="text-lg font-black mt-1" style="color:#7C4DFF">0</p></div>
-<div class="card p-3.5" style="border-color:rgba(255,214,10,0.12)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#FFD60A">Total Bets</p><p id="gs_bets" class="text-lg font-black mt-1" style="color:#FFD60A">$0</p></div>
-<div class="card p-3.5" style="border-color:rgba(16,185,129,0.12)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#10b981">House Revenue</p><p id="gs_rev" class="text-lg font-black mt-1" style="color:#10b981">$0</p></div>
-<div class="card p-3.5" style="border-color:rgba(96,165,250,0.12)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#60a5fa">Top Game</p><p id="gs_top" class="text-lg font-black mt-1" style="color:#60a5fa">-</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(124,77,255,0.32)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#7C4DFF">Game Players</p><p id="gs_players" class="text-lg font-black mt-1" style="color:#7C4DFF">0</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(255,214,10,0.28)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#FFD60A">Total Bets</p><p id="gs_bets" class="text-lg font-black mt-1" style="color:#FFD60A">$0</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(16,185,129,0.30)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#10b981">House Revenue</p><p id="gs_rev" class="text-lg font-black mt-1" style="color:#10b981">$0</p></div>
+<div class="card stat-tile p-3.5" style="--tile-glow:rgba(96,165,250,0.32)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#60a5fa">Top Game</p><p id="gs_top" class="text-lg font-black mt-1" style="color:#60a5fa">-</p></div>
 </div>
-<div class="card p-4"><h3 class="font-bold text-[13px] mb-3">Conversion Funnel</h3><div id="funnelWrap" class="space-y-2"><p class="text-[11px] text-center py-4" style="color:var(--text3)">Loading...</p></div></div>
+<div class="card p-4"><div class="flex items-center justify-between mb-3"><h3 class="font-bold text-[13px]">Conversion Funnel</h3><div class="flex items-center gap-2"><span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(124,77,255,0.15);color:#7C4DFF">User Journey</span><span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">● LIVE</span></div></div><div id="funnelWrap" class="space-y-2"><p class="text-[11px] text-center py-4" style="color:var(--text3)">Loading...</p></div></div>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 <div class="lg:col-span-2 card p-5"><div class="flex justify-between items-center"><h3 class="font-bold text-[13px]">Revenue Chart</h3><span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">LIVE</span></div><canvas id="revChart" height="110" class="mt-3"></canvas></div>
 <div class="card p-4" style="border-color:rgba(16,185,129,0.12)"><h3 class="font-bold text-[13px]">System Health</h3>
@@ -757,7 +763,7 @@ hints.innerHTML=chips.length?chips.map(c=>`<span class="px-2.5 py-1 rounded-full
 
 function renderUsers(users){
 let q=document.getElementById('userSearch')?.value?.toLowerCase()||'';
-let f=document.getElementById('userFilter')?.value||'all';
+let f=activeUserFilter||document.getElementById('userFilter')?.value||'all';
 let filtered=users;
 let now=new Date();
 let fiveMinAgo=new Date(now.getTime()-5*60000).toISOString();
@@ -795,10 +801,23 @@ return`<tr class="border-t cursor-pointer" style="border-color:var(--border2);${
 }).join('')||`<tr><td colspan="8" class="p-8 text-center" style="color:var(--text3)">No users found.</td></tr>`;
 }
 
-function filterUsers(){renderUsers(allUsers);}
+function filterUsers(){
+activeUserFilter=document.getElementById('userFilter').value;
+renderUsers(allUsers);
+}
+
+let activeUserFilter='all';
 
 function setUserFilter(f){
+activeUserFilter=f;
 let sel=document.getElementById('userFilter');
+let opts=[].map.call(sel.options,o=>o.value);
+if(!opts.includes(f)){
+let names={'no_dep':'0 Deposit','has_tasks_no_dep':'Tasks Done 0 Dep','inactive7':'Inactive 7d','dep_no_wd':'Dep No WD','high_bal':'High Value'};
+let o=document.createElement('option');
+o.value=f;o.textContent=names[f]||f;
+sel.appendChild(o);
+}
 sel.value=f;
 renderUsers(allUsers);
 }
@@ -1390,11 +1409,17 @@ if(r.labels&&r.labels.length>0){
 let ctx2=document.getElementById('revChart')?.getContext('2d');
 if(ctx2){
 if(chartInstance){chartInstance.destroy();}
+let g1=ctx2.createLinearGradient(0,0,0,110);
+g1.addColorStop(0,'rgba(16,185,129,0.28)');g1.addColorStop(1,'rgba(16,185,129,0.01)');
+let g2=ctx2.createLinearGradient(0,0,0,110);
+g2.addColorStop(0,'rgba(249,115,22,0.26)');g2.addColorStop(1,'rgba(249,115,22,0.01)');
+let g3=ctx2.createLinearGradient(0,0,0,110);
+g3.addColorStop(0,'rgba(124,77,255,0.3)');g3.addColorStop(1,'rgba(124,77,255,0.01)');
 chartInstance=new Chart(ctx2,{type:'line',data:{labels:r.labels,datasets:[
-{label:'Deposits',data:r.deposits,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.08)',tension:0.4,fill:true,borderWidth:2,pointRadius:3},
-{label:'Withdrawals',data:r.withdrawals,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.08)',tension:0.4,fill:true,borderWidth:2,pointRadius:3},
-{label:'Game Revenue',data:r.game_revenue,borderColor:'#7C4DFF',backgroundColor:'rgba(124,77,255,0.08)',tension:0.4,fill:true,borderWidth:2,pointRadius:3}
-]},options:{plugins:{legend:{display:true,labels:{color:'rgba(200,205,240,0.5)',font:{size:10}}}},scales:{x:{grid:{display:false},ticks:{color:'rgba(200,205,240,0.3)',font:{size:9}}},y:{grid:{color:'rgba(120,130,200,0.05)'},ticks:{color:'rgba(200,205,240,0.3)',font:{size:9}}}}}});
+{label:'Deposits',data:r.deposits,borderColor:'#10b981',backgroundColor:g1,tension:0.45,fill:true,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#10b981',pointBorderColor:'#0a0f1a'},
+{label:'Withdrawals',data:r.withdrawals,borderColor:'#fb923c',backgroundColor:g2,tension:0.45,fill:true,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#fb923c',pointBorderColor:'#0a0f1a'},
+{label:'Game Revenue',data:r.game_revenue,borderColor:'#a78bfa',backgroundColor:g3,tension:0.45,fill:true,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#a78bfa',pointBorderColor:'#0a0f1a'}
+]},options:{interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,labels:{color:'rgba(200,210,255,0.6)',font:{size:10,weight:'600'},boxWidth:8,usePointStyle:true,pointStyle:'circle'}},tooltip:{backgroundColor:'rgba(10,13,23,0.95)',borderColor:'rgba(148,163,255,0.2)',borderWidth:1,padding:10,titleFont:{size:11},bodyFont:{size:11}}},scales:{x:{grid:{display:false},ticks:{color:'rgba(200,210,255,0.4)',font:{size:9}}},y:{grid:{color:'rgba(120,130,200,0.06)'},ticks:{color:'rgba(200,210,255,0.4)',font:{size:9}}}}}});
 }
 }
 }catch(e){console.error('chart',e);}
