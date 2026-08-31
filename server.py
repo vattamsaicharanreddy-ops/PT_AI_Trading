@@ -242,10 +242,110 @@ def admin_send_dm(req: DirectMessage, request: Request):
         return {"ok": False, "error": str(e)}
 
 
-class GroupBulkAdd(BaseModel):
-    user_ids: List[str]
-    group: str
-    method: str = "direct"
+class NudgeRequest(BaseModel):
+    template: str = "deposit"
+
+
+@app.post("/api/admin/user/{user_id}/nudge")
+def admin_send_nudge(user_id: int, req: NudgeRequest, request: Request):
+    require_admin(request)
+    import json as _json
+    import urllib.request as _urllib
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"SELECT * FROM users WHERE user_id={ph()}", (user_id,))
+        row = cur.fetchone()
+        if not row:
+            return {"ok": False, "error": "User not found"}
+        u = dict(row) if not isinstance(row, dict) else row
+        token = os.getenv("BOT_TOKEN", "")
+        if not token:
+            return {"ok": False, "error": "BOT_TOKEN not set"}
+        bal = float(val(u, "balance", 0) or 0)
+        total_dep = float(val(u, "total_deposit", 0) or 0)
+        name = val(u, "username", "") or f"user #{user_id}"
+        template = req.template or "deposit"
+
+        if template == "deposit":
+            text = "\n".join([
+                f"Hey <b>{name}</b>! 👋",
+                "",
+                f"Your <b>PT_AI</b> account is <b>ready to earn</b> — all you need is a first deposit.",
+                "",
+                "🚀 Deposit as little as <b>$5 USDT</b>",
+                "⚡ AI trades automatically — no experience needed",
+                "💎 Earn <b>7.6% – 14.9%</b> daily returns",
+                "",
+                "🔗 Open the app and tap <b>Deposit</b>:",
+                "👉 t.me/PT_Minebot",
+                "",
+                "Your friends are already earning. The only loss is doing nothing. 💰",
+            ])
+        elif template == "tasks":
+            text = "\n".join([
+                f"Hi <b>{name}</b>! 👋",
+                "",
+                "Quick heads-up: there are still <b>simple tasks</b> waiting for you.",
+                "",
+                "✅ Join groups & channels → earn <b>$1 each</b>",
+                "🎁 Complete them to <b>unlock withdrawals</b>",
+                "",
+                "Takes 2 minutes: 👉 t.me/PT_Minebot",
+                "",
+                "These tasks also unlock your ability to withdraw your earnings. Don't skip free money! 💸",
+            ])
+        elif template == "reinvest":
+            text = "\n".join([
+                f"Hey <b>{name}</b>! 📈",
+                "",
+                "Capital at work beats idle balance.",
+                "",
+                "💵 Current AI balance: <b>${:.2f}</b>".format(bal),
+                "💰 Total deposited: <b>${:.2f}</b>".format(total_dep),
+                "",
+                "Top up today and upgrade your trading tier for a <b>higher daily rate</b>.",
+                "",
+                "👉 t.me/PT_Minebot",
+                "",
+                "Consistent deposits = consistently bigger returns. 🚀",
+            ])
+        elif template == "returning":
+            text = "\n".join([
+                f"Hey <b>{name}</b>! ⏰",
+                "",
+                "We noticed you haven't been around — your AI balance is still working for you!",
+                "",
+                "💵 Live balance: <b>${:.2f}</b>".format(bal),
+                "",
+                "Log back in, check your profit, and grow it further:",
+                "👉 t.me/PT_Minebot",
+                "",
+                "See you on the dashboard! 🎯",
+            ])
+        else:
+            return {"ok": False, "error": f"Unknown template: {template}"}
+
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        payload = _json.dumps({"chat_id": user_id, "text": text, "parse_mode": "HTML"}).encode()
+        req_url = _urllib.Request(url, data=payload, headers={"Content-Type": "application/json"})
+        with _urllib.urlopen(req_url, timeout=15) as r:
+            resp = _json.loads(r.read().decode())
+            if resp.get("ok"):
+                try:
+                    cur.execute(f"INSERT INTO admin_logs (admin_user_id, admin_action, target_user_id, details, created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()})",
+                        (0, "nudge", user_id, f"template={template}", datetime.utcnow().isoformat()))
+                    conn.commit()
+                except Exception as elog:
+                    logger.error(f"nudge log failed: {elog}")
+                return {"ok": True, "message": f"Nudge sent to #{user_id}"}
+            else:
+                return {"ok": False, "error": resp.get("description", "Unknown error")}
+    except Exception as e:
+        logger.error(f"nudge failed: {e}", exc_info=True)
+        return {"ok": False, "error": str(e)}
+    finally:
+        safe_close(conn)
 
 
 def cursor(conn):
@@ -1377,6 +1477,67 @@ def admin_stats(request: Request):
         safe_close(conn)
 
 
+@app.get("/api/admin/funnel")
+def admin_funnel(request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        now = datetime.utcnow()
+        week_ago = (now - timedelta(days=7)).isoformat()
+        day_ago = (now - timedelta(days=1)).isoformat()
+
+        def q(sql, label):
+            cur.execute(sql)
+            r = cur.fetchone()
+            r = dict(r) if not isinstance(r, dict) else r
+            v = r.get("cnt", 0) or 0
+            logger.info(f"funnel {label}: {v}")
+            return v
+
+        rows = [
+            {
+                "key": "signed_up",
+                "label": "Signed Up",
+                "value": q("SELECT COUNT(*) as cnt FROM users", "signed"),
+            },
+            {
+                "key": "completed_task",
+                "label": "Completed a Task",
+                "value": q("SELECT COUNT(DISTINCT user_id) as cnt FROM user_tasks WHERE reward_claimed=1", "task"),
+            },
+            {
+                "key": "deposited",
+                "label": "Deposited",
+                "value": q("SELECT COUNT(*) as cnt FROM users WHERE COALESCE(total_deposit,0)>0", "deposited"),
+            },
+            {
+                "key": "played_game",
+                "label": "Played a Game",
+                "value": q("SELECT COUNT(DISTINCT user_id) as cnt FROM game_history", "game"),
+            },
+            {
+                "key": "withdrew",
+                "label": "Withdrew",
+                "value": q("SELECT COUNT(*) as cnt FROM users WHERE COALESCE(total_withdraw,0)>0", "withdrew"),
+            },
+        ]
+
+        cur.execute(f"SELECT COUNT(*) as cnt FROM users WHERE created_at >= {ph()}", (week_ago,))
+        new_week = val(cur.fetchone(), "cnt", 0) or 0
+
+        cur.execute(f"SELECT COUNT(*) as cnt FROM users WHERE created_at >= {ph()}", (day_ago,))
+        new_day = val(cur.fetchone(), "cnt", 0) or 0
+
+        actions = [{"key": "signup7d", "label": "New in 7 days", "value": new_week}, {"key": "signup1d", "label": "New today", "value": new_day}]
+        return {"funnel": rows, "actions": actions}
+    except Exception as e:
+        logger.error(f"admin_funnel FAILED: {e}", exc_info=True)
+        return {"funnel": [], "actions": [], "error": str(e)}
+    finally:
+        safe_close(conn)
+
+
 @app.get("/api/admin/deposits")
 def admin_deposits(request: Request):
     require_admin(request)
@@ -1726,15 +1887,39 @@ async def admin_broadcast(request: Request):
     message = body.get("message", "").strip()
     if not message:
         return {"ok": False, "error": "Message is required", "sent": 0}
+    segment = body.get("segment", "all")
     token = os.getenv("BOT_TOKEN", "")
     if not token:
         return {"ok": False, "error": "BOT_TOKEN not set", "sent": 0}
     conn = get_conn()
     sent = 0
     failed = 0
+    skipped = 0
     try:
         cur = cursor(conn)
-        cur.execute("SELECT user_id FROM users")
+        if segment == "no_deposit":
+            cur.execute("SELECT user_id FROM users WHERE COALESCE(total_deposit,0)<=0 AND COALESCE(is_banned,0)=0")
+        elif segment == "inactive_7d":
+            cut = (datetime.utcnow() - timedelta(days=7)).isoformat()
+            cur.execute(f"SELECT user_id FROM users WHERE COALESCE(is_banned,0)=0 AND COALESCE(total_deposit,0)>0 AND (last_webapp_open='' OR last_webapp_open IS NULL OR last_webapp_open < {ph()})", (cut,))
+        elif segment == "no_tasks":
+            cur.execute("""SELECT u.user_id FROM users u
+                WHERE COALESCE(u.is_banned,0)=0
+                AND NOT EXISTS (SELECT 1 FROM user_tasks ut JOIN tasks t ON ut.task_id=t.id
+                    WHERE ut.user_id=u.user_id AND ut.reward_claimed=1 AND t.is_mandatory=1)""")
+        elif segment == "has_tasks_no_dep":
+            cur.execute("""SELECT u.user_id FROM users u
+                WHERE COALESCE(u.is_banned,0)=0 AND COALESCE(u.total_deposit,0)<=0
+                AND EXISTS (SELECT 1 FROM user_tasks ut JOIN tasks t ON ut.task_id=t.id
+                    WHERE ut.user_id=u.user_id AND ut.reward_claimed=1 AND t.is_mandatory=1)""")
+        elif segment == "deposit_no_withdraw":
+            cur.execute("SELECT user_id FROM users WHERE COALESCE(total_deposit,0)>0 AND COALESCE(total_withdraw,0)<=0 AND COALESCE(is_banned,0)=0")
+        elif segment == "referred_no_dep":
+            cur.execute("""SELECT DISTINCT u.referred_by as user_id FROM users u
+                WHERE u.referred_by IS NOT NULL AND u.referred_by>0
+                AND NOT EXISTS (SELECT 1 FROM users r WHERE r.user_id=u.referred_by AND COALESCE(r.total_deposit,0)>0)""")
+        else:
+            cur.execute("SELECT user_id FROM users")
         users = cur.fetchall()
         for row in users:
             uid = row[0] if isinstance(row, tuple) else row.get("user_id", 0)
@@ -1754,7 +1939,7 @@ async def admin_broadcast(request: Request):
                 failed += 1
     finally:
         safe_close(conn)
-    return {"ok": sent > 0, "sent": sent, "failed": failed}
+    return {"ok": sent > 0, "sent": sent, "failed": failed, "targeted": segment}
 
 
 @app.post("/api/admin/upload")

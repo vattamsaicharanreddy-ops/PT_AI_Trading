@@ -144,6 +144,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.4)!import
 <div class="card p-3.5" style="border-color:rgba(16,185,129,0.12)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#10b981">House Revenue</p><p id="gs_rev" class="text-lg font-black mt-1" style="color:#10b981">$0</p></div>
 <div class="card p-3.5" style="border-color:rgba(96,165,250,0.12)"><p class="text-[8px] font-bold tracking-widest uppercase" style="color:#60a5fa">Top Game</p><p id="gs_top" class="text-lg font-black mt-1" style="color:#60a5fa">-</p></div>
 </div>
+<div class="card p-4"><h3 class="font-bold text-[13px] mb-3">Conversion Funnel</h3><div id="funnelWrap" class="space-y-2"><p class="text-[11px] text-center py-4" style="color:var(--text3)">Loading...</p></div></div>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 <div class="lg:col-span-2 card p-5"><div class="flex justify-between items-center"><h3 class="font-bold text-[13px]">Revenue Chart</h3><span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">LIVE</span></div><canvas id="revChart" height="110" class="mt-3"></canvas></div>
 <div class="card p-4" style="border-color:rgba(16,185,129,0.12)"><h3 class="font-bold text-[13px]">System Health</h3>
@@ -165,11 +166,22 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.4)!import
 <div class="card p-5">
 <div class="flex flex-wrap gap-2 justify-between items-center">
 <h2 class="text-lg font-black">Users Control</h2>
+<div class="flex flex-wrap gap-2 items-center">
+<div class="flex gap-1.5 flex-wrap">
+<button onclick="setUserFilter('all')" data-uf="all" class="uf-btn px-3 py-1.5 rounded-full text-[10px] font-bold" style="background:rgba(124,77,255,0.15);color:#7C4DFF;border:1px solid rgba(124,77,255,0.25)">All</button>
+<button onclick="setUserFilter('no_dep')" data-uf="no_dep" class="uf-btn px-3 py-1.5 rounded-full text-[10px] font-bold" style="background:var(--hover)">0 Deposit</button>
+<button onclick="setUserFilter('has_tasks_no_dep')" data-uf="has_tasks_no_dep" class="uf-btn px-3 py-1.5 rounded-full text-[10px] font-bold" style="background:var(--hover)">Tasks Done, 0 Dep</button>
+<button onclick="setUserFilter('inactive7')" data-uf="inactive7" class="uf-btn px-3 py-1.5 rounded-full text-[10px] font-bold" style="background:var(--hover)">Inactive 7d</button>
+<button onclick="setUserFilter('dep_no_wd')" data-uf="dep_no_wd" class="uf-btn px-3 py-1.5 rounded-full text-[10px] font-bold" style="background:var(--hover)">Dep, No WD</button>
+<button onclick="setUserFilter('high_bal')" data-uf="high_bal" class="uf-btn px-3 py-1.5 rounded-full text-[10px] font-bold" style="background:var(--hover)">High Value</button>
+</div>
 <div class="flex gap-2">
 <input id="userSearch" oninput="filterUsers()" placeholder="Search ID or username..." class="rounded-full px-4 py-2 text-[11px] w-[200px] border outline-none focus:ring-1" style="background:var(--input);border-color:var(--border)">
 <select id="userFilter" onchange="filterUsers()" class="rounded-full px-3 py-2 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="all">All Users</option><option value="online">Online Now</option><option value="active">Active (Deposited)</option><option value="banned">Banned</option><option value="whale">Whales >$500</option><option value="no_tasks">No Tasks Done</option></select>
 <button onclick="bulkActionPrompt()" class="btn-gold px-4 py-2 rounded-full text-[11px]">Bulk Action</button>
 </div>
+</div>
+<div class="mt-2 flex items-center gap-2 flex-wrap" id="convHints"></div>
 </div>
 <div class="mt-4 overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">User</th><th class="text-left p-2.5">Joined</th><th class="text-left p-2.5">Balances</th><th class="text-left p-2.5">Tasks</th><th class="text-left p-2.5">Games</th><th class="text-left p-2.5">Streak</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Actions</th></tr></thead><tbody id="users"></tbody></table></div>
 </div>
@@ -225,6 +237,9 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.4)!import
 
 <div class="card p-5"><h3 class="font-bold text-sm mb-3">Quick Actions</h3>
 <div class="flex flex-wrap gap-2">
+<button onclick="sendNudge(currentDetailUserId,'deposit',0)" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">✉️ Deposit Nudge</button>
+<button onclick="sendNudge(currentDetailUserId,'reinvest',0)" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">✉️ Top-up Nudge</button>
+<button onclick="sendNudge(currentDetailUserId,'returning',0)" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(96,165,250,0.15);color:#60a5fa">✉️ Come-back Nudge</button>
 <button onclick="openAction(currentDetailUserId,'add_balance')" class="btn-emerald px-4 py-2 rounded-full text-[11px] font-bold">+ Add Balance</button>
 <button onclick="openAction(currentDetailUserId,'deduct_balance')" class="btn-red px-4 py-2 rounded-full text-[11px] font-bold">- Less Balance</button>
 <button onclick="openAction(currentDetailUserId,'add_withdrawable')" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(255,214,10,0.15);color:#FFD60A">+ Add Withdrawable</button>
@@ -369,9 +384,28 @@ Upload Image
 </div>
 </div>
 <div class="card p-5">
-<h2 class="text-lg font-black">Broadcast to All Bot Users</h2>
-<textarea id="broadcastMsgUsers" placeholder="Message to all users..." class="mt-4 w-full h-32 rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)"></textarea>
-<button onclick="sendBroadcast()" class="mt-3 btn-gold px-6 py-3 rounded-full text-sm">Send to All Users</button>
+<h2 class="text-lg font-black">Broadcast to Bot Users</h2>
+<div class="mt-3 p-3 rounded-xl" style="background:rgba(124,77,255,0.06);border:1px solid rgba(124,77,255,0.15)">
+<p class="text-[10px] font-bold" style="color:#7C4DFF">Target Segment</p>
+<p class="text-[10px] mt-0.5" style="color:var(--text3)">Reach the right users — targeted messages convert much better than blasting everyone.</p>
+<select id="broadcastSegment" onchange="applySegmentTemplate()" class="mt-2 w-full rounded-xl p-2.5 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+<option value="all">All Users</option>
+<option value="no_deposit">✋ Signed up, NO deposit yet</option>
+<option value="has_tasks_no_dep">✅ Done tasks, still NO deposit</option>
+<option value="inactive_7d">😴 Deposited but inactive 7+ days</option>
+<option value="deposit_no_withdraw">💰 Deposited, never withdrew</option>
+<option value="no_tasks">❌ No mandatory tasks done</option>
+<option value="referred_no_dep">🔗 Referred someone but no deposit</option>
+</select>
+<div class="mt-2 flex gap-1.5 flex-wrap">
+<button onclick="applySegmentTemplate()" class="px-3 py-1.5 rounded-full text-[10px] font-bold" style="background:rgba(124,77,255,0.15);color:#7C4DFF">Load Template</button>
+<button onclick="segmentPreview()" class="px-3 py-1.5 rounded-full text-[10px] font-bold" style="background:var(--hover)">Estimate Audience</button>
+<span id="segmentCount" class="text-[10px] self-center" style="color:var(--text3)"></span>
+</div>
+</div>
+<textarea id="broadcastMsgUsers" placeholder="Message to target users..." class="mt-4 w-full h-32 rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)"></textarea>
+<button onclick="sendBroadcast()" class="mt-3 btn-gold px-6 py-3 rounded-full text-sm">Send to Target</button>
+<span id="broadcastStatus" class="text-[11px] ml-2" style="color:var(--text3)"></span>
 </div>
 </section>
 
@@ -668,6 +702,7 @@ document.getElementById('logs').innerHTML=logs.slice(0,20).map(l=>`<tr class="bo
 }catch(e){}
 loadRevenueChart();
 loadHealth();
+loadFunnel();
 try{
 let gs=await fetchJson('/api/admin/game-stats');
 document.getElementById('gs_players').innerText=gs.unique_players||0;
@@ -678,18 +713,71 @@ document.getElementById('gs_top').innerText=top?(top.game_type+' ('+top.total_pl
 }catch(e){}
 }
 
+async function loadFunnel(){
+try{
+let d=await fetchJson('/api/admin/funnel');
+let el=document.getElementById('funnelWrap');
+if(!el)return;
+let funnel=d.funnel||[];
+if(!funnel.length){el.innerHTML='<p class="text-[11px] text-center py-4" style="color:var(--text3)">No data yet.</p>';return;}
+let max=Math.max(1,...funnel.map(x=>Number(x.value)||0));
+let html='';
+funnel.forEach((stage,i)=>{
+let v=Number(stage.value)||0;
+let prev=i>0?(Number(funnel[i-1].value)||0):max;
+let pct=prev>0?(v/prev*100):0;
+let drop=prev>0?(100-(v/prev*100)):0;
+let barPct=v/max*100;
+let grad=drop>50?'linear-gradient(90deg,rgba(239,68,68,0.5),rgba(239,68,68,0.15))':drop>25?'linear-gradient(90deg,rgba(255,214,10,0.5),rgba(255,214,10,0.12))':'linear-gradient(90deg,rgba(16,185,129,0.5),rgba(16,185,129,0.12))';
+html+=`<div>
+<div class="flex justify-between items-center text-[11px] mb-1"><span class="font-bold">${stage.label}</span><div class="flex items-center gap-2"><span class="font-black">${v.toLocaleString()}</span>${i>0?`<span class="text-[9px] font-bold" style="color:${drop>50?'#ef4444':drop>25?'#FFD60A':'#10b981'}">${drop>0?'▼ '+drop.toFixed(0)+'%':'✓ 100%'}</span>`:'<span class="text-[9px]" style="color:var(--text3)">base</span>'}</div></div>
+<div class="h-2.5 rounded-full overflow-hidden" style="background:var(--border)"><div class="h-full rounded-full transition-all duration-500" style="width:${barPct}%;background:${grad}"></div></div>
+</div>`;
+});
+let actions=d.actions||[];
+let actionHtml='';
+if(actions.length){
+actionHtml='<div class="mt-3 pt-3 border-t" style="border-color:var(--border2)"><div class="flex gap-2 flex-wrap text-[10px] font-bold">'+actions.map(a=>`<span class="px-2 py-1 rounded-full" style="background:${a.key==='signup1d'?'rgba(16,185,129,0.15);color:#10b981':'rgba(124,77,255,0.15);color:#7C4DFF'}">${a.label}: ${a.value}</span>`).join('')+'</div></div>';
+}
+el.innerHTML=html+actionHtml;
+let hints=document.getElementById('convHints');
+if(hints){
+let fmap={};
+funnel.forEach(x=>fmap[x.key]=Number(x.value)||0);
+let signed=fmap.signed_up||0, dep=fmap.deposited||0, task=fmap.completed_task||0;
+let noDep=signed-dep, taskNoDep=task-dep, wd=fmap.withdrew||0;
+let chips=[];
+if(noDep>0)chips.push([`${noDep.toLocaleString()} signed up but never deposited`,`rgba(239,68,68,0.12);color:#ef4444`]);
+if(taskNoDep>0)chips.push([`${taskNoDep.toLocaleString()} even did tasks, still 0 deposit`,`rgba(255,214,10,0.12);color:#FFD60A`]);
+if(dep>0&&wd>0)chips.push([`${dep.toLocaleString()} deposited, ${wd.toLocaleString()} withdrew`,`rgba(16,185,129,0.12);color:#10b981`]);
+hints.innerHTML=chips.length?chips.map(c=>`<span class="px-2.5 py-1 rounded-full text-[10px] font-bold" style="background:${c[1]}">${c[0]}</span>`).join(''):'';
+}
+}catch(e){console.error('funnel',e);}
+}
+
 function renderUsers(users){
 let q=document.getElementById('userSearch')?.value?.toLowerCase()||'';
 let f=document.getElementById('userFilter')?.value||'all';
 let filtered=users;
 let now=new Date();
 let fiveMinAgo=new Date(now.getTime()-5*60000).toISOString();
+let sevenDaysAgo=new Date(Date.now()-7*86400000).toISOString();
 if(q) filtered=filtered.filter(u=>String(u.user_id).includes(q)||(u.username||'').toLowerCase().includes(q));
 if(f==='banned') filtered=filtered.filter(u=>u.is_banned);
 if(f==='online') filtered=filtered.filter(u=>!u.is_banned&&(u.last_webapp_open||'')>fiveMinAgo);
 if(f==='active') filtered=filtered.filter(u=>!u.is_banned&&Number(u.total_deposit)>0);
 if(f==='whale') filtered=filtered.filter(u=>Number(u.balance)>500);
 if(f==='no_tasks') filtered=filtered.filter(u=>!u.tasks_completed||u.tasks_completed===0);
+if(f==='no_dep') filtered=filtered.filter(u=>!u.is_banned&&Number(u.total_deposit)<=0);
+if(f==='has_tasks_no_dep') filtered=filtered.filter(u=>!u.is_banned&&Number(u.total_deposit)<=0&&u.mandatory_done);
+if(f==='inactive7') filtered=filtered.filter(u=>!u.is_banned&&Number(u.total_deposit)>0&&!((u.last_webapp_open||'')>sevenDaysAgo&&(u.last_webapp_open||'')!==""));
+if(f==='dep_no_wd') filtered=filtered.filter(u=>!u.is_banned&&Number(u.total_deposit)>0&&Number(u.total_withdraw)<=0);
+if(f==='high_bal') filtered=filtered.filter(u=>!u.is_banned&&Number(u.balance)+Number(u.withdrawable)>100);
+document.querySelectorAll('.uf-btn').forEach(b=>{let k=b.getAttribute('data-uf');
+let active=(k===f);
+b.style.background=active?'rgba(124,77,255,0.15)':'var(--hover)';
+b.style.color=active?'#7C4DFF':'var(--text2)';
+b.style.borderColor=active?'rgba(124,77,255,0.25)':'var(--border2)';});
 document.getElementById('users').innerHTML=filtered.slice(0,300).map(u=>{
 let daysAgo=u.created_at?Math.floor((Date.now()-new Date(u.created_at).getTime())/(86400000)):'?';
 let joinedShort=u.created_at?(u.created_at.slice(5,10)):'-';
@@ -703,11 +791,17 @@ return`<tr class="border-t cursor-pointer" style="border-color:var(--border2);${
 <td class="p-2.5"><p class="text-[11px]">${u.total_games_played||0} plays</p><p class="text-[9px]" style="color:var(--text3)">${u.total_games_won||0} wins</p></td>
 <td class="p-2.5"><p class="text-[11px] font-bold" style="color:${streak>=7?'#FFD60A':streak>=3?'#10b981':'var(--text2)'}">${streak}d</p><p class="text-[9px]" style="color:var(--text3)">last: ${(u.last_login_date||'').slice(5,10)||'-'}</p></td>
 <td class="p-2.5">${u.is_banned?'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">BANNED</span>':isOnline?'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(124,77,255,0.15);color:#7C4DFF">● ONLINE</span>':'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">ACTIVE</span>'}</td>
-<td class="p-2.5"><div class="flex flex-wrap gap-1 max-w-[180px]"><button onclick="event.stopPropagation();openAction(${u.user_id},'add_balance')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981">+Bal</button><button onclick="event.stopPropagation();openAction(${u.user_id},'deduct_balance')" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">-Bal</button><button onclick="event.stopPropagation();openAction(${u.user_id},'add_withdrawable')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(255,214,10,0.15);color:#FFD60A">+WD</button><button onclick="event.stopPropagation();openAction(${u.user_id},${u.is_banned?'\'unban\'':'\'ban\''})" class="px-2 py-0.5 rounded-full text-[10px]" style="background:var(--hover)">${u.is_banned?'Unban':'Ban'}</button></div></td></tr>`;
+<td class="p-2.5"><div class="flex flex-wrap gap-1 max-w-[200px]"><button onclick="event.stopPropagation();sendNudge(${u.user_id},'${Number(u.total_deposit)>0?'reinvest':'deposit'}',${u.balance||0})" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981" title="Send deposit/conversion nudge DM">✉️ Nudge</button><button onclick="event.stopPropagation();openAction(${u.user_id},'add_balance')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981">+Bal</button><button onclick="event.stopPropagation();openAction(${u.user_id},'deduct_balance')" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">-Bal</button><button onclick="event.stopPropagation();openAction(${u.user_id},'add_withdrawable')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(255,214,10,0.15);color:#FFD60A">+WD</button><button onclick="event.stopPropagation();openAction(${u.user_id},${u.is_banned?'\'unban\'':'\'ban\''})" class="px-2 py-0.5 rounded-full text-[10px]" style="background:var(--hover)">${u.is_banned?'Unban':'Ban'}</button></div></td></tr>`;
 }).join('')||`<tr><td colspan="8" class="p-8 text-center" style="color:var(--text3)">No users found.</td></tr>`;
 }
 
 function filterUsers(){renderUsers(allUsers);}
+
+function setUserFilter(f){
+let sel=document.getElementById('userFilter');
+sel.value=f;
+renderUsers(allUsers);
+}
 
 let currentDetailUserId=null;
 
@@ -984,8 +1078,59 @@ document.getElementById('groupMembers').innerHTML=m.map(x=>`<tr class="border-t"
 async function sendBroadcast(){
 let msg=document.getElementById('broadcastMsgUsers').value;
 if(!msg){alert('Enter message');return;}
-let r=await fetch('/api/admin/broadcast',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({message:msg})});
-let j=await r.json();alert('Sent to '+j.sent+' users');
+let seg=document.getElementById('broadcastSegment')?.value||'all';
+let status=document.getElementById('broadcastStatus');
+if(status)status.textContent='Sending...';
+try{
+let r=await fetch('/api/admin/broadcast',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({message:msg,segment:seg})});
+let j=await r.json();
+alert('Sent to '+j.sent+' users'+(j.failed?' ('+j.failed+' failed)':''));
+if(status)status.textContent='Sent: '+j.sent+' | Failed: '+j.failed;
+}catch(e){alert('Error: '+e);if(status)status.textContent='Error';}
+}
+
+const SEGMENT_TEMPLATES={
+all:`Welcome to <b>PT_AI Trading Bot</b>! 🚀\n\nYour AI account is earning-ready. Open the app and explore:\n👉 t.me/PT_Minebot`,
+no_deposit:`Hey! 👋\n\nYour <b>PT_AI</b> account is ready — just needs a <b>first deposit</b> to start earning.\n\n💵 Start from just <b>$5 USDT</b>\n⚡ AI trades 24/7 — no experience needed\n💎 Earn <b>7.6% – 14.9%</b> daily\n\nTap <b>Deposit</b> in the app: 👉 t.me/PT_Minebot\n\nYour future self will thank you. 💰`,
+has_tasks_no_dep:`Almost there! ✅\n\nYou've completed your tasks — now just <b>deposit</b> to activate AI trading.\n\n🚀 <b>$5</b> is all it takes to start earning <b>7.6%+ daily</b>\n\n👉 t.me/PT_Minebot → tap <b>Deposit</b>\n\nDon't let the momentum stop now! 📈`,
+inactive_7d:`We miss you! 👋\n\nYour AI balance is still working, but real growth needs you back.\n\n📈 Check your profit, upgrade your tier, and keep the earnings compounding:\n👉 t.me/PT_Minebot\n\nSee you on the dashboard! 🎯`,
+deposit_no_withdraw:`Great job depositing! 💪\n\nNow let's take it to the next level:\n\n🔥 Add a top-up to upgrade your trading tier\n💵 Earn <b>up to 14.9%</b> daily returns\n\n👉 t.me/PT_Minebot\n\nYour capital at work is the fastest path to serious earnings. 🚀`,
+no_tasks:`Quick reminder! ⏰\n\nThere are <b>simple tasks</b> waiting — join groups & channels to earn <b>$1 each</b>, plus <b>unlock withdrawals</b>.\n\n✅ Takes just 2 minutes\n💸 Free USDT for the taking\n\n👉 t.me/PT_Minebot`,
+referred_no_dep:`You shared the bot with friends — awesome! 🤝\n\nMake it even better: when YOU deposit, you'll earn <b>7% commission</b> on every friend's deposit too.\n\n💵 Start with <b>$5</b> and get your referral engine running:\n👉 t.me/PT_Minebot
+`
+};
+
+function applySegmentTemplate(){
+let seg=document.getElementById('broadcastSegment').value;
+let t=SEGMENT_TEMPLATES[seg];
+if(t)document.getElementById('broadcastMsgUsers').value=t;
+}
+
+async function segmentPreview(){
+try{
+let r=await fetch('/api/admin/stats',{headers:apiHeaders()});
+let st=await r.json();
+let totalU=Number(st.total_users||0);
+let est=document.getElementById('segmentCount');
+if(!est)return;
+let seg=document.getElementById('broadcastSegment').value;
+let f=null;
+try{f=await fetchJson('/api/admin/funnel');}catch(e){}
+let fmap={};
+if(f&&f.funnel)f.funnel.forEach(x=>fmap[x.key]=Number(x.value)||0);
+let v=0;
+if(seg==='all')v=totalU;
+else if(seg==='no_deposit')v=(fmap.signed_up||totalU)-(fmap.deposited||0);
+else if(seg==='has_tasks_no_dep')v=Math.round(((fmap.completed_task||0)-(fmap.deposited||0))*0.7);
+else if(seg==='no_tasks')v=(fmap.signed_up||totalU)-(fmap.completed_task||0);
+else if(seg==='deposit_no_withdraw')v=(fmap.deposited||0)-(fmap.withdrew||0);
+else if(seg==='inactive_7d')v=Math.round((fmap.deposited||0)*0.55);
+else if(seg==='referred_no_dep')v=Math.round(totalU*0.15);
+v=Math.max(0,Math.round(v));
+let q=totalU>0?Math.round(v/totalU*100):0;
+est.textContent='≈'+v.toLocaleString()+' users ('+q+'% of all)';
+est.style.color='#7C4DFF';
+}catch(e){console.error(e);}
 }
 
 async function loadGroups(){
@@ -1032,6 +1177,20 @@ let j=await r.json();
 if(j.ok){status.textContent='Sent!';status.style.color='#10b981';document.getElementById('dmMsg').value='';}
 else{status.textContent=j.error||'Failed';status.style.color='#ef4444';}
 }catch(e){status.textContent='Error: '+e;status.style.color='#ef4444';}
+}
+
+async function sendNudge(userId,template,balance){
+let templates={
+deposit:'deposit',tasks:'tasks',reinvest:'reinvest',returning:'returning'
+};
+let t=templates[template]||'deposit';
+if(!confirm('Send a personalized "'+(template==='reinvest'?'Top-up / reinvest':'Deposit')+'" nudge DM to #'+userId+'?'))return;
+try{
+let r=await fetch('/api/admin/user/'+userId+'/nudge',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({template:t})});
+let j=await r.json();
+if(j.ok){toast('Nudge sent to #'+userId,'success');}
+else{toast(j.error||'Nudge failed','error');}
+}catch(e){toast('Error: '+e,'error');}
 }
 
 document.getElementById('broadcastImgUrl').addEventListener('input',function(){
