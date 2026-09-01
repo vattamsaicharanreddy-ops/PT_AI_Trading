@@ -1721,7 +1721,6 @@ def _send_wd_notification(wd, tx_hash):
     notify_chat = os.getenv("NOTIFY_CHANNEL", "").strip()
     if not token or not notify_chat:
         return
-    uid = val(wd, "user_id")
     amount = val(wd, "amount", 0)
     network = val(wd, "network", "BEP-20")
     addr = val(wd, "address", "")
@@ -1729,9 +1728,8 @@ def _send_wd_notification(wd, tx_hash):
     now_str = datetime.utcnow().strftime("%d %b %Y, %H:%M UTC")
     bscscan_link = f"https://bscscan.com/tx/{tx_hash}" if tx_hash else ""
     lines = [
-        "<b>✅ Withdrawal Approved</b>",
+        "<b>✅ Member Withdrawal Approved</b>",
         "",
-        f"👤 User: <code>#{uid}</code>",
         f"💵 Amount: <b>${amount:.2f} USDT</b>",
         f"🔗 Network: {network}",
     ]
