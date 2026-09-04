@@ -133,6 +133,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <p class='text-[11px] font-bold flex-1' style='color:#FFD60A'>First Deposit Bonus! Get <span id='fdBonusPct'>+10%</span> bonus (max $10) on your first deposit.</p>
 <button onclick='openDeposit()' class='px-3 py-1.5 rounded-full text-[10px] font-extrabold' style='background:#FFD60A;color:#000'>CLAIM</button>
 </div>
+<div class='mx-4 mb-4 rounded-2xl px-3 py-2.5 grid grid-cols-3 gap-2 text-center' style='background:var(--surface);border:1px solid var(--border)'>
+<div><div class='text-base'>⚡</div><p class='text-[9px] font-bold mt-0.5'>Fast Payouts</p><p class='text-[7px]' style='color:var(--text3)'>auto-approved</p></div>
+<div><div class='text-base'>🔒</div><p class='text-[9px] font-bold mt-0.5'>Secure</p><p class='text-[7px]' style='color:var(--text3)'>encrypted funds</p></div>
+<div><div class='text-base'>📈</div><p class='text-[9px] font-bold mt-0.5'>24/7 AI</p><p class='text-[7px]' style='color:var(--text3)'>auto trading</p></div>
+</div>
 <div class='mx-4 rounded-2xl p-4 flex justify-between items-center' style='background:var(--surface);border:1px solid var(--border)'>
 <div class='flex items-center gap-3'><div class='w-11 h-11 rounded-full bg-[#26A17B] flex items-center justify-center font-bold text-white text-[16px]'>$</div><div><p class='text-xs tracking-widest font-bold' style='color:#26A17B'><span id='aiStatus'>AI ACTIVE</span> <span id='tierPct'>0%</span>/day</p><p class='font-bold text-sm'><span id='balTopMini'>0</span> USDT</p><p id='aiTimer' class='text-[10px] font-mono px-2 py-0.5 rounded-full mt-1 inline-block' style='background:var(--border)'>00d 00h 00m 00s left</p></div></div>
 <div class='text-right'><p class='text-[10px]' style='color:var(--text3)'>WALLET</p><p id='withdrawableTop' class='font-bold text-sm' style='color:#FFD60A'>0.00 USDT</p><p id='taskBadge' class='text-[10px] px-2 py-0.5 rounded-full mt-1 hidden' style='background:rgba(108,59,255,0.15);color:#A5A6F6'>Tasks</p></div>
@@ -537,13 +542,13 @@ if(_tierPopupShown)return;
 _tierPopupShown=true;
 let list=$('tierInfoList');if(!list)return;
 let tiers=[
-{min:5,rate:7.6,name:'STARTER',color:'#10b981',icon:'🌱'},
-{min:120,rate:8.9,name:'BRONZE',color:'#f97316',icon:'🥉'},
-{min:500,rate:9.6,name:'SILVER',color:'#A5A6F6',icon:'🥈'},
-{min:1200,rate:10.9,name:'PLATINUM',color:'#C0C0C0',icon:'💎'},
-{min:2500,rate:11.8,name:'GOLD',color:'#FFD60A',icon:'🏆'},
-{min:6000,rate:13.6,name:'DIAMOND',color:'#A5A6F6',icon:'💠'},
-{min:15000,rate:14.9,name:'PLATINUM',color:'#FFD60A',icon:'⭐'},
+{min:5,rate:7.6,name:'STARTER',color:'#10b981',icon:'🌱',perk:'Instant withdrawals'},
+{min:120,rate:8.9,name:'BRONZE',color:'#f97316',icon:'🥉',perk:'Priority withdrawals'},
+{min:500,rate:9.6,name:'SILVER',color:'#A5A6F6',icon:'🥈',perk:'Unlimited withdrawals'},
+{min:1200,rate:10.9,name:'PLATINUM',color:'#C0C0C0',icon:'💎',perk:'Priority payouts'},
+{min:2500,rate:11.8,name:'GOLD',color:'#FFD60A',icon:'🏆',perk:'VIP + fast payouts'},
+{min:6000,rate:13.6,name:'DIAMOND',color:'#A5A6F6',icon:'💠',perk:'VIP + one-on-one manager'},
+{min:15000,rate:14.9,name:'PLATINUM',color:'#FFD60A',icon:'⭐',perk:'WHALE = VIP + instant payouts'},
 ];
 let me=window._lastMe||{};
 let bal=parseFloat(me.balance||0);
@@ -557,6 +562,7 @@ h+='<div class="flex items-center gap-3 p-2.5 rounded-xl'+(isUnlocked?'':' opaci
 h+='<span class="text-lg">'+t.icon+'</span>';
 h+='<div class="flex-1"><div class="flex justify-between items-center"><p class="text-[11px] font-bold" style="color:'+t.color+'">'+t.name+(isHighest?' ✓':'')+'</p><span class="text-[10px] font-black" style="color:'+t.color+'">'+t.rate+'%/day</span></div>';
 h+='<p class="text-[9px] mt-0.5" style="color:var(--text3)">Min deposit: $'+t.min.toLocaleString()+'</p>';
+h+='<p class="text-[9px] mt-0.5" style="color:'+t.color+'">⚡ '+t.perk+'</p>';
 if(isHighest&&bal>0){h+='<p class="text-[9px] mt-0.5 font-bold" style="color:'+t.color+'">Your earnings: ~$'+dailyEarn+'/day</p>';}
 h+='</div></div>';
 }
