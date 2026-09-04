@@ -1964,6 +1964,12 @@ def admin_user_action(action: AdminAction, request: Request):
             cur.execute(f"UPDATE users SET balance=GREATEST(0,COALESCE(balance,0)-{ph()}) WHERE user_id={ph()}", (amt, action.user_id))
         elif act == "set_balance":
             cur.execute(f"UPDATE users SET balance={ph()}, total_deposit=COALESCE(total_deposit,0)+GREATEST(0,{ph()}-COALESCE(balance,0)), admin_added_balance=COALESCE(admin_added_balance,0)+GREATEST(0,{ph()}-COALESCE(balance,0)) WHERE user_id={ph()}", (amt, amt, amt, action.user_id))
+        elif act == "credit_existing_balance":
+            cur.execute(
+                f"UPDATE users SET total_deposit=COALESCE(total_deposit,0)+GREATEST(0,COALESCE(balance,0)-COALESCE(total_deposit,0)), "
+                f"admin_added_balance=COALESCE(admin_added_balance,0)+GREATEST(0,COALESCE(balance,0)-COALESCE(total_deposit,0)) WHERE user_id={ph()}",
+                (action.user_id,),
+            )
         elif act == "add_withdrawable":
             cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()} WHERE user_id={ph()}", (amt, action.user_id))
         elif act == "deduct_withdrawable":

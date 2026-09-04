@@ -247,6 +247,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.45)!impor
 <button onclick="sendNudge(currentDetailUserId,'reinvest',0)" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">✉️ Top-up Nudge</button>
 <button onclick="sendNudge(currentDetailUserId,'returning',0)" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(96,165,250,0.15);color:#60a5fa">✉️ Come-back Nudge</button>
 <button onclick="openAction(currentDetailUserId,'add_balance')" class="btn-emerald px-4 py-2 rounded-full text-[11px] font-bold">+ Add Balance</button>
+<button onclick="creditExistingBalance(currentDetailUserId)" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(108,59,255,0.15);color:#A5A6F6" title="Count current balance as admin deposit">💳 Credit Balance → Deposit</button>
 <button onclick="openAction(currentDetailUserId,'deduct_balance')" class="btn-red px-4 py-2 rounded-full text-[11px] font-bold">- Less Balance</button>
 <button onclick="openAction(currentDetailUserId,'add_withdrawable')" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(255,214,10,0.15);color:#FFD60A">+ Add Withdrawable</button>
 <button onclick="openAction(currentDetailUserId,'deduct_withdrawable')" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(249,115,22,0.15);color:#f97316">- Less Withdrawable</button>
@@ -1089,6 +1090,20 @@ openUserDetail(currentDetailUserId);
 }else{toast(j.error||'Failed','error');}
 }catch(e){toast('Request failed','error');}
 if(btn){btn.disabled=false;btn.style.opacity='1';}
+}
+
+async function creditExistingBalance(userId){
+let u=(allUsers||[]).find(x=>x.user_id==userId);
+let bal=u?Number(u.balance||0):0;
+let dep=u?Number(u.total_deposit||0):0;
+let gap=(bal-dep).toFixed(2);
+if(!confirm(`Count this user's current balance that isn't already recorded as a deposit?\n\nCurrent balance: $${bal.toFixed(2)}\nAlready recorded: $${dep.toFixed(2)}\nWill add: $${gap>0?gap:'0.00'} to Total Deposits`))return;
+try{
+let res=await fetch('/api/admin/user/action',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({user_id:userId,action:'credit_existing_balance',amount:0,note:'credit existing balance'})});
+let j=await res.json();
+if(j.ok){toast('Balance credited as deposit','success');openUserDetail(userId);}
+else{toast(j.error||'Failed','error');}
+}catch(e){toast('Request failed','error');}
 }
 
 async function addMembers(){
