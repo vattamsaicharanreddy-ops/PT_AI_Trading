@@ -1595,38 +1595,16 @@ def admin_users(request: Request):
         cur = cursor(conn)
         cur.execute("SELECT * FROM users ORDER BY created_at DESC")
         users = rows_as_dicts(cur.fetchall())
-        uids = [u["user_id"] for u in users]
-        if not uids:
-            return users
-        tasks_by_user = {}
-        mandatory_by_user = {}
-        try:
-            cur.execute(f"SELECT user_id, COUNT(*) as cnt FROM user_tasks WHERE reward_claimed=1 AND user_id IN ({','.join([ph()]*len(uids))}) GROUP BY user_id", uids)
-            for r in cur.fetchall():
-                rd = dict(r) if not isinstance(r, dict) else r
-                tasks_by_user[rd["user_id"]] = rd["cnt"] or 0
-        except Exception as e:
-            logger.error(f"users tasks bulk failed: {e}")
-        try:
-            cur.execute(f"""SELECT ut.user_id, COUNT(*) as cnt FROM user_tasks ut JOIN tasks t ON ut.task_id=t.id
-                WHERE ut.user_id IN ({','.join([ph()]*len(uids))}) AND t.is_mandatory=1 AND ut.reward_claimed=1 GROUP BY ut.user_id""", uids)
-            for r in cur.fetchall():
-                rd = dict(r) if not isinstance(r, dict) else r
-                mandatory_by_user[rd["user_id"]] = rd["cnt"] or 0
-        except Exception as e:
-            logger.error(f"users mandatory bulk failed: {e}")
-        total_mandatory = 0
-        try:
-            cur.execute("SELECT COUNT(*) as cnt FROM tasks WHERE is_mandatory=1 AND is_active=1")
-            total_mandatory = val(cur.fetchone(), "cnt", 0) or 0
-        except Exception:
-            pass
         for u in users:
             uid = u["user_id"]
-            mc = mandatory_by_user.get(uid, 0)
-            u["tasks_completed"] = tasks_by_user.get(uid, 0)
-            u["mandatory_completed"] = mc
-            u["mandatory_done"] = (mc or 0) >= total_mandatory and total_mandatory > 0
+            cur.execute(f"SELECT COUNT(*) as cnt FROM user_tasks WHERE user_id={ph()} AND reward_claimed=1", (uid,))
+            u["tasks_completed"] = val(cur.fetchone(), "cnt", 0) or 0
+            cur.execute(f"""SELECT COUNT(*) as cnt FROM user_tasks ut JOIN tasks t ON ut.task_id=t.id
+                WHERE ut.user_id={ph()} AND t.is_mandatory=1 AND ut.reward_claimed=1""", (uid,))
+            u["mandatory_completed"] = val(cur.fetchone(), "cnt", 0) or 0
+            cur.execute(f"SELECT COUNT(*) as cnt FROM tasks WHERE is_mandatory=1 AND is_active=1")
+            total_mandatory = val(cur.fetchone(), "cnt", 0) or 0
+            u["mandatory_done"] = (u["mandatory_completed"] or 0) >= total_mandatory and total_mandatory > 0
         return users
     finally:
         safe_close(conn)
