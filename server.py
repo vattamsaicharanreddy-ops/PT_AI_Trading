@@ -7,6 +7,8 @@ import string
 import time
 import urllib.parse
 import urllib.request
+import csv
+import io
 from collections import defaultdict
 from datetime import datetime, timedelta
 from functools import wraps
@@ -182,6 +184,23 @@ class IdAction(BaseModel):
     action: str
     amount: Optional[float] = None
     note: Optional[str] = None
+
+
+class NoteUpdate(BaseModel):
+    note: str = ""
+
+
+class CouponCreate(BaseModel):
+    code: str = Field(min_length=3, max_length=32)
+    bonus_pct: float = Field(default=10.0, ge=0.1, le=100)
+    max_bonus: float = Field(default=10.0, ge=0.1)
+    max_uses: int = Field(default=100, ge=1)
+    valid_from: Optional[str] = None
+    valid_until: Optional[str] = None
+
+
+class CouponRedeem(BaseModel):
+    code: str = Field(min_length=3)
     tx_hash: Optional[str] = None
 
 
@@ -2912,3 +2931,299 @@ def _send_new_request_notification(ntype, user_id, amount, network="", address="
             logger.info(f"Notification sent: {ntype} user={user_id}")
     except Exception as e:
         logger.error(f"Failed to send {ntype} notification: {e}")
+
+
+# ──────────────────────────────────────────────────────────────
+#  NEW ADMIN ENDPOINTS
+# ──────────────────────────────────────────────────────────────
+
+
+@app.get("/api/admin/payout/tracker")
+def admin_payout_tracker(request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        result = {"ok": True, "paused": False}
+        try:
+            from blockchain_monitor import tracker_is_paused
+            result["paused"] = tracker_is_paused()
+        except Exception:
+            result["paused"] = False
+        try:
+            cur.execute(f"SELECT COUNT(*) as cnt FROM wd_post_queue WHERE posted=0")
+            result["queue_pending"] = val(cur.fetchone(), "cnt", 0)
+            cur.execute(f"SELECT COUNT(*) as cnt FROM wd_post_queue WHERE posted=1")
+            result["queue_posted"] = val(cur.fetchone(), "cnt", 0)
+            cur.execute(f"""SELECT COUNT(*) as cnt FROM withdrawal_announcements
+                WHERE posted_at LIKE {ph()}""",
+                (datetime.utcnow().strftime("%Y-%m-%dT") + "%",))
+            result["posts_today"] = val(cur.fetchone(), "cnt", 0)
+            cur.execute(f"""SELECT COUNT(*) as cnt FROM withdrawal_announcements
+                WHERE posted_at LIKE {ph()}""",
+                (datetime.utcnow().strftime("%Y-%m-%dT%H") + "%",))
+            result["posts_this_hour"] = val(cur.fetchone(), "cnt", 0)
+            cur.execute(f"""SELECT wa.tx_hash, wa.posted_at, wq.amount
+                FROM withdrawal_announcements wa
+                LEFT JOIN wd_post_queue wq ON wa.tx_hash=wq.tx_hash
+                ORDER BY wa.id DESC LIMIT 1""")
+            last = cur.fetchone()
+            if last:
+                ld = dict(last) if not isinstance(last, dict) else last
+                result["last_post"] = {
+                    "tx_hash": ld.get("tx_hash", ""),
+                    "amount": float(ld.get("amount", 0) or 0),
+                    "posted_at": ld.get("posted_at", ""),
+                }
+            else:
+                result["last_post"] = None
+            cur.execute(f"SELECT tx_hash, amount, tx_time, created_at FROM wd_post_queue WHERE posted=0 ORDER BY id DESC LIMIT 8")
+            result["recent_queue"] = rows_as_dicts(cur.fetchall())
+            cur.execute(f"SELECT wa.tx_hash, wa.posted_at, wq.amount, wq.tx_time FROM withdrawal_announcements wa LEFT JOIN wd_post_queue wq ON wa.tx_hash=wq.tx_hash ORDER BY wa.id DESC LIMIT 8")
+            result["recent_posts"] = rows_as_dicts(cur.fetchall())
+        except Exception as e:
+            result["error"] = str(e)
+        return result
+    finally:
+        safe_close(conn)
+
+
+@app.post("/api/admin/payout/pause")
+def admin_payout_pause(body: dict, request: Request):
+    require_admin(request)
+    paused = body.get("paused", True)
+    try:
+        from blockchain_monitor import set_tracker_paused
+        set_tracker_paused(bool(paused))
+        return {"ok": True, "paused": bool(paused)}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@app.get("/api/admin/user/{user_id}/note")
+def admin_user_get_note(user_id: int, request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"SELECT note, updated_at FROM user_notes WHERE user_id={ph()}", (user_id,))
+        row = cur.fetchone()
+        if row:
+            d = dict(row) if not isinstance(row, dict) else row
+            return {"ok": True, "note": d.get("note", ""), "updated_at": d.get("updated_at", "")}
+        return {"ok": True, "note": "", "updated_at": ""}
+    finally:
+        safe_close(conn)
+
+
+@app.post("/api/admin/user/{user_id}/note")
+def admin_user_set_note(user_id: int, body: NoteUpdate, request: Request):
+    require_admin(request)
+    now = datetime.utcnow().isoformat()
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(
+            f"""INSERT INTO user_notes (user_id, note, updated_at) VALUES ({ph()},{ph()},{ph()})
+            ON CONFLICT (user_id) DO UPDATE SET note=EXCLUDED.note, updated_at=EXCLUDED.updated_at""",
+            (user_id, body.note, now),
+        )
+        conn.commit()
+        return {"ok": True}
+    finally:
+        safe_close(conn)
+
+
+@app.get("/api/admin/coupons")
+def admin_coupons_list(request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute("SELECT * FROM coupons ORDER BY id DESC")
+        rows = cur.fetchall()
+        return [dict(r) if not isinstance(r, dict) else r for r in rows]
+    finally:
+        safe_close(conn)
+
+
+@app.post("/api/admin/coupons/create")
+def admin_coupons_create(body: CouponCreate, request: Request):
+    require_admin(request)
+    code = body.code.strip().upper()
+    now = datetime.utcnow().isoformat()
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(
+            f"""INSERT INTO coupons (code, bonus_pct, max_bonus, max_uses, used_count, valid_from, valid_until, is_active, created_at)
+            VALUES ({ph()},{ph()},{ph()},{ph()},0,{ph()},{ph()},1,{ph()})""",
+            (code, body.bonus_pct, body.max_bonus, body.max_uses, body.valid_from, body.valid_until, now),
+        )
+        conn.commit()
+        cur.execute(f"SELECT * FROM coupons WHERE code={ph()}", (code,))
+        row = cur.fetchone()
+        return {"ok": True, "coupon": dict(row) if row else None}
+    finally:
+        safe_close(conn)
+
+
+@app.post("/api/admin/coupons/toggle")
+def admin_coupons_toggle(body: IdAction, request: Request):
+    require_admin(request)
+    action = body.action
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        if action == "activate":
+            cur.execute(f"UPDATE coupons SET is_active=1 WHERE id={ph()}", (body.id,))
+        elif action == "deactivate":
+            cur.execute(f"UPDATE coupons SET is_active=0 WHERE id={ph()}", (body.id,))
+        elif action == "delete":
+            cur.execute(f"DELETE FROM coupon_uses WHERE coupon_id={ph()}", (body.id,))
+            cur.execute(f"DELETE FROM coupons WHERE id={ph()}", (body.id,))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        safe_close(conn)
+
+
+@app.post("/api/admin/coupon/redeem/{user_id}")
+def admin_coupon_redeem(user_id: int, body: CouponRedeem, request: Request):
+    code = body.code.strip().upper()
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"SELECT * FROM coupons WHERE code={ph()}", (code,))
+        coupon = cur.fetchone()
+        if not coupon:
+            return {"ok": False, "error": "Invalid coupon code"}
+        c = dict(coupon) if not isinstance(coupon, dict) else coupon
+        if not c.get("is_active"):
+            return {"ok": False, "error": "This coupon is no longer active"}
+        now_iso = datetime.utcnow().isoformat()
+        if c.get("valid_from") and now_iso < c["valid_from"]:
+            return {"ok": False, "error": "This coupon is not yet valid"}
+        if c.get("valid_until") and now_iso > c["valid_until"]:
+            return {"ok": False, "error": "This coupon has expired"}
+        if c.get("used_count", 0) >= c.get("max_uses", 999999):
+            return {"ok": False, "error": "This coupon has reached its maximum uses"}
+        cur.execute(f"SELECT id FROM coupon_uses WHERE coupon_id={ph()} AND user_id={ph()}", (c["id"], user_id))
+        if cur.fetchone():
+            return {"ok": False, "error": "You have already used this coupon"}
+        bonus = round(min(1.0 * c["bonus_pct"], float(c["max_bonus"])), 2)
+        cur.execute(
+            f"""INSERT INTO coupon_uses (coupon_id, user_id, created_at) VALUES ({ph()},{ph()},{ph()})""",
+            (c["id"], user_id, now_iso),
+        )
+        cur.execute(
+            f"UPDATE coupons SET used_count=used_count+1 WHERE id={ph()}", (c["id"],)
+        )
+        cur.execute(
+            f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()} WHERE user_id={ph()}",
+            (bonus, user_id),
+        )
+        conn.commit()
+        return {"ok": True, "bonus": bonus, "code": code, "message": f"Coupon applied! +${bonus} USDT credited to your withdrawable balance"}
+    finally:
+        safe_close(conn)
+
+
+@app.post("/api/admin/initiate/deposit")
+def admin_initiate_deposit(body: dict, request: Request):
+    require_admin(request)
+    user_id = body.get("user_id")
+    amount = float(body.get("amount", 0))
+    network = body.get("network", "TRC20")
+    if not user_id or amount <= 0:
+        return {"ok": False, "error": "Invalid user_id or amount"}
+    if network not in DEPOSIT_ADDR:
+        network = "TRC20"
+    ensure_user(user_id)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        inv = invoice_id()
+        now = datetime.utcnow()
+        exp = now + timedelta(minutes=60)
+        cur.execute(
+            f"INSERT INTO deposits (user_id,amount,network,status,created_at,expires_at,invoice_id,expected_amount) VALUES ({ph()},{ph()},{ph()},'awaiting_payment',{ph()},{ph()},{ph()},{ph()})",
+            (user_id, amount, network, now.isoformat(), exp.isoformat(), inv, amount),
+        )
+        conn.commit()
+        addr = DEPOSIT_ADDR.get(network, DEPOSIT_ADDR["TRC20"])
+        return {"ok": True, "invoice_id": inv, "address": addr, "amount": amount, "network": network, "expires_at": exp.isoformat()}
+    finally:
+        safe_close(conn)
+
+
+@app.post("/api/admin/initiate/withdraw")
+def admin_initiate_withdraw(body: dict, request: Request):
+    require_admin(request)
+    user_id = body.get("user_id")
+    amount = float(body.get("amount", 0))
+    address = body.get("address", "").strip()
+    network = body.get("network", "TRC20")
+    if not user_id or amount <= 0 or not address:
+        return {"ok": False, "error": "Invalid user_id, amount, or address"}
+    ensure_user(user_id)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"SELECT withdrawable FROM users WHERE user_id={ph()}", (user_id,))
+        row = cur.fetchone()
+        if not row:
+            return {"ok": False, "error": "User not found"}
+        wd = float(val(row, "withdrawable", 0) or 0)
+        if wd < amount:
+            return {"ok": False, "error": f"Withdrawable balance ${wd:.2f} is less than ${amount:.2f}"}
+        cur.execute(f"UPDATE users SET withdrawable=withdrawable-{ph()} WHERE user_id={ph()}", (amount, user_id))
+        cur.execute(
+            f"INSERT INTO withdrawals (user_id,amount,address,network,status,created_at,admin_note) VALUES ({ph()},{ph()},{ph()},{ph()},'pending',{ph()},'Admin initiated')",
+            (user_id, amount, address, network, datetime.utcnow().isoformat()),
+        )
+        conn.commit()
+        try:
+            _send_new_request_notification("withdrawal", user_id, amount, network, address)
+        except Exception:
+            pass
+        return {"ok": True, "message": f"Withdrawal ${amount:.2f} created (deducted ${amount:.2f} from withdrawable)"}
+    finally:
+        safe_close(conn)
+
+
+@app.get("/api/admin/export")
+def admin_export(request: Request, type: str = "users"):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        if type == "users":
+            w.writerow(["user_id", "username", "balance", "withdrawable", "total_deposit", "total_withdraw", "daily_percent", "is_banned", "created_at", "last_login_date", "login_streak", "tasks_completed", "referred_by", "referral_earnings"])
+            cur.execute("SELECT * FROM users ORDER BY user_id DESC")
+            for r in cur.fetchall():
+                r = dict(r) if not isinstance(r, dict) else r
+                cur2 = cursor(conn)
+                cur2.execute(f"SELECT COUNT(*) as cnt FROM user_tasks WHERE user_id={ph()} AND reward_claimed=1", (r["user_id"],))
+                tc = val(cur2.fetchone(), "cnt", 0) or 0
+                w.writerow([r.get("user_id"), r.get("username",""), r.get("balance",0), r.get("withdrawable",0), r.get("total_deposit",0), r.get("total_withdraw",0), r.get("daily_percent",0), r.get("is_banned",0), r.get("created_at",""), r.get("last_login_date",""), r.get("login_streak",0), tc, r.get("referred_by",""), r.get("referral_earnings",0)])
+        elif type == "deposits":
+            w.writerow(["id", "user_id", "amount", "network", "status", "tx_hash", "invoice_id", "created_at", "verified_at"])
+            cur.execute("SELECT * FROM deposits ORDER BY id DESC")
+            for r in cur.fetchall():
+                r = dict(r) if not isinstance(r, dict) else r
+                w.writerow([r.get("id"), r.get("user_id"), r.get("amount"), r.get("network"), r.get("status"), r.get("tx_hash",""), r.get("invoice_id",""), r.get("created_at",""), r.get("verified_at","")])
+        elif type == "withdrawals":
+            w.writerow(["id", "user_id", "amount", "address", "network", "status", "tx_hash", "created_at", "admin_note"])
+            cur.execute("SELECT * FROM withdrawals ORDER BY id DESC")
+            for r in cur.fetchall():
+                r = dict(r) if not isinstance(r, dict) else r
+                w.writerow([r.get("id"), r.get("user_id"), r.get("amount"), r.get("address",""), r.get("network"), r.get("status"), r.get("tx_hash",""), r.get("created_at",""), r.get("admin_note","")])
+        else:
+            return {"ok": False, "error": "Invalid export type"}
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(content=buf.getvalue(), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename={type}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"})
+    finally:
+        safe_close(conn)

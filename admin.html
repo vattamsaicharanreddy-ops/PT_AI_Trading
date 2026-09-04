@@ -88,6 +88,8 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.45)!impor
 <button onclick="showTab('tasks')" data-tab="tasks" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px] flex justify-between" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Tasks & Rewards</span></button>
 <button onclick="showTab('groups')" data-tab="groups" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px]" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Groups Manager</span></button>
 <button onclick="showTab('referrals')" data-tab="referrals" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px]" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>Referrals</span></button>
+<button onclick="showTab('payout')" data-tab="payout" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px]" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/></svg>Payout Tracker</span></button>
+<button onclick="showTab('coupons')" data-tab="coupons" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px]" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 12l-8-8H4v8l8 8 8-8z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>Coupon Codes</span></button>
 <div class="my-1.5 mx-3 border-t" style="border-color:var(--border2)"></div>
 <button onclick="showTab('extreme')" data-tab="extreme" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px] font-bold" style="color:#f87171;background:rgba(239,68,68,0.06)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Extreme Tools</span></button>
 <button onclick="showTab('broadcast')" data-tab="broadcast" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px]" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>Broadcast</span></button>
@@ -227,6 +229,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.45)!impor
 <button onclick="userDetailTab('deposits')" data-udtab="deposits" class="ud-tab px-4 py-2 rounded-full text-[11px] font-bold" style="background:var(--hover)">Deposits</button>
 <button onclick="userDetailTab('withdrawals')" data-udtab="withdrawals" class="ud-tab px-4 py-2 rounded-full text-[11px] font-bold" style="background:var(--hover)">Withdrawals</button>
 <button onclick="userDetailTab('audit')" data-udtab="audit" class="ud-tab px-4 py-2 rounded-full text-[11px] font-bold" style="background:var(--hover)">Audit Log</button>
+<button onclick="userDetailTab('notes')" data-udtab="notes" class="ud-tab px-4 py-2 rounded-full text-[11px] font-bold" style="background:var(--hover)">Notes</button>
 </div>
 
 <div id="ud-tasks" class="card p-5"><h3 class="font-bold text-sm mb-3">Tasks Progress</h3><div class="overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">Task</th><th class="text-left p-2.5">Reward</th><th class="text-left p-2.5">Type</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Claimed</th></tr></thead><tbody id="ud_tasks_list"></tbody></table></div></div>
@@ -241,8 +244,20 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.45)!impor
 
 <div id="ud-audit" class="hidden card p-5"><h3 class="font-bold text-sm mb-3">Activity Audit Log</h3><p class="text-[10px] mb-3" style="color:var(--text2)">All balance changes, games, deposits, withdrawals, and admin actions for this user.</p><div class="overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">Type</th><th class="text-left p-2.5">Action</th><th class="text-left p-2.5">Details</th><th class="text-left p-2.5">Time</th></tr></thead><tbody id="ud_audit_list"></tbody></table></div></div>
 
+<div id="ud-notes" class="hidden card p-5">
+<h3 class="font-bold text-sm mb-1">Private Notes</h3>
+<p class="text-[10px] mb-3" style="color:var(--text2)">Only seen by admins. Useful for tracking VIPs, warnings, or deal details.</p>
+<textarea id="ud_note_input" placeholder="Write a note about this user..." class="w-full h-28 rounded-xl p-3 text-[12px] border outline-none" style="background:var(--input);border-color:var(--border)"></textarea>
+<p id="ud_note_updated" class="text-[9px] mt-1" style="color:var(--text3)"></p>
+<div class="mt-2 flex gap-2">
+<button onclick="saveUserNote()" class="btn-gold px-5 py-2.5 rounded-full text-[11px] font-black">Save Note</button>
+</div>
+</div>
+
 <div class="card p-5"><h3 class="font-bold text-sm mb-3">Quick Actions</h3>
 <div class="flex flex-wrap gap-2">
+<button onclick="initiateDeposit()" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.25)">🧾 Create Invoice</button>
+<button onclick="initiateWithdraw()" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(249,115,22,0.15);color:#f97316;border:1px solid rgba(249,115,22,0.25)">💸 Initiate Withdrawal</button>
 <button onclick="sendNudge(currentDetailUserId,'deposit',0)" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">✉️ Deposit Nudge</button>
 <button onclick="sendNudge(currentDetailUserId,'reinvest',0)" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">✉️ Top-up Nudge</button>
 <button onclick="sendNudge(currentDetailUserId,'returning',0)" class="px-4 py-2 rounded-full text-[11px] font-bold" style="background:rgba(96,165,250,0.15);color:#60a5fa">✉️ Come-back Nudge</button>
@@ -413,6 +428,74 @@ Upload Image
 <textarea id="broadcastMsgUsers" placeholder="Message to target users..." class="mt-4 w-full h-32 rounded-2xl p-4 text-sm border outline-none" style="background:var(--input);border-color:var(--border)"></textarea>
 <button onclick="sendBroadcast()" class="mt-3 btn-gold px-6 py-3 rounded-full text-sm">Send to Target</button>
 <span id="broadcastStatus" class="text-[11px] ml-2" style="color:var(--text3)"></span>
+</div>
+</section>
+
+<section id="sec-payout" class="hidden space-y-5 fade-in">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+<div class="card stat-tile p-4" style="--tile-glow:rgba(108,59,255,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#7C4DFF">Queue Pending</p><p id="pt_queue_pending" class="text-[26px] font-black mt-1" style="color:#7C4DFF">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">awaiting post</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(16,185,129,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Posts Today</p><p id="pt_posts_today" class="text-[26px] font-black mt-1" style="color:#10b981">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)"><span id="pt_posts_hour">0</span> this hour</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(255,214,10,0.42)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Last Post</p><p id="pt_last_amt" class="text-[26px] font-black mt-1" style="color:#FFD60A">$0</p><p id="pt_last_time" class="text-[10px] mt-0.5" style="color:var(--text2)">-</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(96,165,250,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#60a5fa">Poster Status</p><p id="pt_status" class="text-[26px] font-black mt-1" style="color:#10b981">RUNNING</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">paused = holding posts</p></div>
+</div>
+<div class="card p-5">
+<div class="flex flex-wrap gap-3 items-center justify-between">
+<div class="flex items-center gap-3">
+<div id="ptStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+<h3 class="font-black text-sm">BSC Payout Tracker</h3>
+<span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(108,59,255,0.15);color:#7C4DFF">WD_POST_PER_HOUR ≤5</span>
+</div>
+<div class="flex gap-2">
+<button onclick="loadPayoutTracker()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh</button>
+<button onclick="togglePayoutPause()" id="ptToggleBtn" class="btn-gold px-5 py-2 rounded-full text-[11px] font-black">Pause Poster</button>
+</div>
+</div>
+<p class="text-[11px] mt-3 leading-relaxed" style="color:var(--text2)">The tracker watches a live BSC wallet, scans fresh USDT send txs (last ~90s), and posts realistic payouts (amounts $10–$1000, biased to $10–$100) into the group with on-chain timestamps. Use <b>Pause</b> to hold all posts (new txs still ignored), then <b>Resume</b> to continue.</p>
+<div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+<div class="rounded-2xl p-4" style="background:var(--border2);border:1px solid var(--border2)">
+<p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">QUEUE PREVIEW (newest fresh txs)</p>
+<div id="ptQueueList" class="mt-2 space-y-1.5 text-[11px] max-h-64 overflow-y-auto">
+<p style="color:var(--text3)">Loading...</p>
+</div>
+</div>
+<div class="rounded-2xl p-4" style="background:var(--border2);border:1px solid var(--border2)">
+<p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">RECENT POSTED PAYOUTS</p>
+<div id="ptPostedList" class="mt-2 space-y-1.5 text-[11px] max-h-64 overflow-y-auto">
+<p style="color:var(--text3)">Loading...</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="sec-coupons" class="hidden space-y-5 fade-in">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+<div class="card p-5">
+<h3 class="font-black text-sm">Create Promo Coupon</h3>
+<p class="text-[11px] mt-1" style="color:var(--text2)">Share the code to attract users. Redeemed bonus credits instantly to the user's withdrawable balance (one use per user).</p>
+<div class="mt-4 space-y-2.5">
+<input id="cp_code" placeholder="CODE (e.g. VIP10)" class="w-full rounded-xl p-3 text-[11px] mono border outline-none uppercase" style="background:var(--input);border-color:var(--border)">
+<div class="grid grid-cols-2 gap-2">
+<input id="cp_pct" type="number" value="10" step="0.5" class="rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+<input id="cp_max" type="number" value="10" step="0.5" class="rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+</div>
+<div class="grid grid-cols-2 gap-2">
+<input id="cp_uses" type="number" value="100" class="rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+<input id="cp_until" type="date" class="rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+</div>
+<p class="text-[9px] px-1" style="color:var(--text3)">Bonus % · Max bonus $ · Max uses · Valid until (empty = never expires)</p>
+<button onclick="createCoupon()" class="w-full btn-gold py-3 rounded-full text-sm mt-1">Create Coupon</button>
+</div>
+</div>
+<div class="lg:col-span-2 card p-5">
+<div class="flex justify-between items-center mb-3">
+<h3 class="font-black text-sm">Active Coupons</h3>
+<button onclick="loadCoupons()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh</button>
+</div>
+<div class="overflow-x-auto"><table class="w-full text-[11px]">
+<thead><tr><th class="text-left p-2.5">Code</th><th class="text-left p-2.5">Bonus</th><th class="text-left p-2.5">Uses</th><th class="text-left p-2.5">Valid Until</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Created</th><th class="text-left p-2.5">Actions</th></tr></thead>
+<tbody id="couponsList"></tbody></table></div>
+</div>
 </div>
 </section>
 
@@ -614,6 +697,8 @@ let title=tab==='user-detail'?'User Profile':btn?btn.innerText.replace('NEW','')
 document.getElementById('pageTitle').innerText=title;
 if(['deposits','users','dashboard','withdrawals','referrals','tasks'].includes(tab)) loadAll();
 if(tab==='broadcast') loadBroadcastTab();
+if(tab==='payout') loadPayoutTracker();
+if(tab==='coupons') loadCoupons();
 if(tab==='settings') loadEnvStatus();
 }
 
@@ -881,7 +966,7 @@ async function userDetailTab(tab){
 document.querySelectorAll('.ud-tab').forEach(b=>{b.style.background='var(--hover)';b.style.color='var(--text2)';});
 let btn=document.querySelector(`[data-udtab="${tab}"]`);
 if(btn){btn.style.background='var(--text)';btn.style.color='var(--bg)';}
-['ud-tasks','ud-games','ud-refs','ud-deposits','ud-withdrawals','ud-audit'].forEach(id=>{document.getElementById(id).classList.add('hidden');});
+['ud-tasks','ud-games','ud-refs','ud-deposits','ud-withdrawals','ud-audit','ud-notes'].forEach(id=>{document.getElementById(id).classList.add('hidden');});
 document.getElementById('ud-'+tab).classList.remove('hidden');
 if(tab==='tasks') await loadUserDetailTasks();
 if(tab==='games') await loadUserDetailGames();
@@ -889,6 +974,7 @@ if(tab==='refs') await loadUserDetailRefs();
 if(tab==='deposits') await loadUserDetailDeps();
 if(tab==='withdrawals') await loadUserDetailWds();
 if(tab==='audit') await loadUserAudit(currentDetailUserId);
+if(tab==='notes') await loadUserNote();
 }
 
 async function loadUserDetailTasks(){
@@ -1424,11 +1510,19 @@ await fetch('/api/admin/tasks/create',{method:'POST',headers:{'Content-Type':'ap
 alert('Default tasks created! Edit Group IDs to real IDs where bot is admin.');loadAll();
 }
 
-function exportData(){
-let csv="user_id,username,balance,withdrawable,total_deposit,total_withdraw,is_banned\n"+allUsers.map(u=>`${u.user_id},${u.username||''},${u.balance},${u.withdrawable},${u.total_deposit},${u.total_withdraw},${u.is_banned}`).join("\n");
-let blob=new Blob([csv],{type:'text/csv'});
+async function exportData(){
+let type=prompt('Export which data?\n1) users\n2) deposits\n3) withdrawals','users');
+type=(type||'users').toLowerCase();
+if(!['users','deposits','withdrawals'].includes(type))type='users';
+try{
+let r=await fetch('/api/admin/export?type='+type,{headers:apiHeaders(),cache:'no-store'});
+if(!r.ok){toast('Export failed HTTP '+r.status,'error');return;}
+let blob=await r.blob();
 let url=URL.createObjectURL(blob);
-let a=document.createElement('a');a.href=url;a.download='users_'+Date.now()+'.csv';a.click();
+let a=document.createElement('a');a.href=url;a.download='pt_ai_'+type+'_'+Date.now()+'.csv';a.click();
+URL.revokeObjectURL(url);
+toast('Exported '+type+' CSV','success');
+}catch(e){toast('Export error','error');console.error(e);}
 }
 
 function bulkActionPrompt(){
@@ -1607,6 +1701,124 @@ let c=typeColors[l.type]||'var(--text2)';
 return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5"><span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:${c}22;color:${c}">${l.type}</span></td><td class="p-2.5 text-[11px]">${l.action}</td><td class="p-2.5 text-[10px]" style="color:var(--text2)">${l.details||''}</td><td class="p-2.5 text-[9px] mono" style="color:var(--text3)">${(l.time||'').slice(0,16)}</td></tr>`;
 }).join('')||`<tr><td colspan="4" class="p-6 text-center" style="color:var(--text3)">No activity logged</td></tr>`;
 }catch(e){el.innerHTML=`<tr><td colspan="4" class="p-6 text-center" style="color:var(--text3)">Failed to load</td></tr>`;}
+}
+
+let payoutPaused=false;
+async function loadPayoutTracker(){
+try{
+let t=await fetchJson('/api/admin/payout/tracker');
+payoutPaused=!!t.paused;
+document.getElementById('pt_queue_pending').innerText=t.queue_pending||0;
+document.getElementById('pt_posts_today').innerText=t.posts_today||0;
+document.getElementById('pt_posts_hour').innerText=t.posts_this_hour||0;
+let lp=t.last_post;
+document.getElementById('pt_last_amt').innerText=lp?'$'+Number(lp.amount).toFixed(2):'$0';
+document.getElementById('pt_last_time').innerText=lp?(lp.posted_at||'').slice(0,16):'-';
+let st=document.getElementById('pt_status');
+st.innerText=payoutPaused?'PAUSED':'RUNNING';
+st.style.color=payoutPaused?'#ef4444':'#10b981';
+document.getElementById('ptStatusDot').style.background=payoutPaused?'#ef4444':'#34d399';
+let btn=document.getElementById('ptToggleBtn');
+btn.innerText=payoutPaused?'Resume Poster':'Pause Poster';
+btn.className=payoutPaused?'px-5 py-2 rounded-full text-[11px] font-black':'btn-gold px-5 py-2 rounded-full text-[11px] font-black';
+btn.style.background=payoutPaused?'rgba(16,185,129,0.15)':'';btn.style.color=payoutPaused?'#10b981':'';
+document.getElementById('ptQueueList').innerHTML=(t.recent_queue||[]).map(r=>`<div class="flex justify-between items-center px-2 py-1.5 rounded-lg" style="background:var(--bg)"><span class="mono text-[10px]" style="color:var(--text2)">${(r.tx_hash||'').slice(0,12)}…</span><span class="font-black" style="color:#7C4DFF">$${Number(r.amount).toFixed(2)}</span><span class="text-[9px]" style="color:var(--text3)">${(r.tx_time||'').slice(0,16)}</span></div>`).join('')||'<p style="color:var(--text3)">Queue empty</p>';
+document.getElementById('ptPostedList').innerHTML=(t.recent_posts||[]).map(r=>`<div class="flex justify-between items-center px-2 py-1.5 rounded-lg" style="background:var(--bg)"><span class="mono text-[10px]" style="color:var(--text2)">${(r.tx_hash||'').slice(0,12)}…</span><span class="font-black" style="color:#10b981">$${Number(r.amount||0).toFixed(2)}</span><span class="text-[9px]" style="color:var(--text3)">${(r.posted_at||'').slice(0,16)}</span></div>`).join('')||'<p style="color:var(--text3)">No payouts posted yet</p>';
+}catch(e){toast('Failed to load payout tracker','error');}
+}
+async function togglePayoutPause(){
+try{
+let res=await fetch('/api/admin/payout/pause',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({paused:!payoutPaused})});
+let j=await res.json();
+toast((j.paused?'Payout poster paused':'Payout poster resumed'),j.ok?'success':'error');
+loadPayoutTracker();
+}catch(e){toast('Request failed','error');}
+}
+
+async function loadCoupons(){
+try{
+let rows=await fetchJson('/api/admin/coupons');
+document.getElementById('couponsList').innerHTML=rows.map(c=>{
+let active=!!c.is_active;
+let until=c.valid_until?(c.valid_until.slice(0,10)):'∞';
+return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 mono font-black" style="color:#FFD60A">${c.code}</td><td class="p-2.5">$${Number(c.bonus_pct).toFixed(2)} <span class="text-[9px]" style="color:var(--text3)">(${Number(c.max_bonus).toFixed(2)} max)</span></td><td class="p-2.5">${c.used_count||0}/${c.max_uses}</td><td class="p-2.5 text-[10px]" style="color:var(--text3)">${until}</td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="color:${active?'#10b981':'#ef4444'};background:${active?'rgba(16,185,129,0.12)':'rgba(239,68,68,0.12)'}">${active?'ACTIVE':'OFF'}</span></td><td class="p-2.5 text-[9px] mono" style="color:var(--text3)">${(c.created_at||'').slice(0,10)}</td><td class="p-2.5"><div class="flex gap-1.5"><button onclick="couponAction(${c.id},'activate')" class="px-2 py-1 rounded-lg text-[9px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">ON</button><button onclick="couponAction(${c.id},'deactivate')" class="px-2 py-1 rounded-lg text-[9px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">OFF</button><button onclick="couponAction(${c.id},'delete')" class="px-2 py-1 rounded-lg text-[9px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">DEL</button></div></td></tr>`;
+}).join('')||`<tr><td colspan="7" class="p-6 text-center" style="color:var(--text3)">No coupons yet — create your first promo above</td></tr>`;
+}catch(e){toast('Failed to load coupons','error');}
+}
+async function createCoupon(){
+let code=document.getElementById('cp_code').value.trim();
+if(!code){toast('Enter a coupon code','error');return;}
+let payload={
+code,
+bonus_pct:parseFloat(document.getElementById('cp_pct').value||0),
+max_bonus:parseFloat(document.getElementById('cp_max').value||0),
+max_uses:parseInt(document.getElementById('cp_uses').value||100),
+valid_from:new Date().toISOString(),
+valid_until:null
+};
+let until=document.getElementById('cp_until').value;
+if(until)payload.valid_until=new Date(until+'T23:59:59').toISOString();
+try{
+let res=await fetch('/api/admin/coupons/create',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify(payload)});
+let j=await res.json();
+if(j.ok){toast('Coupon '+code+' created!','success');document.getElementById('cp_code').value='';loadCoupons();}
+else{toast(j.error||'Failed','error');}
+}catch(e){toast('Request failed','error');}
+}
+async function couponAction(id,action){
+if(action==='delete'&&!confirm('Delete coupon permanently?'))return;
+try{
+let res=await fetch('/api/admin/coupons/toggle',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id,action})});
+let j=await res.json();
+toast(j.ok?'Coupon updated':'Failed',j.ok?'success':'error');
+loadCoupons();
+}catch(e){toast('Request failed','error');}
+}
+
+async function loadUserNote(){
+if(!currentDetailUserId)return;
+try{
+let r=await fetchJson('/api/admin/user/'+currentDetailUserId+'/note');
+document.getElementById('ud_note_input').value=r.note||'';
+document.getElementById('ud_note_updated').innerText=r.updated_at?'Last updated '+r.updated_at.slice(0,16):'No note saved yet';
+}catch(e){}
+}
+async function saveUserNote(){
+if(!currentDetailUserId)return;
+let note=document.getElementById('ud_note_input').value||'';
+try{
+let res=await fetch('/api/admin/user/'+currentDetailUserId+'/note',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({note})});
+let j=await res.json();
+toast(j.ok?'Note saved':'Failed',j.ok?'success':'error');
+if(j.ok)loadUserNote();
+}catch(e){toast('Request failed','error');}
+}
+
+async function initiateDeposit(){
+let amount=parseFloat(prompt('Invoice amount (USDT):','50'));
+if(!amount||amount<=0)return;
+let network=prompt('Network (TRC20 default, or BEP20):','TRC20')||'TRC20';
+try{
+let res=await fetch('/api/admin/initiate/deposit',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({user_id:currentDetailUserId,amount,network})});
+let j=await res.json();
+if(j.ok){
+alert(`Invoice created!\n\nInvoice #: ${j.invoice_id}\nAmount: $${j.amount.toFixed(2)} ${j.network}\nAddress: ${j.address}\nExpires: ${j.expires_at.slice(0,16)}`);
+toast('Invoice created','success');openUserDetail(currentDetailUserId);
+}else{toast(j.error||'Failed','error');}
+}catch(e){toast('Request failed','error');}
+}
+async function initiateWithdraw(){
+let amount=parseFloat(prompt('Withdrawal amount (USDT):',''));
+if(!amount||amount<=0)return;
+let address=prompt('Destination address:','');
+if(!address)return;
+let network=prompt('Network (BEP20 / TRC20):','BEP20')||'BEP20';
+try{
+let res=await fetch('/api/admin/initiate/withdraw',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({user_id:currentDetailUserId,amount,address,network})});
+let j=await res.json();
+if(j.ok){toast(j.message||'Withdrawal created','success');openUserDetail(currentDetailUserId);}
+else{toast(j.error||'Failed','error');}
+}catch(e){toast('Request failed','error');}
 }
 
 function toggleSidebar(){

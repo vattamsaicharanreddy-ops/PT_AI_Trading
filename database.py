@@ -254,6 +254,33 @@ def init_db():
             except Exception:
                 pass
 
+            cur.execute("""CREATE TABLE IF NOT EXISTS user_notes (
+                user_id BIGINT PRIMARY KEY,
+                note TEXT DEFAULT '',
+                updated_at TEXT
+            )""")
+
+            cur.execute("""CREATE TABLE IF NOT EXISTS coupons (
+                id SERIAL PRIMARY KEY,
+                code TEXT UNIQUE NOT NULL,
+                bonus_pct DOUBLE PRECISION DEFAULT 10.0,
+                max_bonus DOUBLE PRECISION DEFAULT 10.0,
+                max_uses INTEGER DEFAULT 100,
+                used_count INTEGER DEFAULT 0,
+                valid_from TEXT,
+                valid_until TEXT,
+                is_active INTEGER DEFAULT 1,
+                created_at TEXT
+            )""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS coupon_uses (
+                id SERIAL PRIMARY KEY,
+                coupon_id INTEGER NOT NULL,
+                user_id BIGINT NOT NULL,
+                created_at TEXT,
+                UNIQUE(coupon_id, user_id)
+            )""")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code)")
+
             conn.commit()
             cur.close()
         else:
@@ -321,6 +348,31 @@ def init_db():
                 photo_url TEXT DEFAULT '',
                 created_at TEXT
             )""")
+            conn.execute("""CREATE TABLE IF NOT EXISTS user_notes (
+                user_id INTEGER PRIMARY KEY,
+                note TEXT DEFAULT '',
+                updated_at TEXT
+            )""")
+            conn.execute("""CREATE TABLE IF NOT EXISTS coupons (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT UNIQUE NOT NULL,
+                bonus_pct REAL DEFAULT 10.0,
+                max_bonus REAL DEFAULT 10.0,
+                max_uses INTEGER DEFAULT 100,
+                used_count INTEGER DEFAULT 0,
+                valid_from TEXT,
+                valid_until TEXT,
+                is_active INTEGER DEFAULT 1,
+                created_at TEXT
+            )""")
+            conn.execute("""CREATE TABLE IF NOT EXISTS coupon_uses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                coupon_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                created_at TEXT,
+                UNIQUE(coupon_id, user_id)
+            )""")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code)")
 
             for stmt in [
                 "CREATE INDEX IF NOT EXISTS idx_deposits_status ON deposits(status)",

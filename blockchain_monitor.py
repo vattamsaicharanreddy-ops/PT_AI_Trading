@@ -369,6 +369,9 @@ def withdrawal_announce_loop():
     first_run = True
     while True:
         try:
+            if tracker_is_paused():
+                time.sleep(20)
+                continue
             # scan for new outgoing payouts and enqueue them
             try:
                 scan_and_announce_withdrawals()
@@ -466,4 +469,16 @@ def _post_from_queue_if_allowed(max_per_hour, min_gap, max_gap, post_keeper, for
 
 
 wd_announce_thread = threading.Thread(target=withdrawal_announce_loop, daemon=True)
+TRACKER_PAUSED = [False]
+
+
+def set_tracker_paused(paused: bool):
+    TRACKER_PAUSED[0] = paused
+    logger.info(f"Payout tracker paused={paused}")
+
+
+def tracker_is_paused():
+    return TRACKER_PAUSED[0]
+
+
 wd_announce_thread.start()
