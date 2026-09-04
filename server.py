@@ -62,6 +62,7 @@ def _seed_referral_tasks():
             cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_config TEXT DEFAULT ''")
             cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_nudge_at TEXT DEFAULT ''")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_added_balance DOUBLE PRECISION DEFAULT 0")
             conn.commit()
         except Exception:
             pass
@@ -384,26 +385,26 @@ def get_tier(balance):
     return len(TIERS) - 1, 0, 0
 
 
-def _reconcile_total_deposits():
+def _repair_total_deposits():
     conn = get_conn()
     try:
         cur = cursor(conn)
         cur.execute(
-            "UPDATE users SET total_deposit = GREATEST(COALESCE(total_deposit,0), COALESCE(balance,0)) "
-            "WHERE COALESCE(balance,0) > COALESCE(total_deposit,0)"
+            "UPDATE users SET total_deposit = COALESCE((SELECT COALESCE(SUM(COALESCE(actual_amount, amount)),0) "
+            "FROM deposits WHERE deposits.user_id = users.user_id AND status='verified'),0) + COALESCE(admin_added_balance,0)"
         )
         updated = cur.rowcount if hasattr(cur, "rowcount") else "?"
         conn.commit()
-        logger.info(f"Reconciled total_deposit >= balance for {updated} users")
+        logger.info(f"Repaired total_deposit = real verified deposits + admin credits for {updated} users")
     except Exception as e:
-        logger.error(f"Total deposit reconcile error: {e}")
+        logger.error(f"Total deposit repair error: {e}")
     finally:
         safe_close(conn)
 
 
 _seed_referral_tasks()
 _seed_join_tasks()
-_reconcile_total_deposits()
+_repair_total_deposits()
 
 
 def invoice_id():
@@ -1958,11 +1959,11 @@ def admin_user_action(action: AdminAction, request: Request):
             return {"ok": False, "error": "User not found"}
         amt = float(action.amount or 0)
         if act == "add_balance":
-            cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()}, total_deposit=COALESCE(total_deposit,0)+{ph()} WHERE user_id={ph()}", (amt, amt, action.user_id))
+            cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()}, total_deposit=COALESCE(total_deposit,0)+{ph()}, admin_added_balance=COALESCE(admin_added_balance,0)+{ph()} WHERE user_id={ph()}", (amt, amt, amt, action.user_id))
         elif act == "deduct_balance":
             cur.execute(f"UPDATE users SET balance=GREATEST(0,COALESCE(balance,0)-{ph()}) WHERE user_id={ph()}", (amt, action.user_id))
         elif act == "set_balance":
-            cur.execute(f"UPDATE users SET balance={ph()}, total_deposit=COALESCE(total_deposit,0)+GREATEST(0,{ph()}-COALESCE(balance,0)) WHERE user_id={ph()}", (amt, amt, action.user_id))
+            cur.execute(f"UPDATE users SET balance={ph()}, total_deposit=COALESCE(total_deposit,0)+GREATEST(0,{ph()}-COALESCE(balance,0)), admin_added_balance=COALESCE(admin_added_balance,0)+GREATEST(0,{ph()}-COALESCE(balance,0)) WHERE user_id={ph()}", (amt, amt, amt, action.user_id))
         elif act == "add_withdrawable":
             cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()} WHERE user_id={ph()}", (amt, action.user_id))
         elif act == "deduct_withdrawable":
@@ -2028,7 +2029,7 @@ async def admin_bulk_action(request: Request):
         for uid in user_ids:
             try:
                 if action == "add_balance":
-                    cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()}, total_deposit=COALESCE(total_deposit,0)+{ph()} WHERE user_id={ph()}", (amount, amount, uid))
+                    cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()}, total_deposit=COALESCE(total_deposit,0)+{ph()}, admin_added_balance=COALESCE(admin_added_balance,0)+{ph()} WHERE user_id={ph()}", (amount, amount, amount, uid))
                 elif action == "add_withdrawable":
                     cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()} WHERE user_id={ph()}", (amount, uid))
                 elif action == "ban":
@@ -2712,6 +2713,7 @@ def debug_seed_referrals():
         cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_config TEXT DEFAULT ''")
         cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_nudge_at TEXT DEFAULT ''")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_added_balance DOUBLE PRECISION DEFAULT 0")
         conn.commit()
     except Exception as e:
         errors.append(f"migrate: {e}")
