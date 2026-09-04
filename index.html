@@ -112,6 +112,54 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 </div>
 </div>
 </div>
+<div id='rulesModal' class='hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[200] p-4'>
+<div class='rounded-3xl p-5 w-full max-w-[380px] max-h-[86vh] overflow-y-auto' style='background:var(--surface);border:1px solid var(--border)'>
+<div class='flex items-start justify-between'>
+<div class='flex items-center gap-2'>
+<div class='w-9 h-9 rounded-xl flex items-center justify-center text-lg' style='background:linear-gradient(135deg,#FFD60A22,#6C3BFF22);border:1px solid rgba(255,214,10,0.2)'>📜</div>
+<h2 class='font-black text-base'>About &amp; Rules</h2>
+</div>
+<button onclick='closeRules()' class='w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold' style='background:var(--border);color:var(--text3)'>✕</button>
+</div>
+
+<div class='mt-4 rounded-2xl p-4' style='background:linear-gradient(135deg,rgba(108,59,255,0.12),var(--surface));border:1px solid rgba(108,59,255,0.2)'>
+<h3 class='font-bold text-sm' style='color:#A5A6F6'>🏦 About PT_AI Trading</h3>
+<p class='text-[11px] mt-2 leading-relaxed' style='color:var(--text2)'>PT_AI Trading is an AI-powered crypto trading platform running automated strategies around the clock. Deposits power the AI engine, and every successful withdrawal is sent as a real on-chain payout — you can verify each one on BSCScan.</p>
+<div class='mt-3 grid grid-cols-3 gap-2 text-center'>
+<div class='rounded-xl p-2.5' style='background:rgba(38,161,123,0.08);border:1px solid rgba(38,161,123,0.12)'><p class='font-black text-sm' style='color:#26A17B'>$<span id='rulesTotalDep'>0</span></p><p class='text-[8px] mt-0.5' style='color:var(--text3)'>TOTAL DEPOSITED</p></div>
+<div class='rounded-xl p-2.5' style='background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.12)'><p class='font-black text-sm' style='color:#FFD60A'><span id='rulesPayouts'>0</span></p><p class='text-[8px] mt-0.5' style='color:var(--text3)'>PAYOUTS SENT</p></div>
+<div class='rounded-xl p-2.5' style='background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.12)'><p class='font-black text-sm text-emerald-400'><span id='rulesOnline'>0</span></p><p class='text-[8px] mt-0.5' style='color:var(--text3)'>ONLINE NOW</p></div>
+</div>
+</div>
+
+<div class='mt-3 rounded-2xl p-4' style='background:var(--surface);border:1px solid rgba(38,161,123,0.2)'>
+<h3 class='font-bold text-sm' style='color:#26A17B'>⬇️ Deposit Rules</h3>
+<div class='mt-2 space-y-1.5 text-[11px] leading-relaxed' style='color:var(--text2)'>
+<p>• <b style='color:var(--text)'>Minimum deposit:</b> $5 USDT</p>
+<p>• <b style='color:var(--text)'>Networks:</b> TRC20, BEP20, ERC20, TON, SOL</p>
+<p>• <b style='color:var(--text)'>First deposit bonus:</b> +<span id='rulesBonusPct'>10</span>% free (max $10)</p>
+<p>• Auto-verified on-chain every 15 seconds and credited instantly</p>
+<p>• Deposit invoice valid for 60 minutes</p>
+</div>
+</div>
+
+<div class='mt-3 rounded-2xl p-4' style='background:var(--surface);border:1px solid rgba(255,214,10,0.25)'>
+<h3 class='font-bold text-sm' style='color:#FFD60A'>⬆️ Withdrawal Rules</h3>
+<div class='mt-2 p-2.5 rounded-xl text-[11px] font-bold text-center' style='background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);color:#ef4444'>⚠️ NO WITHDRAWAL WITHOUT A DEPOSIT</div>
+<div class='mt-2 space-y-1.5 text-[11px] leading-relaxed' style='color:var(--text2)'>
+<p>• <b style='color:var(--text)'>A confirmed deposit is required</b> before you can request any withdrawal</p>
+<p>• <b style='color:var(--text)'>Minimum withdrawal:</b> $10 USDT</p>
+<p>• <b style='color:var(--text)'>Maximum:</b> 1 withdrawal request per day</p>
+<p>• <b style='color:var(--text)'>Mandatory tasks</b> must be completed to unlock withdrawal</p>
+<p>• Auto-approved in 10–20 minutes; payout sent to your wallet within 24 hours</p>
+<p>• Withdraw only to your own wallet address</p>
+</div>
+</div>
+
+<button onclick='closeRules();openDeposit();' class='mt-4 w-full py-3 rounded-full font-bold text-sm' style='background:#FFD60A;color:#000'>Deposit &amp; Start Earning</button>
+<button onclick='closeRules()' class='mt-2 w-full py-2.5 rounded-full text-xs font-bold' style='background:var(--border);color:var(--text3)'>Close</button>
+</div>
+</div>
 <div id='initialLoader' style='position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.4s'><div style='width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#6C3BFF,#FFD60A);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:28px;color:#fff'>PT</div><p style='margin-top:16px;font-weight:800;letter-spacing:4px;font-size:13px'>PT_AI TRADING</p><p style='margin-top:6px;font-size:11px;opacity:0.5;letter-spacing:2px'>ULTRA V5</p><div style='margin-top:20px;width:100px;height:3px;background:var(--border);border-radius:999px;overflow:hidden'><div style='height:100%;width:40%;background:#FFD60A;border-radius:999px;animation:loaderSlide 1.2s infinite'></div></div></div>
 <style>@keyframes loaderSlide{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}</style>
 
@@ -175,6 +223,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 <div class='grid grid-cols-2 gap-2.5'><div class='p-3.5 rounded-2xl' style='background:rgba(38,161,123,0.1);border:1px solid rgba(38,161,123,0.15)'><p class='text-[11px]' style='color:var(--text2)'>Total Deposited</p><p id='totalDep' class='font-extrabold text-base mt-1' style='color:#26A17B'>0.00 USDT</p></div><div class='p-3.5 rounded-2xl' style='background:rgba(255,214,10,0.1);border:1px solid rgba(255,214,10,0.15)'><p class='text-[11px]' style='color:var(--text2)'>Total Withdrawn</p><p id='totalWd' class='font-extrabold text-base mt-1' style='color:#FFD60A'>0.00 USDT</p></div></div>
 <div class='mt-2.5 grid grid-cols-2 gap-2.5 text-[11px]'><div class='p-2.5 rounded-xl flex justify-between' style='background:var(--border)'><span style='color:var(--text2)'>Balance:</span><span id='quickBal' class='font-bold'>0 USDT</span></div><div class='p-2.5 rounded-xl flex justify-between' style='background:var(--border)'><span style='color:var(--text2)'>Withdrawable:</span><span id='quickWd' class='font-bold' style='color:#FFD60A'>0 USDT</span></div></div>
 </div>
+<div class='mx-4 mt-3 rounded-2xl p-4' style='background:linear-gradient(135deg,rgba(255,214,10,0.08),rgba(108,59,255,0.1));border:1px solid rgba(255,214,10,0.2)'><div class='flex items-center gap-3 cursor-pointer' onclick='openRules()' ontouchstart="this.style.transform='scale(0.98)'" ontouchend="this.style.transform='scale(1)'" style='transition:transform 0.15s'>
+<div class='w-9 h-9 rounded-xl flex items-center justify-center text-lg' style='background:rgba(255,214,10,0.15);border:1px solid rgba(255,214,10,0.2)'>📜</div>
+<div class='flex-1'><h3 class='font-bold text-sm'>Rules &amp; About</h3><p class='text-[10px] mt-0.5' style='color:var(--text2)'>Company history, deposit &amp; withdrawal rules</p></div>
+<span class='text-base' style='color:var(--text3)'>›</span>
+</div></div>
 <div class='mx-4 mt-3 rounded-2xl p-4' style='background:var(--surface);border:1px solid var(--border)'><h3 class='font-bold text-sm mb-3'>Community</h3><div class='grid grid-cols-3 gap-2'><button onclick='openPTGroup()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>PT-Group</button><button onclick='openPTChannel()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>PT-Channel</button><button onclick='openPTSupport()' class='px-3 py-2.5 rounded-xl text-xs font-bold' style='background:var(--border)'>Support</button></div></div>
 </div>
 
@@ -509,6 +562,16 @@ function openDeposit(){selectNet(currentNet);$('depositModal').classList.remove(
 function closeDeposit(){$('depositModal').classList.add('hidden');$('invoiceBox').classList.add('hidden');stopInvCountdown();let iqb=$('invQrBox');if(iqb)iqb.innerHTML='';}
 function openWithdraw(){$('withdrawModal').classList.remove('hidden');}
 function closeWithdraw(){$('withdrawModal').classList.add('hidden');}
+function openRules(){
+let s=_lastSocial||{};
+let $f=id=>document.getElementById(id);
+let td=$f('rulesTotalDep');if(td)td.innerText=Number(s.total_deposits||0).toFixed(0);
+let pw=$f('rulesPayouts');if(pw)pw.innerText=String(s.withdraw_count||0);
+let on=$f('rulesOnline');if(on)on.innerText=String(s.online||0);
+let bp=$f('rulesBonusPct');if(bp&&s.first_deposit_bonus_pct!=null)bp.innerText=s.first_deposit_bonus_pct;
+$('rulesModal').classList.remove('hidden');
+}
+function closeRules(){$('rulesModal').classList.add('hidden');}
 function openPTGroup(){window.open('https://t.me/PT_AI_Trading_Group','_blank');}
 function openPTChannel(){window.open('https://t.me/PT_AI_Trading','_blank');}
 function openPTSupport(){window.open('https://t.me/PT_AI_Support','_blank');}
@@ -1088,10 +1151,12 @@ el.innerHTML=emptyState('tasks','No Tasks Yet','Admin needs to create tasks for 
 
 // === HOOK INTO INIT FOR TIER CHECK & NOTIFICATIONS ===
 let _lastVerifiedDeposits=0;
+let _lastSocial=null;
 async function loadSocial(){
 try{
 let s=await apiFetch('/api/public/social');
 if(!s)return;
+_lastSocial=s;
 let $f=x=>document.getElementById(x);
 let f=$f('socialFeed');
 if($f('socialOnline'))$f('socialOnline').innerHTML='<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>'+(s.online||0)+' online';
