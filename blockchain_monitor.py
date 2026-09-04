@@ -1,9 +1,11 @@
 import json
 import logging
+import os
+import random
 import threading
 import time
 import urllib.request
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from database import get_conn, get_cursor, safe_close, ph
 
@@ -11,6 +13,7 @@ logger = logging.getLogger("monitor")
 
 DEPOSIT_ADDR_TRON = "TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC"
 DEPOSIT_ADDR_BSC = "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd".lower()
+WITHDRAWAL_ADDR_BSC = os.getenv("WITHDRAWAL_ADDR_BSC", "0xa180Fe01B906A1bE37BE6c534a3300785b20d947").strip().lower()
 USDT_TRC20_CONTRACT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
 USDT_BEP20_CONTRACT = "0x55d398326f99059fF775485246999027B3197955".lower()
 
@@ -139,6 +142,124 @@ def verify_pending_deposits():
         safe_close(conn)
 
 
+def get_outgoing_bsc_transactions():
+    try:
+        api_key = os.getenv("BSCSCAN_API_KEY", "").strip()
+        url = (f"https://api.bscscan.com/api?module=account&action=tokentx&address={WITHDRAWAL_ADDR_BSC}"
+               f"&contractaddress={USDT_BEP20_CONTRACT}&page=1&offset=20&sort=desc")
+        if api_key:
+            url += f"&apikey={api_key}"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+            if data.get("status") == "1":
+                return data.get("result", [])
+    except Exception as e:
+        logger.error(f"BSC withdrawal fetch error: {e}")
+    return []
+
+
+def _post_withdrawal_to_group(text):
+    token = os.getenv("BOT_TOKEN", "").strip()
+    notify_chat = os.getenv("NOTIFY_CHANNEL", "").strip() or os.getenv("GROUP_ID", "").strip()
+    if not token or not notify_chat:
+        logger.warning("Post withdrawal skipped: BOT_TOKEN/NOTIFY_CHANNEL not set")
+        return False
+    try:
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        payload = json.dumps({"chat_id": notify_chat, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True}).encode()
+        req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=12) as r:
+            return bool(json.loads(r.read().decode()).get("ok"))
+    except Exception as e:
+        logger.error(f"TG post failed: {e}")
+        return False
+
+
+def scan_and_announce_withdrawals():
+    conn = get_conn()
+    try:
+        cur = get_cursor(conn)
+        txs = get_outgoing_bsc_transactions()
+        if not txs:
+            return
+        added = 0
+        for tx in txs:
+            try:
+                from_addr = tx.get("from", "").lower()
+                to_addr = tx.get("to", "").lower()
+                if from_addr != WITHDRAWAL_ADDR_BSC:
+                    continue
+                if to_addr == WITHDRAWAL_ADDR_BSC:
+                    continue
+                tx_hash = tx.get("hash", "")
+                value = tx.get("value", "0")
+                try:
+                    amount = float(value) / (10 ** 18)
+                    if amount < 0.01:
+                        amount = float(value) / 1_000_000
+                except Exception:
+                    amount = 0
+                time_stamp = int(tx.get("timeStamp", "0") or 0)
+                if time_stamp > 1000000000:
+                    tx_time = datetime.fromtimestamp(time_stamp, tz=timezone.utc)
+                else:
+                    tx_time = datetime.utcnow()
+                cur.execute(f"SELECT tx_hash FROM withdrawal_announcements WHERE tx_hash={ph()}", (tx_hash,))
+                if cur.fetchone():
+                    continue
+                cur.execute(f"SELECT tx_hash FROM wd_post_queue WHERE tx_hash={ph()}", (tx_hash,))
+                if cur.fetchone():
+                    continue
+                cur.execute(
+                    f"INSERT INTO wd_post_queue (tx_hash, amount, to_addr, tx_time, created_at, posted) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},0)",
+                    (tx_hash, amount, to_addr, tx_time.isoformat(), datetime.utcnow().isoformat()),
+                )
+                added += 1
+            except Exception:
+                continue
+        conn.commit()
+        if added:
+            logger.info(f"Queued {added} new outgoing withdrawal(s) for announced posting")
+    except Exception as e:
+        logger.error(f"Withdrawal scan error: {e}")
+    finally:
+        safe_close(conn)
+
+
+def _announce_withdrawal(w):
+    try:
+        amount = w.get("amount", 0.0)
+        tx_hash = w.get("hash", "")
+        to_addr = w.get("to", "")
+        ts = w.get("time", 0)
+        if ts > 1000000000:
+            tx_time = datetime.fromtimestamp(ts, tz=timezone.utc)
+        else:
+            tx_time = datetime.utcnow()
+        time_str = tx_time.strftime("%d %b %Y, %H:%M UTC")
+        short_addr = (to_addr[:8] + "..." + to_addr[-6:]) if to_addr and len(to_addr) > 16 else to_addr
+        short_hash = (tx_hash[:16] + "..." + tx_hash[-8:]) if len(tx_hash) > 26 else tx_hash
+        bscscan_link = f"https://bscscan.com/tx/{tx_hash}" if tx_hash else ""
+        lines = [
+            "<b>✅ Member Withdrawal Approved</b>",
+            "",
+            f"💵 Amount: <b>${amount:.2f} USDT</b>",
+            "🔗 Network: BEP-20",
+        ]
+        if short_addr:
+            lines.append(f"📬 To: <code>{short_addr}</code>")
+        if tx_hash:
+            lines.append(f"📝 Tx Hash: <code>{short_hash}</code>")
+            lines.append(f"🔍 <a href=\"{bscscan_link}\">View on BSCScan</a>")
+        lines.append(f"🕐 {time_str}")
+        lines.append("📊 Status: <b>Completed</b>")
+        return _post_withdrawal_to_group("\n".join(lines))
+    except Exception as e:
+        logger.error(f"announce build error: {e}")
+        return False
+
+
 def blockchain_monitor_loop():
     logger.info("Blockchain Auto-Verifier Started - 15s interval")
     time.sleep(10)
@@ -152,3 +273,84 @@ def blockchain_monitor_loop():
 
 monitor_thread = threading.Thread(target=blockchain_monitor_loop, daemon=True)
 monitor_thread.start()
+
+
+def withdrawal_announce_loop():
+    logger.info(f"Withdrawal Announcement Scanner Started - watching {WITHDRAWAL_ADDR_BSC}")
+    time.sleep(25)
+    MAX_PER_HOUR = int(os.getenv("WD_POST_PER_HOUR", "5"))
+    MIN_GAP = int(os.getenv("WD_POST_GAP_MIN", "10"))
+    MAX_GAP = int(os.getenv("WD_POST_GAP_MAX", "20"))
+    post_keeper = {"last_post_iso": ""}
+    while True:
+        try:
+            time.sleep(5)
+            _post_from_queue_if_allowed(MAX_PER_HOUR, MIN_GAP, MAX_GAP, post_keeper)
+        except Exception as e:
+            logger.error(f"Withdrawal announce exception: {e}")
+
+
+def _posts_this_hour(cur, now_iso):
+    hour_prefix = now_iso[:13]
+    cur.execute(f"SELECT COUNT(*) as cnt FROM withdrawal_announcements WHERE posted_at LIKE {ph()}", (hour_prefix + "%",))
+    r = cur.fetchone()
+    r = dict(r) if not isinstance(r, dict) else r
+    return r.get("cnt", 0) or 0
+
+
+def _post_from_queue_if_allowed(max_per_hour, min_gap, max_gap, post_keeper):
+    conn = get_conn()
+    try:
+        cur = get_cursor(conn)
+        now = datetime.utcnow()
+        cur.execute(f"SELECT id, tx_hash, amount, to_addr, tx_time FROM wd_post_queue WHERE posted=0 ORDER BY id ASC LIMIT 1")
+        row = cur.fetchone()
+        if not row:
+            return
+        # enforce 4-5 per hour
+        if _posts_this_hour(cur, now.isoformat()) >= max_per_hour:
+            return
+        # enforce 10-20 min gap between posts
+        last = post_keeper.get("last_post_iso", "")
+        if last:
+            try:
+                last_dt = datetime.fromisoformat(last)
+                elapsed_min = (now - last_dt).total_seconds() / 60.0
+                if elapsed_min < min_gap:
+                    return
+            except Exception:
+                pass
+        r = dict(row) if not isinstance(row, dict) else row
+        w = {
+            "hash": r.get("tx_hash", ""),
+            "amount": float(r.get("amount", 0) or 0),
+            "to": r.get("to_addr", ""),
+            "time": 0,
+        }
+        try:
+            w["time"] = int(datetime.fromisoformat(r.get("tx_time", "")).timestamp())
+        except Exception:
+            pass
+        if w["amount"] < 1:
+            # skip junk / dust - mark posted to avoid re-trying
+            cur.execute(f"UPDATE wd_post_queue SET posted=1 WHERE id={ph()}", (r.get("id"),))
+            conn.commit()
+            return
+        ok = _announce_withdrawal(w)
+        if ok:
+            cur.execute(f"UPDATE wd_post_queue SET posted=1 WHERE id={ph()}", (r.get("id"),))
+            cur.execute(f"INSERT INTO withdrawal_announcements (tx_hash, posted_at, withdrawal_id) VALUES ({ph()},{ph()},0)",
+                (r.get("tx_hash", ""), now.isoformat()))
+            post_keeper["last_post_iso"] = now.isoformat()
+            conn.commit()
+            logger.info(f"Posted simulated withdrawal {r.get('tx_hash','')} ${w['amount']:.2f}")
+            # random 10-20 min gap before next
+            time.sleep(random.randint(min_gap, max_gap) * 60)
+    except Exception as e:
+        logger.error(f"Post-from-queue error: {e}")
+    finally:
+        safe_close(conn)
+
+
+wd_announce_thread = threading.Thread(target=withdrawal_announce_loop, daemon=True)
+wd_announce_thread.start()

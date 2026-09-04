@@ -146,6 +146,17 @@ def init_db():
                 )
             """)
             cur.execute("""
+                CREATE TABLE IF NOT EXISTS wd_post_queue (
+                    id SERIAL PRIMARY KEY,
+                    tx_hash TEXT,
+                    amount DOUBLE PRECISION,
+                    to_addr TEXT,
+                    tx_time TEXT,
+                    created_at TEXT,
+                    posted INTEGER DEFAULT 0
+                )
+            """)
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS group_members (
                     id SERIAL PRIMARY KEY,
                     user_id BIGINT,
@@ -279,6 +290,10 @@ def init_db():
             conn.execute("""CREATE TABLE IF NOT EXISTS withdrawal_announcements (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 withdrawal_id INTEGER, tx_hash TEXT, posted_at TEXT
+            )""")
+            conn.execute("""CREATE TABLE IF NOT EXISTS wd_post_queue (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tx_hash TEXT, amount REAL, to_addr TEXT, tx_time TEXT, created_at TEXT, posted INTEGER DEFAULT 0
             )""")
             conn.execute("""CREATE TABLE IF NOT EXISTS group_members (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
