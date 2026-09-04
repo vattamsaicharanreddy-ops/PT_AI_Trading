@@ -1762,7 +1762,84 @@ def admin_referrals(request: Request):
     try:
         cur = cursor(conn)
         cur.execute("SELECT * FROM referral_logs ORDER BY id DESC LIMIT 500")
-        return [{"from_user": x["from_user"], "to_user": x["to_user"], "level": x["level"], "deposit": x["deposit_amount"], "bonus": x["bonus_amount"], "percent": x["bonus_percent"]} for x in rows_as_dicts(cur.fetchall())]
+        raw_logs = rows_as_dicts(cur.fetchall())
+        logs = []
+        total_bonus = 0.0
+        for x in raw_logs:
+            fu = x.get("from_user")
+            tu = x.get("to_user")
+            cur.execute(f"SELECT username FROM users WHERE user_id={ph()}", (fu,))
+            fr = cur.fetchone()
+            cur.execute(f"SELECT username FROM users WHERE user_id={ph()}", (tu,))
+            tr = cur.fetchone()
+            b = float(x.get("bonus_amount", 0) or 0)
+            total_bonus += b
+            logs.append({
+                "from_user": fu,
+                "from_username": (fr["username"] if fr else "") or "",
+                "to_user": tu,
+                "to_username": (tr["username"] if tr else "") or "",
+                "level": x.get("level"),
+                "deposit": x.get("deposit_amount"),
+                "bonus": b,
+                "percent": x.get("bonus_percent"),
+                "created_at": x.get("created_at", ""),
+            })
+        cur.execute("SELECT user_id, username, total_deposit, created_at, referred_by FROM users WHERE referred_by IS NOT NULL AND referred_by>0 ORDER BY created_at DESC")
+        net_rows = rows_as_dicts(cur.fetchall())
+        network = []
+        referrer_ids = set()
+        referred_deposited = 0
+        for r in net_rows:
+            r_id = r["user_id"]
+            ref = r.get("referred_by")
+            if ref:
+                referrer_ids.add(ref)
+            dep = float(r.get("total_deposit", 0) or 0)
+            if dep > 0:
+                referred_deposited += 1
+            cur.execute(f"SELECT username, referral_earnings FROM users WHERE user_id={ph()}", (ref,))
+            refrow = cur.fetchone()
+            cur.execute(f"SELECT COALESCE(SUM(bonus_amount),0) as b FROM referral_logs WHERE from_user={ph()}", (r_id,))
+            bonus_paid = float(val(cur.fetchone(), "b", 0) or 0)
+            network.append({
+                "referrer_id": ref,
+                "referrer_username": (refrow["username"] if refrow else "") or "",
+                "referrer_earned": float(val(refrow, "referral_earnings", 0) or 0) if refrow else 0,
+                "referred_id": r_id,
+                "referred_username": r.get("username", "") or "",
+                "referred_deposit": dep,
+                "referred_created": r.get("created_at", "") or "",
+                "bonus_paid": bonus_paid,
+            })
+        top = None
+        if referrer_ids:
+            agg = {}
+            for n in network:
+                rid = n["referrer_id"]
+                if rid not in agg:
+                    agg[rid] = {"earned": 0.0, "count": 0, "username": n["referrer_username"]}
+                agg[rid]["earned"] += n["bonus_paid"]
+                agg[rid]["count"] += 1
+                if not agg[rid]["username"]:
+                    agg[rid]["username"] = n["referrer_username"]
+            if agg:
+                tid, t = max(agg.items(), key=lambda kv: kv[1]["earned"])
+                top = {"user_id": tid, "username": t["username"], "earned": round(t["earned"], 2), "count": t["count"]}
+        referred_total = len(net_rows)
+        return {
+            "stats": {
+                "total_bonus_paid": round(total_bonus, 2),
+                "bonus_count": len(logs),
+                "network_size": referred_total,
+                "referrers": len(referrer_ids),
+                "referred_deposited": referred_deposited,
+                "conversion_rate": round(referred_deposited * 100.0 / referred_total, 1) if referred_total else 0.0,
+            },
+            "top_referrer": top,
+            "logs": logs,
+            "network": network,
+        }
     finally:
         safe_close(conn)
 

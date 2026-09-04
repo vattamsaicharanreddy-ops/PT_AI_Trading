@@ -335,7 +335,26 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.45)!impor
 <div class="card p-5"><h3 class="font-bold text-sm">Recent Group Adds</h3><div class="overflow-x-auto mt-3"><table class="w-full text-[11px]"><thead><tr><th class="p-2.5 text-left">ID</th><th class="p-2.5 text-left">User</th><th class="p-2.5 text-left">Group</th><th class="p-2.5 text-left">Method</th><th class="p-2.5 text-left">Status</th><th class="p-2.5 text-left">Time</th></tr></thead><tbody id="groupMembers"></tbody></table></div></div>
 </section>
 
-<section id="sec-referrals" class="hidden space-y-5 fade-in"><div class="card p-5"><h2 class="text-lg font-black">Referral Logs</h2><div class="overflow-x-auto mt-4"><table class="w-full text-[11px]"><thead><tr><th class="p-2.5 text-left">From</th><th class="p-2.5 text-left">To</th><th class="p-2.5 text-left">Level</th><th class="p-2.5 text-left">Deposit</th><th class="p-2.5 text-left">Bonus</th></tr></thead><tbody id="refs"></tbody></table></div></div></section>
+<section id="sec-referrals" class="hidden space-y-5 fade-in">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+<div class="card stat-tile p-4" style="--tile-glow:rgba(255,214,10,0.42)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Bonus Paid</p><p id="rf_paid" class="text-[22px] font-black mt-1" style="color:#FFD60A">$0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)"><span id="rf_paid_cnt">0</span> payouts</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(124,77,255,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#7c4dff">Network Size</p><p id="rf_network" class="text-[22px] font-black mt-1" style="color:#7c4dff">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)"><span id="rf_referrers">0</span> referrers</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(16,185,129,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Deposit Conversion</p><p id="rf_conv" class="text-[22px] font-black mt-1" style="color:#10b981">0%</p><p class="text-[10px] mt-0.5" style="color:var(--text2)"><span id="rf_deposited">0</span> referred users deposited</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(96,165,250,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#60a5fa">Top Referrer</p><p id="rf_top" class="text-[22px] font-black mt-1" style="color:#60a5fa">-</p><p class="text-[10px] mt-0.5" style="color:var(--text2)" id="rf_top_sub">no referrals yet</p></div>
+</div>
+<div class="card p-5">
+<div class="flex flex-wrap gap-3 items-center justify-between">
+<h3 class="font-black text-sm">Referral Network <span class="text-[9px] font-normal" style="color:var(--text3)">every user who joined via a referral link</span></h3>
+<button onclick="loadReferrals()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh</button>
+</div>
+<p id="rf_empty" class="text-[11px] mt-3 rounded-xl p-3" style="background:var(--hover);color:var(--text2);display:none">No referral sign-ups yet. Users who tap <b>Start</b> the bot and open the app through your referral link get linked to their referrer. Referral bonuses only appear once a referred user actually deposits. Share your bot link to grow the network.</p>
+<div class="overflow-x-auto mt-3"><table class="w-full text-[11px]"><thead><tr><th class="p-2.5 text-left">Referrer</th><th class="p-2.5 text-left">Referred User</th><th class="p-2.5 text-left">Status</th><th class="p-2.5 text-left">Referred Deposit</th><th class="p-2.5 text-left">Bonus Paid</th><th class="p-2.5 text-left">Joined</th></tr></thead><tbody id="rf_network"></tbody></table></div>
+</div>
+<div class="card p-5">
+<h3 class="font-black text-sm">Referral Bonus Logs</h3>
+<div class="overflow-x-auto mt-3"><table class="w-full text-[11px]"><thead><tr><th class="p-2.5 text-left">Referred</th><th class="p-2.5 text-left">Referrer</th><th class="p-2.5 text-left">Level</th><th class="p-2.5 text-left">Deposit</th><th class="p-2.5 text-left">Bonus</th><th class="p-2.5 text-left">Time</th></tr></thead><tbody id="refs"></tbody></table></div>
+</div>
+</section>
 
 <section id="sec-extreme" class="hidden space-y-5 fade-in">
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -778,8 +797,7 @@ if(tabVisible('sec-withdrawals'))renderWithdrawals();
 }catch(e){}
 
 try{
-let refs=await fetchJson('/api/admin/referrals');
-if(tabVisible('sec-referrals'))document.getElementById('refs').innerHTML=refs.map(r=>`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5">${r.from_user}</td><td class="p-2.5">${r.to_user}</td><td class="p-2.5">L${r.level}</td><td class="p-2.5">$${Number(r.deposit).toFixed(2)}</td><td class="p-2.5 font-bold" style="color:#FFD60A">$${Number(r.bonus).toFixed(2)} (${r.percent}%)</td></tr>`).join('')||`<tr><td colspan="5" class="p-6 text-center" style="color:var(--text3)">No referrals</td></tr>`;
+if(tabVisible('sec-referrals'))loadReferrals();
 }catch(e){}
 
 try{
@@ -1733,6 +1751,45 @@ let j=await res.json();
 toast((j.paused?'Payout poster paused':'Payout poster resumed'),j.ok?'success':'error');
 loadPayoutTracker();
 }catch(e){toast('Request failed','error');}
+}
+
+function rfName(u,name){return name||('# '+u);}
+
+async function loadReferrals(){
+try{
+let d=await fetchJson('/api/admin/referrals');
+let s=d.stats||{};
+document.getElementById('rf_paid').innerText='$'+Number(s.total_bonus_paid||0).toFixed(2);
+document.getElementById('rf_paid_cnt').innerText=s.bonus_count||0;
+document.getElementById('rf_network').innerText=s.network_size||0;
+document.getElementById('rf_referrers').innerText=s.referrers||0;
+document.getElementById('rf_conv').innerText=(s.conversion_rate||0)+'%';
+document.getElementById('rf_deposited').innerText=s.referred_deposited||0;
+let t=d.top_referrer;
+if(t&&t.user_id){document.getElementById('rf_top').innerText=t.username||('#'+t.user_id);document.getElementById('rf_top_sub').innerText='$'+Number(t.earned||0).toFixed(2)+' earned from '+t.count+' referrals';}
+else{document.getElementById('rf_top').innerText='-';document.getElementById('rf_top_sub').innerText='no referrals yet';}
+let emptyEl=document.getElementById('rf_empty');
+let netEl=document.getElementById('rf_network');
+let netWrap=netEl?netEl.parentElement:null;
+let hasNet=(d.network||[]).length>0;
+emptyEl.style.display=hasNet?'none':'block';
+if(netWrap)netWrap.style.display=hasNet?'':'none';
+if(hasNet){
+netEl.innerHTML=(d.network||[]).map(n=>{
+let hasDep=n.referred_deposit>0;
+let statusBadge=hasDep?'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="color:#10b981;background:rgba(16,185,129,0.12)">DEPOSITED</span>':'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="color:var(--text3);background:var(--hover)">SIGNED UP</span>';
+return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5">${rfName(n.referrer_id,n.referrer_username)} <span class="text-[9px]" style="color:var(--text3)">earned $${Number(n.referrer_earned||0).toFixed(2)}</span></td><td class="p-2.5 mono font-bold">${rfName(n.referred_id,n.referred_username)}</td><td class="p-2.5">${statusBadge}</td><td class="p-2.5 font-bold" style="color:${hasDep?'#10b981':'var(--text3)'}">$${Number(n.referred_deposit||0).toFixed(2)}</td><td class="p-2.5" style="color:#FFD60A">$${Number(n.bonus_paid||0).toFixed(2)}</td><td class="p-2.5 text-[9px] mono" style="color:var(--text3)">${(n.referred_created||'').slice(0,10)}</td></tr>`;
+}).join('');
+}
+let logsEl=document.getElementById('refs');
+if((d.logs||[]).length>0){
+logsEl.closest('.card').style.display='';
+logsEl.innerHTML=(d.logs||[]).map(r=>`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5">${rfName(r.from_user,r.from_username)}</td><td class="p-2.5"><b>${rfName(r.to_user,r.to_username)}</b></td><td class="p-2.5">L${r.level}</td><td class="p-2.5">$${Number(r.deposit).toFixed(2)}</td><td class="p-2.5 font-bold" style="color:#FFD60A">$${Number(r.bonus).toFixed(2)} (${r.percent}%)</td><td class="p-2.5 text-[9px] mono" style="color:var(--text3)">${(r.created_at||'').slice(0,16)}</td></tr>`).join('');
+}else{
+let card=logsEl.closest('.card');
+if(card)card.style.display='none';
+}
+}catch(e){toast('Failed to load referrals','error');}
 }
 
 async function loadCoupons(){
