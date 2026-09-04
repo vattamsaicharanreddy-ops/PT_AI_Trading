@@ -254,6 +254,10 @@ def _announce_withdrawal(w):
             lines.append(f"🔍 <a href=\"{bscscan_link}\">View on BSCScan</a>")
         lines.append(f"🕐 {time_str}")
         lines.append("📊 Status: <b>Completed</b>")
+        lines.append("")
+        bot_name = os.getenv("BOT_USERNAME", "PT_Minebot")
+        lines.append("💰🚀 <b>Join now and start earning your profits!</b>")
+        lines.append(f"👉 <a href=\"https://t.me/{bot_name}\">Open the Bot</a>")
         return _post_withdrawal_to_group("\n".join(lines))
     except Exception as e:
         logger.error(f"announce build error: {e}")

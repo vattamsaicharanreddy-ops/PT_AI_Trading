@@ -746,8 +746,17 @@ def public_social():
             cur.execute("SELECT COALESCE(SUM(amount),0) as tot, COUNT(*) as cnt FROM withdrawals WHERE status='approved'")
             r = cur.fetchone()
             rd = dict(r) if not isinstance(r, dict) else r
-            stats["total_withdrawals"] = round(float(rd.get("tot", 0) or 0), 2)
-            stats["withdraw_count"] = rd.get("cnt", 0) or 0
+            base_wd_total = round(float(rd.get("tot", 0) or 0), 2)
+            base_wd_count = rd.get("cnt", 0) or 0
+            try:
+                cur.execute("SELECT COALESCE(SUM(amount),0) as tot, COUNT(*) as cnt FROM wd_post_queue WHERE posted=1")
+                rq = cur.fetchone()
+                rqd = dict(rq) if not isinstance(rq, dict) else rq
+                stats["total_withdrawals"] = round(base_wd_total + float(rqd.get("tot", 0) or 0), 2)
+                stats["withdraw_count"] = int(base_wd_count) + int(rqd.get("cnt", 0) or 0)
+            except Exception:
+                stats["total_withdrawals"] = base_wd_total
+                stats["withdraw_count"] = base_wd_count
             cur.execute("SELECT w.amount, w.network, w.tx_hash, w.created_at FROM withdrawals w WHERE w.status='approved' AND w.tx_hash IS NOT NULL AND w.tx_hash<>'' ORDER BY w.id DESC LIMIT 8")
             for row in cur.fetchall():
                 r = dict(row) if not isinstance(row, dict) else row
@@ -1894,6 +1903,10 @@ def _send_wd_notification(wd, tx_hash):
         lines.append(f"🔍 <a href=\"{bscscan_link}\">View on BSCScan</a>")
     lines.append(f"🕐 {now_str}")
     lines.append(f"📊 Status: <b>Completed</b>")
+    lines.append("")
+    bot_name = os.getenv("BOT_USERNAME", "PT_Minebot")
+    lines.append("💰🚀 <b>Join now and start earning your profits!</b>")
+    lines.append(f"👉 <a href=\"https://t.me/{bot_name}\">Open the Bot</a>")
     text = "\n".join(lines)
     try:
         url = f"https://api.telegram.org/bot{token}/sendMessage"
