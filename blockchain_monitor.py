@@ -152,7 +152,7 @@ def get_outgoing_bsc_transactions():
         wallet_topic = "0x000000000000000000000000" + WITHDRAWAL_ADDR_BSC[2:]
         latest_hex = _meganode_call(url, "eth_blockNumber", [])
         latest = int(latest_hex, 16)
-        recent_blocks = int(os.getenv("WD_SCAN_BLOCKS", "800"))
+        recent_blocks = int(os.getenv("WD_SCAN_BLOCKS", "30"))
         logs = _meganode_call(url, "eth_getLogs", [{
             "fromBlock": hex(max(latest - recent_blocks, 0)),
             "toBlock": hex(latest),
@@ -265,16 +265,24 @@ def scan_and_announce_withdrawals():
                     tx_time = datetime.fromtimestamp(time_stamp, tz=timezone.utc)
                 else:
                     tx_time = datetime.utcnow()
-                # Only track LIVE withdrawals - ignore historical/backfill txs.
-                # Window (hours) configurable via WD_RECENT_HOURS (default last 24h).
-                recent_hours = int(os.getenv("WD_RECENT_HOURS", "24"))
-                cutoff = datetime.utcnow() - timedelta(hours=recent_hours)
+                # Only post FRESH txs - tx must be within WD_FRESH_MAX_MIN (default 10 min)
+                # so the on-chain timestamp closely matches the post time.
+                now_utc = datetime.utcnow()
+                fresh_min = int(os.getenv("WD_FRESH_MAX_MIN", "10"))
+                cutoff = now_utc - timedelta(minutes=fresh_min)
                 if tx_time.replace(tzinfo=None) < cutoff:
                     continue
-                # Enforce minimum withdrawal amount (default 10 USDT)
+                # Enforce amount range: min 10, max 1000 USDT.
                 min_amt = float(os.getenv("WD_MIN_AMOUNT", "10"))
-                if amount < min_amt:
+                max_amt = float(os.getenv("WD_MAX_AMOUNT", "1000"))
+                if amount < min_amt or amount > max_amt:
                     continue
+                # Bias toward the 10-100 band so most posts look realistic.
+                # Txs over 100 only get queued occasionally (default 20%).
+                if amount > 100:
+                    large_chance = float(os.getenv("WD_LARGE_CHANCE", "0.2"))
+                    if random.random() > large_chance:
+                        continue
                 cur.execute(f"SELECT tx_hash FROM withdrawal_announcements WHERE tx_hash={ph()}", (tx_hash,))
                 if cur.fetchone():
                     continue
@@ -351,6 +359,8 @@ monitor_thread.start()
 
 def withdrawal_announce_loop():
     logger.info(f"Withdrawal Announcement Scanner Started - watching {WITHDRAWAL_ADDR_BSC}")
+    # Clear stale queue on startup so old backfill txs don't post with wrong timestamps
+    _clear_stale_queue()
     time.sleep(8)
     MAX_PER_HOUR = int(os.getenv("WD_POST_PER_HOUR", "5"))
     MIN_GAP = int(os.getenv("WD_POST_GAP_MIN", "10"))
@@ -372,6 +382,18 @@ def withdrawal_announce_loop():
         time.sleep(20)
 
 
+def _clear_stale_queue():
+    conn = get_conn()
+    try:
+        cur = get_cursor(conn)
+        cur.execute("DELETE FROM wd_post_queue WHERE posted=0")
+        conn.commit()
+    except Exception:
+        pass
+    finally:
+        safe_close(conn)
+
+
 def _posts_this_hour(cur, now_iso):
     hour_prefix = now_iso[:13]
     cur.execute(f"SELECT COUNT(*) as cnt FROM withdrawal_announcements WHERE posted_at LIKE {ph()}", (hour_prefix + "%",))
@@ -385,7 +407,7 @@ def _post_from_queue_if_allowed(max_per_hour, min_gap, max_gap, post_keeper, for
     try:
         cur = get_cursor(conn)
         now = datetime.utcnow()
-        cur.execute(f"SELECT id, tx_hash, amount, to_addr, tx_time FROM wd_post_queue WHERE posted=0 ORDER BY id ASC LIMIT 1")
+        cur.execute(f"SELECT id, tx_hash, amount, to_addr, tx_time FROM wd_post_queue WHERE posted=0 ORDER BY id DESC LIMIT 1")
         row = cur.fetchone()
         if not row:
             return
@@ -413,9 +435,17 @@ def _post_from_queue_if_allowed(max_per_hour, min_gap, max_gap, post_keeper, for
             w["time"] = int(datetime.fromisoformat(r.get("tx_time", "")).timestamp())
         except Exception:
             pass
+        # Only post FRESH txs so the on-chain time matches the post time closely.
+        max_age_min = int(os.getenv("WD_POST_MAX_AGE_MIN", "5"))
+        if w["time"] > 1000000000:
+            tx_dt = datetime.fromtimestamp(w["time"], tz=timezone.utc).replace(tzinfo=None)
+            if (now - tx_dt).total_seconds() / 60.0 > max_age_min:
+                # no fresh tx available yet - wait for a new one
+                return
         min_amt = float(os.getenv("WD_MIN_AMOUNT", "10"))
-        if w["amount"] < min_amt:
-            # below minimum withdrawal - skip, mark posted to avoid re-trying
+        max_amt = float(os.getenv("WD_MAX_AMOUNT", "1000"))
+        if w["amount"] < min_amt or w["amount"] > max_amt:
+            # outside valid range - skip, mark posted to avoid re-trying
             cur.execute(f"UPDATE wd_post_queue SET posted=1 WHERE id={ph()}", (r.get("id"),))
             conn.commit()
             return
