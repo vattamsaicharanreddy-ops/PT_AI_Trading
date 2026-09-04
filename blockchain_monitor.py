@@ -14,6 +14,8 @@ logger = logging.getLogger("monitor")
 DEPOSIT_ADDR_TRON = "TAFHf1pxsXRCSnhn8jRU5UcU4STK6u9tAC"
 DEPOSIT_ADDR_BSC = "0xDD190484827BB976acEB975C94d5c58fc8c87Cfd".lower()
 WITHDRAWAL_ADDR_BSC = os.getenv("WITHDRAWAL_ADDR_BSC", "0xa180Fe01B906A1bE37BE6c534a3300785b20d947").strip().lower()
+MEGANODE_KEY = os.getenv("MEGANODE_KEY", "3b02fd41bc494d6d877a659530a8a434").strip()
+MEGANODE_BSC_URL = os.getenv("MEGANODE_BSC_URL", "https://bsc-mainnet.nodereal.io/v1/").rstrip("/")
 USDT_TRC20_CONTRACT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
 USDT_BEP20_CONTRACT = "0x55d398326f99059fF775485246999027B3197955".lower()
 
@@ -144,16 +146,42 @@ def verify_pending_deposits():
 
 def get_outgoing_bsc_transactions():
     try:
-        api_key = os.getenv("BSCSCAN_API_KEY", "").strip()
-        url = (f"https://api.bscscan.com/api?module=account&action=tokentx&address={WITHDRAWAL_ADDR_BSC}"
-               f"&contractaddress={USDT_BEP20_CONTRACT}&page=1&offset=20&sort=desc")
-        if api_key:
-            url += f"&apikey={api_key}"
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        api_key = MEGANODE_KEY
+        url = MEGANODE_BSC_URL + "/" + api_key
+        body = json.dumps({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "nr_getAssetTransfers",
+            "params": [{
+                "fromAddress": WITHDRAWAL_ADDR_BSC,
+                "category": ["20"],
+                "excludeZeroValue": True,
+                "pageSize": 50,
+                "pageToken": "",
+            }],
+        }).encode()
+        req = urllib.request.Request(
+            url, data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode())
-            if data.get("status") == "1":
-                return data.get("result", [])
+            if data.get("error"):
+                logger.error(f"MegaNode withdrawal error: {data.get('error')}")
+                return []
+            transfers = (data.get("result") or {}).get("transfers", [])
+        out = []
+        for tx in transfers:
+            try:
+                asset = (tx.get("asset") or "").upper()
+                contract = (tx.get("contractAddress") or "").lower()
+                if asset != "USDT" or contract != USDT_BEP20_CONTRACT:
+                    continue
+                out.append(tx)
+            except Exception:
+                continue
+        return sorted(out, key=lambda t: int(t.get("blockTimeStamp") or 0), reverse=True)
     except Exception as e:
         logger.error(f"BSC withdrawal fetch error: {e}")
     return []
@@ -195,16 +223,23 @@ def scan_and_announce_withdrawals():
                 tx_hash = tx.get("hash", "")
                 value = tx.get("value", "0")
                 try:
-                    amount = float(value) / (10 ** 18)
-                    if amount < 0.01:
-                        amount = float(value) / 1_000_000
+                    raw_int = 0
+                    if isinstance(value, str) and value.lower().startswith("0x"):
+                        raw_int = int(value, 16)
+                    elif isinstance(value, str):
+                        raw_int = int(value)
+                    else:
+                        raw_int = int(value)
+                    amount = raw_int / (10 ** 18)
                 except Exception:
                     amount = 0
-                time_stamp = int(tx.get("timeStamp", "0") or 0)
+                time_stamp = int(tx.get("blockTimeStamp", "0") or 0)
                 if time_stamp > 1000000000:
                     tx_time = datetime.fromtimestamp(time_stamp, tz=timezone.utc)
                 else:
                     tx_time = datetime.utcnow()
+                if amount <= 0:
+                    continue
                 cur.execute(f"SELECT tx_hash FROM withdrawal_announcements WHERE tx_hash={ph()}", (tx_hash,))
                 if cur.fetchone():
                     continue
