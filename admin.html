@@ -348,7 +348,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.45)!impor
 <button onclick="loadReferrals()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh</button>
 </div>
 <p id="rf_empty" class="text-[11px] mt-3 rounded-xl p-3" style="background:var(--hover);color:var(--text2);display:none">No referral sign-ups yet. Users who tap <b>Start</b> the bot and open the app through your referral link get linked to their referrer. Referral bonuses only appear once a referred user actually deposits. Share your bot link to grow the network.</p>
-<div class="overflow-x-auto mt-3"><table class="w-full text-[11px]"><thead><tr><th class="p-2.5 text-left">Referrer</th><th class="p-2.5 text-left">Referred User</th><th class="p-2.5 text-left">Status</th><th class="p-2.5 text-left">Referred Deposit</th><th class="p-2.5 text-left">Bonus Paid</th><th class="p-2.5 text-left">Joined</th></tr></thead><tbody id="rf_network"></tbody></table></div>
+<div class="overflow-x-auto mt-3"><table class="w-full text-[11px]"><thead><tr><th class="p-2.5 text-left">Referrer</th><th class="p-2.5 text-left">Referred User</th><th class="p-2.5 text-left">Status</th><th class="p-2.5 text-left">Referred Deposit</th><th class="p-2.5 text-left">Bonus Paid</th><th class="p-2.5 text-left">Joined</th></tr></thead><tbody id="rf_network_tb"></tbody></table></div>
 </div>
 <div class="card p-5">
 <h3 class="font-black text-sm">Referral Bonus Logs</h3>
@@ -1769,7 +1769,7 @@ let t=d.top_referrer;
 if(t&&t.user_id){document.getElementById('rf_top').innerText=t.username||('#'+t.user_id);document.getElementById('rf_top_sub').innerText='$'+Number(t.earned||0).toFixed(2)+' earned from '+t.count+' referrals';}
 else{document.getElementById('rf_top').innerText='-';document.getElementById('rf_top_sub').innerText='no referrals yet';}
 let emptyEl=document.getElementById('rf_empty');
-let netEl=document.getElementById('rf_network');
+let netEl=document.getElementById('rf_network_tb');
 let netWrap=netEl?netEl.parentElement:null;
 let hasNet=(d.network||[]).length>0;
 emptyEl.style.display=hasNet?'none':'block';
