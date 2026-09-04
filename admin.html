@@ -749,7 +749,15 @@ let actionHtml='';
 if(actions.length){
 actionHtml='<div class="mt-3 pt-3 border-t" style="border-color:var(--border2)"><div class="flex gap-2 flex-wrap text-[10px] font-bold">'+actions.map(a=>`<span class="px-2 py-1 rounded-full" style="background:${a.key==='signup1d'?'rgba(16,185,129,0.15);color:#10b981':'rgba(124,77,255,0.15);color:#7C4DFF'}">${a.label}: ${a.value}</span>`).join('')+'</div></div>';
 }
-el.innerHTML=html+actionHtml;
+let diag=d.diagnostics||{};
+let diagHtml='';
+if(diag.rates){
+let rates=[['Opened App',diag.rates.signup_to_open_pct],['Tried to Deposit',diag.rates.signup_to_attempt_pct],['Invoice → Paid',diag.rates.attempt_to_verify_pct],['Signed → Deposited',diag.rates.signup_to_deposit_pct],['Deposit → Withdraw',diag.rates.deposit_to_withdraw_pct]];
+let rateChips=rates.map(rr=>`<div class="text-center px-2 py-1.5 rounded-lg" style="background:${rr[1]>=50?'rgba(16,185,129,0.12)':rr[1]>=25?'rgba(255,214,10,0.12)':'rgba(239,68,68,0.12)'}"><p class="font-black text-[13px]" style="color:${rr[1]>=50?'#10b981':rr[1]>=25?'#FFD60A':'#ef4444'}">${rr[1]}%</p><p class="text-[7px] uppercase tracking-wide" style="color:var(--text3)">${rr[0]}</p></div>`).join('');
+let levers=(diag.levers||[]).map(l=>`<div class="flex items-start gap-2 text-[10px]"><span style="color:#ef4444">⚠</span><span><b style="color:#FFD60A">${l.stage}</b> (${l.rate}%) — ${l.fix}</span></div>`).join('');
+diagHtml='<div class="mt-3 pt-3 border-t space-y-2" style="border-color:var(--border2)"><div class="flex justify-between items-center"><h4 class="font-bold text-[11px]">Stage Rates</h4><span class="text-[8px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(108,59,255,0.15);color:#A5A6F6">LEVERAGE</span></div><div class="grid grid-cols-5 gap-1.5">'+rateChips+'</div>'+(levers?'<div class="space-y-1 mt-1.5 p-2 rounded-lg" style="background:rgba(239,68,68,0.06);border:1px dashed rgba(239,68,68,0.2)">'+levers+'</div>':'')+'</div>';
+}
+el.innerHTML=html+actionHtml+diagHtml;
 let hints=document.getElementById('convHints');
 if(hints){
 let fmap={};

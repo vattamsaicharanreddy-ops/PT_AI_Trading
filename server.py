@@ -1611,12 +1611,71 @@ def admin_funnel(request: Request):
         new_day = val(cur.fetchone(), "cnt", 0) or 0
 
         actions = [{"key": "signup7d", "label": "New in 7 days", "value": new_week}, {"key": "signup1d", "label": "New today", "value": new_day}]
-        return {"funnel": rows, "actions": actions}
+        diag = _funnel_diagnostics(cur)
+        return {"funnel": rows, "actions": actions, "diagnostics": diag}
     except Exception as e:
         logger.error(f"admin_funnel FAILED: {e}", exc_info=True)
-        return {"funnel": [], "actions": [], "error": str(e)}
+        return {"funnel": [], "actions": [], "diagnostics": {}, "error": str(e)}
     finally:
         safe_close(conn)
+
+
+def _funnel_diagnostics(cur):
+    def one(sql):
+        try:
+            cur.execute(sql)
+            r = cur.fetchone()
+            r = dict(r) if not isinstance(r, dict) else r
+            return r.get("cnt", 0) or 0
+        except Exception:
+            return 0
+
+    signed = one("SELECT COUNT(*) as cnt FROM users")
+    attempted = one("SELECT COUNT(DISTINCT user_id) as cnt FROM deposits")
+    verified_users = one("SELECT COUNT(*) as cnt FROM users WHERE COALESCE(total_deposit,0)>0")
+    verified_invoices = one("SELECT COUNT(*) as cnt FROM deposits WHERE status='verified'")
+    total_invoices = one("SELECT COUNT(*) as cnt FROM deposits")
+    expired_invoices = one("SELECT COUNT(*) as cnt FROM deposits WHERE status='expired'")
+    withdrew = one("SELECT COUNT(*) as cnt FROM users WHERE COALESCE(total_withdraw,0)>0")
+    tapped_open = one("SELECT COUNT(*) as cnt FROM users WHERE last_webapp_open IS NOT NULL AND last_webapp_open<>''")
+
+    signup_to_open = (tapped_open / signed * 100) if signed else 0
+    signup_to_attempt = (attempted / signed * 100) if signed else 0
+    attempt_to_verify = (verified_invoices / total_invoices * 100) if total_invoices else 0
+    signup_to_deposit = (verified_users / signed * 100) if signed else 0
+    deposit_to_withdraw = (withdrew / verified_users * 100) if verified_users else 0
+
+    return {
+        "signed": signed,
+        "opened_app": tapped_open,
+        "attempted_deposit": attempted,
+        "total_invoices": total_invoices,
+        "verified_invoices": verified_invoices,
+        "expired_invoices": expired_invoices,
+        "verified_users": verified_users,
+        "withdrew": withdrew,
+        "rates": {
+            "signup_to_open_pct": round(signup_to_open, 1),
+            "signup_to_attempt_pct": round(signup_to_attempt, 1),
+            "attempt_to_verify_pct": round(attempt_to_verify, 1),
+            "signup_to_deposit_pct": round(signup_to_deposit, 1),
+            "deposit_to_withdraw_pct": round(deposit_to_withdraw, 1),
+        },
+        "levers": _funnel_levers(signup_to_open, signup_to_attempt, attempt_to_verify, signup_to_deposit, deposit_to_withdraw),
+    }
+
+
+def _funnel_levers(s2o, s2a, a2v, s2d, d2w):
+    weak = []
+    if a2v < 60:
+        weak.append({"stage": "invoice_create_to_paid", "rate": round(a2v, 1), "fix": "60-min expiry + tolerant matching + bonus already shipped; monitor verify retention"})
+    if s2a < 25:
+        weak.append({"stage": "signup_to_attempt", "rate": round(s2a, 1), "fix": "Improve onboarding/activation (nudge drip + first-deposit bonus now live)"})
+    if s2o < 50:
+        weak.append({"stage": "signup_to_open_app", "rate": round(s2o, 1), "fix": "Users register but never open the app - webapp deep-link in /start + re-engagement messages"})
+    if d2w > 0 and d2w < 15:
+        weak.append({"stage": "deposit_to_withdraw", "rate": round(d2w, 1), "fix": "Low trust after deposit - social proof + withdrawal transparency"})
+    return weak
 
 
 @app.get("/api/admin/deposits")
