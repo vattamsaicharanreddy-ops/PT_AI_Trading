@@ -567,7 +567,14 @@ def process_invoice_payment(invoice_id_str, tx_hash, actual_amount):
         cur.execute(f"SELECT * FROM users WHERE user_id={ph()}", (user_id,))
         user = cur.fetchone()
         if user:
-            new_bal = float(val(user, "balance", 0) or 0) + amt
+            cur.execute(f"SELECT COUNT(*) as cnt FROM deposits WHERE user_id={ph()} AND status='verified'", (user_id,))
+            prev_verified = val(cur.fetchone(), "cnt", 0) or 0
+            bonus = 0.0
+            if prev_verified == 0:
+                FIRST_DEP_BONUS_PCT = float(os.getenv("FIRST_DEPOSIT_BONUS_PCT", "10"))
+                FIRST_DEP_BONUS_CAP = float(os.getenv("FIRST_DEPOSIT_BONUS_CAP", "10"))
+                bonus = round(min(amt * (FIRST_DEP_BONUS_PCT / 100.0), FIRST_DEP_BONUS_CAP), 2)
+            new_bal = float(val(user, "balance", 0) or 0) + amt + bonus
             new_total = float(val(user, "total_deposit", 0) or 0) + amt
             tier_idx, _, _ = get_tier(new_bal)
             ai_end = (datetime.utcnow() + timedelta(days=30)).isoformat()
@@ -576,6 +583,13 @@ def process_invoice_payment(invoice_id_str, tx_hash, actual_amount):
                 (new_bal, new_total, tier_idx, now, ai_end, user_id),
             )
             _process_referrals(cur, user_id, amt)
+            if bonus > 0:
+                try:
+                    cur.execute(f"INSERT INTO admin_logs (admin_action,target_user_id,details) VALUES ('first_deposit_bonus',{ph()},{ph()})",
+                        (user_id, f"bonus ${bonus} on deposit ${amt}"))
+                except Exception:
+                    pass
+                logger.info(f"FIRST DEPOSIT BONUS ${bonus} for user {user_id}")
         conn.commit()
         logger.info(f"Invoice {invoice_id_str} auto-verified: {amt} USDT for user {user_id}")
         try:
@@ -698,6 +712,8 @@ def public_social():
             "withdraw_count": 0,
             "recent_withdrawals": [],
             "online": 0,
+            "first_deposit_bonus_pct": float(os.getenv("FIRST_DEPOSIT_BONUS_PCT", "10")),
+            "first_deposit_bonus_cap": float(os.getenv("FIRST_DEPOSIT_BONUS_CAP", "10")),
         }
         try:
             cur.execute("SELECT COALESCE(SUM(COALESCE(actual_amount, amount)),0) as tot, COUNT(*) as cnt FROM deposits WHERE status='verified'")
