@@ -91,7 +91,8 @@ def verify_pending_deposits():
                             if str(to_addr).lower() == DEPOSIT_ADDR_TRON.lower():
                                 tx_time = datetime.fromtimestamp(timestamp / 1000) if timestamp > 1000000000000 else datetime.fromtimestamp(timestamp) if timestamp > 1000000000 else datetime.utcnow()
                                 if tx_time >= created_dt - timedelta(minutes=2):
-                                    if abs(amount - expected) < 0.5 or amount >= expected - 0.01:
+                                    tol = expected * 0.01
+                                    if amount >= expected - tol:
                                         cur.execute(f"SELECT tx_hash FROM used_tx_hashes WHERE tx_hash={ph()}", (tx_id,))
                                         if not cur.fetchone():
                                             matched_tx = tx_id
@@ -115,7 +116,8 @@ def verify_pending_deposits():
                             if to_addr == DEPOSIT_ADDR_BSC:
                                 tx_time = datetime.fromtimestamp(time_stamp) if time_stamp > 0 else datetime.utcnow()
                                 if tx_time >= created_dt - timedelta(minutes=2):
-                                    if abs(amount - expected) < 0.5 or amount >= expected - 0.01:
+                                    tol = expected * 0.01
+                                    if amount >= expected - tol:
                                         cur.execute(f"SELECT tx_hash FROM used_tx_hashes WHERE tx_hash={ph()}", (tx_hash,))
                                         if not cur.fetchone():
                                             matched_tx = tx_hash

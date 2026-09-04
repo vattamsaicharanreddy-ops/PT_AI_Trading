@@ -1043,7 +1043,7 @@ def create_invoice(user_id: int, req: InvoiceRequest):
         cur = cursor(conn)
         inv = invoice_id()
         now = datetime.utcnow()
-        exp = now + timedelta(minutes=15)
+        exp = now + timedelta(minutes=60)
         if req.network not in DEPOSIT_ADDR:
             req.network = "TRC20"
         cur.execute(
@@ -1108,7 +1108,7 @@ def check_payment(invoice_id: str):
                 return {"ok": True, "status": "verified", "message": "Payment verified! Balance credited."}
             elif new_status == "expired":
                 return {"ok": False, "status": "expired", "message": "Invoice expired. Please create a new one."}
-        return {"ok": False, "status": "awaiting_payment", "message": "No payment detected yet. Make sure you sent the exact amount to the correct address."}
+        return {"ok": False, "status": "awaiting_payment", "message": "No payment detected yet. You can close this screen - your deposit auto-verifies within ~15 seconds of arriving."}
     except Exception as e:
         logger.error(f"check_payment error: {e}", exc_info=True)
         return {"ok": False, "status": "error", "message": "Check failed. Try again."}
