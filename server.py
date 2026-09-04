@@ -683,6 +683,57 @@ def webhook_get(token: str):
     return {"ok": True, "message": "Webhook active"}
 
 
+@app.get("/api/public/social")
+def public_social():
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        now = datetime.utcnow()
+        day_ago = (now - timedelta(days=1)).isoformat()
+        stats = {
+            "total_deposits": 0,
+            "deposit_count": 0,
+            "day_deposits": 0,
+            "total_withdrawals": 0,
+            "withdraw_count": 0,
+            "recent_withdrawals": [],
+            "online": 0,
+        }
+        try:
+            cur.execute("SELECT COALESCE(SUM(COALESCE(actual_amount, amount)),0) as tot, COUNT(*) as cnt FROM deposits WHERE status='verified'")
+            r = cur.fetchone()
+            rd = dict(r) if not isinstance(r, dict) else r
+            stats["total_deposits"] = round(float(rd.get("tot", 0) or 0), 2)
+            stats["deposit_count"] = rd.get("cnt", 0) or 0
+            cur.execute("SELECT COALESCE(SUM(COALESCE(actual_amount, amount)),0) as tot FROM deposits WHERE status='verified' AND created_at >= " + ph(), (day_ago,))
+            stats["day_deposits"] = round(float(val(cur.fetchone(), "tot", 0) or 0), 2)
+            cur.execute("SELECT COALESCE(SUM(amount),0) as tot, COUNT(*) as cnt FROM withdrawals WHERE status='approved'")
+            r = cur.fetchone()
+            rd = dict(r) if not isinstance(r, dict) else r
+            stats["total_withdrawals"] = round(float(rd.get("tot", 0) or 0), 2)
+            stats["withdraw_count"] = rd.get("cnt", 0) or 0
+            cur.execute("SELECT w.amount, w.network, w.tx_hash, w.created_at FROM withdrawals w WHERE w.status='approved' AND w.tx_hash IS NOT NULL AND w.tx_hash<>'' ORDER BY w.id DESC LIMIT 8")
+            for row in cur.fetchall():
+                r = dict(row) if not isinstance(row, dict) else row
+                tx = r.get("tx_hash", "") or ""
+                short = (tx[:14] + "..." + tx[-8:]) if len(tx) > 24 else tx
+                at = (r.get("created_at") or "")[:16]
+                stats["recent_withdrawals"].append({
+                    "amount": round(float(r.get("amount", 0) or 0), 2),
+                    "network": r.get("network", ""),
+                    "tx": short,
+                    "at": at,
+                })
+            online_cut = (now - timedelta(minutes=5)).isoformat()
+            cur.execute("SELECT COUNT(*) as cnt FROM users WHERE COALESCE(is_banned,0)=0 AND last_webapp_open IS NOT NULL AND last_webapp_open<>'' AND last_webapp_open >= " + ph(), (online_cut,))
+            stats["online"] = val(cur.fetchone(), "cnt", 0) or 0
+        except Exception as e:
+            logger.error(f"social stats error: {e}")
+        return stats
+    finally:
+        safe_close(conn)
+
+
 @app.get("/api/me/{user_id}")
 def api_me(user_id: int, username: Optional[str] = Query(None), referred_by: Optional[str] = Query(None)):
     u = ensure_user(user_id, username or "", referred_by)

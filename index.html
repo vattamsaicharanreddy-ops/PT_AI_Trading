@@ -119,6 +119,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 
 <div class='w-full max-w-[420px] min-h-screen relative pb-28' style='background:var(--bg)'>
 <header class='flex justify-between items-center p-5 pt-10'><span class='text-sm tracking-[3px] font-bold'>PT_AI Trading</span><span class='text-xs px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'>LIVE</span></header>
+<div class='mx-4 mb-4 rounded-2xl px-4 py-3' style='background:var(--surface);border:1px solid rgba(16,185,129,0.18)'>
+<div class='flex justify-between items-center text-[10px]' style='color:var(--text2)'><span>Community</span><span id='socialOnline' class='flex items-center gap-1'><span class='w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse'></span>0 online</span></div>
+<div class='grid grid-cols-3 gap-2 mt-2 text-center'>
+<div class='rounded-xl p-2' style='background:rgba(16,185,129,0.08)'><p id='socialDep' class='font-extrabold text-xs text-emerald-400'>$0</p><p class='text-[8px]' style='color:var(--text3)'>DEPOSITED TODAY</p></div>
+<div class='rounded-xl p-2' style='background:rgba(255,214,10,0.08)'><p id='socialTotalDep' class='font-extrabold text-xs' style='color:#FFD60A'>$0</p><p class='text-[8px]' style='color:var(--text3)'>TOTAL DEPOSITS</p></div>
+<div class='rounded-xl p-2' style='background:rgba(108,59,255,0.08)'><p id='socialWdCount' class='font-extrabold text-xs' style='color:#A5A6F6'>0</p><p class='text-[8px]' style='color:var(--text3)'>PAYOUTS SENT</p></div>
+</div>
+<div id='socialFeed' class='mt-2 space-y-1'></div>
+</div>
 <div class='mx-4 rounded-2xl p-4 flex justify-between items-center' style='background:var(--surface);border:1px solid var(--border)'>
 <div class='flex items-center gap-3'><div class='w-11 h-11 rounded-full bg-[#26A17B] flex items-center justify-center font-bold text-white text-[16px]'>$</div><div><p class='text-xs tracking-widest font-bold' style='color:#26A17B'><span id='aiStatus'>AI ACTIVE</span> <span id='tierPct'>0%</span>/day</p><p class='font-bold text-sm'><span id='balTopMini'>0</span> USDT</p><p id='aiTimer' class='text-[10px] font-mono px-2 py-0.5 rounded-full mt-1 inline-block' style='background:var(--border)'>00d 00h 00m 00s left</p></div></div>
 <div class='text-right'><p class='text-[10px]' style='color:var(--text3)'>WALLET</p><p id='withdrawableTop' class='font-bold text-sm' style='color:#FFD60A'>0.00 USDT</p><p id='taskBadge' class='text-[10px] px-2 py-0.5 rounded-full mt-1 hidden' style='background:rgba(108,59,255,0.15);color:#A5A6F6'>Tasks</p></div>
@@ -1068,7 +1077,28 @@ el.innerHTML=emptyState('tasks','No Tasks Yet','Admin needs to create tasks for 
 
 // === HOOK INTO INIT FOR TIER CHECK & NOTIFICATIONS ===
 let _lastVerifiedDeposits=0;
+async function loadSocial(){
+try{
+let s=await apiFetch('/api/public/social');
+if(!s)return;
+let $f=x=>document.getElementById(x);
+let f=$f('socialFeed');
+if($f('socialOnline'))$f('socialOnline').innerHTML='<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>'+(s.online||0)+' online';
+if($f('socialDep'))$f('socialDep').innerText='$'+Number(s.day_deposits||0).toFixed(0);
+if($f('socialTotalDep'))$f('socialTotalDep').innerText='$'+Number(s.total_deposits||0).toFixed(0);
+if($f('socialWdCount'))$f('socialWdCount').innerText=String(s.withdraw_count||0);
+if(f){
+if(s.recent_withdrawals&&s.recent_withdrawals.length){
+f.innerHTML=s.recent_withdrawals.slice(0,3).map(function(w){return '<div class="flex justify-between items-center text-[9px] rounded-lg px-2 py-1" style="background:var(--border)"><span style="color:var(--text2)">Payout <span class="mono" style="color:#A5A6F6">'+w.tx+'</span></span><span class="font-bold" style="color:#FFD60A">$'+Number(w.amount).toFixed(2)+'</span></div>';}).join('');
+}else{
+f.innerHTML='<div class="text-center text-[9px] py-1" style="color:var(--text3)">Payouts appear here as withdrawals are sent</div>';
+}
+}
+}catch(e){console.error('social',e);}
+}
+setInterval(loadSocial,30000);
 init=async function(){
+loadSocial();
 let me=await apiFetch('/api/me/'+userId);
 if(!me){console.error('Failed to load user');return;}
 let oldMe=window._lastMe;
