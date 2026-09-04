@@ -717,7 +717,7 @@ def public_social():
             "first_deposit_bonus_cap": float(os.getenv("FIRST_DEPOSIT_BONUS_CAP", "10")),
         }
         try:
-            cur.execute("SELECT COALESCE(SUM(COALESCE(actual_amount, amount)),0) as tot, COUNT(*) as cnt FROM deposits WHERE status='verified'")
+            cur.execute("SELECT COALESCE(SUM(COALESCE(total_deposit,0)),0) as tot, COUNT(*) as cnt FROM users WHERE COALESCE(total_deposit,0)>0")
             r = cur.fetchone()
             rd = dict(r) if not isinstance(r, dict) else r
             stats["total_deposits"] = round(float(rd.get("tot", 0) or 0), 2)
