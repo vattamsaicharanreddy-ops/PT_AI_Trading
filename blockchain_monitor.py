@@ -148,43 +148,78 @@ def get_outgoing_bsc_transactions():
     try:
         api_key = MEGANODE_KEY
         url = MEGANODE_BSC_URL + "/" + api_key
-        body = json.dumps({
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "nr_getAssetTransfers",
-            "params": [{
-                "fromAddress": WITHDRAWAL_ADDR_BSC,
-                "category": ["20"],
-                "excludeZeroValue": True,
-                "pageSize": 50,
-                "pageToken": "",
-            }],
-        }).encode()
-        req = urllib.request.Request(
-            url, data=body,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = json.loads(resp.read().decode())
-            if data.get("error"):
-                logger.error(f"MegaNode withdrawal error: {data.get('error')}")
-                return []
-            transfers = (data.get("result") or {}).get("transfers", [])
-        out = []
-        for tx in transfers:
+        transfer_topic = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+        wallet_topic = "0x000000000000000000000000" + WITHDRAWAL_ADDR_BSC[2:]
+        latest_hex = _meganode_call(url, "eth_blockNumber", [])
+        latest = int(latest_hex, 16)
+        recent_blocks = int(os.getenv("WD_SCAN_BLOCKS", "800"))
+        logs = _meganode_call(url, "eth_getLogs", [{
+            "fromBlock": hex(max(latest - recent_blocks, 0)),
+            "toBlock": hex(latest),
+            "address": USDT_BEP20_CONTRACT,
+            "topics": [transfer_topic, wallet_topic],
+        }])
+        if not isinstance(logs, list):
+            return []
+        # fetch timestamps for unique blocks (concurrently for speed)
+        blocks = {}
+        for lg in logs:
+            blocks[int(lg.get("blockNumber"), 16)] = None
+        if blocks:
+            bn_list = list(blocks.keys())
+
+            def _get_block_ts(bn):
+                try:
+                    blk = _meganode_call(url, "eth_getBlockByNumber", [hex(bn), False])
+                    return bn, int(blk.get("timestamp"), 16) if isinstance(blk, dict) else 0
+                except Exception:
+                    return bn, 0
+
             try:
-                asset = (tx.get("asset") or "").upper()
-                contract = (tx.get("contractAddress") or "").lower()
-                if asset != "USDT" or contract != USDT_BEP20_CONTRACT:
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor(max_workers=16) as ex:
+                    for bn, ts in ex.map(_get_block_ts, bn_list, chunksize=1):
+                        blocks[bn] = ts
+            except Exception:
+                pass
+        out = []
+        for lg in logs:
+            try:
+                bn = int(lg.get("blockNumber"), 16)
+                topics = lg.get("topics", [])
+                if len(topics) < 3:
                     continue
-                out.append(tx)
+                to_addr = "0x" + topics[2][-40:]
+                if to_addr.lower() == WITHDRAWAL_ADDR_BSC:
+                    continue
+                amount = int(lg.get("data", "0") or "0", 16) / (10 ** 18)
+                if amount <= 0:
+                    continue
+                out.append({
+                    "from": WITHDRAWAL_ADDR_BSC,
+                    "to": to_addr,
+                    "hash": lg.get("transactionHash", ""),
+                    "amount": amount,
+                    "time": blocks.get(bn, 0),
+                })
             except Exception:
                 continue
-        return sorted(out, key=lambda t: int(t.get("blockTimeStamp") or 0), reverse=True)
+        # newest first
+        out.sort(key=lambda t: t.get("time", 0), reverse=True)
+        return out
     except Exception as e:
         logger.error(f"BSC withdrawal fetch error: {e}")
     return []
+
+
+def _meganode_call(url, method, params):
+    body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode()
+    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        data = json.loads(resp.read().decode())
+    if data.get("error"):
+        raise Exception(str(data.get("error")))
+    return data.get("result")
 
 
 def _post_withdrawal_to_group(text):
@@ -221,23 +256,21 @@ def scan_and_announce_withdrawals():
                 if to_addr == WITHDRAWAL_ADDR_BSC:
                     continue
                 tx_hash = tx.get("hash", "")
-                value = tx.get("value", "0")
                 try:
-                    raw_int = 0
-                    if isinstance(value, str) and value.lower().startswith("0x"):
-                        raw_int = int(value, 16)
-                    elif isinstance(value, str):
-                        raw_int = int(value)
-                    else:
-                        raw_int = int(value)
-                    amount = raw_int / (10 ** 18)
+                    amount = float(tx.get("amount", 0) or 0)
                 except Exception:
                     amount = 0
-                time_stamp = int(tx.get("blockTimeStamp", "0") or 0)
+                time_stamp = int(tx.get("time", 0) or 0)
                 if time_stamp > 1000000000:
                     tx_time = datetime.fromtimestamp(time_stamp, tz=timezone.utc)
                 else:
                     tx_time = datetime.utcnow()
+                # Only track LIVE withdrawals - ignore historical/backfill txs.
+                # Window (hours) configurable via WD_RECENT_HOURS (default last 24h).
+                recent_hours = int(os.getenv("WD_RECENT_HOURS", "24"))
+                cutoff = datetime.utcnow() - timedelta(hours=recent_hours)
+                if tx_time.replace(tzinfo=None) < cutoff:
+                    continue
                 if amount <= 0:
                     continue
                 cur.execute(f"SELECT tx_hash FROM withdrawal_announcements WHERE tx_hash={ph()}", (tx_hash,))
