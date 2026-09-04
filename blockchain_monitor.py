@@ -271,7 +271,9 @@ def scan_and_announce_withdrawals():
                 cutoff = datetime.utcnow() - timedelta(hours=recent_hours)
                 if tx_time.replace(tzinfo=None) < cutoff:
                     continue
-                if amount <= 0:
+                # Enforce minimum withdrawal amount (default 10 USDT)
+                min_amt = float(os.getenv("WD_MIN_AMOUNT", "10"))
+                if amount < min_amt:
                     continue
                 cur.execute(f"SELECT tx_hash FROM withdrawal_announcements WHERE tx_hash={ph()}", (tx_hash,))
                 if cur.fetchone():
@@ -349,17 +351,25 @@ monitor_thread.start()
 
 def withdrawal_announce_loop():
     logger.info(f"Withdrawal Announcement Scanner Started - watching {WITHDRAWAL_ADDR_BSC}")
-    time.sleep(25)
+    time.sleep(8)
     MAX_PER_HOUR = int(os.getenv("WD_POST_PER_HOUR", "5"))
     MIN_GAP = int(os.getenv("WD_POST_GAP_MIN", "10"))
     MAX_GAP = int(os.getenv("WD_POST_GAP_MAX", "20"))
     post_keeper = {"last_post_iso": ""}
+    first_run = True
     while True:
         try:
-            time.sleep(5)
-            _post_from_queue_if_allowed(MAX_PER_HOUR, MIN_GAP, MAX_GAP, post_keeper)
+            # scan for new outgoing payouts and enqueue them
+            try:
+                scan_and_announce_withdrawals()
+            except Exception as e:
+                logger.error(f"Withdrawal scan exception: {e}")
+            # post immediately on first run / first available item for a fast first post
+            _post_from_queue_if_allowed(MAX_PER_HOUR, MIN_GAP, MAX_GAP, post_keeper, force_first=first_run)
+            first_run = False
         except Exception as e:
             logger.error(f"Withdrawal announce exception: {e}")
+        time.sleep(20)
 
 
 def _posts_this_hour(cur, now_iso):
@@ -370,7 +380,7 @@ def _posts_this_hour(cur, now_iso):
     return r.get("cnt", 0) or 0
 
 
-def _post_from_queue_if_allowed(max_per_hour, min_gap, max_gap, post_keeper):
+def _post_from_queue_if_allowed(max_per_hour, min_gap, max_gap, post_keeper, force_first=False):
     conn = get_conn()
     try:
         cur = get_cursor(conn)
@@ -384,7 +394,7 @@ def _post_from_queue_if_allowed(max_per_hour, min_gap, max_gap, post_keeper):
             return
         # enforce 10-20 min gap between posts
         last = post_keeper.get("last_post_iso", "")
-        if last:
+        if last and not force_first:
             try:
                 last_dt = datetime.fromisoformat(last)
                 elapsed_min = (now - last_dt).total_seconds() / 60.0
@@ -403,8 +413,9 @@ def _post_from_queue_if_allowed(max_per_hour, min_gap, max_gap, post_keeper):
             w["time"] = int(datetime.fromisoformat(r.get("tx_time", "")).timestamp())
         except Exception:
             pass
-        if w["amount"] < 1:
-            # skip junk / dust - mark posted to avoid re-trying
+        min_amt = float(os.getenv("WD_MIN_AMOUNT", "10"))
+        if w["amount"] < min_amt:
+            # below minimum withdrawal - skip, mark posted to avoid re-trying
             cur.execute(f"UPDATE wd_post_queue SET posted=1 WHERE id={ph()}", (r.get("id"),))
             conn.commit()
             return
