@@ -384,8 +384,26 @@ def get_tier(balance):
     return len(TIERS) - 1, 0, 0
 
 
+def _reconcile_total_deposits():
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(
+            "UPDATE users SET total_deposit = GREATEST(COALESCE(total_deposit,0), COALESCE(balance,0)) "
+            "WHERE COALESCE(balance,0) > COALESCE(total_deposit,0)"
+        )
+        updated = cur.rowcount if hasattr(cur, "rowcount") else "?"
+        conn.commit()
+        logger.info(f"Reconciled total_deposit >= balance for {updated} users")
+    except Exception as e:
+        logger.error(f"Total deposit reconcile error: {e}")
+    finally:
+        safe_close(conn)
+
+
 _seed_referral_tasks()
 _seed_join_tasks()
+_reconcile_total_deposits()
 
 
 def invoice_id():
