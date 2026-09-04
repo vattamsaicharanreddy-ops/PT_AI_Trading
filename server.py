@@ -1221,6 +1221,12 @@ def withdraw(user_id: int, req: WithdrawalRequest):
             if done < mand:
                 return {"ok": False, "error": f"Complete {mand} mandatory join tasks first! Go to Tasks tab"}
         cur.execute(
+            f"SELECT COUNT(*) as cnt FROM withdrawals WHERE user_id={ph()} AND created_at LIKE {ph()}",
+            (user_id, _today() + "%"),
+        )
+        if (val(cur.fetchone(), "cnt", 0) or 0) > 0:
+            return {"ok": False, "error": "You can only request one withdrawal per day. Try again tomorrow."}
+        cur.execute(
             f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)-{ph()} WHERE user_id={ph()}",
             (req.amount, user_id),
         )
