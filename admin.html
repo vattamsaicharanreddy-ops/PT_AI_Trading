@@ -183,6 +183,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.45)!impor
 <div class="flex gap-2">
 <input id="userSearch" oninput="filterUsers()" placeholder="Search ID or username..." class="rounded-full px-4 py-2 text-[11px] w-[200px] border outline-none focus:ring-1" style="background:var(--input);border-color:var(--border)">
 <select id="userFilter" onchange="filterUsers()" class="rounded-full px-3 py-2 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="all">All Users</option><option value="online">Online Now</option><option value="active">Active (Deposited)</option><option value="banned">Banned</option><option value="whale">Whales >$500</option><option value="no_tasks">No Tasks Done</option></select>
+<select id="userSort" onchange="renderUsers(allUsers)" class="rounded-full px-3 py-2 text-[11px] border" style="background:var(--input);border-color:var(--border)"><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="balance">Highest Balance</option><option value="deposit">Highest Deposit</option><option value="tasks">Most Tasks</option><option value="games">Most Games</option></select>
 <button onclick="bulkActionPrompt()" class="btn-gold px-4 py-2 rounded-full text-[11px]">Bulk Action</button>
 </div>
 </div>
@@ -769,7 +770,7 @@ let q=document.getElementById('userSearch')?.value?.toLowerCase()||'';
 let f=activeUserFilter||document.getElementById('userFilter')?.value||'all';
 let filtered=users;
 let now=new Date();
-let fiveMinAgo=new Date(now.getTime()-5*60000).toISOString();
+let fiveMinAgo=new Date(now.getTime()-1*60000).toISOString();
 let sevenDaysAgo=new Date(Date.now()-7*86400000).toISOString();
 if(q) filtered=filtered.filter(u=>String(u.user_id).includes(q)||(u.username||'').toLowerCase().includes(q));
 if(f==='banned') filtered=filtered.filter(u=>u.is_banned);
@@ -782,6 +783,19 @@ if(f==='has_tasks_no_dep') filtered=filtered.filter(u=>!u.is_banned&&Number(u.to
 if(f==='inactive7') filtered=filtered.filter(u=>!u.is_banned&&Number(u.total_deposit)>0&&!((u.last_webapp_open||'')>sevenDaysAgo&&(u.last_webapp_open||'')!==""));
 if(f==='dep_no_wd') filtered=filtered.filter(u=>!u.is_banned&&Number(u.total_deposit)>0&&Number(u.total_withdraw)<=0);
 if(f==='high_bal') filtered=filtered.filter(u=>!u.is_banned&&Number(u.balance)+Number(u.withdrawable)>100);
+let sortBy=document.getElementById('userSort')?.value||'newest';
+filtered=filtered.slice().sort((a,b)=>{
+let ka,kb;
+switch(sortBy){
+case 'oldest':ka=a.created_at||'';kb=b.created_at||'';return ka<kb?-1:ka>kb?1:0;
+case 'balance':ka=Number(a.balance)||0;kb=Number(b.balance)||0;break;
+case 'deposit':ka=Number(a.total_deposit)||0;kb=Number(b.total_deposit)||0;break;
+case 'tasks':ka=a.tasks_completed||0;kb=b.tasks_completed||0;break;
+case 'games':ka=a.total_games_played||0;kb=b.total_games_played||0;break;
+default:ka=a.created_at||'';kb=b.created_at||'';return kb<ka?-1:kb>ka?1:0;
+}
+return kb-ka;
+});
 document.querySelectorAll('.uf-btn').forEach(b=>{let k=b.getAttribute('data-uf');
 let active=(k===f);
 b.style.background=active?'rgba(124,77,255,0.15)':'var(--hover)';

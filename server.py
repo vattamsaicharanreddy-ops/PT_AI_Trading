@@ -1478,8 +1478,10 @@ def admin_stats(request: Request):
             logger.error("admin_stats: fetchone returned None")
             return DEFAULT
         r = dict(row) if not isinstance(row, dict) else row
-        r["online_users"] = 0
-        logger.info(f"admin_stats OK: users={r.get('total_users',0)} deps={r.get('verified_deposits',0)} wds={r.get('pending_withdrawals',0)}")
+        online_cut = (datetime.utcnow() - timedelta(minutes=1)).isoformat()
+        cur.execute(f"SELECT COUNT(*) as cnt FROM users WHERE COALESCE(is_banned,0)=0 AND last_webapp_open <> '' AND last_webapp_open IS NOT NULL AND last_webapp_open >= {ph()}", (online_cut,))
+        r["online_users"] = val(cur.fetchone(), "cnt", 0) or 0
+        logger.info(f"admin_stats OK: users={r.get('total_users',0)} deps={r.get('verified_deposits',0)} wds={r.get('pending_withdrawals',0)} online={r.get('online_users',0)}")
         return r
     except Exception as e:
         logger.error(f"admin_stats FAILED: {e}", exc_info=True)
