@@ -210,6 +210,7 @@ def init_db():
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS total_games_played INTEGER DEFAULT 0",
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS total_games_won INTEGER DEFAULT 0",
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_webapp_open TEXT DEFAULT ''",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_nudge_at TEXT DEFAULT ''",
             ]
             for m in migrations:
                 try:
@@ -362,6 +363,7 @@ def init_db():
                 "ALTER TABLE users ADD COLUMN total_games_played INTEGER DEFAULT 0",
                 "ALTER TABLE users ADD COLUMN total_games_won INTEGER DEFAULT 0",
                 "ALTER TABLE users ADD COLUMN last_webapp_open TEXT DEFAULT ''",
+                "ALTER TABLE users ADD COLUMN last_nudge_at TEXT DEFAULT ''",
             ]:
                 try:
                     conn.execute(stmt)

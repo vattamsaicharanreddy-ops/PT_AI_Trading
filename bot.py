@@ -75,6 +75,7 @@ WELCOME_TEXT = (
     "\u2728 <b>Welcome, {name}!</b>\n\n"
     "\U0001f3af <b>PT_AI Trading</b> \u2014 AI earns you USDT daily\n\n"
     "\u2022 Deposit min <b>$5 USDT</b> \u2192 earn <b>7.6% \u2013 14.9%</b> daily\n"
+    "\u2022 \U0001f381 <b>First deposit bonus:</b> get extra <b>+10%</b> (max $10) free\n"
     "\u2022 <b>Withdraw anytime</b> to your wallet\n"
     "\u2022 Complete tasks \u2192 earn <b>1+ USDT</b> free\n\n"
     "\u2b50 <b>Join our groups first</b> to get started:\n"

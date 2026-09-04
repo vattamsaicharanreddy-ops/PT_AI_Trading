@@ -61,6 +61,7 @@ def _seed_referral_tasks():
             cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_type TEXT DEFAULT 'join'")
             cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_config TEXT DEFAULT ''")
             cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_nudge_at TEXT DEFAULT ''")
             conn.commit()
         except Exception:
             pass
@@ -2633,6 +2634,7 @@ def debug_seed_referrals():
         cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_type TEXT DEFAULT 'join'")
         cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_config TEXT DEFAULT ''")
         cur.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_nudge_at TEXT DEFAULT ''")
         conn.commit()
     except Exception as e:
         errors.append(f"migrate: {e}")
