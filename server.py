@@ -1940,11 +1940,11 @@ def admin_user_action(action: AdminAction, request: Request):
             return {"ok": False, "error": "User not found"}
         amt = float(action.amount or 0)
         if act == "add_balance":
-            cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()} WHERE user_id={ph()}", (amt, action.user_id))
+            cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()}, total_deposit=COALESCE(total_deposit,0)+{ph()} WHERE user_id={ph()}", (amt, amt, action.user_id))
         elif act == "deduct_balance":
             cur.execute(f"UPDATE users SET balance=GREATEST(0,COALESCE(balance,0)-{ph()}) WHERE user_id={ph()}", (amt, action.user_id))
         elif act == "set_balance":
-            cur.execute(f"UPDATE users SET balance={ph()} WHERE user_id={ph()}", (amt, action.user_id))
+            cur.execute(f"UPDATE users SET balance={ph()}, total_deposit=COALESCE(total_deposit,0)+GREATEST(0,{ph()}-COALESCE(balance,0)) WHERE user_id={ph()}", (amt, amt, action.user_id))
         elif act == "add_withdrawable":
             cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()} WHERE user_id={ph()}", (amt, action.user_id))
         elif act == "deduct_withdrawable":
@@ -2010,7 +2010,7 @@ async def admin_bulk_action(request: Request):
         for uid in user_ids:
             try:
                 if action == "add_balance":
-                    cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()} WHERE user_id={ph()}", (amount, uid))
+                    cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()}, total_deposit=COALESCE(total_deposit,0)+{ph()} WHERE user_id={ph()}", (amount, amount, uid))
                 elif action == "add_withdrawable":
                     cur.execute(f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()} WHERE user_id={ph()}", (amount, uid))
                 elif action == "ban":
