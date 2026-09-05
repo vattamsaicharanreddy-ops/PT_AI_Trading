@@ -362,9 +362,9 @@ def withdrawal_announce_loop():
     # Clear stale queue on startup so old backfill txs don't post with wrong timestamps
     _clear_stale_queue()
     time.sleep(8)
-    MAX_PER_HOUR = int(os.getenv("WD_POST_PER_HOUR", "5"))
-    MIN_GAP = int(os.getenv("WD_POST_GAP_MIN", "10"))
-    MAX_GAP = int(os.getenv("WD_POST_GAP_MAX", "20"))
+    MAX_PER_HOUR = int(os.getenv("WD_POST_PER_HOUR", "1"))
+    MIN_GAP = int(os.getenv("WD_POST_GAP_MIN", "240"))
+    MAX_GAP = int(os.getenv("WD_POST_GAP_MAX", "360"))
     post_keeper = {"last_post_iso": ""}
     first_run = True
     while True:
@@ -414,10 +414,10 @@ def _post_from_queue_if_allowed(max_per_hour, min_gap, max_gap, post_keeper, for
         row = cur.fetchone()
         if not row:
             return
-        # enforce 4-5 per hour
+        # at most 1 post per hour
         if _posts_this_hour(cur, now.isoformat()) >= max_per_hour:
             return
-        # enforce 10-20 min gap between posts
+        # enforce 4-6 hour gap between posts
         last = post_keeper.get("last_post_iso", "")
         if last and not force_first:
             try:
@@ -460,7 +460,7 @@ def _post_from_queue_if_allowed(max_per_hour, min_gap, max_gap, post_keeper, for
             post_keeper["last_post_iso"] = now.isoformat()
             conn.commit()
             logger.info(f"Posted simulated withdrawal {r.get('tx_hash','')} ${w['amount']:.2f}")
-            # random 10-20 min gap before next
+            # random 4-6 hour gap before next
             time.sleep(random.randint(min_gap, max_gap) * 60)
     except Exception as e:
         logger.error(f"Post-from-queue error: {e}")

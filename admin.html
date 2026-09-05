@@ -462,14 +462,14 @@ Upload Image
 <div class="flex items-center gap-3">
 <div id="ptStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
 <h3 class="font-black text-sm">BSC Payout Tracker</h3>
-<span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(108,59,255,0.15);color:#7C4DFF">WD_POST_PER_HOUR ≤5</span>
+<span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(108,59,255,0.15);color:#7C4DFF">POST GAP 4–6 HRS</span>
 </div>
 <div class="flex gap-2">
 <button onclick="loadPayoutTracker()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh</button>
 <button onclick="togglePayoutPause()" id="ptToggleBtn" class="btn-gold px-5 py-2 rounded-full text-[11px] font-black">Pause Poster</button>
 </div>
 </div>
-<p class="text-[11px] mt-3 leading-relaxed" style="color:var(--text2)">The tracker watches a live BSC wallet, scans fresh USDT send txs (last ~90s), and posts realistic payouts (amounts $10–$1000, biased to $10–$100) into the group with on-chain timestamps. Use <b>Pause</b> to hold all posts (new txs still ignored), then <b>Resume</b> to continue.</p>
+<p class="text-[11px] mt-3 leading-relaxed" style="color:var(--text2)">The tracker watches a live BSC wallet, scans fresh USDT send txs (last ~90s), and posts realistic payouts (amounts $10–$1000, biased to $10–$100) into the group roughly every 4–6 hours with on-chain timestamps. Use <b>Pause</b> to hold all posts (new txs still ignored), then <b>Resume</b> to continue.</p>
 <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
 <div class="rounded-2xl p-4" style="background:var(--border2);border:1px solid var(--border2)">
 <p class="text-[9px] font-bold tracking-widest" style="color:var(--text3)">QUEUE PREVIEW (newest fresh txs)</p>
