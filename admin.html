@@ -90,6 +90,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.45)!impor
 <button onclick="showTab('referrals')" data-tab="referrals" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px]" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>Referrals</span></button>
 <button onclick="showTab('payout')" data-tab="payout" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px]" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/></svg>Payout Tracker</span></button>
 <button onclick="showTab('coupons')" data-tab="coupons" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px]" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 12l-8-8H4v8l8 8 8-8z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>Coupon Codes</span></button>
+<button onclick="showTab('inr')" data-tab="inr" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px]" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>INR Ledger</span></button>
 <div class="my-1.5 mx-3 border-t" style="border-color:var(--border2)"></div>
 <button onclick="showTab('extreme')" data-tab="extreme" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px] font-bold" style="color:#f87171;background:rgba(239,68,68,0.06)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Extreme Tools</span></button>
 <button onclick="showTab('broadcast')" data-tab="broadcast" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-[12px]" style="color:var(--text2)"><span class="flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>Broadcast</span></button>
@@ -491,7 +492,7 @@ Upload Image
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 <div class="card p-5">
 <h3 class="font-black text-sm">Create Promo Coupon</h3>
-<p class="text-[11px] mt-1" style="color:var(--text2)">Share the code to attract users. Redeemed bonus credits instantly to the user's withdrawable balance (one use per user).</p>
+<p class="text-[11px] mt-1" style="color:var(--text2)">Share the code to attract users. Bonus is credited to the user's balance after their deposit is verified (one use per user).</p>
 <div class="mt-4 space-y-2.5">
 <input id="cp_code" placeholder="CODE (e.g. VIP10)" class="w-full rounded-xl p-3 text-[11px] mono border outline-none uppercase" style="background:var(--input);border-color:var(--border)">
 <div class="grid grid-cols-2 gap-2">
@@ -514,6 +515,48 @@ Upload Image
 <div class="overflow-x-auto"><table class="w-full text-[11px]">
 <thead><tr><th class="text-left p-2.5">Code</th><th class="text-left p-2.5">Bonus</th><th class="text-left p-2.5">Uses</th><th class="text-left p-2.5">Valid Until</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Created</th><th class="text-left p-2.5">Actions</th></tr></thead>
 <tbody id="couponsList"></tbody></table></div>
+</div>
+</div>
+</section>
+
+<section id="sec-inr" class="hidden space-y-5 fade-in">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+<div class="card stat-tile p-4" style="--tile-glow:rgba(16,185,129,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Total In</p><p id="inr_total_in" class="text-[26px] font-black mt-1" style="color:#10b981">₹0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">credits</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(239,68,68,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#ef4444">Total Out</p><p id="inr_total_out" class="text-[26px] font-black mt-1" style="color:#ef4444">₹0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">debits</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(255,214,10,0.42)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Net</p><p id="inr_net" class="text-[26px] font-black mt-1" style="color:#FFD60A">₹0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">in − out</p></div>
+<div class="card stat-tile p-4" style="--tile-glow:rgba(96,165,250,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#60a5fa">Entries</p><p id="inr_count" class="text-[26px] font-black mt-1" style="color:#60a5fa">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">logged txs</p></div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+<div class="card p-5">
+<div class="flex items-center justify-between">
+<h3 class="font-black text-sm">Add Manual Transaction</h3>
+<span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(108,59,255,0.15);color:#7C4DFF">INR ONLY</span>
+</div>
+<p class="text-[11px] mt-1" style="color:var(--text2)">Standalone Indian Rupee bookkeeping — no link to the Mini App bots/users. Log UPI/bank transfers manually.</p>
+<div class="mt-4 space-y-2.5">
+<input id="inr_tx" placeholder="Transaction / UTI / Ref ID" class="w-full rounded-xl p-3 text-[11px] mono border outline-none" style="background:var(--input);border-color:var(--border)">
+<div class="grid grid-cols-2 gap-2">
+<select id="inr_type" class="rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+<option value="credit">Credit (Received)</option>
+<option value="debit">Debit (Sent)</option>
+</select>
+<input id="inr_amount" type="number" step="1" placeholder="Amount ₹" class="rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+</div>
+<input id="inr_note" placeholder="Note (e.g. Alice UPI x1234)" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+<button onclick="addInr()" class="w-full btn-gold py-3 rounded-full text-sm mt-1">Add Transaction</button>
+</div>
+</div>
+<div class="lg:col-span-2 card p-5">
+<div class="flex justify-between items-center mb-3">
+<h3 class="font-black text-sm">Statement Entries</h3>
+<div class="flex gap-2">
+<button onclick="loadInr()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh</button>
+<button onclick="exportInr()" class="btn-gold px-4 py-2 rounded-full text-[11px] font-black">Export Statement (CSV)</button>
+</div>
+</div>
+<div class="overflow-x-auto"><table class="w-full text-[11px]">
+<thead><tr><th class="text-left p-2.5">Date</th><th class="text-left p-2.5">Transaction ID</th><th class="text-left p-2.5">Type</th><th class="text-left p-2.5">Amount</th><th class="text-left p-2.5">Note</th><th class="text-left p-2.5"></th></tr></thead>
+<tbody id="inrList"></tbody></table></div>
 </div>
 </div>
 </section>
@@ -718,6 +761,7 @@ if(['deposits','users','dashboard','withdrawals','referrals','tasks'].includes(t
 if(tab==='broadcast') loadBroadcastTab();
 if(tab==='payout') loadPayoutTracker();
 if(tab==='coupons') loadCoupons();
+if(tab==='inr') loadInr();
 if(tab==='settings') loadEnvStatus();
 }
 
@@ -1830,6 +1874,56 @@ let j=await res.json();
 toast(j.ok?'Coupon updated':'Failed',j.ok?'success':'error');
 loadCoupons();
 }catch(e){toast('Request failed','error');}
+}
+
+async function loadInr(){
+try{
+let j=await fetchJson('/api/admin/inr');
+if(!j.ok){toast(j.error||'Failed','error');return;}
+document.getElementById('inr_total_in').innerText='₹'+Number(j.total_in||0).toFixed(2);
+document.getElementById('inr_total_out').innerText='₹'+Number(j.total_out||0).toFixed(2);
+document.getElementById('inr_net').innerText='₹'+Number(j.net||0).toFixed(2);
+let rows=j.transactions||[];
+document.getElementById('inr_count').innerText=rows.length;
+document.getElementById('inrList').innerHTML=rows.map(t=>{
+let isIn=t.type==='credit';
+return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 text-[10px]" style="color:var(--text3)">${(t.created_at||'').slice(0,16).replace('T',' ')}</td><td class="p-2.5 mono">${t.tx_id||''}</td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="color:${isIn?'#10b981':'#ef4444'};background:${isIn?'rgba(16,185,129,0.12)':'rgba(239,68,68,0.12)'}">${isIn?'CREDIT':'DEBIT'}</span></td><td class="p-2.5 font-bold" style="color:${isIn?'#10b981':'#ef4444'}">${isIn?'+':'−'}₹${Number(t.amount||0).toFixed(2)}</td><td class="p-2.5" style="color:var(--text2)">${t.note||''}</td><td class="p-2.5"><button onclick="deleteInr(${t.id})" class="px-2 py-1 rounded-lg text-[9px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">DEL</button></td></tr>`;
+}).join('')||`<tr><td colspan="6" class="p-6 text-center" style="color:var(--text3)">No INR entries yet — add your first transaction on the left</td></tr>`;
+}catch(e){toast('Failed to load INR ledger','error');}
+}
+async function addInr(){
+let tx=document.getElementById('inr_tx').value.trim();
+let type=document.getElementById('inr_type').value;
+let amount=parseFloat(document.getElementById('inr_amount').value||0);
+let note=document.getElementById('inr_note').value.trim();
+if(!tx){toast('Enter a transaction ID','error');return;}
+if(!amount||amount<=0){toast('Enter an amount greater than 0','error');return;}
+try{
+let res=await fetch('/api/admin/inr/add',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({tx_id:tx,type,amount,note})});
+let j=await res.json();
+if(j.ok){toast('Transaction added','success');document.getElementById('inr_tx').value='';document.getElementById('inr_amount').value='';document.getElementById('inr_note').value='';loadInr();}
+else{toast(j.error||'Failed','error');}
+}catch(e){toast('Request failed','error');}
+}
+async function deleteInr(id){
+if(!confirm('Delete this transaction?'))return;
+try{
+let res=await fetch('/api/admin/inr/delete',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({id})});
+let j=await res.json();
+toast(j.ok?'Deleted':'Failed',j.ok?'success':'error');
+loadInr();
+}catch(e){toast('Request failed','error');}
+}
+async function exportInr(){
+try{
+let r=await fetch('/api/admin/inr/statement',{headers:apiHeaders(),cache:'no-store'});
+if(!r.ok){toast('Export failed HTTP '+r.status,'error');return;}
+let blob=await r.blob();
+let url=URL.createObjectURL(blob);
+let a=document.createElement('a');a.href=url;a.download='inr_statement_'+Date.now()+'.csv';a.click();
+URL.revokeObjectURL(url);
+toast('Statement exported','success');
+}catch(e){toast('Export error','error');}
 }
 
 async function loadUserNote(){

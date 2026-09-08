@@ -204,6 +204,13 @@ class CouponRedeem(BaseModel):
     tx_hash: Optional[str] = None
 
 
+class InrAdd(BaseModel):
+    tx_id: str = Field(min_length=1, max_length=128)
+    type: str = "credit"
+    amount: float = Field(gt=0)
+    note: Optional[str] = ""
+
+
 class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = ""
@@ -3261,6 +3268,87 @@ def _credit_pending_coupons(cur, user_id):
         total += bonus
         logger.info(f"COUPON BONUS ${bonus} credited to user {user_id} after verified deposit {now}")
     return total
+
+
+@app.get("/api/admin/inr")
+def admin_inr_list(request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute("SELECT * FROM inr_ledger ORDER BY id DESC")
+        rows = [dict(r) if not isinstance(r, dict) else r for r in cur.fetchall()]
+        total_in = round(sum(float(r.get("amount", 0) or 0) for r in rows if r.get("type") == "credit"), 2)
+        total_out = round(sum(float(r.get("amount", 0) or 0) for r in rows if r.get("type") == "debit"), 2)
+        return {"ok": True, "transactions": rows, "total_in": total_in, "total_out": total_out, "net": round(total_in - total_out, 2)}
+    finally:
+        safe_close(conn)
+
+
+@app.post("/api/admin/inr/add")
+def admin_inr_add(body: InrAdd, request: Request):
+    require_admin(request)
+    ttype = (body.type or "credit").strip().lower()
+    if ttype not in ("credit", "debit"):
+        return {"ok": False, "error": "Type must be credit or debit"}
+    amt = round(float(body.amount or 0), 2)
+    if amt <= 0:
+        return {"ok": False, "error": "Amount must be greater than 0"}
+    tx_id = (body.tx_id or "").strip()
+    if not tx_id:
+        return {"ok": False, "error": "Transaction ID is required"}
+    note = (body.note or "").strip()
+    now = datetime.utcnow().isoformat()
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"SELECT id FROM inr_ledger WHERE tx_id={ph()}", (tx_id,))
+        if cur.fetchone():
+            return {"ok": False, "error": "Transaction ID already exists"}
+        cur.execute(
+            f"INSERT INTO inr_ledger (tx_id, type, amount, note, created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()})",
+            (tx_id, ttype, amt, note, now),
+        )
+        conn.commit()
+        return {"ok": True}
+    finally:
+        safe_close(conn)
+
+
+@app.post("/api/admin/inr/delete")
+def admin_inr_delete(body: IdAction, request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute(f"DELETE FROM inr_ledger WHERE id={ph()}", (body.id,))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        safe_close(conn)
+
+
+@app.get("/api/admin/inr/statement")
+def admin_inr_statement(request: Request):
+    require_admin(request)
+    conn = get_conn()
+    try:
+        cur = cursor(conn)
+        cur.execute("SELECT * FROM inr_ledger ORDER BY id ASC")
+        rows = cur.fetchall()
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(["Date", "Transaction ID", "Type", "Amount (INR)", "Running Balance (INR)", "Note"])
+        balance = 0.0
+        for r in rows:
+            r = dict(r) if not isinstance(r, dict) else r
+            amt = float(r.get("amount", 0) or 0)
+            balance += amt if r.get("type") == "credit" else -amt
+            w.writerow([r.get("created_at", ""), r.get("tx_id", ""), r.get("type", ""), f"{amt:.2f}", f"{balance:.2f}", r.get("note", "")])
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(content=buf.getvalue(), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=inr_statement_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"})
+    finally:
+        safe_close(conn)
 
 
 @app.post("/api/admin/initiate/deposit")

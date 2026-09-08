@@ -281,6 +281,15 @@ def init_db():
                 UNIQUE(coupon_id, user_id)
             )""")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code)")
+            cur.execute("""CREATE TABLE IF NOT EXISTS inr_ledger (
+                id SERIAL PRIMARY KEY,
+                tx_id TEXT NOT NULL,
+                type TEXT NOT NULL DEFAULT 'credit',
+                amount DOUBLE PRECISION DEFAULT 0,
+                note TEXT DEFAULT '',
+                created_at TEXT
+            )""")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_inr_ledger_tx ON inr_ledger(tx_id)")
             try:
                 cur.execute("SELECT credited FROM coupon_uses LIMIT 1")
             except Exception:
@@ -383,6 +392,15 @@ def init_db():
                 UNIQUE(coupon_id, user_id)
             )""")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code)")
+            conn.execute("""CREATE TABLE IF NOT EXISTS inr_ledger (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tx_id TEXT NOT NULL,
+                type TEXT NOT NULL DEFAULT 'credit',
+                amount REAL DEFAULT 0,
+                note TEXT DEFAULT '',
+                created_at TEXT
+            )""")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_inr_ledger_tx ON inr_ledger(tx_id)")
             try:
                 conn.execute("SELECT credited FROM coupon_uses LIMIT 1")
             except Exception:
