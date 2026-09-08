@@ -205,10 +205,11 @@ class CouponRedeem(BaseModel):
 
 
 class InrAdd(BaseModel):
-    tx_id: str = Field(min_length=1, max_length=128)
+    description: str = Field(min_length=1, max_length=255)
     type: str = "credit"
+    status: str = "settled"
     amount: float = Field(gt=0)
-    note: Optional[str] = ""
+    tx_date: Optional[str] = None
 
 
 class TaskCreate(BaseModel):
@@ -3276,11 +3277,25 @@ def admin_inr_list(request: Request):
     conn = get_conn()
     try:
         cur = cursor(conn)
-        cur.execute("SELECT * FROM inr_ledger ORDER BY id DESC")
+        cur.execute("SELECT * FROM inr_ledger ORDER BY id ASC")
         rows = [dict(r) if not isinstance(r, dict) else r for r in cur.fetchall()]
-        total_in = round(sum(float(r.get("amount", 0) or 0) for r in rows if r.get("type") == "credit"), 2)
-        total_out = round(sum(float(r.get("amount", 0) or 0) for r in rows if r.get("type") == "debit"), 2)
-        return {"ok": True, "transactions": rows, "total_in": total_in, "total_out": total_out, "net": round(total_in - total_out, 2)}
+        running = 0.0
+        total_in = 0.0
+        total_out = 0.0
+        pending = 0.0
+        for r in rows:
+            amt = float(r.get("amount", 0) or 0)
+            if r.get("type") == "credit":
+                total_in += amt
+                running += amt
+            else:
+                total_out += amt
+                running -= amt
+            r["balance"] = round(running, 2)
+            if (r.get("status") or "settled") == "awaiting":
+                pending += amt if r.get("type") == "credit" else -amt
+        rows.reverse()
+        return {"ok": True, "transactions": rows, "total_in": round(total_in, 2), "total_out": round(total_out, 2), "net": round(total_in - total_out, 2), "pending": round(pending, 2)}
     finally:
         safe_close(conn)
 
@@ -3291,23 +3306,25 @@ def admin_inr_add(body: InrAdd, request: Request):
     ttype = (body.type or "credit").strip().lower()
     if ttype not in ("credit", "debit"):
         return {"ok": False, "error": "Type must be credit or debit"}
+    status = (body.status or "settled").strip().lower()
+    if status not in ("settled", "awaiting"):
+        return {"ok": False, "error": "Status must be settled or awaiting"}
     amt = round(float(body.amount or 0), 2)
     if amt <= 0:
         return {"ok": False, "error": "Amount must be greater than 0"}
-    tx_id = (body.tx_id or "").strip()
-    if not tx_id:
-        return {"ok": False, "error": "Transaction ID is required"}
-    note = (body.note or "").strip()
+    desc = (body.description or "").strip()
+    if not desc:
+        return {"ok": False, "error": "Description is required"}
+    tx_date = (body.tx_date or "").strip()
+    tx_date = tx_date[:10] if tx_date else datetime.utcnow().strftime("%Y-%m-%d")
     now = datetime.utcnow().isoformat()
     conn = get_conn()
     try:
         cur = cursor(conn)
-        cur.execute(f"SELECT id FROM inr_ledger WHERE tx_id={ph()}", (tx_id,))
-        if cur.fetchone():
-            return {"ok": False, "error": "Transaction ID already exists"}
         cur.execute(
-            f"INSERT INTO inr_ledger (tx_id, type, amount, note, created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()})",
-            (tx_id, ttype, amt, note, now),
+            f"""INSERT INTO inr_ledger (tx_id, type, amount, note, description, status, tx_date, created_at)
+            VALUES ('',{ph()},{ph()},'',{ph()},{ph()},{ph()},{ph()})""",
+            (ttype, amt, desc, status, tx_date, now),
         )
         conn.commit()
         return {"ok": True}
@@ -3338,13 +3355,14 @@ def admin_inr_statement(request: Request):
         rows = cur.fetchall()
         buf = io.StringIO()
         w = csv.writer(buf)
-        w.writerow(["Date", "Transaction ID", "Type", "Amount (INR)", "Running Balance (INR)", "Note"])
+        w.writerow(["Date", "Description", "Type", "Amount (INR)", "Status", "Running Balance (INR)"])
         balance = 0.0
         for r in rows:
             r = dict(r) if not isinstance(r, dict) else r
             amt = float(r.get("amount", 0) or 0)
             balance += amt if r.get("type") == "credit" else -amt
-            w.writerow([r.get("created_at", ""), r.get("tx_id", ""), r.get("type", ""), f"{amt:.2f}", f"{balance:.2f}", r.get("note", "")])
+            d = (r.get("tx_date") or "")[:10] or (r.get("created_at") or "")[:10]
+            w.writerow([d, r.get("description") or r.get("tx_id") or "", r.get("type", ""), f"{amt:.2f}", r.get("status", "settled"), f"{balance:.2f}"])
         from fastapi.responses import PlainTextResponse
         return PlainTextResponse(content=buf.getvalue(), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=inr_statement_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"})
     finally:

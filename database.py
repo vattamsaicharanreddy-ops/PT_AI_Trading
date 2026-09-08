@@ -287,9 +287,22 @@ def init_db():
                 type TEXT NOT NULL DEFAULT 'credit',
                 amount DOUBLE PRECISION DEFAULT 0,
                 note TEXT DEFAULT '',
+                description TEXT DEFAULT '',
+                status TEXT DEFAULT 'settled',
+                tx_date TEXT DEFAULT '',
                 created_at TEXT
             )""")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_inr_ledger_tx ON inr_ledger(tx_id)")
+            try:
+                cur.execute("SELECT description, status, tx_date FROM inr_ledger LIMIT 1")
+            except Exception:
+                try:
+                    cur.execute("ALTER TABLE inr_ledger ADD COLUMN IF NOT EXISTS description TEXT DEFAULT ''")
+                    cur.execute("ALTER TABLE inr_ledger ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'settled'")
+                    cur.execute("ALTER TABLE inr_ledger ADD COLUMN IF NOT EXISTS tx_date TEXT DEFAULT ''")
+                    cur.execute("UPDATE inr_ledger SET description=COALESCE(tx_id,''), status='settled' WHERE description IS NULL OR description=''")
+                except Exception:
+                    pass
             try:
                 cur.execute("SELECT credited FROM coupon_uses LIMIT 1")
             except Exception:
@@ -398,9 +411,22 @@ def init_db():
                 type TEXT NOT NULL DEFAULT 'credit',
                 amount REAL DEFAULT 0,
                 note TEXT DEFAULT '',
+                description TEXT DEFAULT '',
+                status TEXT DEFAULT 'settled',
+                tx_date TEXT DEFAULT '',
                 created_at TEXT
             )""")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_inr_ledger_tx ON inr_ledger(tx_id)")
+            try:
+                conn.execute("SELECT description, status, tx_date FROM inr_ledger LIMIT 1")
+            except Exception:
+                try:
+                    conn.execute("ALTER TABLE inr_ledger ADD COLUMN description TEXT DEFAULT ''")
+                    conn.execute("ALTER TABLE inr_ledger ADD COLUMN status TEXT DEFAULT 'settled'")
+                    conn.execute("ALTER TABLE inr_ledger ADD COLUMN tx_date TEXT DEFAULT ''")
+                    conn.execute("UPDATE inr_ledger SET description=COALESCE(tx_id,''), status='settled' WHERE description IS NULL OR description=''")
+                except Exception:
+                    pass
             try:
                 conn.execute("SELECT credited FROM coupon_uses LIMIT 1")
             except Exception:

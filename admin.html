@@ -520,42 +520,50 @@ Upload Image
 </section>
 
 <section id="sec-inr" class="hidden space-y-5 fade-in">
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-<div class="card stat-tile p-4" style="--tile-glow:rgba(16,185,129,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Total In</p><p id="inr_total_in" class="text-[26px] font-black mt-1" style="color:#10b981">₹0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">credits</p></div>
-<div class="card stat-tile p-4" style="--tile-glow:rgba(239,68,68,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#ef4444">Total Out</p><p id="inr_total_out" class="text-[26px] font-black mt-1" style="color:#ef4444">₹0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">debits</p></div>
-<div class="card stat-tile p-4" style="--tile-glow:rgba(255,214,10,0.42)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Net</p><p id="inr_net" class="text-[26px] font-black mt-1" style="color:#FFD60A">₹0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">in − out</p></div>
-<div class="card stat-tile p-4" style="--tile-glow:rgba(96,165,250,0.5)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#60a5fa">Entries</p><p id="inr_count" class="text-[26px] font-black mt-1" style="color:#60a5fa">0</p><p class="text-[10px] mt-0.5" style="color:var(--text2)">logged txs</p></div>
+<div class="card p-5">
+<div class="flex flex-wrap gap-3 items-center justify-between">
+<div>
+<h3 class="font-black text-sm" style="color:#7C4DFF">Settlement Statement</h3>
+<p class="text-[11px] mt-1" style="color:var(--text2)">Standalone Indian Rupee bookkeeping — not linked to the Mini App. Custom dates, settled / awaiting settlement, Razorpay-style view.</p>
+</div>
+<div class="flex gap-2 items-center">
+<span class="px-2.5 py-1 rounded-full text-[10px] font-bold" style="background:rgba(16,185,129,0.12);color:#10b981">✓ Settled</span>
+<span class="px-2.5 py-1 rounded-full text-[10px] font-bold" style="background:rgba(245,158,11,0.14);color:#f59e0b">⏳ Awaiting Settlement</span>
+<button onclick="loadInr()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh</button>
+<button onclick="exportInr()" class="btn-gold px-4 py-2 rounded-full text-[11px] font-black">Export Statement</button>
+</div>
+</div>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+<div class="rounded-2xl p-4" style="background:var(--border2);border:1px solid rgba(16,185,129,0.25)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#10b981">Total In</p><p id="inr_total_in" class="text-[26px] font-black mt-1" style="color:#10b981">₹0</p></div>
+<div class="rounded-2xl p-4" style="background:var(--border2);border:1px solid rgba(239,68,68,0.25)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#ef4444">Total Out</p><p id="inr_total_out" class="text-[26px] font-black mt-1" style="color:#ef4444">₹0</p></div>
+<div class="rounded-2xl p-4" style="background:var(--border2);border:1px solid rgba(255,214,10,0.3)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#FFD60A">Net Balance</p><p id="inr_net" class="text-[26px] font-black mt-1" style="color:#FFD60A">₹0</p></div>
+<div class="rounded-2xl p-4" style="background:var(--border2);border:1px solid rgba(245,158,11,0.3)"><p class="text-[8px] tracking-[2px] font-bold uppercase" style="color:#f59e0b">Pending Settlement</p><p id="inr_pending" class="text-[26px] font-black mt-1" style="color:#f59e0b">₹0</p></div>
+</div>
 </div>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 <div class="card p-5">
-<div class="flex items-center justify-between">
-<h3 class="font-black text-sm">Add Manual Transaction</h3>
-<span class="text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(108,59,255,0.15);color:#7C4DFF">INR ONLY</span>
-</div>
-<p class="text-[11px] mt-1" style="color:var(--text2)">Standalone Indian Rupee bookkeeping — no link to the Mini App bots/users. Log UPI/bank transfers manually.</p>
+<h3 class="font-black text-sm">Add Entry</h3>
+<p class="text-[11px] mt-1" style="color:var(--text2)">Log a UPI / bank / cash movement manually.</p>
 <div class="mt-4 space-y-2.5">
-<input id="inr_tx" placeholder="Transaction / UTI / Ref ID" class="w-full rounded-xl p-3 text-[11px] mono border outline-none" style="background:var(--input);border-color:var(--border)">
 <div class="grid grid-cols-2 gap-2">
-<select id="inr_type" class="rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
-<option value="credit">Credit (Received)</option>
-<option value="debit">Debit (Sent)</option>
-</select>
-<input id="inr_amount" type="number" step="1" placeholder="Amount ₹" class="rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
+<div><label class="text-[9px] font-bold" style="color:var(--text3)">DATE</label><input id="inr_date" type="date" class="mt-1 w-full rounded-xl p-2.5 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"></div>
+<div><label class="text-[9px] font-bold" style="color:var(--text3)">TYPE</label><select id="inr_type" class="mt-1 w-full rounded-xl p-2.5 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"><option value="credit">Credit (Received)</option><option value="debit">Debit (Sent)</option></select></div>
 </div>
-<input id="inr_note" placeholder="Note (e.g. Alice UPI x1234)" class="w-full rounded-xl p-3 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)">
-<button onclick="addInr()" class="w-full btn-gold py-3 rounded-full text-sm mt-1">Add Transaction</button>
+<div><label class="text-[9px] font-bold" style="color:var(--text3)">DESCRIPTION</label><input id="inr_desc" placeholder="e.g. Alice UPI x1234 / Salary / Rent" class="mt-1 w-full rounded-xl p-2.5 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"></div>
+<div class="grid grid-cols-2 gap-2">
+<div><label class="text-[9px] font-bold" style="color:var(--text3)">AMOUNT (₹)</label><input id="inr_amount" type="number" step="1" placeholder="0.00" class="mt-1 w-full rounded-xl p-2.5 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"></div>
+<div><label class="text-[9px] font-bold" style="color:var(--text3)">STATUS</label><select id="inr_status" class="mt-1 w-full rounded-xl p-2.5 text-[11px] border outline-none" style="background:var(--input);border-color:var(--border)"><option value="settled">✓ Settled</option><option value="awaiting">⏳ Awaiting</option></select></div>
+</div>
+<button onclick="addInr()" class="w-full btn-gold py-3 rounded-full text-sm mt-1">Add Entry</button>
 </div>
 </div>
 <div class="lg:col-span-2 card p-5">
 <div class="flex justify-between items-center mb-3">
-<h3 class="font-black text-sm">Statement Entries</h3>
-<div class="flex gap-2">
-<button onclick="loadInr()" class="glass px-4 py-2 rounded-full text-[11px] font-bold">Refresh</button>
-<button onclick="exportInr()" class="btn-gold px-4 py-2 rounded-full text-[11px] font-black">Export Statement (CSV)</button>
-</div>
+<h3 class="font-black text-sm">Statement</h3>
+<span id="inr_count" class="text-[10px] font-bold" style="color:var(--text3)">0 entries</span>
 </div>
 <div class="overflow-x-auto"><table class="w-full text-[11px]">
-<thead><tr><th class="text-left p-2.5">Date</th><th class="text-left p-2.5">Transaction ID</th><th class="text-left p-2.5">Type</th><th class="text-left p-2.5">Amount</th><th class="text-left p-2.5">Note</th><th class="text-left p-2.5"></th></tr></thead>
+<thead><tr class="text-[9px]" style="color:var(--text3)"><th class="text-left p-2.5 font-bold">DATE</th><th class="text-left p-2.5 font-bold">DESCRIPTION</th><th class="text-right p-2.5 font-bold">AMOUNT</th><th class="text-right p-2.5 font-bold">BALANCE</th><th class="text-left p-2.5 font-bold">STATUS</th><th class="text-left p-2.5"></th></tr></thead>
 <tbody id="inrList"></tbody></table></div>
 </div>
 </div>
@@ -1877,31 +1885,38 @@ loadCoupons();
 }
 
 async function loadInr(){
+let dd=document.getElementById('inr_date');if(dd&&!dd.value)dd.value=new Date().toISOString().slice(0,10);
 try{
 let j=await fetchJson('/api/admin/inr');
 if(!j.ok){toast(j.error||'Failed','error');return;}
 document.getElementById('inr_total_in').innerText='₹'+Number(j.total_in||0).toFixed(2);
 document.getElementById('inr_total_out').innerText='₹'+Number(j.total_out||0).toFixed(2);
 document.getElementById('inr_net').innerText='₹'+Number(j.net||0).toFixed(2);
+document.getElementById('inr_pending').innerText='₹'+Number(j.pending||0).toFixed(2);
 let rows=j.transactions||[];
-document.getElementById('inr_count').innerText=rows.length;
+document.getElementById('inr_count').innerText=rows.length+' entries';
 document.getElementById('inrList').innerHTML=rows.map(t=>{
 let isIn=t.type==='credit';
-return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 text-[10px]" style="color:var(--text3)">${(t.created_at||'').slice(0,16).replace('T',' ')}</td><td class="p-2.5 mono">${t.tx_id||''}</td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="color:${isIn?'#10b981':'#ef4444'};background:${isIn?'rgba(16,185,129,0.12)':'rgba(239,68,68,0.12)'}">${isIn?'CREDIT':'DEBIT'}</span></td><td class="p-2.5 font-bold" style="color:${isIn?'#10b981':'#ef4444'}">${isIn?'+':'−'}₹${Number(t.amount||0).toFixed(2)}</td><td class="p-2.5" style="color:var(--text2)">${t.note||''}</td><td class="p-2.5"><button onclick="deleteInr(${t.id})" class="px-2 py-1 rounded-lg text-[9px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">DEL</button></td></tr>`;
-}).join('')||`<tr><td colspan="6" class="p-6 text-center" style="color:var(--text3)">No INR entries yet — add your first transaction on the left</td></tr>`;
-}catch(e){toast('Failed to load INR ledger','error');}
+let amt=Number(t.amount||0).toFixed(2);
+let bal=Number(t.balance||0).toFixed(2);
+let d=(t.tx_date||(t.created_at||'').slice(0,10));
+let settled=(t.status||'settled')==='settled';
+return`<tr class="border-t" style="border-color:var(--border2)"><td class="p-2.5 text-[10px] mono whitespace-nowrap" style="color:var(--text3)">${d}</td><td class="p-2.5"><p class="font-bold" style="color:var(--text)">${t.description||t.note||''}</p><span class="text-[9px] font-bold" style="color:${isIn?'#10b981':'#ef4444'}">${isIn?'CREDIT':'DEBIT'}</span></td><td class="p-2.5 text-right font-black whitespace-nowrap" style="color:${isIn?'#10b981':'#ef4444'}">${isIn?'+':'−'}₹${amt}</td><td class="p-2.5 text-right whitespace-nowrap" style="color:var(--text2)">₹${bal}</td><td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap" style="color:${settled?'#10b981':'#f59e0b'};background:${settled?'rgba(16,185,129,0.12)':'rgba(245,158,11,0.14)'}">${settled?'✓ Settled':'⏳ Awaiting'}</span></td><td class="p-2.5 text-right"><button onclick="deleteInr(${t.id})" class="px-2 py-1 rounded-lg text-[9px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">DEL</button></td></tr>`;
+}).join('')||`<tr><td colspan="6" class="p-8 text-center" style="color:var(--text3)">No entries yet — add your first transaction on the left</td></tr>`;
+}catch(e){toast('Failed to load INR statement','error');}
 }
 async function addInr(){
-let tx=document.getElementById('inr_tx').value.trim();
+let date=document.getElementById('inr_date').value;
 let type=document.getElementById('inr_type').value;
+let status=document.getElementById('inr_status').value;
 let amount=parseFloat(document.getElementById('inr_amount').value||0);
-let note=document.getElementById('inr_note').value.trim();
-if(!tx){toast('Enter a transaction ID','error');return;}
+let desc=document.getElementById('inr_desc').value.trim();
+if(!desc){toast('Enter a description','error');return;}
 if(!amount||amount<=0){toast('Enter an amount greater than 0','error');return;}
 try{
-let res=await fetch('/api/admin/inr/add',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({tx_id:tx,type,amount,note})});
+let res=await fetch('/api/admin/inr/add',{method:'POST',headers:{'Content-Type':'application/json',...apiHeaders()},body:JSON.stringify({tx_date:date||null,description:desc,type,status,amount})});
 let j=await res.json();
-if(j.ok){toast('Transaction added','success');document.getElementById('inr_tx').value='';document.getElementById('inr_amount').value='';document.getElementById('inr_note').value='';loadInr();}
+if(j.ok){toast('Entry added','success');document.getElementById('inr_desc').value='';document.getElementById('inr_amount').value='';loadInr();}
 else{toast(j.error||'Failed','error');}
 }catch(e){toast('Request failed','error');}
 }
