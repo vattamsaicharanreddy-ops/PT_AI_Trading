@@ -3271,11 +3271,62 @@ def _credit_pending_coupons(cur, user_id):
     return total
 
 
+def _ensure_inr_table(conn):
+    cur = cursor(conn)
+    if USE_POSTGRES:
+        cur.execute("""CREATE TABLE IF NOT EXISTS inr_ledger (
+            id SERIAL PRIMARY KEY,
+            tx_id TEXT NOT NULL,
+            type TEXT NOT NULL DEFAULT 'credit',
+            amount DOUBLE PRECISION DEFAULT 0,
+            note TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            status TEXT DEFAULT 'settled',
+            tx_date TEXT DEFAULT '',
+            created_at TEXT
+        )""")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_inr_ledger_tx ON inr_ledger(tx_id)")
+    else:
+        cur.execute("""CREATE TABLE IF NOT EXISTS inr_ledger (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tx_id TEXT NOT NULL,
+            type TEXT NOT NULL DEFAULT 'credit',
+            amount REAL DEFAULT 0,
+            note TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            status TEXT DEFAULT 'settled',
+            tx_date TEXT DEFAULT '',
+            created_at TEXT
+        )""")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_inr_ledger_tx ON inr_ledger(tx_id)")
+    try:
+        cur.execute("SELECT description, status, tx_date FROM inr_ledger LIMIT 1")
+    except Exception:
+        try:
+            cur.execute("ALTER TABLE inr_ledger ADD COLUMN IF NOT EXISTS description TEXT DEFAULT ''")
+            cur.execute("ALTER TABLE inr_ledger ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'settled'")
+            cur.execute("ALTER TABLE inr_ledger ADD COLUMN IF NOT EXISTS tx_date TEXT DEFAULT ''")
+            cur.execute("UPDATE inr_ledger SET description=COALESCE(tx_id,''), status='settled' WHERE description IS NULL OR description=''")
+        except Exception:
+            pass
+    conn.commit()
+
+
+_ensure_inr_startup = get_conn()
+try:
+    _ensure_inr_table(_ensure_inr_startup)
+except Exception as e:
+    logger.warning(f"inr ensure at startup: {e}")
+finally:
+    safe_close(_ensure_inr_startup)
+
+
 @app.get("/api/admin/inr")
 def admin_inr_list(request: Request):
     require_admin(request)
     conn = get_conn()
     try:
+        _ensure_inr_table(conn)
         cur = cursor(conn)
         cur.execute("SELECT * FROM inr_ledger ORDER BY id ASC")
         rows = [dict(r) if not isinstance(r, dict) else r for r in cur.fetchall()]
@@ -3320,6 +3371,7 @@ def admin_inr_add(body: InrAdd, request: Request):
     now = datetime.utcnow().isoformat()
     conn = get_conn()
     try:
+        _ensure_inr_table(conn)
         cur = cursor(conn)
         cur.execute(
             f"""INSERT INTO inr_ledger (tx_id, type, amount, note, description, status, tx_date, created_at)
@@ -3337,6 +3389,7 @@ def admin_inr_delete(body: IdAction, request: Request):
     require_admin(request)
     conn = get_conn()
     try:
+        _ensure_inr_table(conn)
         cur = cursor(conn)
         cur.execute(f"DELETE FROM inr_ledger WHERE id={ph()}", (body.id,))
         conn.commit()
@@ -3350,6 +3403,7 @@ def admin_inr_statement(request: Request):
     require_admin(request)
     conn = get_conn()
     try:
+        _ensure_inr_table(conn)
         cur = cursor(conn)
         cur.execute("SELECT * FROM inr_ledger ORDER BY id ASC")
         rows = cur.fetchall()
