@@ -3165,45 +3165,60 @@ def admin_coupons_toggle(body: IdAction, request: Request):
         safe_close(conn)
 
 
+@app.post("/api/coupon/redeem/{user_id}")
+def user_coupon_redeem(user_id: int, body: CouponRedeem):
+    ensure_user(user_id)
+    return _redeem_coupon(user_id, body.code)
+
+
 @app.post("/api/admin/coupon/redeem/{user_id}")
 def admin_coupon_redeem(user_id: int, body: CouponRedeem, request: Request):
-    code = body.code.strip().upper()
+    require_admin(request)
+    return _redeem_coupon(user_id, body.code)
+
+
+def _redeem_coupon(user_id, code):
     conn = get_conn()
     try:
-        cur = cursor(conn)
-        cur.execute(f"SELECT * FROM coupons WHERE code={ph()}", (code,))
-        coupon = cur.fetchone()
-        if not coupon:
-            return {"ok": False, "error": "Invalid coupon code"}
-        c = dict(coupon) if not isinstance(coupon, dict) else coupon
-        if not c.get("is_active"):
-            return {"ok": False, "error": "This coupon is no longer active"}
-        now_iso = datetime.utcnow().isoformat()
-        if c.get("valid_from") and now_iso < c["valid_from"]:
-            return {"ok": False, "error": "This coupon is not yet valid"}
-        if c.get("valid_until") and now_iso > c["valid_until"]:
-            return {"ok": False, "error": "This coupon has expired"}
-        if c.get("used_count", 0) >= c.get("max_uses", 999999):
-            return {"ok": False, "error": "This coupon has reached its maximum uses"}
-        cur.execute(f"SELECT id FROM coupon_uses WHERE coupon_id={ph()} AND user_id={ph()}", (c["id"], user_id))
-        if cur.fetchone():
-            return {"ok": False, "error": "You have already used this coupon"}
-        bonus = round(min(1.0 * c["bonus_pct"], float(c["max_bonus"])), 2)
-        cur.execute(
-            f"""INSERT INTO coupon_uses (coupon_id, user_id, created_at) VALUES ({ph()},{ph()},{ph()})""",
-            (c["id"], user_id, now_iso),
-        )
-        cur.execute(
-            f"UPDATE coupons SET used_count=used_count+1 WHERE id={ph()}", (c["id"],)
-        )
-        cur.execute(
-            f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()} WHERE user_id={ph()}",
-            (bonus, user_id),
-        )
-        conn.commit()
-        return {"ok": True, "bonus": bonus, "code": code, "message": f"Coupon applied! +${bonus} USDT credited to your withdrawable balance"}
+        return _redeem_coupon_logic(conn, user_id, code)
     finally:
         safe_close(conn)
+
+
+def _redeem_coupon_logic(conn, user_id, code):
+    code = (code or "").strip().upper()
+    cur = cursor(conn)
+    cur.execute(f"SELECT * FROM coupons WHERE code={ph()}", (code,))
+    coupon = cur.fetchone()
+    if not coupon:
+        return {"ok": False, "error": "Invalid coupon code"}
+    c = dict(coupon) if not isinstance(coupon, dict) else coupon
+    if not c.get("is_active"):
+        return {"ok": False, "error": "This coupon is no longer active"}
+    now_iso = datetime.utcnow().isoformat()
+    if c.get("valid_from") and now_iso < c["valid_from"]:
+        return {"ok": False, "error": "This coupon is not yet valid"}
+    if c.get("valid_until") and now_iso > c["valid_until"]:
+        return {"ok": False, "error": "This coupon has expired"}
+    if c.get("used_count", 0) >= c.get("max_uses", 999999):
+        return {"ok": False, "error": "This coupon has reached its maximum uses"}
+    cur.execute(f"SELECT id FROM coupon_uses WHERE coupon_id={ph()} AND user_id={ph()}", (c["id"], user_id))
+    if cur.fetchone():
+        return {"ok": False, "error": "You have already used this coupon"}
+    bonus = round(min(1.0 * c["bonus_pct"], float(c["max_bonus"])), 2)
+    cur.execute(
+        f"""INSERT INTO coupon_uses (coupon_id, user_id, created_at) VALUES ({ph()},{ph()},{ph()})""",
+        (c["id"], user_id, now_iso),
+    )
+    cur.execute(
+        f"UPDATE coupons SET used_count=used_count+1 WHERE id={ph()}", (c["id"],)
+    )
+    cur.execute(
+        f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()} WHERE user_id={ph()}",
+        (bonus, user_id),
+    )
+    conn.commit()
+    return {"ok": True, "bonus": bonus, "code": code, "message": f"Coupon applied! +${bonus} USDT credited to your withdrawable balance"}
 
 
 @app.post("/api/admin/initiate/deposit")
