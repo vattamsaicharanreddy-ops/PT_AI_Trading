@@ -277,9 +277,18 @@ def init_db():
                 coupon_id INTEGER NOT NULL,
                 user_id BIGINT NOT NULL,
                 created_at TEXT,
+                credited INTEGER DEFAULT 0,
                 UNIQUE(coupon_id, user_id)
             )""")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code)")
+            try:
+                cur.execute("SELECT credited FROM coupon_uses LIMIT 1")
+            except Exception:
+                try:
+                    cur.execute("ALTER TABLE coupon_uses ADD COLUMN IF NOT EXISTS credited INTEGER DEFAULT 0")
+                    cur.execute("UPDATE coupon_uses SET credited=1")
+                except Exception:
+                    pass
 
             conn.commit()
             cur.close()
@@ -370,9 +379,18 @@ def init_db():
                 coupon_id INTEGER NOT NULL,
                 user_id INTEGER NOT NULL,
                 created_at TEXT,
+                credited INTEGER DEFAULT 0,
                 UNIQUE(coupon_id, user_id)
             )""")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code)")
+            try:
+                conn.execute("SELECT credited FROM coupon_uses LIMIT 1")
+            except Exception:
+                try:
+                    conn.execute("ALTER TABLE coupon_uses ADD COLUMN credited INTEGER DEFAULT 0")
+                    conn.execute("UPDATE coupon_uses SET credited=1")
+                except Exception:
+                    pass
 
             for stmt in [
                 "CREATE INDEX IF NOT EXISTS idx_deposits_status ON deposits(status)",

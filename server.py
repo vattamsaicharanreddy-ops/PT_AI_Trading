@@ -629,6 +629,7 @@ def process_invoice_payment(invoice_id_str, tx_hash, actual_amount):
                 except Exception:
                     pass
                 logger.info(f"FIRST DEPOSIT BONUS ${bonus} for user {user_id}")
+            _credit_pending_coupons(cur, user_id)
         conn.commit()
         logger.info(f"Invoice {invoice_id_str} auto-verified: {amt} USDT for user {user_id}")
         try:
@@ -1941,6 +1942,7 @@ def admin_deposit_action(action: IdAction, request: Request):
                     f"UPDATE users SET balance={ph()}, total_deposit={ph()}, current_tier={ph()}, ai_start={ph()}, ai_end={ph()} WHERE user_id={ph()}",
                     (new_bal, new_total, tier_idx, now, ai_end, val(dep, "user_id")),
                 )
+                _credit_pending_coupons(cur, val(dep, "user_id"))
             conn.commit()
             logger.info(f"Admin approved deposit {action.id}")
             return {"ok": True}
@@ -3207,18 +3209,58 @@ def _redeem_coupon_logic(conn, user_id, code):
         return {"ok": False, "error": "You have already used this coupon"}
     bonus = round(min(1.0 * c["bonus_pct"], float(c["max_bonus"])), 2)
     cur.execute(
-        f"""INSERT INTO coupon_uses (coupon_id, user_id, created_at) VALUES ({ph()},{ph()},{ph()})""",
+        f"""INSERT INTO coupon_uses (coupon_id, user_id, created_at, credited) VALUES ({ph()},{ph()},{ph()},0)""",
         (c["id"], user_id, now_iso),
     )
     cur.execute(
         f"UPDATE coupons SET used_count=used_count+1 WHERE id={ph()}", (c["id"],)
     )
-    cur.execute(
-        f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()} WHERE user_id={ph()}",
-        (bonus, user_id),
-    )
+    cur.execute(f"SELECT COUNT(*) as cnt FROM deposits WHERE user_id={ph()} AND status='verified'", (user_id,))
+    verified_cnt = val(cur.fetchone(), "cnt", 0) or 0
+    if verified_cnt > 0:
+        cur.execute(f"SELECT balance FROM users WHERE user_id={ph()}", (user_id,))
+        urow = cur.fetchone()
+        new_bal = (float(val(urow, "balance", 0) or 0) if urow else 0) + bonus
+        cur.execute(
+            f"UPDATE users SET balance={ph()}, current_tier={ph()}, ai_start={ph()}, ai_end={ph()} WHERE user_id={ph()}",
+            (new_bal, get_tier(new_bal)[0], now_iso, (datetime.utcnow() + timedelta(days=30)).isoformat(), user_id),
+        )
+        cur.execute(f"UPDATE coupon_uses SET credited=1 WHERE coupon_id={ph()} AND user_id={ph()}", (c["id"], user_id))
+        conn.commit()
+        try:
+            cur.execute(f"INSERT INTO admin_logs (admin_action,target_user_id,details) VALUES ('coupon_bonus',{ph()},{ph()})",
+                (user_id, f"coupon {code} +${bonus} to balance"))
+        except Exception:
+            pass
+        return {"ok": True, "bonus": bonus, "code": code, "message": f"Coupon applied! +${bonus} USDT added to your balance"}
     conn.commit()
-    return {"ok": True, "bonus": bonus, "code": code, "message": f"Coupon applied! +${bonus} USDT credited to your withdrawable balance"}
+    return {"ok": True, "bonus": bonus, "code": code, "pending": True, "message": f"Coupon applied! +${bonus} USDT will be added to your balance once your deposit is verified"}
+
+
+def _credit_pending_coupons(cur, user_id):
+    cur.execute(
+        f"""SELECT cu.id as cu_id, cu.coupon_id as cid, c.code as code, c.bonus_pct, c.max_bonus
+            FROM coupon_uses cu JOIN coupons c ON c.id=cu.coupon_id
+            WHERE cu.user_id={ph()} AND (cu.credited IS NULL OR cu.credited=0)""",
+        (user_id,),
+    )
+    rows = cur.fetchall()
+    now = datetime.utcnow().isoformat()
+    total = 0.0
+    for r in rows:
+        bonus = round(min(1.0 * val(r, "bonus_pct"), float(val(r, "max_bonus"))), 2)
+        cur.execute(
+            f"UPDATE users SET balance=COALESCE(balance,0)+{ph()} WHERE user_id={ph()}", (bonus, user_id)
+        )
+        cur.execute(f"UPDATE coupon_uses SET credited=1 WHERE id={ph()}", (val(r, "cu_id"),))
+        try:
+            cur.execute(f"INSERT INTO admin_logs (admin_action,target_user_id,details) VALUES ('coupon_bonus',{ph()},{ph()})",
+                (user_id, f"coupon {val(r, 'code')} +${bonus} to balance after verified deposit"))
+        except Exception:
+            pass
+        total += bonus
+        logger.info(f"COUPON BONUS ${bonus} credited to user {user_id} after verified deposit {now}")
+    return total
 
 
 @app.post("/api/admin/initiate/deposit")
