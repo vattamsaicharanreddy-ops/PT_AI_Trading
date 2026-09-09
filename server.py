@@ -204,14 +204,6 @@ class CouponRedeem(BaseModel):
     tx_hash: Optional[str] = None
 
 
-class InrAdd(BaseModel):
-    description: str = Field(min_length=1, max_length=255)
-    type: str = "credit"
-    status: str = "settled"
-    amount: float = Field(gt=0)
-    tx_date: Optional[str] = None
-
-
 class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = ""
@@ -637,7 +629,7 @@ def process_invoice_payment(invoice_id_str, tx_hash, actual_amount):
                 except Exception:
                     pass
                 logger.info(f"FIRST DEPOSIT BONUS ${bonus} for user {user_id}")
-            _credit_pending_coupons(cur, user_id)
+            _credit_pending_coupons(conn, cur, user_id)
         conn.commit()
         logger.info(f"Invoice {invoice_id_str} auto-verified: {amt} USDT for user {user_id}")
         try:
@@ -1950,7 +1942,7 @@ def admin_deposit_action(action: IdAction, request: Request):
                     f"UPDATE users SET balance={ph()}, total_deposit={ph()}, current_tier={ph()}, ai_start={ph()}, ai_end={ph()} WHERE user_id={ph()}",
                     (new_bal, new_total, tier_idx, now, ai_end, val(dep, "user_id")),
                 )
-                _credit_pending_coupons(cur, val(dep, "user_id"))
+                _credit_pending_coupons(conn, cur, val(dep, "user_id"))
             conn.commit()
             logger.info(f"Admin approved deposit {action.id}")
             return {"ok": True}
@@ -3187,9 +3179,36 @@ def admin_coupon_redeem(user_id: int, body: CouponRedeem, request: Request):
     return _redeem_coupon(user_id, body.code)
 
 
+def _ensure_coupon_uses_schema(conn):
+    try:
+        cur = cursor(conn)
+        try:
+            cur.execute("SELECT credited FROM coupon_uses LIMIT 1")
+        except Exception:
+            try:
+                if USE_POSTGRES:
+                    cur.execute("ALTER TABLE coupon_uses ADD COLUMN IF NOT EXISTS credited INTEGER DEFAULT 0")
+                else:
+                    cur.execute("ALTER TABLE coupon_uses ADD COLUMN credited INTEGER DEFAULT 0")
+                cur.execute("UPDATE coupon_uses SET credited=1 WHERE credited IS NULL OR credited=0")
+                conn.commit()
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+_ensure_coupon_startup = get_conn()
+try:
+    _ensure_coupon_uses_schema(_ensure_coupon_startup)
+finally:
+    safe_close(_ensure_coupon_startup)
+
+
 def _redeem_coupon(user_id, code):
     conn = get_conn()
     try:
+        _ensure_coupon_uses_schema(conn)
         return _redeem_coupon_logic(conn, user_id, code)
     finally:
         safe_close(conn)
@@ -3245,7 +3264,8 @@ def _redeem_coupon_logic(conn, user_id, code):
     return {"ok": True, "bonus": bonus, "code": code, "pending": True, "message": f"Coupon applied! +${bonus} USDT will be added to your balance once your deposit is verified"}
 
 
-def _credit_pending_coupons(cur, user_id):
+def _credit_pending_coupons(conn, cur, user_id):
+    _ensure_coupon_uses_schema(conn)
     cur.execute(
         f"""SELECT cu.id as cu_id, cu.coupon_id as cid, c.code as code, c.bonus_pct, c.max_bonus
             FROM coupon_uses cu JOIN coupons c ON c.id=cu.coupon_id
@@ -3271,156 +3291,6 @@ def _credit_pending_coupons(cur, user_id):
     return total
 
 
-def _ensure_inr_table(conn):
-    cur = cursor(conn)
-    if USE_POSTGRES:
-        cur.execute("""CREATE TABLE IF NOT EXISTS inr_ledger (
-            id SERIAL PRIMARY KEY,
-            tx_id TEXT NOT NULL,
-            type TEXT NOT NULL DEFAULT 'credit',
-            amount DOUBLE PRECISION DEFAULT 0,
-            note TEXT DEFAULT '',
-            description TEXT DEFAULT '',
-            status TEXT DEFAULT 'settled',
-            tx_date TEXT DEFAULT '',
-            created_at TEXT
-        )""")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_inr_ledger_tx ON inr_ledger(tx_id)")
-    else:
-        cur.execute("""CREATE TABLE IF NOT EXISTS inr_ledger (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            tx_id TEXT NOT NULL,
-            type TEXT NOT NULL DEFAULT 'credit',
-            amount REAL DEFAULT 0,
-            note TEXT DEFAULT '',
-            description TEXT DEFAULT '',
-            status TEXT DEFAULT 'settled',
-            tx_date TEXT DEFAULT '',
-            created_at TEXT
-        )""")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_inr_ledger_tx ON inr_ledger(tx_id)")
-    try:
-        cur.execute("SELECT description, status, tx_date FROM inr_ledger LIMIT 1")
-    except Exception:
-        try:
-            cur.execute("ALTER TABLE inr_ledger ADD COLUMN IF NOT EXISTS description TEXT DEFAULT ''")
-            cur.execute("ALTER TABLE inr_ledger ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'settled'")
-            cur.execute("ALTER TABLE inr_ledger ADD COLUMN IF NOT EXISTS tx_date TEXT DEFAULT ''")
-            cur.execute("UPDATE inr_ledger SET description=COALESCE(tx_id,''), status='settled' WHERE description IS NULL OR description=''")
-        except Exception:
-            pass
-    conn.commit()
-
-
-_ensure_inr_startup = get_conn()
-try:
-    _ensure_inr_table(_ensure_inr_startup)
-except Exception as e:
-    logger.warning(f"inr ensure at startup: {e}")
-finally:
-    safe_close(_ensure_inr_startup)
-
-
-@app.get("/api/admin/inr")
-def admin_inr_list(request: Request):
-    require_admin(request)
-    conn = get_conn()
-    try:
-        _ensure_inr_table(conn)
-        cur = cursor(conn)
-        cur.execute("SELECT * FROM inr_ledger ORDER BY id ASC")
-        rows = [dict(r) if not isinstance(r, dict) else r for r in cur.fetchall()]
-        running = 0.0
-        total_in = 0.0
-        total_out = 0.0
-        pending = 0.0
-        for r in rows:
-            amt = float(r.get("amount", 0) or 0)
-            if r.get("type") == "credit":
-                total_in += amt
-                running += amt
-            else:
-                total_out += amt
-                running -= amt
-            r["balance"] = round(running, 2)
-            if (r.get("status") or "settled") == "awaiting":
-                pending += amt if r.get("type") == "credit" else -amt
-        rows.reverse()
-        return {"ok": True, "transactions": rows, "total_in": round(total_in, 2), "total_out": round(total_out, 2), "net": round(total_in - total_out, 2), "pending": round(pending, 2)}
-    finally:
-        safe_close(conn)
-
-
-@app.post("/api/admin/inr/add")
-def admin_inr_add(body: InrAdd, request: Request):
-    require_admin(request)
-    ttype = (body.type or "credit").strip().lower()
-    if ttype not in ("credit", "debit"):
-        return {"ok": False, "error": "Type must be credit or debit"}
-    status = (body.status or "settled").strip().lower()
-    if status not in ("settled", "awaiting"):
-        return {"ok": False, "error": "Status must be settled or awaiting"}
-    amt = round(float(body.amount or 0), 2)
-    if amt <= 0:
-        return {"ok": False, "error": "Amount must be greater than 0"}
-    desc = (body.description or "").strip()
-    if not desc:
-        return {"ok": False, "error": "Description is required"}
-    tx_date = (body.tx_date or "").strip()
-    tx_date = tx_date[:10] if tx_date else datetime.utcnow().strftime("%Y-%m-%d")
-    now = datetime.utcnow().isoformat()
-    conn = get_conn()
-    try:
-        _ensure_inr_table(conn)
-        cur = cursor(conn)
-        cur.execute(
-            f"""INSERT INTO inr_ledger (tx_id, type, amount, note, description, status, tx_date, created_at)
-            VALUES ('',{ph()},{ph()},'',{ph()},{ph()},{ph()},{ph()})""",
-            (ttype, amt, desc, status, tx_date, now),
-        )
-        conn.commit()
-        return {"ok": True}
-    finally:
-        safe_close(conn)
-
-
-@app.post("/api/admin/inr/delete")
-def admin_inr_delete(body: IdAction, request: Request):
-    require_admin(request)
-    conn = get_conn()
-    try:
-        _ensure_inr_table(conn)
-        cur = cursor(conn)
-        cur.execute(f"DELETE FROM inr_ledger WHERE id={ph()}", (body.id,))
-        conn.commit()
-        return {"ok": True}
-    finally:
-        safe_close(conn)
-
-
-@app.get("/api/admin/inr/statement")
-def admin_inr_statement(request: Request):
-    require_admin(request)
-    conn = get_conn()
-    try:
-        _ensure_inr_table(conn)
-        cur = cursor(conn)
-        cur.execute("SELECT * FROM inr_ledger ORDER BY id ASC")
-        rows = cur.fetchall()
-        buf = io.StringIO()
-        w = csv.writer(buf)
-        w.writerow(["Date", "Description", "Type", "Amount (INR)", "Status", "Running Balance (INR)"])
-        balance = 0.0
-        for r in rows:
-            r = dict(r) if not isinstance(r, dict) else r
-            amt = float(r.get("amount", 0) or 0)
-            balance += amt if r.get("type") == "credit" else -amt
-            d = (r.get("tx_date") or "")[:10] or (r.get("created_at") or "")[:10]
-            w.writerow([d, r.get("description") or r.get("tx_id") or "", r.get("type", ""), f"{amt:.2f}", r.get("status", "settled"), f"{balance:.2f}"])
-        from fastapi.responses import PlainTextResponse
-        return PlainTextResponse(content=buf.getvalue(), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=inr_statement_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"})
-    finally:
-        safe_close(conn)
 
 
 @app.post("/api/admin/initiate/deposit")
