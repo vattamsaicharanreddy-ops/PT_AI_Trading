@@ -3182,25 +3182,42 @@ def admin_coupon_redeem(user_id: int, body: CouponRedeem, request: Request):
 def _ensure_coupon_uses_schema(conn):
     try:
         cur = cursor(conn)
-        try:
-            cur.execute("SELECT credited FROM coupon_uses LIMIT 1")
-        except Exception:
-            try:
-                if USE_POSTGRES:
-                    cur.execute("ALTER TABLE coupon_uses ADD COLUMN IF NOT EXISTS credited INTEGER DEFAULT 0")
-                else:
-                    cur.execute("ALTER TABLE coupon_uses ADD COLUMN credited INTEGER DEFAULT 0")
-                cur.execute("UPDATE coupon_uses SET credited=1 WHERE credited IS NULL OR credited=0")
-                conn.commit()
-            except Exception:
-                pass
+        if USE_POSTGRES:
+            cur.execute("""CREATE TABLE IF NOT EXISTS coupon_uses (
+                id SERIAL PRIMARY KEY,
+                coupon_id INTEGER,
+                user_id TEXT,
+                created_at TEXT,
+                credited INTEGER DEFAULT 0
+            )""")
+            cur.execute("SELECT 1 FROM information_schema.columns WHERE table_name='coupon_uses' AND column_name='credited'")
+            has_col = bool(cur.fetchall())
+        else:
+            cur.execute("""CREATE TABLE IF NOT EXISTS coupon_uses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                coupon_id INTEGER,
+                user_id TEXT,
+                created_at TEXT,
+                credited INTEGER DEFAULT 0
+            )""")
+            cur.execute("PRAGMA table_info(coupon_uses)")
+            cols = [r[1] for r in cur.fetchall()]
+            has_col = "credited" in cols
+        if has_col:
+            return
+        cur.execute("ALTER TABLE coupon_uses ADD COLUMN credited INTEGER DEFAULT 0")
+        cur.execute("UPDATE coupon_uses SET credited=1 WHERE credited IS NULL OR credited=0")
     except Exception:
-        pass
+        try:
+            conn.rollback()
+        except Exception:
+            pass
 
 
 _ensure_coupon_startup = get_conn()
 try:
     _ensure_coupon_uses_schema(_ensure_coupon_startup)
+    _ensure_coupon_startup.commit()
 finally:
     safe_close(_ensure_coupon_startup)
 
