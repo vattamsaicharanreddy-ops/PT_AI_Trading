@@ -184,6 +184,7 @@ class IdAction(BaseModel):
     action: str
     amount: Optional[float] = None
     note: Optional[str] = None
+    tx_hash: Optional[str] = None
 
 
 class NoteUpdate(BaseModel):
