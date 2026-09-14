@@ -875,11 +875,46 @@ def _is_yesterday(date_str):
 
 
 @app.post("/api/daily-bonus/{user_id}")
+def _ensure_streak_milestones_schema(conn):
+    try:
+        cur = cursor(conn)
+        if USE_POSTGRES:
+            cur.execute("""CREATE TABLE IF NOT EXISTS streak_milestones (
+                id SERIAL PRIMARY KEY,
+                user_id TEXT,
+                milestone INTEGER,
+                claimed_at TEXT
+            )""")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_ssm_user ON streak_milestones(user_id, milestone)")
+        else:
+            cur.execute("""CREATE TABLE IF NOT EXISTS streak_milestones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                milestone INTEGER,
+                claimed_at TEXT
+            )""")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_ssm_user ON streak_milestones(user_id, milestone)")
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+
+_ensure_streak_milestones_startup = get_conn()
+try:
+    _ensure_streak_milestones_schema(_ensure_streak_milestones_startup)
+    _ensure_streak_milestones_startup.commit()
+finally:
+    safe_close(_ensure_streak_milestones_startup)
+
+
 def claim_daily_bonus(user_id: int):
     today = _today()
     conn = get_conn()
     try:
         cur = cursor(conn)
+        _ensure_streak_milestones_schema(conn)
         cur.execute(f"SELECT last_login_date, login_streak FROM users WHERE user_id={ph()}", (user_id,))
         row = cur.fetchone()
         if not row:
@@ -896,7 +931,13 @@ def claim_daily_bonus(user_id: int):
         streak_bonus = 0
         for days, reward in sorted(STREAK_REWARDS.items()):
             if streak == days:
-                streak_bonus = reward
+                cur.execute(f"SELECT 1 FROM streak_milestones WHERE user_id={ph()} AND milestone={ph()}", (user_id, days))
+                if not cur.fetchone():
+                    streak_bonus = reward
+                    cur.execute(
+                        f"INSERT INTO streak_milestones (user_id, milestone, claimed_at) VALUES ({ph()},{ph()},{ph()})",
+                        (user_id, days, datetime.utcnow().isoformat()),
+                    )
                 break
         total = bonus + streak_bonus
         cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()}, withdrawable=COALESCE(withdrawable,0)+{ph()}, last_login_date={ph()}, login_streak={ph()} WHERE user_id={ph()}", (total, total, today, streak, user_id))
