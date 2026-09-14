@@ -214,7 +214,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 </div>
 <div class='mx-4 mt-3 rounded-2xl p-4' style='background:linear-gradient(135deg,rgba(108,59,255,0.15),rgba(255,214,10,0.1));border:1px solid rgba(108,59,255,0.15)'>
 <div class='flex justify-between items-center'>
-<div><h3 class='font-bold text-sm'>🎰 Lucky Spin</h3><p id='spinInfo' class='text-[11px] mt-0.5' style='color:var(--text2)'>Free spin every 24 hours</p></div>
+<div><h3 class='font-bold text-sm'>🎰 Lucky Spin</h3><p id='spinInfo' class='text-[11px] mt-0.5' style='color:var(--text2)'>Free spin daily for your first 7 days</p></div>
 <button id='spinBtn' onclick="openSpinWheel()" class='px-4 py-2 rounded-full text-xs font-bold' style='background:#FFD60A;color:#000'>SPIN NOW</button>
 </div>
 </div>
@@ -1209,8 +1209,8 @@ if(me.is_banned){$('bannedOverlay').classList.remove('hidden');return;}
 checkTierUpgrade(me.tier||7);
 loadTasks(true);
 updateStreakUI(me);
-if(me.can_spin){$('spinBtn').innerText='SPIN NOW';$('spinBtn').style.background='#FFD60A';$('spinInfo').innerText='Free spin available!';}
-else{$('spinBtn').innerText='Come Back Tomorrow';$('spinBtn').style.background='var(--hover)';$('spinBtn').style.color='var(--text3)';$('spinInfo').innerText='Already spun today';}
+if(me.can_spin){$('spinBtn').innerText='SPIN NOW';$('spinBtn').style.background='#FFD60A';$('spinBtn').style.color='#000';$('spinInfo').innerText='Free spin available!';}
+else{$('spinBtn').innerText='Locked';$('spinBtn').style.background='var(--hover)';$('spinBtn').style.color='var(--text3)';$('spinInfo').innerText=me.spin_msg||'Spin not available';}
 let today=new Date().toISOString().slice(0,10);
 if(me.last_login_date!==today){claimDailyBonus();}
 let depCount=me.verified_deposits_count||0;
@@ -1282,10 +1282,8 @@ const SPIN_COLORS=['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#6C3BFF','
 const SPIN_COUNT=8;
 
 function openSpinWheel(){
-let canSpin=true;
-let info=$('spinInfo');
-if(info&&info.innerText.includes('Come back'))canSpin=false;
-if(!canSpin){userToast('Already spun today! Come back tomorrow.');return;}
+let me=window._lastMe;
+if(!me||!me.can_spin){userToast(me&&me.spin_msg||'Spin not available');return;}
 showSpinOverlay();
 }
 
@@ -1312,7 +1310,7 @@ ov.innerHTML=`
 </style>
 <div class="text-center w-full max-w-[360px]" style="perspective:800px">
 <h2 class="font-extrabold text-2xl mb-1" style="background:linear-gradient(135deg,#FFD60A,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Lucky Spin</h2>
-<p class="text-white/50 text-[11px] mb-4">Free spin every 24 hours</p>
+<p class="text-white/50 text-[11px] mb-4">Free spin daily for your first 7 days</p>
 <div class="relative mx-auto" style="width:290px;height:290px;transform:rotateX(8deg);transform-style:preserve-3d">
 <div id="spinPointer" style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);z-index:10;animation:pointerBounce 1s ease-in-out infinite">
 <div style="width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:22px solid #FFD60A;filter:drop-shadow(0 2px 6px rgba(255,214,10,0.5))"></div>

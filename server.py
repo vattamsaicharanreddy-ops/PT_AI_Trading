@@ -824,7 +824,14 @@ def api_me(user_id: int, username: Optional[str] = Query(None), referred_by: Opt
     d["login_streak"] = int(d.get("login_streak", 0) or 0)
     d["last_login_date"] = d.get("last_login_date", "") or ""
     d["last_spin_date"] = d.get("last_spin_date", "") or ""
-    d["can_spin"] = d["last_spin_date"] != _today()
+    try:
+        conn_spin = get_conn()
+        spin_ok, spin_msg = _check_spin_eligibility(conn_spin, user_id)
+        safe_close(conn_spin)
+    except Exception:
+        spin_ok, spin_msg = False, "Spin temporarily unavailable"
+    d["can_spin"] = spin_ok
+    d["spin_msg"] = spin_msg
     conn2 = get_conn()
     try:
         cur2 = cursor(conn2)
@@ -953,38 +960,51 @@ def claim_daily_bonus(user_id: int):
         safe_close(conn)
 
 
+import random as _random
+
+
+def _check_spin_eligibility(conn, user_id):
+    cur = cursor(conn)
+    cur.execute(f"SELECT last_spin_date, created_at FROM users WHERE user_id={ph()}", (user_id,))
+    row = cur.fetchone()
+    if not row:
+        return False, "User not found"
+    last_spin = val(row, "last_spin_date", "") or ""
+    if last_spin == _today():
+        return False, "Already spun today. Come back tomorrow!"
+    created_at = val(row, "created_at", "") or ""
+    if created_at:
+        try:
+            signup_date = datetime.fromisoformat(created_at).date()
+            if (datetime.utcnow().date() - signup_date).days < 7:
+                return True, ""
+        except Exception:
+            pass
+    cur.execute(f"SELECT 1 FROM deposits WHERE user_id={ph()} AND status='verified' LIMIT 1", (user_id,))
+    if cur.fetchone():
+        return True, ""
+    return False, "Spin available for first 7 days or after your first deposit"
+
+
 @app.get("/api/spin/status/{user_id}")
 def spin_status(user_id: int):
     conn = get_conn()
     try:
-        cur = cursor(conn)
-        cur.execute(f"SELECT last_spin_date, login_streak FROM users WHERE user_id={ph()}", (user_id,))
-        row = cur.fetchone()
-        if not row:
-            return {"available": False}
-        last_spin = val(row, "last_spin_date", "") or ""
-        streak = int(val(row, "login_streak", 0) or 0)
-        can_spin = last_spin != _today()
-        return {"available": can_spin, "last_spin": last_spin, "streak": streak, "prizes": SPIN_PRIZES}
+        can, reason = _check_spin_eligibility(conn, user_id)
+        return {"available": can, "reason": reason, "prizes": SPIN_PRIZES}
     finally:
         safe_close(conn)
 
-
-import random as _random
 
 @app.post("/api/spin/{user_id}")
 def claim_spin(user_id: int):
     today = _today()
     conn = get_conn()
     try:
+        can, reason = _check_spin_eligibility(conn, user_id)
+        if not can:
+            return {"ok": False, "error": reason}
         cur = cursor(conn)
-        cur.execute(f"SELECT last_spin_date FROM users WHERE user_id={ph()}", (user_id,))
-        row = cur.fetchone()
-        if not row:
-            return {"ok": False, "error": "User not found"}
-        last_spin = val(row, "last_spin_date", "") or ""
-        if last_spin == today:
-            return {"ok": False, "error": "Already spun today. Come back tomorrow!"}
         prize = _random.choices(SPIN_PRIZES, weights=SPIN_WEIGHTS, k=1)[0]
         cur.execute(f"UPDATE users SET balance=COALESCE(balance,0)+{ph()}, last_spin_date={ph()} WHERE user_id={ph()}", (prize, today, user_id))
         conn.commit()
