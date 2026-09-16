@@ -133,7 +133,15 @@ DEPOSIT_ADDR = {
     "SOL": os.getenv("ADDR_SOL", "87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7"),
 }
 TIERS = [(15000, 14.9), (6000, 13.6), (2500, 11.8), (1200, 10.9), (500, 9.6), (120, 8.9), (5, 7.6), (0, 0.0)]
-REF_BONUS = {1: 7, **{level: 1 for level in range(2, 11)}}
+REFERRAL_MIN_DEPOSIT = 10.0
+REFERRAL_TIERS = [
+    {"name": "Starter", "min_refs": 0, "pct": 7, "bonus": 0.0},
+    {"name": "Bronze", "min_refs": 1, "pct": 8, "bonus": 2.0},
+    {"name": "Silver", "min_refs": 3, "pct": 10, "bonus": 5.0},
+    {"name": "Gold", "min_refs": 10, "pct": 12, "bonus": 15.0},
+    {"name": "Platinum", "min_refs": 25, "pct": 15, "bonus": 40.0},
+    {"name": "Diamond", "min_refs": 50, "pct": 18, "bonus": 100.0},
+]
 SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT", "AVAXUSDT", "LINKUSDT", "LTCUSDT", "ADAUSDT", "PEPEUSDT", "SHIBUSDT", "MATICUSDT", "DOTUSDT", "ARBUSDT"]
 BASE_PRICES = {"BTCUSDT": 67200, "ETHUSDT": 3400, "SOLUSDT": 178, "BNBUSDT": 610, "XRPUSDT": .62, "DOGEUSDT": .16, "AVAXUSDT": 42, "LINKUSDT": 18.5, "LTCUSDT": 84, "ADAUSDT": .48, "PEPEUSDT": .000009, "SHIBUSDT": .000027, "MATICUSDT": .89, "DOTUSDT": 7.2, "ARBUSDT": 1.12}
 
@@ -622,7 +630,7 @@ def process_invoice_payment(invoice_id_str, tx_hash, actual_amount):
                 f"UPDATE users SET balance={ph()}, total_deposit={ph()}, current_tier={ph()}, ai_start={ph()}, ai_end={ph()} WHERE user_id={ph()}",
                 (new_bal, new_total, tier_idx, now, ai_end, user_id),
             )
-            _process_referrals(cur, user_id, amt)
+            _process_referrals(cur, conn, user_id, amt)
             if bonus > 0:
                 try:
                     cur.execute(f"INSERT INTO admin_logs (admin_action,target_user_id,details) VALUES ('first_deposit_bonus',{ph()},{ph()})",
@@ -646,7 +654,67 @@ def process_invoice_payment(invoice_id_str, tx_hash, actual_amount):
         safe_close(conn)
 
 
-def _process_referrals(cur, user_id, deposit_amount):
+def _ensure_referral_tiers_schema(conn):
+    try:
+        cur = cursor(conn)
+        if USE_POSTGRES:
+            cur.execute("""CREATE TABLE IF NOT EXISTS referral_tier_payouts (
+                id SERIAL PRIMARY KEY,
+                user_id TEXT,
+                tier TEXT,
+                claimed_at TEXT
+            )""")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_rtp_user ON referral_tier_payouts(user_id, tier)")
+        else:
+            cur.execute("""CREATE TABLE IF NOT EXISTS referral_tier_payouts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                tier TEXT,
+                claimed_at TEXT
+            )""")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_rtp_user ON referral_tier_payouts(user_id, tier)")
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+
+_ensure_referral_tiers_startup = get_conn()
+try:
+    _ensure_referral_tiers_schema(_ensure_referral_tiers_startup)
+    _ensure_referral_tiers_startup.commit()
+finally:
+    safe_close(_ensure_referral_tiers_startup)
+
+
+def _referral_tier(cur, referrer_id):
+    cur.execute(f"SELECT COUNT(*) as cnt FROM users WHERE referred_by={ph()} AND COALESCE(total_deposit,0)>={ph()}", (referrer_id, REFERRAL_MIN_DEPOSIT))
+    q = int(val(cur.fetchone(), "cnt", 0) or 0)
+    tier = REFERRAL_TIERS[0]
+    nxt = None
+    for t in REFERRAL_TIERS:
+        if q >= int(t["min_refs"]):
+            tier = t
+        else:
+            nxt = t
+            break
+    return {
+        "qualifying": q,
+        "min_deposit": REFERRAL_MIN_DEPOSIT,
+        "tier": tier["name"],
+        "pct": tier["pct"],
+        "next": nxt["name"] if nxt else None,
+        "next_min": int(nxt["min_refs"]) if nxt else None,
+        "next_bonus": nxt["bonus"] if nxt else None,
+    }
+
+
+def _process_referrals(cur, conn, user_id, deposit_amount):
+    try:
+        _ensure_referral_tiers_schema(conn)
+    except Exception:
+        pass
     cur.execute(f"SELECT referred_by FROM users WHERE user_id={ph()}", (user_id,))
     row = cur.fetchone()
     if not row:
@@ -655,8 +723,9 @@ def _process_referrals(cur, user_id, deposit_amount):
     if not referrer:
         return
     now = datetime.utcnow().isoformat()
-    bonus_pct = REF_BONUS.get(1, 7)
-    bonus = round(deposit_amount * bonus_pct / 100, 2)
+    info = _referral_tier(cur, referrer)
+    pct = info["pct"]
+    bonus = round(deposit_amount * pct / 100, 2)
     if bonus > 0:
         cur.execute(
             f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()}, referral_earnings=COALESCE(referral_earnings,0)+{ph()} WHERE user_id={ph()}",
@@ -664,8 +733,25 @@ def _process_referrals(cur, user_id, deposit_amount):
         )
         cur.execute(
             f"INSERT INTO referral_logs (from_user,to_user,level,deposit_amount,bonus_amount,bonus_percent,created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()})",
-            (user_id, referrer, 1, deposit_amount, bonus, bonus_pct, now),
+            (user_id, referrer, 1, deposit_amount, bonus, pct, now),
         )
+    t = None
+    for t_ in REFERRAL_TIERS:
+        if info["tier"] == t_["name"]:
+            t = t_
+            break
+    if t and t["bonus"] > 0:
+        cur.execute(f"SELECT 1 FROM referral_tier_payouts WHERE user_id={ph()} AND tier={ph()}", (referrer, t["name"]))
+        if not cur.fetchone():
+            cur.execute(f"INSERT INTO referral_tier_payouts (user_id, tier, claimed_at) VALUES ({ph()},{ph()},{ph()})", (referrer, t["name"], now))
+            cur.execute(
+                f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()}, referral_earnings=COALESCE(referral_earnings,0)+{ph()} WHERE user_id={ph()}",
+                (t["bonus"], t["bonus"], referrer),
+            )
+            cur.execute(
+                f"INSERT INTO referral_logs (from_user,to_user,level,deposit_amount,bonus_amount,bonus_percent,created_at) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()})",
+                (referrer, referrer, 0, 0, t["bonus"], pct, now),
+            )
 
 
 @app.post("/webhook/{token}")
@@ -1369,11 +1455,16 @@ def referral(user_id: int):
             team_dep = 0
         cur.execute(f"SELECT * FROM referral_logs WHERE to_user={ph()} ORDER BY id DESC LIMIT 100", (user_id,))
         logs = rows_as_dicts(cur.fetchall())
+        try:
+            tier_info = _referral_tier(cur, user_id)
+        except Exception:
+            tier_info = {"qualifying": 0, "tier": "Starter", "pct": 7, "next": "Bronze", "next_min": 1, "next_bonus": 2.0, "min_deposit": REFERRAL_MIN_DEPOSIT}
         return {
             "ref_link": f"https://t.me/{bot_name}?start={user_id}",
             "direct_count": len(direct),
             "total_earnings": val(tot, "total", 0) or 0,
             "total_team_deposit": team_dep or 0,
+            "tier": tier_info,
             "direct_refs": [{"user_id": r["user_id"], "username": r.get("username"), "balance": r.get("balance", 0), "deposit": r.get("total_deposit", 0)} for r in direct],
             "logs": [{"from": l["from_user"], "level": l["level"], "deposit": l["deposit_amount"], "bonus": l["bonus_amount"], "percent": l["bonus_percent"], "at": l["created_at"]} for l in logs],
         }
@@ -2008,6 +2099,7 @@ def admin_deposit_action(action: IdAction, request: Request):
                     (new_bal, new_total, tier_idx, now, ai_end, val(dep, "user_id")),
                 )
                 _credit_pending_coupons(conn, cur, val(dep, "user_id"))
+                _process_referrals(cur, conn, val(dep, "user_id"), amt)
             conn.commit()
             logger.info(f"Admin approved deposit {action.id}")
             return {"ok": True}
