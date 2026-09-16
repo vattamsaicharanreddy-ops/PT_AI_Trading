@@ -2241,8 +2241,9 @@ async def admin_bulk_action(request: Request):
 @app.post("/api/admin/broadcast")
 async def admin_broadcast(request: Request):
     require_admin(request)
+    import asyncio
     import json as _json
-    import urllib.request as _urllib
+    import httpx as _httpx
     body = await request.json()
     message = body.get("message", "").strip()
     if not message:
@@ -2252,9 +2253,6 @@ async def admin_broadcast(request: Request):
     if not token:
         return {"ok": False, "error": "BOT_TOKEN not set", "sent": 0}
     conn = get_conn()
-    sent = 0
-    failed = 0
-    skipped = 0
     try:
         cur = cursor(conn)
         if segment == "no_deposit":
@@ -2281,25 +2279,36 @@ async def admin_broadcast(request: Request):
         else:
             cur.execute("SELECT user_id FROM users")
         users = cur.fetchall()
-        for row in users:
-            uid = row[0] if isinstance(row, tuple) else row.get("user_id", 0)
-            if not uid:
-                continue
-            try:
-                url = f"https://api.telegram.org/bot{token}/sendMessage"
-                payload = _json.dumps({"chat_id": uid, "text": message, "parse_mode": "HTML"}).encode()
-                req = _urllib.Request(url, data=payload, headers={"Content-Type": "application/json"})
-                with _urllib.urlopen(req, timeout=10) as r:
-                    resp = _json.loads(r.read().decode())
-                    if resp.get("ok"):
-                        sent += 1
-                    else:
-                        failed += 1
-            except Exception:
-                failed += 1
     finally:
         safe_close(conn)
-    return {"ok": sent > 0, "sent": sent, "failed": failed, "targeted": segment}
+    uid_list = [row[0] if isinstance(row, tuple) else row.get("user_id", 0) for row in users]
+    uid_list = [u for u in uid_list if u]
+    count = {"sent": 0, "failed": 0, "rate_limited": 0}
+    if uid_list:
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        sem = asyncio.Semaphore(15)
+        async with _httpx.AsyncClient(timeout=10.0) as client:
+            async def _send(uid):
+                async with sem:
+                    for attempt in range(2):
+                        try:
+                            r = await client.post(url, json={"chat_id": uid, "text": message, "parse_mode": "HTML"})
+                            j = r.json()
+                            if j.get("ok"):
+                                count["sent"] += 1
+                                return
+                            if j.get("error_code") == 429:
+                                count["rate_limited"] += 1
+                                ra = j.get("parameters", {}).get("retry_after", 1)
+                                await asyncio.sleep(min(ra, 3) * (attempt + 1))
+                                continue
+                            count["failed"] += 1
+                            return
+                        except Exception:
+                            count["failed"] += 1
+                            return
+            await asyncio.gather(*[_send(u) for u in uid_list])
+    return {"ok": count["sent"] > 0, "sent": count["sent"], "failed": count["failed"], "rate_limited": count["rate_limited"], "target": len(uid_list), "targeted": segment}
 
 
 @app.post("/api/admin/upload")
