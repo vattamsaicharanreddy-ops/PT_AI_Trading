@@ -1304,6 +1304,9 @@ def withdraw(user_id: int, req: WithdrawalRequest):
     conn = get_conn()
     try:
         cur = cursor(conn)
+        cur.execute(f"SELECT COUNT(*) as cnt FROM deposits WHERE user_id={ph()} AND status='verified'", (user_id,))
+        if (val(cur.fetchone(), "cnt", 0) or 0) == 0:
+            return {"ok": False, "error": "Make your first deposit to unlock withdrawals"}
         cur.execute(f"SELECT COUNT(*) as cnt FROM tasks WHERE is_mandatory=1 AND is_active=1")
         mand = val(cur.fetchone(), "cnt", 0) or 0
         if mand > 0:
