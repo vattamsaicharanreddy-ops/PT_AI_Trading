@@ -134,6 +134,7 @@ DEPOSIT_ADDR = {
     "SOL": os.getenv("ADDR_SOL", "87fwXKMuH8wyayeMJ74eRUq3knQ3UXmFQPj9g87A4se7"),
 }
 TIERS = [(15000, 14.9), (6000, 13.6), (2500, 11.8), (1200, 10.9), (500, 9.6), (120, 8.9), (5, 7.6), (0, 0.0)]
+PROFIT_MIN_BALANCE = 5.0
 REFERRAL_MIN_DEPOSIT = 10.0
 REFERRAL_TIERS = [
     {"name": "Starter", "min_refs": 0, "pct": 7, "bonus": 0.0},
@@ -512,7 +513,7 @@ def recalc_profit(user_id: int):
             tier_index, _, daily_percent = get_tier(0)
             end_dt = None
             ai_end_str = None
-        if balance >= 20 and not ai_end_str:
+        if balance >= PROFIT_MIN_BALANCE and not ai_end_str:
             ai_start = now.isoformat()
             ai_end = (now + timedelta(days=30)).isoformat()
             cur.execute(
@@ -524,7 +525,7 @@ def recalc_profit(user_id: int):
                 end_dt = datetime.fromisoformat(ai_end)
             except Exception:
                 end_dt = now + timedelta(days=30)
-        elif current_tier != tier_index and balance >= 20:
+        elif current_tier != tier_index and balance >= PROFIT_MIN_BALANCE:
             ai_start = now.isoformat()
             ai_end = (now + timedelta(days=30)).isoformat()
             cur.execute(
@@ -550,7 +551,7 @@ def recalc_profit(user_id: int):
         last_claim = val(user, "last_claim")
         active = False
         try:
-            active = bool(end_dt and now < end_dt and balance >= 20)
+            active = bool(end_dt and now < end_dt and balance >= PROFIT_MIN_BALANCE)
             if active and last_claim:
                 hours = max(0, (now - datetime.fromisoformat(last_claim)).total_seconds() / 3600)
                 profit += hours * per_hour
