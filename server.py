@@ -4,6 +4,7 @@ import logging
 import os
 import random
 import string
+import threading
 import time
 import urllib.parse
 import urllib.request
@@ -686,6 +687,60 @@ try:
     _ensure_referral_tiers_startup.commit()
 finally:
     safe_close(_ensure_referral_tiers_startup)
+
+
+_expire_loop_started = threading.Event()
+
+
+def _expire_balances_loop():
+    while True:
+        conn = None
+        try:
+            conn = get_conn()
+            cur = cursor(conn)
+            now_iso = datetime.utcnow().isoformat()
+            cur.execute(
+                f"SELECT user_id, balance, ai_end FROM users WHERE ai_end IS NOT NULL AND ai_end <> '' AND ai_end < {ph()} AND COALESCE(balance,0) > 0",
+                (now_iso,),
+            )
+            rows = cur.fetchall()
+            for r in rows:
+                uid = val(r, "user_id")
+                amt = float(val(r, "balance", 0) or 0)
+                aend = val(r, "ai_end", "")
+                cur.execute(
+                    f"UPDATE users SET balance=0, profit=0, ai_start=NULL, ai_end=NULL, current_tier={ph()}, profit_per_hour=0 WHERE user_id={ph()}",
+                    (len(TIERS) - 1, uid),
+                )
+                try:
+                    cur.execute(
+                        f"INSERT INTO admin_logs (admin_action,target_user_id,details) VALUES ('ai_expired',{ph()},{ph()})",
+                        (uid, f"Expired {amt} USDT after 30d (sweep) - {aend}"),
+                    )
+                except Exception:
+                    pass
+            if rows:
+                conn.commit()
+                logger.info(f"Expiry sweep zeroed {len(rows)} balances")
+        except Exception as e:
+            try:
+                if conn:
+                    conn.rollback()
+            except Exception:
+                pass
+            logger.error(f"Expiry sweep error: {e}")
+        finally:
+            safe_close(conn)
+        time.sleep(300)
+
+
+try:
+    if not _expire_loop_started.is_set():
+        _expire_loop_started.set()
+        threading.Thread(target=_expire_balances_loop, daemon=True).start()
+        logger.info("Expiry sweep thread started (every 5min)")
+except Exception as e:
+    logger.warning(f"Expiry sweep thread start failed: {e}")
 
 
 def _referral_tier(cur, referrer_id):
@@ -2019,6 +2074,25 @@ def admin_users(request: Request):
             cur.execute(f"SELECT COUNT(*) as cnt FROM tasks WHERE is_mandatory=1 AND is_active=1")
             total_mandatory = val(cur.fetchone(), "cnt", 0) or 0
             u["mandatory_done"] = (u["mandatory_completed"] or 0) >= total_mandatory and total_mandatory > 0
+            now_u = datetime.utcnow()
+            aend = u.get("ai_end") or ""
+            bal = float(u.get("balance", 0) or 0)
+            u["ai_expired"] = False
+            u["time_left"] = ""
+            if aend:
+                try:
+                    end_dt = datetime.fromisoformat(aend)
+                    remain = end_dt - now_u
+                    if remain.total_seconds() <= 0:
+                        if bal > 0:
+                            u["time_left"] = "EXPIRED"
+                            u["ai_expired"] = True
+                    else:
+                        h = int(remain.total_seconds() // 3600)
+                        u["time_left"] = f"{h // 24}d {h % 24}h"
+                except Exception:
+                    pass
+            u["ai_end"] = aend
         return users
     finally:
         safe_close(conn)

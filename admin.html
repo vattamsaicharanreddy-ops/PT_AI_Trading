@@ -191,7 +191,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(124,77,255,0.45)!impor
 </div>
 <div class="mt-2 flex items-center gap-2 flex-wrap" id="convHints"></div>
 </div>
-<div class="mt-4 overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">User</th><th class="text-left p-2.5">Joined</th><th class="text-left p-2.5">Balances</th><th class="text-left p-2.5">Tasks</th><th class="text-left p-2.5">Games</th><th class="text-left p-2.5">Streak</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Actions</th></tr></thead><tbody id="users"></tbody></table></div>
+<div class="mt-4 overflow-x-auto"><table class="w-full text-[11px]"><thead><tr><th class="text-left p-2.5">User</th><th class="text-left p-2.5">Joined</th><th class="text-left p-2.5">Balances</th><th class="text-left p-2.5">Tasks</th><th class="text-left p-2.5">Games</th><th class="text-left p-2.5">Streak</th><th class="text-left p-2.5">Expiry</th><th class="text-left p-2.5">Status</th><th class="text-left p-2.5">Actions</th></tr></thead><tbody id="users"></tbody></table></div>
 </div>
 </section>
 
@@ -925,9 +925,10 @@ return`<tr class="border-t cursor-pointer" style="border-color:var(--border2);${
 <td class="p-2.5"><p class="text-[11px]">${u.tasks_completed||0} done</p><p class="text-[9px]" style="color:${u.mandatory_done?'#10b981':'#ef4444'}">${u.mandatory_done?'✓ All mandatory':'✗ Incomplete'}</p></td>
 <td class="p-2.5"><p class="text-[11px]">${u.total_games_played||0} plays</p><p class="text-[9px]" style="color:var(--text3)">${u.total_games_won||0} wins</p></td>
 <td class="p-2.5"><p class="text-[11px] font-bold" style="color:${streak>=7?'#FFD60A':streak>=3?'#10b981':'var(--text2)'}">${streak}d</p><p class="text-[9px]" style="color:var(--text3)">last: ${(u.last_login_date||'').slice(5,10)||'-'}</p></td>
+<td class="p-2.5"><p class="text-[11px] font-bold" style="color:${u.time_left==='EXPIRED'?'#ef4444':(u.time_left.startsWith('0d ')||u.time_left.startsWith('1d ')||u.time_left.startsWith('2d ')?'#FFD60A':'#10b981')}">${u.time_left||'—'}</p>${u.ai_end?`<p class="text-[9px]" style="color:var(--text3)">${(u.ai_end).replace('T',' ').slice(0,16)}</p>`:''}</td>
 <td class="p-2.5">${u.is_banned?'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">BANNED</span>':isOnline?'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(124,77,255,0.15);color:#7C4DFF">● ONLINE</span>':'<span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(16,185,129,0.15);color:#10b981">ACTIVE</span>'}</td>
 <td class="p-2.5"><div class="flex flex-wrap gap-1 max-w-[200px]"><button onclick="event.stopPropagation();sendNudge(${u.user_id},'${Number(u.total_deposit)>0?'reinvest':'deposit'}',${u.balance||0})" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981" title="Send deposit/conversion nudge DM">✉️ Nudge</button><button onclick="event.stopPropagation();openAction(${u.user_id},'add_balance')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(16,185,129,0.15);color:#10b981">+Bal</button><button onclick="event.stopPropagation();openAction(${u.user_id},'deduct_balance')" class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:rgba(239,68,68,0.15);color:#ef4444">-Bal</button><button onclick="event.stopPropagation();openAction(${u.user_id},'add_withdrawable')" class="px-2 py-0.5 rounded-full text-[10px] font-black" style="background:rgba(255,214,10,0.15);color:#FFD60A">+WD</button><button onclick="event.stopPropagation();openAction(${u.user_id},${u.is_banned?'\'unban\'':'\'ban\''})" class="px-2 py-0.5 rounded-full text-[10px]" style="background:var(--hover)">${u.is_banned?'Unban':'Ban'}</button></div></td></tr>`;
-}).join('')||`<tr><td colspan="8" class="p-8 text-center" style="color:var(--text3)">No users found.</td></tr>`;
+}).join('')||`<tr><td colspan="9" class="p-8 text-center" style="color:var(--text3)">No users found.</td></tr>`;
 }
 
 function filterUsers(){
