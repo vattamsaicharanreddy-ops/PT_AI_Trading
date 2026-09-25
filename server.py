@@ -744,6 +744,98 @@ except Exception as e:
     logger.warning(f"Expiry sweep thread start failed: {e}")
 
 
+def _accrue_profits_sweep():
+    while True:
+        time.sleep(3600)
+        conn = get_conn()
+        try:
+            cur = cursor(conn)
+            now = datetime.utcnow()
+            now_iso = now.isoformat()
+            cur.execute("SELECT user_id, balance, profit, daily_percent, ai_end, ai_start, last_claim, last_auto_claim, current_tier, profit_per_hour FROM users")
+            rows = cur.fetchall()
+            touched = 0
+            claimed = 0
+            for r in rows:
+                try:
+                    uid = val(r, "user_id")
+                    balance = float(val(r, "balance", 0) or 0)
+                    current_tier = val(r, "current_tier", len(TIERS) - 1)
+                    tier_index, _, daily_percent = get_tier(balance)
+                    ai_end_str = val(r, "ai_end")
+                    end_dt = None
+                    try:
+                        end_dt = datetime.fromisoformat(ai_end_str) if ai_end_str else None
+                    except Exception:
+                        end_dt = None
+                    per_hour = balance * daily_percent / 2400 if balance > 0 else 0
+                    last_claim = val(r, "last_claim")
+                    profit = float(val(r, "profit", 0) or 0)
+                    active = bool(end_dt and now < end_dt and balance >= PROFIT_MIN_BALANCE)
+                    if active and last_claim:
+                        try:
+                            hours = max(0, (now - datetime.fromisoformat(last_claim)).total_seconds() / 3600)
+                            profit += hours * per_hour
+                        except Exception:
+                            hours = 0
+                    cur.execute(
+                        f"UPDATE users SET profit={ph()}, profit_per_hour={ph()}, daily_percent={ph()}, last_claim={ph()}, current_tier={ph()} WHERE user_id={ph()}",
+                        (profit, per_hour, daily_percent, now_iso, tier_index, uid),
+                    )
+                    touched += 1
+                    if tier_index != current_tier:
+                        try:
+                            cur.execute(
+                                f"INSERT INTO admin_logs (admin_action,target_user_id,details) VALUES ('tier_change_sweep',{ph()},{ph()})",
+                                (uid, f"Tier {current_tier}->{tier_index} (sweep)"),
+                            )
+                        except Exception:
+                            pass
+                        if balance >= PROFIT_MIN_BALANCE:
+                            _ai_end = (now + timedelta(days=30)).isoformat()
+                            cur.execute(
+                                f"UPDATE users SET ai_start={ph()}, ai_end={ph()} WHERE user_id={ph()}",
+                                (now_iso, _ai_end, uid),
+                            )
+                    last_auto = val(r, "last_auto_claim")
+                    try:
+                        due = not last_auto or (now - datetime.fromisoformat(last_auto)).total_seconds() >= 86400
+                    except Exception:
+                        due = True
+                    if due and profit > 0.01 and active:
+                        cur.execute(
+                            f"UPDATE users SET withdrawable=COALESCE(withdrawable,0)+{ph()}, profit=0, last_auto_claim={ph()} WHERE user_id={ph()}",
+                            (profit, now_iso, uid),
+                        )
+                        claimed += 1
+                except Exception:
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
+            conn.commit()
+            if rows:
+                logger.info(f"Profit accrual sweep: touched {touched} users, auto-claimed {claimed}")
+        except Exception as e:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            logger.error(f"Profit accrual sweep error: {e}")
+        finally:
+            safe_close(conn)
+
+
+_accrue_loop_started = threading.Event()
+try:
+    if not _accrue_loop_started.is_set():
+        _accrue_loop_started.set()
+        threading.Thread(target=_accrue_profits_sweep, daemon=True).start()
+        logger.info("Profit accrual sweep thread started (hourly)")
+except Exception as e:
+    logger.warning(f"Profit accrual sweep thread start failed: {e}")
+
+
 def _referral_tier(cur, referrer_id):
     cur.execute(f"SELECT COUNT(*) as cnt FROM users WHERE referred_by={ph()} AND COALESCE(total_deposit,0)>={ph()}", (referrer_id, REFERRAL_MIN_DEPOSIT))
     q = int(val(cur.fetchone(), "cnt", 0) or 0)

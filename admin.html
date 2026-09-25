@@ -541,6 +541,8 @@ let chartInstance=null;
 let prevPendingDeps=0,prevPendingWds=0,notifSound=null;
 let globalSearchTimer=null;
 
+window.onerror=function(msg,src,line,col){try{console.error('window.onerror:',msg,src,line);if(typeof toast==='function'){toast('JS error: '+msg,'error');}}catch(e){}};
+
 function playNotifSound(){
 try{
 if(!notifSound){
