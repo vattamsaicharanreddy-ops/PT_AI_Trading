@@ -305,6 +305,19 @@ def scan_and_announce_withdrawals():
         safe_close(conn)
 
 
+def _explorer_for(network, tx_hash):
+    net = (network or "").upper().replace(" ", "").replace("-", "")
+    if net in ("TRC20", "TRON", "TRX"):
+        return f"https://tronscan.org/#/transaction/{tx_hash}", "Tronscan"
+    if net in ("ERC20", "ETH"):
+        return f"https://etherscan.io/tx/{tx_hash}", "Etherscan"
+    if net == "TON":
+        return f"https://tonviewer.com/transaction/{tx_hash}", "Tonviewer"
+    if net in ("SOL", "SOLANA"):
+        return f"https://solscan.io/tx/{tx_hash}", "Solscan"
+    return f"https://bscscan.com/tx/{tx_hash}", "BSCScan"
+
+
 def _announce_withdrawal(w):
     try:
         amount = w.get("amount", 0.0)
@@ -318,7 +331,7 @@ def _announce_withdrawal(w):
         time_str = tx_time.strftime("%d %b %Y, %H:%M UTC")
         short_addr = (to_addr[:8] + "..." + to_addr[-6:]) if to_addr and len(to_addr) > 16 else to_addr
         short_hash = (tx_hash[:16] + "..." + tx_hash[-8:]) if len(tx_hash) > 26 else tx_hash
-        bscscan_link = f"https://bscscan.com/tx/{tx_hash}" if tx_hash else ""
+        exp_link, exp_label = _explorer_for("BEP-20", tx_hash)
         lines = [
             "<b>✅ Member Withdrawal Approved</b>",
             "",
@@ -329,7 +342,7 @@ def _announce_withdrawal(w):
             lines.append(f"📬 To: <code>{short_addr}</code>")
         if tx_hash:
             lines.append(f"📝 Tx Hash: <code>{short_hash}</code>")
-            lines.append(f"🔍 <a href=\"{bscscan_link}\">View on BSCScan</a>")
+            lines.append(f"🔍 <a href=\"{exp_link}\">View on {exp_label}</a>")
         lines.append(f"🕐 {time_str}")
         lines.append("📊 Status: <b>Completed</b>")
         lines.append("")

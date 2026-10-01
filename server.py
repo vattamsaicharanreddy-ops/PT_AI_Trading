@@ -2307,6 +2307,19 @@ def admin_deposit_action(action: IdAction, request: Request):
         safe_close(conn)
 
 
+def _explorer_for(network, tx_hash):
+    net = (network or "").upper().replace(" ", "").replace("-", "")
+    if net in ("TRC20", "TRON", "TRX"):
+        return f"https://tronscan.org/#/transaction/{tx_hash}", "Tronscan"
+    if net in ("ERC20", "ETH"):
+        return f"https://etherscan.io/tx/{tx_hash}", "Etherscan"
+    if net == "TON":
+        return f"https://tonviewer.com/transaction/{tx_hash}", "Tonviewer"
+    if net in ("SOL", "SOLANA"):
+        return f"https://solscan.io/tx/{tx_hash}", "Solscan"
+    return f"https://bscscan.com/tx/{tx_hash}", "BSCScan"
+
+
 def _send_wd_notification(wd, tx_hash):
     import json as _json
     import urllib.request as _urllib
@@ -2320,7 +2333,7 @@ def _send_wd_notification(wd, tx_hash):
     addr = val(wd, "address", "")
     short_addr = (addr[:8] + "..." + addr[-6:]) if addr and len(addr) > 16 else addr
     now_str = datetime.utcnow().strftime("%d %b %Y, %H:%M UTC")
-    bscscan_link = f"https://bscscan.com/tx/{tx_hash}" if tx_hash else ""
+    exp_link, exp_label = _explorer_for(network, tx_hash)
     lines = [
         "<b>✅ Member Withdrawal Approved</b>",
         "",
@@ -2330,8 +2343,9 @@ def _send_wd_notification(wd, tx_hash):
     if short_addr:
         lines.append(f"📬 To: <code>{short_addr}</code>")
     if tx_hash:
-        lines.append(f"📝 Tx Hash: <code>{tx_hash}</code>")
-        lines.append(f"🔍 <a href=\"{bscscan_link}\">View on BSCScan</a>")
+        short_hash = (tx_hash[:16] + "..." + tx_hash[-8:]) if len(tx_hash) > 26 else tx_hash
+        lines.append(f"📝 Tx Hash: <code>{short_hash}</code>")
+        lines.append(f"🔍 <a href=\"{exp_link}\">View on {exp_label}</a>")
     lines.append(f"🕐 {now_str}")
     lines.append(f"📊 Status: <b>Completed</b>")
     lines.append("")
