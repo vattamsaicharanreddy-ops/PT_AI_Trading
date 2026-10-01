@@ -1071,15 +1071,18 @@ def api_me(user_id: int, username: Optional[str] = Query(None), referred_by: Opt
         cur2 = cursor(conn2)
         cur2.execute(f"SELECT COUNT(*) as cnt FROM deposits WHERE user_id={ph()} AND status='verified'", (user_id,))
         d["verified_deposits_count"] = val(cur2.fetchone(), "cnt", 0) or 0
-        cur2.execute(f"SELECT COALESCE(admin_added_balance,0) as aab FROM users WHERE user_id={ph()}", (user_id,))
-        d["admin_added_balance"] = float(val(cur2.fetchone(), "aab", 0) or 0)
-        d["has_deposit"] = (d["verified_deposits_count"] or 0) > 0 or d["admin_added_balance"] > 0
+        cur2.execute(f"SELECT COALESCE(admin_added_balance,0) as aab, COALESCE(total_deposit,0) as td FROM users WHERE user_id={ph()}", (user_id,))
+        r2 = cur2.fetchone()
+        d["admin_added_balance"] = float(val(r2, "aab", 0) or 0)
+        d["has_deposit"] = (d["verified_deposits_count"] or 0) > 0 or d["admin_added_balance"] > 0 or (float(val(r2, "td", 0) or 0)) > 0
         cur2.execute(f"SELECT expected_amount FROM deposits WHERE user_id={ph()} AND status='verified' ORDER BY id DESC LIMIT 1", (user_id,))
         last_dep = cur2.fetchone()
         d["last_deposit_amount"] = float(val(last_dep, "expected_amount", 0) or 0) if last_dep else 0
     except Exception:
         d["verified_deposits_count"] = 0
         d["last_deposit_amount"] = 0
+        d["admin_added_balance"] = 0
+        d["has_deposit"] = False
     finally:
         safe_close(conn2)
     try:
@@ -1543,8 +1546,9 @@ def withdraw(user_id: int, req: WithdrawalRequest):
         cur = cursor(conn)
         cur.execute(f"SELECT COUNT(*) as cnt FROM deposits WHERE user_id={ph()} AND status='verified'", (user_id,))
         if (val(cur.fetchone(), "cnt", 0) or 0) == 0:
-            cur.execute(f"SELECT COALESCE(admin_added_balance,0) as aab FROM users WHERE user_id={ph()}", (user_id,))
-            if (float(val(cur.fetchone(), "aab", 0) or 0)) <= 0:
+            cur.execute(f"SELECT COALESCE(admin_added_balance,0) as aab, COALESCE(total_deposit,0) as td FROM users WHERE user_id={ph()}", (user_id,))
+            r = cur.fetchone()
+            if (float(val(r, "aab", 0) or 0)) <= 0 and (float(val(r, "td", 0) or 0)) <= 0:
                 return {"ok": False, "error": "Make your first deposit to unlock withdrawals"}
         cur.execute(f"SELECT COUNT(*) as cnt FROM tasks WHERE is_mandatory=1 AND is_active=1")
         mand = val(cur.fetchone(), "cnt", 0) or 0
