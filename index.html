@@ -562,7 +562,7 @@ if(qrBox&&DEPOSIT_ADDRS[net]){qrBox.innerHTML=`<img src="${generateQR(DEPOSIT_AD
 function selectWdNet(net){currentWdNet=net;document.querySelectorAll('.wdnet-btn').forEach(b=>{b.style.background='var(--border)';b.style.color='var(--text)';b.classList.remove('font-bold');});let a=$('wdnet-'+net);if(a){a.style.background='var(--text)';a.style.color='var(--bg)';a.classList.add('font-bold');}}
 function openDeposit(){selectNet(currentNet);$('depositModal').classList.remove('hidden');}
 function closeDeposit(){$('depositModal').classList.add('hidden');$('invoiceBox').classList.add('hidden');stopInvCountdown();let iqb=$('invQrBox');if(iqb)iqb.innerHTML='';}
-function openWithdraw(){$('withdrawModal').classList.remove('hidden');let me=window._lastMe||{};let g=$('wdDepGate');if(g&&(me.verified_deposits_count||0)>0)g.classList.add('hidden');else if(g)g.classList.remove('hidden');}
+function openWithdraw(){$('withdrawModal').classList.remove('hidden');let me=window._lastMe||{};let g=$('wdDepGate');if(g&&(me.has_deposit||me.verified_deposits_count||0)>0)g.classList.add('hidden');else if(g)g.classList.remove('hidden');}
 function closeWithdraw(){$('withdrawModal').classList.add('hidden');}
 function openRules(){
 let s=_lastSocial||{};
