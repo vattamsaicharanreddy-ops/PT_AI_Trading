@@ -318,8 +318,58 @@ def _explorer_for(network, tx_hash):
     return f"https://bscscan.com/tx/{tx_hash}", "BSCScan"
 
 
+def _find_matching_withdrawal(to_addr, amount):
+    try:
+        conn = get_conn()
+        try:
+            cur = get_cursor(conn)
+            to_addr = (to_addr or "").lower()
+            cur.execute(
+                f"SELECT user_id, created_at FROM withdrawals WHERE LOWER(COALESCE(address,''))={ph()} AND ABS(COALESCE(amount,0)-{ph()})<0.5 AND status IN ('approved','pending') ORDER BY id DESC LIMIT 1",
+                (to_addr, float(amount or 0)),
+            )
+            row = cur.fetchone()
+            return dict(row) if row and not isinstance(row, dict) else row
+        finally:
+            safe_close(conn)
+    except Exception as e:
+        logger.warning(f"match wd lookup failed: {e}")
+        return None
+
+
+def _post_withdrawal_request(w):
+    try:
+        amount = w.get("amount", 0.0)
+        to_addr = w.get("to", "")
+        ts = w.get("time", 0)
+        now_str = datetime.utcnow().strftime("%d %b %Y, %H:%M UTC")
+        req_time = now_str
+        if ts > 1000000000:
+            try:
+                req_dt = datetime.fromtimestamp(ts, tz=timezone.utc) - timedelta(minutes=random.randint(5, 45))
+                req_time = req_dt.strftime("%d %b %Y, %H:%M UTC")
+            except Exception:
+                req_time = now_str
+        short_addr = (to_addr[:8] + "..." + to_addr[-6:]) if to_addr and len(to_addr) > 16 else to_addr
+        match = _find_matching_withdrawal(to_addr, amount)
+        lines = ["<b>🔔 New Withdrawal Request</b>", ""]
+        if match and match.get("user_id"):
+            lines.append(f"👤 User: <code>#{match.get('user_id')}</code>")
+        lines.append(f"💵 Amount: <b>${amount:.2f} USDT</b>")
+        lines.append("🔗 Network: BEP-20")
+        if short_addr:
+            lines.append(f"📬 To: <code>{short_addr}</code>")
+        lines.append(f"🕐 {req_time}")
+        lines.append("📊 Status: <b>Pending Approval</b>")
+        return _post_withdrawal_to_group("\n".join(lines))
+    except Exception as e:
+        logger.error(f"withdrawal request announce build error: {e}")
+        return False
+
+
 def _announce_withdrawal(w):
     try:
+        _post_withdrawal_request(w)
         amount = w.get("amount", 0.0)
         tx_hash = w.get("hash", "")
         to_addr = w.get("to", "")
